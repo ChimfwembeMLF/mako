@@ -1,12 +1,18 @@
-import { Injectable, NotFoundException, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import axios from 'axios';
 import { google, Auth } from 'googleapis';
 import { ConfigService } from '@nestjs/config';
 import { SocialAccounts } from './entities/social_accounts.entity';
 import { SocialAccountsCreateDto } from './dto/create-social_accounts.dto';
-import { SocialAccountsUpdateDto } from './dto/update-social_accounts.dto';
+import { TenantMembersService } from '../tenant_members/tenant_members.service';
 
 @Injectable()
 export class SocialAccountsService {
@@ -17,38 +23,58 @@ export class SocialAccountsService {
     @InjectRepository(SocialAccounts)
     private readonly repo: Repository<SocialAccounts>,
     private readonly config: ConfigService,
+    private readonly tenantMembersService: TenantMembersService,
   ) {
     const googleClientId = this.config.get<string>('GOOGLE_CLIENT_ID');
     const googleClientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET');
     this.googleOauthClient = new google.auth.OAuth2(googleClientId, googleClientSecret);
   }
 
-  // FINAL STEP AFTER USER SELECTS ACCOUNT
+  toPublicAccount(account: SocialAccounts) {
+    const { accessToken, refreshToken, ...safe } = account;
+    return safe;
+  }
+
+  async assertTenantAccess(userId: string, tenantId: string) {
+    const memberships = await this.tenantMembersService.findForUser(userId);
+    const allowed = memberships.some((m) => m.tenantId === tenantId && m.isActive);
+    if (!allowed) {
+      throw new ForbiddenException('You are not a member of this workspace');
+    }
+  }
+
   async connectAccount(dto: SocialAccountsCreateDto) {
     if (!dto.userId) {
       throw new UnauthorizedException('UserId is required');
     }
+    if (!dto.tenantId) {
+      throw new ForbiddenException('tenantId is required');
+    }
+
+    await this.assertTenantAccess(dto.userId, dto.tenantId);
 
     const existing = await this.repo.findOne({
       where: {
-        userId: dto.userId,
+        tenantId: dto.tenantId,
         platform: dto.platform,
-        externalId: dto.externalId,
+        externalId: dto.externalId ? dto.externalId : IsNull(),
       },
     });
 
     if (existing) {
       Object.assign(existing, dto);
       existing.connected = true;
-      return this.repo.save(existing);
+      const saved = await this.repo.save(existing);
+      return this.toPublicAccount(saved);
     }
 
-    return this.repo.save(
+    const saved = await this.repo.save(
       this.repo.create({
         ...dto,
         connected: true,
       }),
     );
+    return this.toPublicAccount(saved);
   }
 
   async refreshAccessTokenIfNeeded(account: SocialAccounts) {
@@ -210,12 +236,24 @@ export class SocialAccountsService {
     };
   }
 
+  async findByTenant(tenantId: string, userId: string) {
+    await this.assertTenantAccess(userId, tenantId);
+    const accounts = await this.repo.find({
+      where: { tenantId, connected: true },
+      order: { created_at: 'DESC' },
+    });
+    const refreshed = await Promise.all(
+      accounts.map(async (account) => this.refreshAccessTokenIfNeeded(account)),
+    );
+    return refreshed.map((a) => this.toPublicAccount(a));
+  }
+
   async findByUser(userId: string) {
     const accounts = await this.repo.find({ where: { userId } });
     const refreshed = await Promise.all(
       accounts.map(async (account) => this.refreshAccessTokenIfNeeded(account)),
     );
-    return Promise.all(refreshed.map((account) => this.repo.save(account)));
+    return refreshed.map((a) => this.toPublicAccount(a));
   }
 
   async findOne(id: string) {
@@ -230,17 +268,31 @@ export class SocialAccountsService {
     return acc;
   }
 
-  async disconnect(id: string, userId: string) {
-    const acc = await this.findOneForUser(id, userId);
+  async findOneForTenant(id: string, tenantId: string, userId: string) {
+    await this.assertTenantAccess(userId, tenantId);
+    const acc = await this.repo.findOne({ where: { id, tenantId } });
+    if (!acc) throw new NotFoundException('Not found');
+    return acc;
+  }
+
+  async disconnect(id: string, userId: string, tenantId?: string) {
+    const acc = tenantId
+      ? await this.findOneForTenant(id, tenantId, userId)
+      : await this.findOneForUser(id, userId);
     acc.connected = false;
     acc.accessToken = null as any;
     acc.refreshToken = null as any;
     acc.expiresAt = null as any;
-    return this.repo.save(acc);
+    const saved = await this.repo.save(acc);
+    return this.toPublicAccount(saved);
   }
 
-  async remove(id: string, userId: string) {
-    await this.findOneForUser(id, userId);
+  async remove(id: string, userId: string, tenantId?: string) {
+    if (tenantId) {
+      await this.findOneForTenant(id, tenantId, userId);
+    } else {
+      await this.findOneForUser(id, userId);
+    }
     const res = await this.repo.delete(id);
     if (!res.affected) throw new NotFoundException();
   }

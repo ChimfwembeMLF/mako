@@ -83,14 +83,4 @@ export class BrandProfilesCreateDto {
   @IsOptional()
   @IsString()
   websiteUrl?: string;
-
-  @IsDate()
-  createdAt: Date;
-
-  @IsDate()
-  updatedAt: Date;
-
-  @IsOptional()
-  @IsDate()
-  deletedAt?: Date;
 }

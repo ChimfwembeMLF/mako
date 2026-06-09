@@ -1,0 +1,124 @@
+import 'reflect-metadata';
+import { NestFactory } from '@nestjs/core';
+import { DataSource } from 'typeorm';
+import { AppModule } from '../src/app.module';
+import { TenantBootstrapService } from '../src/modules/tenants/tenant-bootstrap.service';
+import { UserService } from '../src/modules/user/user.service';
+import { Profiles } from '../src/modules/profiles/entities/profiles.entity';
+import { RoleType } from '../src/constants';
+
+/**
+ * Run: npm run seed:dev
+ */
+async function bootstrap() {
+  const app = await NestFactory.createApplicationContext(AppModule, {
+    logger: ['log', 'error', 'warn'],
+  });
+
+  const bootstrapService = app.get(TenantBootstrapService);
+  const userService = app.get(UserService);
+  const dataSource = app.get(DataSource);
+  const profilesRepo = dataSource.getRepository(Profiles);
+
+  console.log('Seeding permissions...');
+  await bootstrapService.ensurePermissionsSeeded();
+  console.log('Permissions seeded.');
+
+  const { SystemSettingsService, DEFAULT_THEME } = await import('../src/modules/system_settings/system_settings.service');
+  const settingsService = app.get(SystemSettingsService);
+  await settingsService.upsert('theme', {
+    value: DEFAULT_THEME,
+    description: 'Global UI theme (HSL values without hsl() wrapper)',
+  });
+  console.log('Default theme seeded.');
+
+  const demoUsers: {
+    email: string;
+    password: string;
+    firstName: string;
+    lastName: string;
+    role: RoleType;
+    isSystemAdmin: boolean;
+  }[] = [
+    {
+      email: 'superadmin@brandpilot.test',
+      password: 'password123',
+      firstName: 'Platform',
+      lastName: 'Super Admin',
+      role: RoleType.SUPER_ADMIN,
+      isSystemAdmin: true,
+    },
+    {
+      email: 'owner@brandpilot.test',
+      password: 'password123',
+      firstName: 'Demo',
+      lastName: 'Owner',
+      role: RoleType.USER,
+      isSystemAdmin: false,
+    },
+    {
+      email: 'admin@brandpilot.test',
+      password: 'password123',
+      firstName: 'Demo',
+      lastName: 'Admin',
+      role: RoleType.ADMIN,
+      isSystemAdmin: false,
+    },
+    {
+      email: 'creator@brandpilot.test',
+      password: 'password123',
+      firstName: 'Demo',
+      lastName: 'Creator',
+      role: RoleType.USER,
+      isSystemAdmin: false,
+    },
+  ];
+
+  for (const demo of demoUsers) {
+    let user = await userService.findOne({ email: demo.email });
+    if (!user) {
+      user = await userService.createUser({
+        email: demo.email,
+        password: demo.password,
+        firstName: demo.firstName,
+        lastName: demo.lastName,
+        provider: 'local',
+      });
+      console.log(`Created demo user: ${demo.email}`);
+    } else {
+      console.log(`Demo user exists: ${demo.email}`);
+    }
+
+    await bootstrapService.bootstrapForUser(user);
+
+    if (user.role !== demo.role) {
+      user.role = demo.role;
+      await userService.save(user);
+      console.log(`Set ${demo.email} role to ${demo.role}`);
+    }
+
+    const profile = await profilesRepo.findOne({ where: { userId: user.id } });
+    if (profile) {
+      if (demo.isSystemAdmin && !profile.isSystemAdmin) {
+        profile.isSystemAdmin = true;
+        await profilesRepo.save(profile);
+        console.log(`Promoted ${demo.email} to Super Admin`);
+      } else if (!demo.isSystemAdmin && profile.isSystemAdmin) {
+        profile.isSystemAdmin = false;
+        await profilesRepo.save(profile);
+        console.log(`Removed Super Admin from ${demo.email}`);
+      }
+    }
+  }
+
+  console.log('\nSeed complete.');
+  console.log('Demo accounts (password: password123):');
+  demoUsers.forEach((u) => console.log(`  - ${u.email}`));
+
+  await app.close();
+}
+
+bootstrap().catch((err) => {
+  console.error('Seed failed:', err);
+  process.exit(1);
+});

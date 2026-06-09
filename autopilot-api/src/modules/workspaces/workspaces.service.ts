@@ -17,7 +17,10 @@ export class WorkspacesService {
     return this.repo.save(ent as Workspaces);
   }
 
-  async findAll(): Promise<Workspaces[]> {
+  async findAll(tenantId?: string): Promise<Workspaces[]> {
+    if (tenantId) {
+      return this.repo.find({ where: { tenantId }, order: { created_at: 'ASC' } });
+    }
     return this.repo.find();
   }
 

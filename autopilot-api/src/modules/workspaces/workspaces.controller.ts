@@ -6,13 +6,20 @@ import {
   Delete,
   Param,
   Body,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { WorkspacesService } from './workspaces.service';
 import { Workspaces } from './entities/workspaces.entity';
 import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
 import { WorkspacesUpdateDto } from './dto/update-workspaces.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-@Controller('workspaces')
+@ApiTags('Workspaces')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+@Controller('api/v1/workspaces')
 export class WorkspacesController {
   constructor(private readonly service: WorkspacesService) {}
 
@@ -22,8 +29,8 @@ export class WorkspacesController {
   }
 
   @Get()
-  findAll(): Promise<Workspaces[]> {
-    return this.service.findAll();
+  findAll(@Query('tenantId') tenantId?: string): Promise<Workspaces[]> {
+    return this.service.findAll(tenantId);
   }
 
   @Get(':id')

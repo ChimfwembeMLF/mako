@@ -11,7 +11,10 @@ import * as passport from 'passport';
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  app.enableCors();
+  app.enableCors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+  });
   app.useStaticAssets(join(process.cwd(), 'public'));
 
   // Enable express-session so Passport can store OAuth2 `state` in session

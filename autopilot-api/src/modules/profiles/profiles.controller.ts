@@ -6,6 +6,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
 import { ProfilesService } from './profiles.service';
 import { Profiles } from './entities/profiles.entity';
@@ -24,8 +25,8 @@ export class ProfilesController {
   }
 
   @Get()
-  findAll(): Promise<Profiles[]> {
-    return this.service.findAll();
+  findAll(@Query('userId') userId?: string): Promise<Profiles[]> {
+    return this.service.findAll(userId);
   }
 
   @Get(':id')

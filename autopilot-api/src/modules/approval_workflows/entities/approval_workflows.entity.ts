@@ -1,17 +1,26 @@
 import {
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   Column,
   UpdateDateColumn,
+  Index,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
 import { Roles } from '../../auth/rbac/roles/entities/roles.entity';
 import { UserEntity } from '../../user/user.entity';
+import { Tenants } from '../../tenants/entities/tenants.entity';
 
+@Index(['tenantId', 'actionKey'], { unique: true })
 @Entity({ name: 'approval_workflows' })
 export class ApprovalWorkflows {
-  @PrimaryColumn({ type: 'text' })
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ type: 'uuid' })
+  tenantId: string;
+
+  @Column({ type: 'text' })
   actionKey: string;
 
   @Column({ type: 'text' })
@@ -31,6 +40,10 @@ export class ApprovalWorkflows {
 
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
+
+  @ManyToOne(() => Tenants, { nullable: false })
+  @JoinColumn({ name: 'tenant_id' })
+  tenant: Tenants;
 
   @ManyToOne(() => Roles, { nullable: false })
   @JoinColumn({ name: 'approver_role_id' })

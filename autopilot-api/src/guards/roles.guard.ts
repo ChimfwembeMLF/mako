@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import * as _ from 'lodash';
 
-import type { RoleType } from '../constants';
+import { RoleType } from '../constants';
 import type { UserEntity } from '../modules/user/user.entity';
 
 @Injectable()
@@ -19,6 +19,10 @@ export class RolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const user = <UserEntity>request.user;
+
+    if (user.role === RoleType.SUPER_ADMIN) {
+      return true;
+    }
 
     return roles.includes(user.role);
   }

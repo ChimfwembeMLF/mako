@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Post,
@@ -6,6 +7,7 @@ import {
   Delete,
   Param,
   Body,
+  Query,
 } from '@nestjs/common';
 import { RolePermissionsService } from './role_permissions.service';
 import { RolePermissions } from './entities/role_permissions.entity';
@@ -43,11 +45,14 @@ export class RolePermissionsController {
     return this.service.update(roleId, permissionKey, dto);
   }
 
-  @Delete(':roleId/:permissionKey')
+  @Delete(':roleId')
   remove(
     @Param('roleId') roleId: string,
-    @Param('permissionKey') permissionKey: string,
+    @Query('permissionKey') permissionKey: string,
   ) {
+    if (!permissionKey) {
+      throw new BadRequestException('permissionKey query param is required');
+    }
     return this.service.remove(roleId, permissionKey);
   }
 }

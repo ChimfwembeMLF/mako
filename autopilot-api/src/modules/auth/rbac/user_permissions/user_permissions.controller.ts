@@ -6,12 +6,16 @@ import {
   Delete,
   Param,
   Body,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { UserPermissionsService } from './user_permissions.service';
 import { UserPermissions } from './entities/user_permissions.entity';
 import { UserPermissionsCreateDto } from './dto/create-user_permissions.dto';
 import { UserPermissionsUpdateDto } from './dto/update-user_permissions.dto';
 
+@UseGuards(JwtAuthGuard)
 @Controller('api/v1/user-permissions')
 export class UserPermissionsController {
   constructor(private readonly service: UserPermissionsService) {}
@@ -22,8 +26,8 @@ export class UserPermissionsController {
   }
 
   @Get()
-  findAll(): Promise<UserPermissions[]> {
-    return this.service.findAll();
+  findAll(@Query('tenantId') tenantId?: string, @Query('userId') userId?: string): Promise<UserPermissions[]> {
+    return this.service.findAll(tenantId, userId);
   }
 
   @Get(':id')

@@ -17,7 +17,8 @@ export class ProfilesService {
     return this.repo.save(ent as Profiles);
   }
 
-  async findAll(): Promise<Profiles[]> {
+  async findAll(userId?: string): Promise<Profiles[]> {
+    if (userId) return this.repo.find({ where: { userId } });
     return this.repo.find();
   }
 

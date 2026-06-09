@@ -22,6 +22,15 @@ import { CommentRepliesModule } from './modules/comment_replies/comment_replies.
 import { DepositsModule } from './modules/deposits/deposits.module';
 import { LeadSourcesModule } from './modules/lead_sources/lead_sources.module';
 import { BrandProfilesModule } from './modules/brand_profiles/brand_profiles.module';
+import { TenantMembersModule } from './modules/tenant_members/tenant_members.module';
+import { ProfilesModule } from './modules/profiles/profiles.module';
+import { WorkspacesModule } from './modules/workspaces/workspaces.module';
+import { ApprovalWorkflowsModule } from './modules/approval_workflows/approval_workflows.module';
+import { RolesModule } from './modules/auth/rbac/roles/roles.module';
+import { PermissionsModule } from './modules/auth/rbac/permissions/permissions.module';
+import { RolePermissionsModule } from './modules/auth/rbac/role_permissions/role_permissions.module';
+import { UserPermissionsModule } from './modules/auth/rbac/user_permissions/user_permissions.module';
+import { SystemSettingsModule } from './modules/system_settings/system_settings.module';
 
 @Module({
   imports: [
@@ -38,30 +47,30 @@ import { BrandProfilesModule } from './modules/brand_profiles/brand_profiles.mod
 
     AuthModule,
     UserModule,
-
-    // Multi-tenant core
     TenantsModule,
-
-    // Authorization
+    TenantMembersModule,
+    ProfilesModule,
+    WorkspacesModule,
     RbacModule,
-
+    RolesModule,
+    PermissionsModule,
+    RolePermissionsModule,
+    UserPermissionsModule,
     BrandProfilesModule,
     ContentItemsModule,
     SocialAccountsModule,
     LeadsModule,
     LeadSourcesModule,
-
     PaymentFailuresModule,
     DepositsModule,
-
     ApprovalRequestsModule,
+    ApprovalWorkflowsModule,
     AutoReplyRulesModule,
     WhatsappContactsModule,
     CommentRepliesModule,
-
-    // Platform features
     AuditLogsModule,
     AiUsageModule,
+    SystemSettingsModule,
   ],
   providers: [
     {

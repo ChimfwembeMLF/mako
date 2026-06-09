@@ -6,12 +6,19 @@ import {
   Delete,
   Param,
   Body,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { ApprovalWorkflowsService } from './approval_workflows.service';
 import { ApprovalWorkflows } from './entities/approval_workflows.entity';
 import { ApprovalWorkflowsCreateDto } from './dto/create-approval_workflows.dto';
 import { ApprovalWorkflowsUpdateDto } from './dto/update-approval_workflows.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@ApiTags('Approval Workflows')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('api/v1/approval-workflows')
 export class ApprovalWorkflowsController {
   constructor(private readonly service: ApprovalWorkflowsService) {}
@@ -22,8 +29,8 @@ export class ApprovalWorkflowsController {
   }
 
   @Get()
-  findAll(): Promise<ApprovalWorkflows[]> {
-    return this.service.findAll();
+  findAll(@Query('tenantId') tenantId?: string): Promise<ApprovalWorkflows[]> {
+    return this.service.findAll(tenantId);
   }
 
   @Get(':id')

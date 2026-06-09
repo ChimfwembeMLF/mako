@@ -13,17 +13,20 @@ export class AuditLogsCreateDto {
   @IsUUID()
   tenantId: string;
 
+  @IsOptional()
   @IsUUID()
-  userId: string;
+  userId?: string;
 
   @IsString()
   action: string;
 
+  @IsOptional()
   @IsString()
-  resourceType: string;
+  resourceType?: string;
 
+  @IsOptional()
   @IsUUID()
-  resourceId: string;
+  resourceId?: string;
 
   @IsOptional()
   beforeState?: string;
@@ -42,6 +45,7 @@ export class AuditLogsCreateDto {
   @IsString()
   userAgent?: string;
 
+  @IsOptional()
   @IsDate()
-  createdAt: Date;
+  createdAt?: Date;
 }

@@ -6,12 +6,19 @@ import {
   Delete,
   Param,
   Body,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { RolesService } from './roles.service';
 import { Roles } from './entities/roles.entity';
 import { RolesCreateDto } from './dto/create-roles.dto';
 import { RolesUpdateDto } from './dto/update-roles.dto';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 
+@ApiTags('Roles')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 @Controller('api/v1/roles')
 export class RolesController {
   constructor(private readonly service: RolesService) {}
@@ -22,8 +29,8 @@ export class RolesController {
   }
 
   @Get()
-  findAll(): Promise<Roles[]> {
-    return this.service.findAll();
+  findAll(@Query('tenantId') tenantId?: string): Promise<Roles[]> {
+    return this.service.findAll(tenantId);
   }
 
   @Get(':id')

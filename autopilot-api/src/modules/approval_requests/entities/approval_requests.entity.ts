@@ -8,7 +8,6 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Tenants } from '../../tenants/entities/tenants.entity';
-import { ApprovalWorkflows } from '../../approval_workflows/entities/approval_workflows.entity';
 import { UserEntity } from '../../user/user.entity';
 
 @Index(['status', 'created_at'], { unique: true })
@@ -57,10 +56,6 @@ export class ApprovalRequests {
   @ManyToOne(() => Tenants, { nullable: false })
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenants;
-
-  @ManyToOne(() => ApprovalWorkflows, { nullable: false })
-  @JoinColumn({ name: 'action_key' })
-  workflow: ApprovalWorkflows;
 
   @ManyToOne(() => UserEntity, { nullable: false })
   @JoinColumn({ name: 'requested_by' })

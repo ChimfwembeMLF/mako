@@ -1,15 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Tenants } from './entities/tenants.entity';
 import { TenantsCreateDto } from './dto/create-tenants.dto';
 import { TenantsUpdateDto } from './dto/update-tenants.dto';
+import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
+import { UserEntity } from '../user/user.entity';
+import { TenantBootstrapService } from './tenant-bootstrap.service';
 
 @Injectable()
 export class TenantsService {
   constructor(
     @InjectRepository(Tenants)
     private readonly repo: Repository<Tenants>,
+    @InjectRepository(TenantMembers)
+    private readonly membersRepo: Repository<TenantMembers>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepo: Repository<UserEntity>,
+    private readonly bootstrap: TenantBootstrapService,
   ) {}
 
   async create(dto: TenantsCreateDto): Promise<Tenants> {
@@ -19,6 +27,27 @@ export class TenantsService {
 
   async findAll(): Promise<Tenants[]> {
     return this.repo.find();
+  }
+
+  async findForUser(userId: string): Promise<Tenants[]> {
+    const memberships = await this.membersRepo.find({
+      where: { userId, isActive: true },
+    });
+    if (!memberships.length) return [];
+    const tenantIds = memberships.map((m) => m.tenantId);
+    return this.repo.find({ where: { id: In(tenantIds) } });
+  }
+
+  /** Ensures a default tenant exists — safety net for legacy users or failed first login */
+  async findForUserEnsuringBootstrap(userId: string): Promise<Tenants[]> {
+    let tenants = await this.findForUser(userId);
+    if (tenants.length) return tenants;
+
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) return [];
+
+    await this.bootstrap.bootstrapForUser(user);
+    return this.findForUser(userId);
   }
 
   async findOne(id: string): Promise<Tenants> {

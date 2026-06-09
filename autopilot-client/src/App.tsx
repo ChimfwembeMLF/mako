@@ -1,37 +1,152 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/contexts/AuthContext";
-import AppLayout from "@/components/AppLayout";
-import LoginPage from "@/pages/LoginPage";
-import DashboardPage from "@/pages/DashboardPage";
-import ShipmentsPage from "@/pages/ShipmentsPage";
-import ShipmentDetailPage from "@/pages/ShipmentDetailPage";
-import ProfilePage from "@/pages/ProfilePage";
-import NotFound from "@/pages/NotFound";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { TenantProvider } from "@/hooks/useTenant";
+import { BackendStatusProvider } from "@/hooks/useBackendStatus";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { isNetworkError } from "@/lib/api-errors";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
-const queryClient = new QueryClient();
+// Existing pages
+import Index from "./pages/Index";
+import BrandBrain from "./pages/BrandBrain";
+import ContentEngine from "./pages/ContentEngine";
+import EditContent from "./pages/EditContent";
+import Scheduler from "./pages/Scheduler";
+import LeadAgent from "./pages/LeadAgent";
+import Analytics from "./pages/Analytics";
+import SettingsPage from "./pages/SettingsPage";
+import ContactForm from "./pages/ContactForm";
+import Auth from "./pages/auth/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import PublisherConnect from "./pages/PublisherConnect";
+import NotFound from "./pages/NotFound";
+
+// New RBAC & admin pages
+import RolesPage from "./pages/admin/RolesPage";
+import MakerCheckerConfigPage from "./pages/admin/MakerCheckerConfigPage";
+import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
+import TeamPage from "./pages/team/TeamPage";
+import UserPermissionsPage from "./pages/team/UserPermissionsPage";
+import ApprovalsPage from "./pages/ApprovalsPage";
+import MediaLibraryPage from "./pages/MediaLibraryPage";
+import TemplatesPage from "./pages/TemplatesPage";
+import TemplateEditPage from "./pages/TemplateEditPage";
+import RepliesPage from "./pages/RepliesPage";
+import AuditLogsPage from "./pages/AuditLogsPage";
+import BillingPage from "./pages/BillingPage";
+import ExportPage from "./pages/ExportPage";
+import WorkspacesPage from "./pages/WorkspacesPage";
+import SocialCallback from "./pages/auth/SocialCallback";
+import { SuperAdminRoute } from "@/components/SuperAdminRoute";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30_000,
+      retry: (failureCount, error) => (isNetworkError(error) ? failureCount < 2 : failureCount < 1),
+      throwOnError: false,
+    },
+    mutations: { throwOnError: false },
+  },
+});
+
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen text-muted-foreground">
+      <div className="animate-pulse text-sm">Loading…</div>
+    </div>
+  );
+  if (!user) return <Navigate to="/auth" replace />;
+  return <>{children}</>;
+}
+
+function PublicOnly({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route element={<AppLayout />}>
-              <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/shipments" element={<ShipmentsPage />} />
-              <Route path="/shipments/:id" element={<ShipmentDetailPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-            </Route>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
+      <BackendStatusProvider>
+        <AuthProvider>
+          <TenantProvider>
+            <ErrorBoundary label="Application">
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public routes */}
+                <Route path="/auth" element={<PublicOnly><Auth /></PublicOnly>} />
+                <Route path="/auth/callback" element={<SocialCallback />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/contact/:sourceId" element={<ContactForm />} />
+
+                {/* Protected app routes */}
+                <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                  {/* Core */}
+                  <Route path="/" element={<Index />} />
+                  <Route path="/brand-brain" element={<BrandBrain />} />
+                  <Route path="/content" element={<ContentEngine />} />
+                  <Route path="/content/edit/:id" element={<EditContent />} />
+                  <Route path="/scheduler" element={<Scheduler />} />
+                  <Route path="/leads" element={<LeadAgent />} />
+                  <Route path="/analytics" element={<Analytics />} />
+                  <Route path="/publisher" element={<PublisherConnect />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+
+                  {/* Media */}
+                  <Route path="/media" element={<MediaLibraryPage />} />
+
+                  {/* Templates */}
+                  <Route path="/templates" element={<TemplatesPage />} />
+                  <Route path="/templates/:id" element={<TemplateEditPage />} />
+
+                  {/* Replies */}
+                  <Route path="/replies" element={<RepliesPage />} />
+
+                  {/* Approvals (maker-checker) */}
+                  <Route path="/approvals" element={<ApprovalsPage />} />
+
+                  {/* Team management */}
+                  <Route path="/team" element={<TeamPage />} />
+                  <Route path="/team/:userId/permissions" element={<UserPermissionsPage />} />
+
+                  {/* Audit */}
+                  <Route path="/audit" element={<AuditLogsPage />} />
+
+                  {/* Billing */}
+                  <Route path="/billing" element={<BillingPage />} />
+
+                  {/* Data Export */}
+                  <Route path="/export" element={<ExportPage />} />
+
+                  {/* Workspace Management */}
+                  <Route path="/workspaces" element={<WorkspacesPage />} />
+
+                  {/* Tenant admin */}
+                  <Route path="/admin/roles" element={<RolesPage />} />
+                  <Route path="/admin/maker-checker" element={<MakerCheckerConfigPage />} />
+
+                  {/* Platform backoffice — Super Admin only */}
+                  <Route path="/admin/system" element={<SuperAdminRoute><SystemSettingsPage /></SuperAdminRoute>} />
+                </Route>
+
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </ErrorBoundary>
+        </TenantProvider>
       </AuthProvider>
+      </BackendStatusProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
@@ -11,21 +13,31 @@ import { FacebookAuthService } from './facebook-auth.service';
 import { LinkedInAuthService } from './linkedin-auth.service';
 import { InstagramAuthService } from './instagram-auth.service';
 import { UserModule } from '../user/user.module';
-import { SocialAccountsModule } from '../social_accounts/social_accounts.module';
+import { TenantsModule } from '../tenants/tenants.module';
+import { RefreshTokenEntity } from './entities/refresh-token.entity';
+import { RefreshTokenService } from './refresh-token.service';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     UserModule,
-    SocialAccountsModule,
+    TenantsModule,
+    MailModule,
+    TypeOrmModule.forFeature([RefreshTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET || 'default_secret',
-      signOptions: { expiresIn: '1h' },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET') || 'default_secret',
+        signOptions: { expiresIn: '1h' },
+      }),
     }),
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
+    RefreshTokenService,
     JwtStrategy,
     GoogleStrategy,
     FacebookStrategy,

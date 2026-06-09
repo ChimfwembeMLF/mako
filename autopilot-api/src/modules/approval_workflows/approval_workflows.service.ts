@@ -17,27 +17,26 @@ export class ApprovalWorkflowsService {
     return this.repo.save(ent as ApprovalWorkflows);
   }
 
-  async findAll(): Promise<ApprovalWorkflows[]> {
-    return this.repo.find();
+  async findAll(tenantId?: string): Promise<ApprovalWorkflows[]> {
+    if (tenantId) {
+      return this.repo.find({ where: { tenantId }, order: { actionKey: 'ASC' } });
+    }
+    return this.repo.find({ order: { actionKey: 'ASC' } });
   }
 
-  async findOne(actionKey: string): Promise<ApprovalWorkflows> {
-    const ent = await this.repo.findOne({ where: { actionKey } });
+  async findOne(id: string): Promise<ApprovalWorkflows> {
+    const ent = await this.repo.findOne({ where: { id } });
     if (!ent) throw new NotFoundException('ApprovalWorkflows not found');
     return ent;
   }
 
-  async update(
-    actionKey: string,
-    dto: ApprovalWorkflowsUpdateDto,
-  ): Promise<ApprovalWorkflows> {
-    await this.repo.update(actionKey, dto as any);
-    return this.findOne(actionKey);
+  async update(id: string, dto: ApprovalWorkflowsUpdateDto): Promise<ApprovalWorkflows> {
+    await this.repo.update(id, dto as any);
+    return this.findOne(id);
   }
 
-  async remove(actionKey: string): Promise<void> {
-    const res = await this.repo.delete(actionKey);
-    if (res.affected === 0)
-      throw new NotFoundException('ApprovalWorkflows not found');
+  async remove(id: string): Promise<void> {
+    const res = await this.repo.delete(id);
+    if (res.affected === 0) throw new NotFoundException('ApprovalWorkflows not found');
   }
 }

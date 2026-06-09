@@ -2,11 +2,8 @@ import {
   IsString,
   IsOptional,
   IsUUID,
-  IsBoolean,
   IsDate,
-  IsArray,
-  IsNumber,
-  IsInt,
+  IsObject,
 } from 'class-validator';
 
 export class TenantsUpdateDto {
@@ -25,6 +22,10 @@ export class TenantsUpdateDto {
   @IsOptional()
   @IsUUID()
   ownerId?: string;
+
+  @IsOptional()
+  @IsObject()
+  themeConfig?: Record<string, unknown>;
 
   @IsOptional()
   @IsDate()

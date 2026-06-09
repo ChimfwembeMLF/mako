@@ -26,6 +26,9 @@ export class Tenants {
   @Column({ type: 'uuid' })
   ownerId: string;
 
+  @Column({ type: 'jsonb', nullable: true })
+  themeConfig?: Record<string, unknown>;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

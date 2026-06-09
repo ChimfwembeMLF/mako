@@ -55,4 +55,12 @@ export class UserRegisterDto {
     message: 'Password is required',
   })
   readonly password: string;
+
+  @ApiProperty()
+  @IsString()
+  readonly provider: string;
+
+  @ApiProperty()
+  @IsString()
+  readonly providerId: string;
 }

@@ -1,0 +1,168 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Tenants } from './entities/tenants.entity';
+import { UserEntity } from '../user/user.entity';
+import { Profiles } from '../profiles/entities/profiles.entity';
+import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
+import { Roles } from '../auth/rbac/roles/entities/roles.entity';
+import { Permissions } from '../auth/rbac/permissions/entities/permissions.entity';
+import { RolePermissions } from '../auth/rbac/role_permissions/entities/role_permissions.entity';
+import { Workspaces } from '../workspaces/entities/workspaces.entity';
+import { ApprovalWorkflows } from '../approval_workflows/entities/approval_workflows.entity';
+import {
+  PERMISSION_DEFINITIONS,
+  SYSTEM_ROLE_DEFINITIONS,
+  APPROVAL_WORKFLOW_DEFINITIONS,
+  TENANT_SCOPED_PERMISSIONS,
+} from '../auth/rbac/rbac.constants';
+
+@Injectable()
+export class TenantBootstrapService {
+  private readonly logger = new Logger(TenantBootstrapService.name);
+
+  constructor(
+    @InjectRepository(Tenants) private readonly tenantsRepo: Repository<Tenants>,
+    @InjectRepository(Profiles) private readonly profilesRepo: Repository<Profiles>,
+    @InjectRepository(TenantMembers) private readonly membersRepo: Repository<TenantMembers>,
+    @InjectRepository(Roles) private readonly rolesRepo: Repository<Roles>,
+    @InjectRepository(Permissions) private readonly permissionsRepo: Repository<Permissions>,
+    @InjectRepository(RolePermissions) private readonly rolePermissionsRepo: Repository<RolePermissions>,
+    @InjectRepository(Workspaces) private readonly workspacesRepo: Repository<Workspaces>,
+    @InjectRepository(ApprovalWorkflows) private readonly workflowsRepo: Repository<ApprovalWorkflows>,
+  ) {}
+
+  async ensurePermissionsSeeded(): Promise<void> {
+    await this.permissionsRepo.upsert(
+      PERMISSION_DEFINITIONS.map((perm) => ({
+        key: perm.key,
+        label: perm.label,
+        module: perm.module,
+        description: perm.description,
+      })),
+      ['key'],
+    );
+  }
+
+  async bootstrapForUser(user: UserEntity): Promise<Tenants> {
+    await this.ensurePermissionsSeeded();
+
+    const existingMember = await this.membersRepo.findOne({ where: { userId: user.id } });
+    if (existingMember) {
+      return this.tenantsRepo.findOneOrFail({ where: { id: existingMember.tenantId } });
+    }
+
+    await this.ensureProfile(user);
+
+    const slugBase = (user.email?.split('@')[0] ?? user.firstName ?? `user-${user.id.slice(0, 8)}`)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const slug = `${slugBase}-${Date.now().toString(36)}`;
+
+    const workspaceLabel =
+      user.firstName?.trim() ||
+      user.email?.split('@')[0] ||
+      'My';
+
+    const tenant = await this.tenantsRepo.save(
+      this.tenantsRepo.create({
+        name: `${workspaceLabel}'s Workspace`,
+        slug,
+        ownerId: user.id,
+      }),
+    );
+
+    const roleMap = new Map<string, Roles>();
+    for (const roleDef of SYSTEM_ROLE_DEFINITIONS) {
+      const role = await this.rolesRepo.save(
+        this.rolesRepo.create({
+          tenantId: tenant.id,
+          name: roleDef.name,
+          description: roleDef.description,
+          isSystem: true,
+        }),
+      );
+      roleMap.set(roleDef.name, role);
+
+      const keys =
+        roleDef.permissions === '*'
+          ? TENANT_SCOPED_PERMISSIONS
+          : roleDef.permissions;
+
+      for (const permissionKey of keys) {
+        await this.rolePermissionsRepo.save(
+          this.rolePermissionsRepo.create({ roleId: role.id, permissionKey }),
+        );
+      }
+    }
+
+    const ownerRole = roleMap.get('Owner')!;
+    await this.membersRepo.save(
+      this.membersRepo.create({
+        tenantId: tenant.id,
+        userId: user.id,
+        roleId: ownerRole.id,
+        isActive: true,
+        invitedBy: user.id,
+        joinedAt: new Date(),
+      }),
+    );
+
+    await this.workspacesRepo.save(
+      this.workspacesRepo.create({
+        tenantId: tenant.id,
+        name: 'Default',
+        slug: 'default',
+      }),
+    );
+
+    for (const wf of APPROVAL_WORKFLOW_DEFINITIONS) {
+      const approverRole = roleMap.get(wf.approverRoleName);
+      if (!approverRole) continue;
+      await this.workflowsRepo.save(
+        this.workflowsRepo.create({
+          tenantId: tenant.id,
+          actionKey: wf.actionKey,
+          label: wf.label,
+          description: wf.description,
+          isEnabled: false,
+          approverRoleId: approverRole.id,
+          updatedBy: user.id,
+        }),
+      );
+    }
+
+    this.logger.log(`Bootstrapped tenant ${tenant.id} for user ${user.id}`);
+    return tenant;
+  }
+
+  private async ensureProfile(user: UserEntity): Promise<void> {
+    const existing = await this.profilesRepo.findOne({ where: { userId: user.id } });
+    const displayName =
+      [user.firstName, user.lastName].filter(Boolean).join(' ') ||
+      user.firstName ||
+      user.email ||
+      undefined;
+
+    if (existing) {
+      if (!existing.displayName && displayName) {
+        existing.displayName = displayName;
+        existing.fullName = displayName;
+        if (user.avatar && !existing.avatarUrl) existing.avatarUrl = user.avatar;
+        await this.profilesRepo.save(existing);
+      }
+      return;
+    }
+
+    await this.profilesRepo.save(
+      this.profilesRepo.create({
+        userId: user.id,
+        displayName,
+        fullName: displayName,
+        avatarUrl: user.avatar,
+        isSystemAdmin: false,
+      }),
+    );
+  }
+}

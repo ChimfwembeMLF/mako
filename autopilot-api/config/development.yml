@@ -5,7 +5,7 @@ db:
   username: 'postgres'
   password: 'pass104'
   host: 'localhost'
-  synchronize: false
+  synchronize: true
   database: 'autopilot_dev'
   env: "development"
   

@@ -11,6 +11,9 @@ import {
 
 export class PermissionsCreateDto {
   @IsString()
+  key: string;
+
+  @IsString()
   label: string;
 
   @IsOptional()

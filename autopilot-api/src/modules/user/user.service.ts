@@ -19,12 +19,26 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
-  ) {}
+  ) { }
 
-  async createUser(userRegisterDto: UserRegisterDto): Promise<UserEntity> {
-    const user = this.userRepository.create(userRegisterDto);
-    await this.userRepository.save(user);
-    return user;
+  async createUser(data: {
+    email: string;
+    password: string;
+    firstName?: string;
+    lastName?: string;
+    provider?: string;
+  }): Promise<UserEntity> {
+    const user = this.userRepository.create({
+      email: data.email,
+      password: data.password,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      provider: data.provider || 'local',
+      // Set optional fields to null/undefined to avoid validation errors
+      phone: null,
+      providerId: null,
+    });
+    return this.userRepository.save(user);
   }
 
   async createSociallAuthUser(
@@ -53,6 +67,10 @@ export class UserService {
 
     const [data, itemCount] = await queryBuilder.getManyAndCount();
     return [itemCount, data];
+  }
+
+  async updatePassword(userId: string, hashedPassword: string): Promise<void> {
+    await this.userRepository.update(userId, { password: hashedPassword });
   }
 
   save(user: UserEntity): Promise<UserEntity> {
