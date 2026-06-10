@@ -412,6 +412,47 @@ export const socialAccountsApi = {
             `/api/v1/social-accounts/oauth/${platform}/authorize?tenantId=${encodeURIComponent(tenantId)}&returnUrl=${encodeURIComponent(returnUrl)}`,
         ),
 
+    getFacebookSetup: (token: string) =>
+        request<{ pages: Array<{ id: string; name: string; category?: string }>; profileName?: string }>(
+            `/api/v1/social-accounts/facebook/setup?token=${encodeURIComponent(token)}`,
+        ),
+
+    finalizeFacebook: (data: { setupToken: string; pageId: string }) =>
+        request<SocialAccount>('/api/v1/social-accounts/facebook/finalize', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    getWhatsappSetup: (token: string) =>
+        request<{ phones: Array<{ id: string; displayPhoneNumber?: string; verifiedName?: string; wabaId: string; wabaName?: string }> }>(
+            `/api/v1/social-accounts/whatsapp/setup?token=${encodeURIComponent(token)}`,
+        ),
+
+    setupWhatsappFromMeta: (tenantId: string) =>
+        request<
+            | {
+                  ready: true;
+                  setupToken: string;
+                  phones: Array<{ id: string; displayPhoneNumber?: string; verifiedName?: string; wabaId: string; wabaName?: string }>;
+                  source: 'facebook';
+              }
+            | { ready: false; needOAuth: true; reason: 'no_facebook' | 'missing_scopes' | 'no_phones' }
+        >(`/api/v1/social-accounts/whatsapp/setup-from-meta?tenantId=${encodeURIComponent(tenantId)}`, {
+            method: 'POST',
+        }),
+
+    enablePlatformWhatsapp: (tenantId: string) =>
+        request<SocialAccount>(
+            `/api/v1/social-accounts/whatsapp/enable-platform?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST' },
+        ),
+
+    finalizeWhatsapp: (data: { setupToken: string; phoneNumberId: string }) =>
+        request<any>('/api/v1/social-accounts/whatsapp/finalize', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
     getMyAccounts: () => request<any>('/api/v1/social-accounts/me'),
 
     disconnect: (id: string, tenantId?: string) =>
@@ -428,6 +469,122 @@ export const socialAccountsApi = {
 };
 
 // ==================== Tenants ====================
+export const backofficeApi = {
+    getOverview: () =>
+        request<{
+            company: {
+                name: string;
+                product: string;
+                tagline: string;
+                description: string;
+                operator: string;
+                region: string;
+                supportEmail: string;
+                website: string;
+                legal: { privacy: string; terms: string; dataDeletion: string };
+            };
+            stats: {
+                tenants: number;
+                users: number;
+                activeMembers: number;
+                contentItems: number;
+                publications: number;
+                connectedSocialAccounts: number;
+                leads: number;
+                auditLogs: number;
+                commentReplies: number;
+                pendingDataDeletions: number;
+                estimatedMrrZmw: number;
+                revenueTotalZmw: number;
+                aiTokensLastPeriod: number;
+            };
+            planDistribution: Record<string, number>;
+            aiByFunction: Record<string, number>;
+            tenantGrowth: Array<{ month: string; count: number }>;
+            recentDeposits: Array<{
+                id: string;
+                tenantId: string;
+                plan?: string;
+                status?: string;
+                amount?: string;
+                currency?: string;
+                createdAt: string;
+            }>;
+            recentTenants: Array<{
+                id: string;
+                name: string;
+                slug: string;
+                ownerEmail?: string;
+                createdAt: string;
+            }>;
+            recentAudit: Array<{
+                id: string;
+                action: string;
+                resourceType: string;
+                tenantName?: string;
+                userEmail?: string;
+                createdAt: string;
+            }>;
+            dataDeletionRequests: Array<{
+                id: string;
+                platform: string;
+                status: string;
+                email?: string;
+                createdAt: string;
+            }>;
+            crons: { autoPublish: boolean; dailyWorkflow: boolean; commentSync: boolean };
+            env: {
+                nodeEnv: string;
+                apiPublicUrl: string;
+                clientUrl: string;
+                supabaseConfigured: boolean;
+                mistralConfigured: boolean;
+                metaConfigured: boolean;
+                linkedInConfigured: boolean;
+                pawapayConfigured: boolean;
+                metaWebhookTokenSet: boolean;
+            };
+        }>('/api/v1/backoffice/overview'),
+
+    listTenants: () =>
+        request<
+            Array<{
+                id: string;
+                name: string;
+                slug: string;
+                ownerId: string;
+                ownerEmail?: string;
+                plan: string;
+                status: string;
+                members: number;
+                contentItems: number;
+                createdAt: string;
+            }>
+        >('/api/v1/backoffice/tenants'),
+
+    getTenant: (id: string) =>
+        request<{
+            id: string;
+            name: string;
+            slug: string;
+            logoUrl?: string;
+            ownerId: string;
+            ownerEmail?: string;
+            createdAt: string;
+            subscription: { plan: string; status: string; billingPeriodEnd: string | null };
+            stats: { members: number; contentItems: number; publications: number; leads: number; aiTokens: number };
+            socialAccounts: Array<{ id: string; platform: string; connected: boolean; accountName: string }>;
+            recentDeposits: Array<{
+                id: string;
+                plan?: string;
+                amount?: string;
+                currency?: string;
+                status?: string;
+                createdAt: string;
+            }>;
+        }>(`/api/v1/backoffice/tenants/${id}`),
+};
+
 export const tenantsApi = {
     create: (data: { name: string; slug: string; ownerId: string; logoUrl?: string }) =>
         request<any>('/api/v1/tenants', {
@@ -658,6 +815,7 @@ export const contentAiApi = {
         tenantId?: string;
         contentType?: string;
         platform?: string;
+        templateId?: string;
         save?: boolean;
     }) =>
         request<{ title: string; content: string; contentItemId?: string }>(
@@ -771,13 +929,51 @@ export const paymentsApi = {
     listDeposits: (tenantId: string) =>
         request<Array<{
             id: string;
+            invoiceNumber: string;
             plan: string | null;
             status: string | null;
             amount: string | null;
             currency: string | null;
             method: 'mobile_money';
+            network: string | null;
+            phone: string | null;
             createdAt: string;
+            paidAt: string | null;
+            canDownloadInvoice: boolean;
         }>>(`/api/v1/payments/deposits/tenant/${tenantId}`),
+    downloadInvoice: async (tenantId: string, depositId: string, view = false) => {
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        const response = await fetch(
+            `${API_BASE_URL}/api/v1/payments/deposits/${encodeURIComponent(depositId)}/invoice?tenantId=${encodeURIComponent(tenantId)}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!response.ok) {
+            let message = `HTTP ${response.status}`;
+            try {
+                const body = await response.json();
+                message = body.message || message;
+            } catch { /* ignore */ }
+            throw new ApiError(message, { status: response.status });
+        }
+        const blob = await response.blob();
+        const disposition = response.headers.get('Content-Disposition') ?? '';
+        const nameMatch = disposition.match(/filename="([^"]+)"/);
+        const filename = nameMatch?.[1] ?? `AutoPilot-Invoice-${depositId.slice(0, 8)}.pdf`;
+        const url = URL.createObjectURL(blob);
+        if (view) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+          setTimeout(() => URL.revokeObjectURL(url), 60_000);
+          return;
+        }
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    },
     checkPending: () =>
         request<{ completed: number }>('/api/v1/payments/deposits/check-pending', {
             method: 'POST',
@@ -808,6 +1004,8 @@ export const mediaApi = {
 
 export const templatesApi = {
     findAll: (tenantId: string) => request<any[]>(`/api/v1/templates?tenantId=${tenantId}`),
+    findOne: (id: string, tenantId: string) =>
+        request<any>(`/api/v1/templates/${id}?tenantId=${tenantId}`),
     create: (data: Record<string, unknown>) =>
         request<any>('/api/v1/templates', { method: 'POST', body: JSON.stringify(data) }),
     update: (id: string, tenantId: string, data: Record<string, unknown>) =>
@@ -831,6 +1029,8 @@ export const contentItemsApi = {
         request<any>(tenantId ? `/api/v1/content-items?tenantId=${tenantId}` : '/api/v1/content-items'),
 
     findOne: (id: string) => request<any>(`/api/v1/content-items/${id}`),
+
+    getDetails: (id: string) => request<any>(`/api/v1/content-items/${id}/details`),
 
     update: (id: string, data: ContentItemsUpdateDto) =>
         request<any>(`/api/v1/content-items/${id}`, {
@@ -1002,30 +1202,83 @@ export const autoReplyRulesApi = {
         request<any>(`/api/v1/auto-reply-rules/${id}`, { method: 'DELETE' }),
 };
 
-// ==================== Whatsapp Contacts ====================
+// ==================== Platform capabilities ====================
+export const platformsApi = {
+    capabilities: () =>
+        request<{
+            platforms: Array<Record<string, unknown>>;
+            whatsapp?: {
+                connectionMode: 'platform' | 'oauth';
+                platformConfigured: boolean;
+                displayName?: string;
+                displayPhone?: string;
+            };
+        }>('/api/v1/platforms/capabilities'),
+};
+
+// ==================== WhatsApp ====================
 export const whatsappContactsApi = {
     create: (data: WhatsappContactsCreateDto) =>
-        request<any>('/whatsapp_contacts', {
+        request<any>('/api/v1/whatsapp/contacts', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
 
-    findAll: () => request<any>('/whatsapp_contacts'),
+    findAll: (tenantId: string) =>
+        request<any>(`/api/v1/whatsapp/contacts?tenantId=${tenantId}`),
 
-    findOne: (id: string) => request<any>(`/whatsapp_contacts/${id}`),
+    findOne: (id: string, tenantId: string) =>
+        request<any>(`/api/v1/whatsapp/contacts/${id}?tenantId=${tenantId}`),
 
-    update: (id: string, data: WhatsappContactsUpdateDto) =>
-        request<any>(`/whatsapp_contacts/${id}`, {
+    update: (id: string, tenantId: string, data: WhatsappContactsUpdateDto) =>
+        request<any>(`/api/v1/whatsapp/contacts/${id}?tenantId=${tenantId}`, {
             method: 'PATCH',
             body: JSON.stringify(data),
         }),
 
-    remove: (id: string) =>
-        request<any>(`/whatsapp_contacts/${id}`, { method: 'DELETE' }),
+    remove: (id: string, tenantId: string) =>
+        request<any>(`/api/v1/whatsapp/contacts/${id}?tenantId=${tenantId}`, { method: 'DELETE' }),
+};
+
+export const whatsappApi = {
+    listMessages: (tenantId: string, phone?: string) => {
+        const q = new URLSearchParams({ tenantId });
+        if (phone) q.set('phone', phone);
+        return request<any[]>(`/api/v1/whatsapp/messages?${q}`);
+    },
+
+    conversations: (tenantId: string) =>
+        request<Array<{ phone: string; lastMessage: string; lastAt: string; inboundCount: number }>>(
+            `/api/v1/whatsapp/conversations?tenantId=${tenantId}`,
+        ),
+
+    reply: (data: { tenantId: string; phone: string; message: string }) =>
+        request<{ sent: boolean; message?: string }>('/api/v1/whatsapp/messages/reply', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    listTemplates: (tenantId: string) =>
+        request<{
+            templates: Array<{ name: string; language: string; status: string; category?: string }>;
+            defaultTemplate?: string;
+        }>(`/api/v1/whatsapp/templates?tenantId=${tenantId}`),
 };
 
 // ==================== Comment Replies ====================
 export const commentRepliesApi = {
+    fetch: (tenantId: string) =>
+        request<{ fetched: number }>('/api/v1/comment-replies/fetch', {
+            method: 'POST',
+            body: JSON.stringify({ tenantId }),
+        }),
+
+    send: (id: string, message: string) =>
+        request<{ sent: boolean }>(`/api/v1/comment-replies/${id}/send`, {
+            method: 'POST',
+            body: JSON.stringify({ message }),
+        }),
+
     create: (data: CommentRepliesCreateDto) =>
         request<any>('/api/v1/comment-replies', {
             method: 'POST',

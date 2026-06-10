@@ -178,7 +178,7 @@ export function PlatformPreview({ platform, payload, className }: PlatformPrevie
           <Icon className="h-4 w-4" style={{ color: def.color }} />
         </div>
         <div>
-          <p className="text-sm font-semibold leading-none">AgriWide</p>
+          <p className="text-sm font-semibold leading-none">Tekrem Innvation Solutions</p>
           <p className="text-[10px] text-muted-foreground mt-0.5">
             {def.label} · {def.media.aspectRatio}
           </p>

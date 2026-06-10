@@ -1,109 +1,76 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
+import FormData from 'form-data';
 import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import { SocialPublishAccountService } from './social-publish-account.service';
+import { PublishMediaResolverService } from './publish-media-resolver.service';
+import { formatPublishError } from './publish-error.util';
 
 @Injectable()
 export class FacebookPublishingService {
   private readonly logger = new Logger(FacebookPublishingService.name);
 
   constructor(
-    @InjectRepository(SocialAccounts)
-    private readonly socialAccountsRepo: Repository<SocialAccounts>,
+    private readonly accounts: SocialPublishAccountService,
+    private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
   async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
     try {
-      const socialAccount = await this.socialAccountsRepo.findOne({
-        where: {
-          userId: content.userId,
-          platform: 'facebook',
-          connected: true,
-        },
-      });
+      const socialAccount = await this.accounts.getForPublish(
+        content.tenantId,
+        content.userId,
+        'facebook',
+      );
 
       if (!socialAccount) {
-        return { published: false, message: 'Facebook account not connected' };
+        return { published: false, message: 'Facebook account not connected for this workspace' };
       }
 
-      const pageToken = socialAccount.metadata?.page_token;
-      const pageId = socialAccount.externalId;
+      const pageToken = this.accounts.getFacebookPageToken(socialAccount);
+      const pageId = socialAccount.externalId ?? socialAccount.metadata?.page_id;
 
       if (!pageToken || !pageId) {
         return {
           published: false,
-          message: 'Facebook credentials missing: page_token or page_id',
+          message: 'Facebook page token missing — reconnect Facebook in Publisher Connect',
         };
       }
 
       const plainText = content.content.replace(/<[^>]*>/g, '');
-      let attachedMedia: any[] = [];
-      let videoFbId: string | null = null;
+      const resolvedMedia = await this.mediaResolver.resolveForPublish(media, content.tenantId);
+      const attachedMedia: Array<{ media_fbid: string }> = [];
 
-      // Upload media attachments
-      if (media && media.length > 0) {
-        for (const att of media) {
-          try {
-            if (att.media_type === 'image') {
-              const photoRes = await axios.post(
-                `https://graph.facebook.com/v19.0/${pageId}/photos`,
-                {
-                  url: att.media_url,
-                  published: false,
-                  access_token: pageToken,
-                },
-              );
-              if (photoRes.data?.id) {
-                attachedMedia.push({ media_fbid: photoRes.data.id });
-              }
-            } else if (att.media_type === 'video' && !videoFbId) {
-              // Verify video URL is accessible
-              try {
-                const headRes = await axios.head(att.media_url);
-                if (headRes.status !== 200) {
-                  this.logger.warn(`Video URL not accessible: ${att.media_url}`);
-                  continue;
-                }
-              } catch (err) {
-                this.logger.warn(`Video URL fetch error: ${err}`);
-                continue;
-              }
+      for (const att of resolvedMedia) {
+        try {
+          if (att.media_type !== 'image' && att.media_type !== 'video') continue;
 
-              // Upload video
-              const videoRes = await axios.post(
-                `https://graph.facebook.com/v19.0/${pageId}/videos`,
-                {
-                  file_url: att.media_url,
-                  description: plainText,
-                  access_token: pageToken,
-                },
-              );
-              if (videoRes.data?.id) {
-                videoFbId = videoRes.data.id;
-                attachedMedia.push({ media_fbid: videoRes.data.id });
-              }
-            }
-          } catch (err) {
-            this.logger.error(`Media upload error for Facebook`, err);
+          if (att.media_type === 'image') {
+            const photoId = await this.uploadImage(pageId, pageToken, att.media_url);
+            if (photoId) attachedMedia.push({ media_fbid: photoId });
+          } else if (att.media_type === 'video') {
+            const videoId = await this.uploadVideo(pageId, pageToken, att.media_url, plainText);
+            if (videoId) attachedMedia.push({ media_fbid: videoId });
           }
+        } catch (err) {
+          this.logger.error(`Facebook media upload failed for ${att.media_url}`, err);
         }
       }
 
-      // Create feed post
-      const postBody: any = {
+      if (resolvedMedia.length > 0 && attachedMedia.length === 0) {
+        return {
+          published: false,
+          message:
+            'Facebook could not upload media attachments. Ensure images are public HTTPS URLs or enable Supabase storage.',
+        };
+      }
+
+      const postBody: Record<string, unknown> = {
         message: plainText,
         access_token: pageToken,
       };
       if (attachedMedia.length > 0) {
         postBody.attached_media = attachedMedia;
-      } else if (media && media.length > 0) {
-        return {
-          published: false,
-          message:
-            'Facebook could not fetch media attachments. Use a public HTTPS URL (Supabase storage or set API_PUBLIC_URL to a reachable host).',
-        };
       }
 
       const postRes = await axios.post(
@@ -118,19 +85,59 @@ export class FacebookPublishingService {
           message: `Published to Facebook. Post ID: ${postRes.data.id}`,
           externalPostId: postRes.data.id,
         };
-      } else {
-        return {
-          published: false,
-          message: `Facebook error: ${JSON.stringify(postRes.data?.error || postRes.data)}`,
-        };
       }
+
+      return {
+        published: false,
+        message: `Facebook error: ${JSON.stringify(postRes.data?.error || postRes.data)}`,
+      };
     } catch (err) {
       this.logger.error(`Facebook publish error`, err);
       return {
         published: false,
-        message: `Facebook publish error: ${err instanceof Error ? err.message : String(err)}`,
+        message: formatPublishError(err, 'Facebook'),
         error: String(err),
       };
     }
+  }
+
+  private async uploadImage(pageId: string, pageToken: string, mediaUrl: string): Promise<string | null> {
+    const local = this.mediaResolver.readLocalUpload(mediaUrl);
+    if (local) {
+      const form = new FormData();
+      form.append('source', local.buffer, {
+        filename: local.filename,
+        contentType: local.contentType,
+      });
+      form.append('published', 'false');
+      form.append('access_token', pageToken);
+      const res = await axios.post(
+        `https://graph.facebook.com/v19.0/${pageId}/photos`,
+        form,
+        { headers: form.getHeaders() },
+      );
+      return res.data?.id ?? null;
+    }
+
+    const res = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
+      url: mediaUrl,
+      published: false,
+      access_token: pageToken,
+    });
+    return res.data?.id ?? null;
+  }
+
+  private async uploadVideo(
+    pageId: string,
+    pageToken: string,
+    mediaUrl: string,
+    description: string,
+  ): Promise<string | null> {
+    const res = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/videos`, {
+      file_url: mediaUrl,
+      description,
+      access_token: pageToken,
+    });
+    return res.data?.id ?? null;
   }
 }

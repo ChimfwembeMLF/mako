@@ -31,7 +31,4 @@ export class WhatsappContactsCreateDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
-
-  @IsDate()
-  createdAt: Date;
 }

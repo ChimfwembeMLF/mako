@@ -19,6 +19,10 @@ async function bootstrap() {
   const userService = app.get(UserService);
   const dataSource = app.get(DataSource);
   const profilesRepo = dataSource.getRepository(Profiles);
+  const { TemplateSeedService } = await import('../src/modules/templates/template-seed.service');
+  const { Tenants } = await import('../src/modules/tenants/entities/tenants.entity');
+  const templateSeeds = app.get(TemplateSeedService);
+  const tenantsRepo = dataSource.getRepository(Tenants);
 
   console.log('Seeding permissions...');
   await bootstrapService.ensurePermissionsSeeded();
@@ -110,6 +114,15 @@ async function bootstrap() {
       }
     }
   }
+
+  console.log('Seeding content templates for all tenants...');
+  const allTenants = await tenantsRepo.find({ select: ['id', 'ownerId'] });
+  for (const tenant of allTenants) {
+    if (tenant.ownerId) {
+      await templateSeeds.ensureSeededForTenant(tenant.id, tenant.ownerId);
+    }
+  }
+  console.log(`Content templates seeded for ${allTenants.length} tenant(s).`);
 
   console.log('\nSeed complete.');
   console.log('Demo accounts (password: password123):');

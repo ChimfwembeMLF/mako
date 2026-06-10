@@ -9,6 +9,6 @@ import { StorageModule } from './storage.module';
   imports: [TypeOrmModule.forFeature([MediaAssets]), StorageModule],
   providers: [MediaService],
   controllers: [MediaController],
-  exports: [MediaService],
+  exports: [MediaService, StorageModule],
 })
 export class MediaModule {}

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { BrandProfiles } from '../../brand_profiles/entities/brand_profiles.entity';
+import { ContentTemplates } from '../../templates/entities/content_templates.entity';
 import { BrandContext, brandContextBlock } from '../prompts/brand-fields';
 
 @Injectable()
@@ -26,7 +27,11 @@ export class PromptBuilderService {
     };
   }
 
-  contentGenerationSystem(brand: BrandContext, platform?: string): string {
+  contentGenerationSystem(
+    brand: BrandContext,
+    platform?: string,
+    template?: ContentTemplates | null,
+  ): string {
     const guardrails = [
       brand.bannedWords ? `Never use these words: ${brand.bannedWords}` : '',
       brand.bannedTopics ? `Avoid these topics: ${brand.bannedTopics}` : '',
@@ -34,12 +39,20 @@ export class PromptBuilderService {
       .filter(Boolean)
       .join('\n');
 
+    const templateBlock = template?.body?.trim()
+      ? `\nContent template "${template.name}":\n${template.body.trim()}\n`
+      : '';
+
+    const outputFormat =
+      template?.contentType === 'social' || platform
+        ? 'Return ONLY valid JSON: {"title":"...","content":"plain text post body"}'
+        : 'Return ONLY valid JSON: {"title":"...","content":"<p>HTML paragraphs</p>"}\nUse simple HTML (<p>, <ul>, <li>, <strong>) — no scripts or external links.';
+
     return `You are a marketing copywriter for ${brand.companyName || 'this brand'}.
 Write on-brand content using the brand profile below.
 ${platform ? `Optimize for ${platform}.` : 'Write versatile marketing copy.'}
-${guardrails}
-Return ONLY valid JSON: {"title":"...","content":"<p>HTML paragraphs</p>"}
-Use simple HTML (<p>, <ul>, <li>, <strong>) — no scripts or external links.`;
+${templateBlock}${guardrails}
+${outputFormat}`;
   }
 
   contentGenerationUser(
@@ -67,6 +80,7 @@ Return ONLY valid JSON: {"title":"...","content":"<p>HTML</p>"}`;
     brand: BrandContext,
     platform: string,
     guide: { maxChars: number; trends: string; format: string },
+    template?: ContentTemplates | null,
   ): string {
     const guardrails = [
       brand.bannedWords ? `Never use: ${brand.bannedWords}` : '',
@@ -75,6 +89,10 @@ Return ONLY valid JSON: {"title":"...","content":"<p>HTML</p>"}`;
       .filter(Boolean)
       .join('\n');
 
+    const templateBlock = template?.body?.trim()
+      ? `\nTenant content template "${template.name}":\n${template.body.trim()}\n`
+      : '';
+
     return `You are an expert ${platform} content strategist for ${brand.companyName || 'this brand'}.
 ${brandContextBlock(brand)}
 
@@ -82,7 +100,7 @@ Platform: ${platform}
 Character limit: ${guide.maxChars}
 Current trends: ${guide.trends}
 Format: ${guide.format}
-${guardrails}
+${templateBlock}${guardrails}
 
 Return ONLY valid JSON: {"title":"short headline","content":"plain text post body"}
 Rules:
@@ -90,6 +108,59 @@ Rules:
 - content must be plain text (no HTML, no markdown).
 - Stay within ${guide.maxChars} characters for content.
 - Do NOT mention other platforms.`;
+  }
+
+  platformAdaptBatchSystem(
+    brand: BrandContext,
+    platforms: Array<{ platform: string; guide: { maxChars: number; trends: string; format: string } }>,
+  ): string {
+    const guardrails = [
+      brand.bannedWords ? `Never use: ${brand.bannedWords}` : '',
+      brand.bannedTopics ? `Avoid topics: ${brand.bannedTopics}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const blocks = platforms
+      .map(
+        (p) =>
+          `"${p.platform}": max ${p.guide.maxChars} chars | trends: ${p.guide.trends} | format: ${p.guide.format}`,
+      )
+      .join('\n');
+
+    const keys = platforms.map((p) => `"${p.platform}"`).join(', ');
+
+    return `You are a multi-platform social content strategist for ${brand.companyName || 'this brand'}.
+${brandContextBlock(brand)}
+
+Adapt ONE source post into SEPARATE, platform-native versions. Each platform version MUST be meaningfully different:
+- different hooks, length, tone, structure, and hashtags (where appropriate)
+- NEVER copy-paste the same text across platforms
+
+Platform rules:
+${blocks}
+${guardrails}
+
+Return ONLY valid JSON — one top-level key per platform (${keys}).
+Each value: {"title":"short headline","content":"plain text post body"}
+Global rules:
+- content must be plain text (no HTML, no markdown)
+- respect each platform's character limit
+- do NOT mention other platforms inside any post`;
+  }
+
+  platformAdaptDistinctRetry(
+    brand: BrandContext,
+    platform: string,
+    guide: { maxChars: number; trends: string; format: string },
+    otherPlatformSummaries: string,
+  ): string {
+    return `${this.platformAdaptSystem(brand, platform, guide)}
+
+IMPORTANT: Your version must be clearly different from these other platform versions already written:
+${otherPlatformSummaries}
+
+Rewrite with a fresh hook and structure — do not reuse sentences from the above.`;
   }
 
   replySystem(brand: BrandContext): string {

@@ -4,6 +4,36 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { AutoPublishService } from '../content_items/services/auto-publish.service';
 import { DailyContentWorkflowService } from '../content_items/services/daily-content-workflow.service';
 import { PaymentsService } from '../payments/payments.service';
+import { FetchCommentsService } from '../content-publishing/social-comments.service';
+
+@Injectable()
+export class CommentSyncCron {
+  private readonly logger = new Logger(CommentSyncCron.name);
+  private readonly lastRunByTenant = new Map<string, number>();
+
+  constructor(
+    private readonly fetchComments: FetchCommentsService,
+    private readonly config: ConfigService,
+  ) {}
+
+  @Cron('0 */15 * * * *')
+  async syncComments(): Promise<void> {
+    if (this.config.get<string>('COMMENT_SYNC_CRON_ENABLED') === 'false') return;
+    try {
+      const result = await this.fetchComments.fetchAllWithRateLimit(
+        this.lastRunByTenant,
+        15 * 60 * 1000,
+      );
+      if (result.fetched > 0) {
+        this.logger.log(
+          `Comment sync: ${result.fetched} new comment(s) across ${result.tenants} tenant(s)`,
+        );
+      }
+    } catch (err) {
+      this.logger.error('Comment sync cron error', err);
+    }
+  }
+}
 
 @Injectable()
 export class AutoPublishCron {

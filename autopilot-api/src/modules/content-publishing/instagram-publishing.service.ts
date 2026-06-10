@@ -1,121 +1,100 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import axios from 'axios';
-import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import { SocialPublishAccountService } from './social-publish-account.service';
+import { PublishMediaResolverService } from './publish-media-resolver.service';
+import { formatGraphApiError, formatPublishError } from './publish-error.util';
 
 @Injectable()
 export class InstagramPublishingService {
   private readonly logger = new Logger(InstagramPublishingService.name);
 
   constructor(
-    @InjectRepository(SocialAccounts)
-    private readonly socialAccountsRepo: Repository<SocialAccounts>,
+    private readonly accounts: SocialPublishAccountService,
+    private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
   async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
     try {
-      const socialAccount = await this.socialAccountsRepo.findOne({
-        where: {
-          userId: content.userId,
-          platform: 'instagram',
-          connected: true,
-        },
-      });
+      const socialAccount = await this.accounts.getForPublish(
+        content.tenantId,
+        content.userId,
+        'instagram',
+      );
 
       if (!socialAccount) {
-        return { published: false, message: 'Instagram account not connected' };
+        return { published: false, message: 'Instagram account not connected for this workspace' };
       }
 
-      const igToken = socialAccount.accessToken;
-      const igAccountId = socialAccount.externalId;
+      const igToken = this.accounts.getInstagramToken(socialAccount);
+      const igAccountId = socialAccount.externalId ?? socialAccount.metadata?.instagram_business_account_id;
 
       if (!igToken || !igAccountId) {
         return {
           published: false,
-          message: 'Instagram credentials missing',
+          message: 'Instagram credentials missing — reconnect Instagram in Publisher Connect',
         };
       }
 
       const plainText = content.content.replace(/<[^>]*>/g, '');
 
-      if (!media || media.length === 0) {
+      if (!media?.length) {
         return {
           published: false,
           message: 'Instagram requires at least one image or video attachment',
         };
       }
 
-      // Create media containers
+      const resolvedMedia = await this.mediaResolver.resolveForPublish(media, content.tenantId);
       const containerIds: string[] = [];
-      for (const m of media) {
-        try {
-          let mediaTypeParam = 'IMAGE';
-          const containerPayload: any = {
-            access_token: igToken,
-            caption: plainText,
-            is_carousel_item: media.length > 1 ? true : undefined,
-            alt_text: m.alt_text || undefined,
-          };
 
-          if (m.media_type === 'image') {
-            containerPayload.image_url = m.media_url;
-          } else if (m.media_type === 'video') {
-            mediaTypeParam = 'VIDEO';
-            containerPayload.media_type = 'VIDEO';
-            containerPayload.video_url = m.media_url;
-          } else {
-            continue;
-          }
+      for (const m of resolvedMedia) {
+        const containerPayload: Record<string, unknown> = {
+          access_token: igToken,
+          caption: plainText,
+        };
 
-          const containerRes = await axios.post(
-            `https://graph.facebook.com/v25.0/${igAccountId}/media`,
-            containerPayload,
-          );
-
-          // Check for Instagram token expiration
-          if (containerRes.data?.error?.code === 190) {
-            if (containerRes.data.error.error_subcode === 463) {
-              return {
-                published: false,
-                message: 'Instagram access token expired. Please reconnect your account.',
-              };
-            }
-            return {
-              published: false,
-              message: `Instagram token error: ${containerRes.data.error.message}`,
-            };
-          }
-
-          if (!containerRes.data?.id) {
-            throw new Error(`Failed to create media container: ${JSON.stringify(containerRes.data)}`);
-          }
-
-          containerIds.push(containerRes.data.id);
-        } catch (err) {
-          this.logger.error(`Instagram media container error`, err);
-          throw err;
+        if (resolvedMedia.length > 1) {
+          containerPayload.is_carousel_item = true;
         }
+        if (m.alt_text) containerPayload.alt_text = m.alt_text;
+
+        if (m.media_type === 'image') {
+          containerPayload.image_url = m.media_url;
+        } else if (m.media_type === 'video') {
+          containerPayload.media_type = 'VIDEO';
+          containerPayload.video_url = m.media_url;
+        } else {
+          continue;
+        }
+
+        const containerRes = await axios.post(
+          `https://graph.facebook.com/v19.0/${igAccountId}/media`,
+          containerPayload,
+        );
+
+        if (containerRes.data?.error) {
+          return { published: false, message: formatGraphApiError(containerRes.data, 'Instagram') };
+        }
+
+        if (!containerRes.data?.id) {
+          throw new Error(`Failed to create media container: ${JSON.stringify(containerRes.data)}`);
+        }
+
+        containerIds.push(containerRes.data.id);
       }
 
-      // Publish post (carousel if multiple media)
-      let publishData: any;
-      let publishRes: any;
+      if (!containerIds.length) {
+        return { published: false, message: 'No valid Instagram media containers created' };
+      }
+
+      let creationId: string;
 
       if (containerIds.length === 1) {
-        publishRes = await axios.post(
-          `https://graph.facebook.com/v25.0/${igAccountId}/media_publish`,
-          {
-            creation_id: containerIds[0],
-            access_token: igToken,
-          },
-        );
-        publishData = publishRes.data;
+        creationId = containerIds[0];
       } else {
-        // Create carousel container
         const carouselRes = await axios.post(
-          `https://graph.facebook.com/v25.0/${igAccountId}/media`,
+          `https://graph.facebook.com/v19.0/${igAccountId}/media`,
           {
             media_type: 'CAROUSEL',
             children: containerIds,
@@ -123,70 +102,42 @@ export class InstagramPublishingService {
             access_token: igToken,
           },
         );
-
-        // Check for token expiration on carousel
-        if (carouselRes.data?.error?.code === 190) {
-          if (carouselRes.data.error.error_subcode === 463) {
-            return {
-              published: false,
-              message: 'Instagram access token expired. Please reconnect your account.',
-            };
-          }
+        if (carouselRes.data?.error || !carouselRes.data?.id) {
           return {
             published: false,
-            message: `Instagram token error: ${carouselRes.data.error.message}`,
+            message: formatGraphApiError(carouselRes.data ?? {}, 'Instagram'),
           };
         }
-
-        if (!carouselRes.data?.id) {
-          throw new Error(
-            `Failed to create carousel container: ${JSON.stringify(carouselRes.data)}`,
-          );
-        }
-
-        // Publish carousel
-        publishRes = await axios.post(
-          `https://graph.facebook.com/v25.0/${igAccountId}/media_publish`,
-          {
-            creation_id: carouselRes.data.id,
-            access_token: igToken,
-          },
-        );
-        publishData = publishRes.data;
+        creationId = carouselRes.data.id;
       }
 
-      // Check for token expiration on publish
-      if (publishData?.error?.code === 190) {
-        if (publishData.error.error_subcode === 463) {
-          return {
-            published: false,
-            message: 'Instagram access token expired. Please reconnect your account.',
-          };
-        }
-        return {
-          published: false,
-          message: `Instagram token error: ${publishData.error.message}`,
-        };
+      const publishRes = await axios.post(
+        `https://graph.facebook.com/v19.0/${igAccountId}/media_publish`,
+        { creation_id: creationId, access_token: igToken },
+      );
+
+      if (publishRes.data?.error) {
+        return { published: false, message: formatGraphApiError(publishRes.data, 'Instagram') };
       }
 
-      if (publishData?.id) {
-        this.logger.log(`Published to Instagram: ${publishData.id}`);
+      if (publishRes.data?.id) {
+        this.logger.log(`Published to Instagram: ${publishRes.data.id}`);
         return {
           published: true,
-          message: `Published to Instagram. Post ID: ${publishData.id}`,
-          externalPostId: publishData.id,
-        };
-      } else {
-        return {
-          published: false,
-          message: `Instagram publish error: ${JSON.stringify(publishData)}`,
+          message: `Published to Instagram. Post ID: ${publishRes.data.id}`,
+          externalPostId: publishRes.data.id,
         };
       }
+
+      return {
+        published: false,
+        message: `Instagram publish error: ${JSON.stringify(publishRes.data)}`,
+      };
     } catch (err) {
       this.logger.error(`Instagram publish error`, err);
       return {
         published: false,
-        message: `Instagram publish error: ${err instanceof Error ? err.message : String(err)}`,
+        message: formatPublishError(err, 'Instagram'),
         error: String(err),
       };
     }

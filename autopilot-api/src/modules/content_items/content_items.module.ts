@@ -17,18 +17,25 @@ import { PublishContentService } from './services/publish-content.service';
 import { AutoPublishService } from './services/auto-publish.service';
 import { DailyContentWorkflowService } from './services/daily-content-workflow.service';
 import { ContentPublishingModule } from '../content-publishing/content-publishing.module';
+import { ContentPublicationsModule } from '../content_publications/content-publications.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
 import { MediaModule } from '../media/media.module';
+import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
+import { TemplatesModule } from '../templates/templates.module';
+import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ContentItems, MediaAssets, BrandProfiles, Workspaces, Tenants]),
+    TypeOrmModule.forFeature([ContentItems, MediaAssets, BrandProfiles, Workspaces, Tenants, SocialAccounts]),
     AiModule,
     ContentPublishingModule,
+    ContentPublicationsModule,
     SubscriptionsModule,
     BrandProfilesModule,
     MediaModule,
+    TemplatesModule,
+    WhatsappModule,
   ],
   providers: [
     ContentItemsService,

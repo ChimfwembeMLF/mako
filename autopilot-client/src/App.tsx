@@ -13,8 +13,10 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 
 // Existing pages
 import Index from "./pages/Index";
+import LandingPage from "./pages/LandingPage";
 import BrandBrain from "./pages/BrandBrain";
 import ContentEngine from "./pages/ContentEngine";
+import ContentDetailPage from "./pages/ContentDetailPage";
 import EditContent from "./pages/EditContent";
 import CampaignsPage from "./pages/CampaignsPage";
 import Scheduler from "./pages/Scheduler";
@@ -31,6 +33,7 @@ import NotFound from "./pages/NotFound";
 import RolesPage from "./pages/admin/RolesPage";
 import MakerCheckerConfigPage from "./pages/admin/MakerCheckerConfigPage";
 import SystemSettingsPage from "./pages/admin/SystemSettingsPage";
+import BackofficePage from "./pages/admin/BackofficePage";
 import TeamPage from "./pages/team/TeamPage";
 import UserPermissionsPage from "./pages/team/UserPermissionsPage";
 import ApprovalsPage from "./pages/ApprovalsPage";
@@ -43,6 +46,9 @@ import BillingPage from "./pages/BillingPage";
 import ExportPage from "./pages/ExportPage";
 import WorkspacesPage from "./pages/WorkspacesPage";
 import SocialCallback from "./pages/auth/SocialCallback";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import TermsPage from "./pages/legal/TermsPage";
+import DataDeletionPage from "./pages/legal/DataDeletionPage";
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
 
 const queryClient = new QueryClient({
@@ -55,6 +61,19 @@ const queryClient = new QueryClient({
     mutations: { throwOnError: false },
   },
 });
+
+function HomeRoute() {
+  const { user, loading } = useAuth();
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
+        <div className="animate-pulse text-sm">Loading…</div>
+      </div>
+    );
+  }
+  if (user) return <Navigate to="/dashboard" replace />;
+  return <LandingPage />;
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -70,7 +89,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function PublicOnly({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return null;
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -90,15 +109,19 @@ const App = () => (
                 <Route path="/auth/callback" element={<SocialCallback />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
                 <Route path="/contact/:sourceId" element={<ContactForm />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/data-deletion" element={<DataDeletionPage />} />
+                <Route path="/" element={<HomeRoute />} />
 
                 {/* Protected app routes */}
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                  {/* Core */}
-                  <Route path="/" element={<Index />} />
+                  <Route path="/dashboard" element={<Index />} />
                   <Route path="/brand-brain" element={<BrandBrain />} />
                   <Route path="/content" element={<ContentEngine />} />
                   <Route path="/campaigns" element={<CampaignsPage />} />
                   <Route path="/content/edit/:id" element={<EditContent />} />
+                  <Route path="/content/:id" element={<ContentDetailPage />} />
                   <Route path="/scheduler" element={<Scheduler />} />
                   <Route path="/leads" element={<LeadAgent />} />
                   <Route path="/analytics" element={<Analytics />} />
@@ -140,6 +163,7 @@ const App = () => (
 
                   {/* Platform backoffice — Super Admin only */}
                   <Route path="/admin/system" element={<SuperAdminRoute><SystemSettingsPage /></SuperAdminRoute>} />
+                  <Route path="/admin/backoffice" element={<BackofficePage />} />
                 </Route>
 
                 <Route path="*" element={<NotFound />} />

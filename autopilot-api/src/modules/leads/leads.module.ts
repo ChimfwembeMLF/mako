@@ -19,6 +19,6 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
   ],
   providers: [LeadsService, LeadClassifyService, LeadEmailService],
   controllers: [LeadsController],
-  exports: [LeadsService],
+  exports: [LeadsService, LeadClassifyService],
 })
 export class LeadsModule {}

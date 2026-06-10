@@ -4,6 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
 import { google } from 'googleapis';
 import {
@@ -11,10 +12,57 @@ import {
   GOOGLE_PUBLISHER_SCOPES,
   INSTAGRAM_PUBLISHER_SCOPES,
   LINKEDIN_PUBLISHER_SCOPES,
+  WHATSAPP_PUBLISHER_SCOPES,
   scopesToParam,
 } from './social_accounts-oauth.scopes';
 
-export type SocialOAuthPlatform = 'facebook' | 'linkedin' | 'instagram' | 'google';
+export type SocialOAuthPlatform = 'facebook' | 'linkedin' | 'instagram' | 'google' | 'whatsapp';
+
+export interface WhatsAppPhoneOption {
+  id: string;
+  displayPhoneNumber?: string;
+  verifiedName?: string;
+  wabaId: string;
+  wabaName?: string;
+}
+
+export interface WhatsAppSetupPayload {
+  type: 'whatsapp_setup';
+  userId: string;
+  tenantId: string;
+  accessToken: string;
+  expiresAt?: string;
+  phones: WhatsAppPhoneOption[];
+}
+
+export interface WhatsAppOAuthPrepareResult {
+  accessToken: string;
+  expiresAt?: Date;
+  phones: WhatsAppPhoneOption[];
+}
+
+export interface FacebookPageOption {
+  id: string;
+  name: string;
+  category?: string;
+}
+
+export interface FacebookSetupPayload {
+  type: 'facebook_setup';
+  userId: string;
+  tenantId: string;
+  accessToken: string;
+  expiresAt?: string;
+  profile: { id?: string; name?: string };
+  pages: FacebookPageOption[];
+}
+
+export interface FacebookOAuthPrepareResult {
+  accessToken: string;
+  expiresAt?: Date;
+  profile: { id?: string; name?: string };
+  pages: FacebookPageOption[];
+}
 
 export interface OAuthConnectState {
   userId: string;
@@ -39,7 +87,10 @@ export interface OAuthConnectResult {
 export class SocialAccountsOAuthService {
   private readonly logger = new Logger(SocialAccountsOAuthService.name);
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   encodeState(state: OAuthConnectState): string {
     // base64url — avoid padding chars that get double-encoded in redirect URLs
@@ -91,6 +142,8 @@ export class SocialAccountsOAuthService {
         return this.instagramAuthorizeUrl(state, redirectUri);
       case 'google':
         return this.googleAuthorizeUrl(state, redirectUri);
+      case 'whatsapp':
+        return this.whatsappAuthorizeUrl(state, redirectUri);
       default:
         throw new BadRequestException(`Unsupported platform: ${platform}`);
     }
@@ -103,16 +156,330 @@ export class SocialAccountsOAuthService {
   ): Promise<OAuthConnectResult> {
     switch (platform) {
       case 'facebook':
-        return this.handleFacebookCallback(code, redirectUri);
+        throw new BadRequestException('Facebook uses a separate finalize flow after Page selection');
       case 'linkedin':
         return this.handleLinkedInCallback(code, redirectUri);
       case 'instagram':
         return this.handleInstagramCallback(code, redirectUri);
       case 'google':
         return this.handleGoogleCallback(code, redirectUri);
+      case 'whatsapp':
+        throw new BadRequestException('WhatsApp uses a separate finalize flow after phone selection');
       default:
         throw new BadRequestException(`Unsupported platform: ${platform}`);
     }
+  }
+
+  async prepareWhatsAppConnect(
+    code: string,
+    redirectUri: string,
+  ): Promise<WhatsAppOAuthPrepareResult> {
+    const shortToken = await this.exchangeFacebookCode(code, redirectUri);
+    const longLived = await this.exchangeFacebookLongLived(shortToken);
+    const phones = await this.listWhatsAppPhoneNumbers(longLived.accessToken);
+
+    if (!phones.length) {
+      throw new BadRequestException(
+        'No WhatsApp Business phone numbers are linked to the Meta account you signed in with. ' +
+          'If you are the AutoPilot operator, configure WHATSAPP_PLATFORM_PHONE_NUMBER_ID and WHATSAPP_PLATFORM_ACCESS_TOKEN on the server so clients can enable WhatsApp without Meta setup. ' +
+          'Otherwise your business needs a WhatsApp Business Account in Meta Business Settings (Business settings → WhatsApp accounts), then connect again.',
+      );
+    }
+
+    return {
+      accessToken: longLived.accessToken,
+      expiresAt: longLived.expiresAt,
+      phones,
+    };
+  }
+
+  async prepareFacebookConnect(
+    code: string,
+    redirectUri: string,
+  ): Promise<FacebookOAuthPrepareResult> {
+    const shortToken = await this.exchangeFacebookCode(code, redirectUri);
+    const longLived = await this.exchangeFacebookLongLived(shortToken);
+    const profile = await this.getFacebookProfile(longLived.accessToken);
+    const pages = await this.getFacebookPages(longLived.accessToken);
+
+    if (!pages.length) {
+      throw new BadRequestException(
+        'No Facebook Pages found. Sign in with a Meta account that manages at least one Facebook Page, then try again.',
+      );
+    }
+
+    return {
+      accessToken: longLived.accessToken,
+      expiresAt: longLived.expiresAt,
+      profile,
+      pages: pages.map((page) => ({
+        id: page.id,
+        name: page.name,
+        category: page.category,
+      })),
+    };
+  }
+
+  createFacebookSetupToken(payload: Omit<FacebookSetupPayload, 'type'>): string {
+    return this.jwtService.sign(
+      { type: 'facebook_setup', ...payload },
+      { expiresIn: '15m' },
+    );
+  }
+
+  verifyFacebookSetupToken(token: string): FacebookSetupPayload {
+    try {
+      const decoded = this.jwtService.verify<FacebookSetupPayload>(token);
+      if (decoded.type !== 'facebook_setup') {
+        throw new BadRequestException('Invalid Facebook setup token');
+      }
+      if (!decoded.pages?.length || !decoded.accessToken || !decoded.userId || !decoded.tenantId) {
+        throw new BadRequestException('Invalid Facebook setup token');
+      }
+      return decoded;
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException('Facebook setup expired — please connect again from Publisher');
+    }
+  }
+
+  getFacebookSetupPreview(token: string): { pages: FacebookPageOption[]; profileName?: string } {
+    const payload = this.verifyFacebookSetupToken(token);
+    return {
+      pages: payload.pages.map((p) => ({ id: p.id, name: p.name, category: p.category })),
+      profileName: payload.profile?.name,
+    };
+  }
+
+  async buildFacebookConnectResult(
+    payload: FacebookSetupPayload,
+    pageId: string,
+  ): Promise<OAuthConnectResult> {
+    const listed = payload.pages.find((p) => p.id === pageId);
+    if (!listed) {
+      throw new BadRequestException('Selected Page is not available for this setup session');
+    }
+
+    const pages = await this.getFacebookPages(payload.accessToken);
+    const page = pages.find((p) => p.id === pageId);
+    if (!page) {
+      throw new BadRequestException(
+        'Could not access the selected Page. Confirm you still manage this Page in Meta, then connect again.',
+      );
+    }
+
+    return {
+      platform: 'facebook',
+      accountName: page.name || listed.name || payload.profile.name || 'Facebook Page',
+      externalId: page.id,
+      username: payload.profile.name ?? undefined,
+      accessToken: payload.accessToken,
+      expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : undefined,
+      metadata: {
+        profile: payload.profile,
+        page: { id: page.id, name: page.name, category: page.category },
+        page_id: page.id,
+        page_name: page.name,
+        page_token: page.access_token,
+        pages: pages.map((p) => ({ id: p.id, name: p.name, category: p.category })),
+      },
+    };
+  }
+
+  createWhatsAppSetupToken(payload: Omit<WhatsAppSetupPayload, 'type'>): string {
+    return this.jwtService.sign(
+      { type: 'whatsapp_setup', ...payload },
+      { expiresIn: '15m' },
+    );
+  }
+
+  verifyWhatsAppSetupToken(token: string): WhatsAppSetupPayload {
+    try {
+      const decoded = this.jwtService.verify<WhatsAppSetupPayload>(token);
+      if (decoded.type !== 'whatsapp_setup') {
+        throw new BadRequestException('Invalid WhatsApp setup token');
+      }
+      if (!decoded.phones?.length || !decoded.accessToken || !decoded.userId || !decoded.tenantId) {
+        throw new BadRequestException('Invalid WhatsApp setup token');
+      }
+      return decoded;
+    } catch (err) {
+      if (err instanceof BadRequestException) throw err;
+      throw new BadRequestException('WhatsApp setup expired — please connect again from Publisher');
+    }
+  }
+
+  getWhatsAppSetupPreview(token: string): { phones: WhatsAppPhoneOption[] } {
+    const payload = this.verifyWhatsAppSetupToken(token);
+    return {
+      phones: payload.phones.map((p) => ({
+        id: p.id,
+        displayPhoneNumber: p.displayPhoneNumber,
+        verifiedName: p.verifiedName,
+        wabaId: p.wabaId,
+        wabaName: p.wabaName,
+      })),
+    };
+  }
+
+  /** List WABAs / phone numbers reachable with a Meta user or page token. */
+  async discoverWhatsAppPhones(accessToken: string): Promise<WhatsAppPhoneOption[]> {
+    return this.listWhatsAppPhoneNumbers(accessToken);
+  }
+
+  /** True when the token can send WhatsApp messages (not just list via page linkage). */
+  async metaTokenHasWhatsAppPermissions(accessToken: string): Promise<boolean> {
+    const scopes = await this.debugMetaTokenScopes(accessToken);
+    return scopes.includes('whatsapp_business_messaging');
+  }
+
+  private async debugMetaTokenScopes(accessToken: string): Promise<string[]> {
+    const appId = this.config.get<string>('FACEBOOK_APP_ID');
+    const appSecret = this.config.get<string>('FACEBOOK_APP_SECRET');
+    if (!appId || !appSecret) return [];
+
+    try {
+      const { data } = await axios.get<{ data?: { scopes?: string[]; is_valid?: boolean } }>(
+        'https://graph.facebook.com/v19.0/debug_token',
+        {
+          params: {
+            input_token: accessToken,
+            access_token: `${appId}|${appSecret}`,
+          },
+        },
+      );
+      if (!data.data?.is_valid) return [];
+      return data.data.scopes ?? [];
+    } catch (err) {
+      this.logger.warn('Meta debug_token failed', err);
+      return [];
+    }
+  }
+
+  private whatsappAuthorizeUrl(state: string, redirectUri: string): string {
+    const params = new URLSearchParams({
+      client_id: this.config.getOrThrow<string>('FACEBOOK_APP_ID'),
+      redirect_uri: redirectUri,
+      state,
+      scope: scopesToParam(WHATSAPP_PUBLISHER_SCOPES),
+      response_type: 'code',
+    });
+    return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
+  }
+
+  private async listWhatsAppPhoneNumbers(accessToken: string): Promise<WhatsAppPhoneOption[]> {
+    const phones: WhatsAppPhoneOption[] = [];
+    const seen = new Set<string>();
+
+    const addPhone = (phone: WhatsAppPhoneOption) => {
+      if (seen.has(phone.id)) return;
+      seen.add(phone.id);
+      phones.push(phone);
+    };
+
+    try {
+      const { data: bizData } = await axios.get<{ data?: Array<{ id: string; name?: string }> }>(
+        'https://graph.facebook.com/v19.0/me/businesses',
+        { params: { fields: 'id,name', access_token: accessToken } },
+      );
+
+      for (const biz of bizData.data ?? []) {
+        try {
+          const { data: wabaData } = await axios.get<{ data?: Array<{ id: string; name?: string }> }>(
+            `https://graph.facebook.com/v19.0/${biz.id}/owned_whatsapp_business_accounts`,
+            { params: { fields: 'id,name', access_token: accessToken } },
+          );
+
+          for (const waba of wabaData.data ?? []) {
+            const wabaPhones = await this.getWabaPhoneNumbers(accessToken, waba.id, waba.name);
+            wabaPhones.forEach(addPhone);
+          }
+        } catch (err) {
+          this.logger.warn(`Could not load WABAs for business ${biz.id}`, err);
+        }
+      }
+    } catch (err) {
+      this.logger.warn('Could not list Meta businesses for WhatsApp', err);
+    }
+
+    if (!phones.length) {
+      const viaPages = await this.listWhatsAppPhoneNumbersViaPages(accessToken);
+      viaPages.forEach(addPhone);
+    }
+
+    return phones;
+  }
+
+  private async getWabaPhoneNumbers(
+    accessToken: string,
+    wabaId: string,
+    wabaName?: string,
+  ): Promise<WhatsAppPhoneOption[]> {
+    const { data } = await axios.get<{
+      data?: Array<{ id: string; display_phone_number?: string; verified_name?: string }>;
+    }>(`https://graph.facebook.com/v19.0/${wabaId}/phone_numbers`, {
+      params: {
+        fields: 'id,display_phone_number,verified_name',
+        access_token: accessToken,
+      },
+    });
+
+    return (data.data ?? []).map((phone) => ({
+      id: phone.id,
+      displayPhoneNumber: phone.display_phone_number,
+      verifiedName: phone.verified_name,
+      wabaId,
+      wabaName,
+    }));
+  }
+
+  private async listWhatsAppPhoneNumbersViaPages(
+    accessToken: string,
+  ): Promise<WhatsAppPhoneOption[]> {
+    const phones: WhatsAppPhoneOption[] = [];
+
+    try {
+      const pages = await this.getFacebookPages(accessToken);
+      for (const page of pages) {
+        const pageToken = page.access_token || accessToken;
+        try {
+          const { data } = await axios.get<{
+            whatsapp_business_account?: {
+              id: string;
+              name?: string;
+              phone_numbers?: {
+                data?: Array<{ id: string; display_phone_number?: string; verified_name?: string }>;
+              };
+            };
+          }>(`https://graph.facebook.com/v19.0/${page.id}`, {
+            params: {
+              fields:
+                'whatsapp_business_account{id,name,phone_numbers{id,display_phone_number,verified_name}}',
+              access_token: pageToken,
+            },
+          });
+
+          const waba = data.whatsapp_business_account;
+          if (!waba?.phone_numbers?.data?.length) continue;
+
+          for (const phone of waba.phone_numbers.data) {
+            phones.push({
+              id: phone.id,
+              displayPhoneNumber: phone.display_phone_number,
+              verifiedName: phone.verified_name,
+              wabaId: waba.id,
+              wabaName: waba.name ?? page.name,
+            });
+          }
+        } catch (err) {
+          this.logger.warn(`Could not load WhatsApp for page ${page.id}`, err);
+        }
+      }
+    } catch (err) {
+      this.logger.warn('Could not list Facebook pages for WhatsApp fallback', err);
+    }
+
+    return phones;
   }
 
   private facebookAuthorizeUrl(state: string, redirectUri: string): string {
@@ -159,43 +526,6 @@ export class SocialAccountsOAuthService {
       state,
     });
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
-  }
-
-  private async handleFacebookCallback(code: string, redirectUri: string): Promise<OAuthConnectResult> {
-    const shortToken = await this.exchangeFacebookCode(code, redirectUri);
-    const longLived = await this.exchangeFacebookLongLived(shortToken);
-    const profile = await this.getFacebookProfile(longLived.accessToken);
-
-    let metadata: Record<string, unknown> = { profile };
-    let externalId = profile.id;
-    let accountName = profile.name || 'Facebook Account';
-
-    try {
-      const pages = await this.getFacebookPages(longLived.accessToken);
-      if (pages.length > 0) {
-        const page = pages[0];
-        externalId = page.id;
-        accountName = page.name || accountName;
-        metadata = {
-          ...metadata,
-          page,
-          page_token: page.access_token,
-          pages,
-        };
-      }
-    } catch (err) {
-      this.logger.warn('Could not fetch Facebook pages', err);
-    }
-
-    return {
-      platform: 'facebook',
-      accountName,
-      externalId,
-      username: profile.name ?? undefined,
-      accessToken: longLived.accessToken,
-      expiresAt: longLived.expiresAt,
-      metadata,
-    };
   }
 
   private async handleLinkedInCallback(code: string, redirectUri: string): Promise<OAuthConnectResult> {
@@ -269,6 +599,7 @@ export class SocialAccountsOAuthService {
           profile,
           page_id: page.id,
           page_name: page.name,
+          page_token: pageToken,
           instagram_business_account_id: ig.id,
         },
       };
@@ -399,10 +730,11 @@ export class SocialAccountsOAuthService {
   }
 
   private async getFacebookPages(token: string) {
-    const { data } = await axios.get<{ data?: Array<{ id: string; name: string; access_token?: string }> }>(
-      'https://graph.facebook.com/v19.0/me/accounts',
-      { params: { access_token: token } },
-    );
+    const { data } = await axios.get<{
+      data?: Array<{ id: string; name: string; category?: string; access_token?: string }>;
+    }>('https://graph.facebook.com/v19.0/me/accounts', {
+      params: { fields: 'id,name,category,access_token', access_token: token },
+    });
     return data.data ?? [];
   }
 }

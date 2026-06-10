@@ -17,8 +17,10 @@ import { useToast } from '@/hooks/use-toast';
 import { PermissionGate } from '@/components/PermissionGate';
 import { MessageSquareReply, Bot, Plus, Trash2, Save, Send, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { autoReplyPlatforms, commentReplyPlatforms } from '@/lib/platform-capabilities';
 
-const PLATFORMS = ['facebook','instagram','linkedin','twitter'];
+const PLATFORMS = autoReplyPlatforms().map((p) => p.id);
+const COMMENT_PLATFORMS = commentReplyPlatforms().map((p) => p.id);
 const SENTIMENTS = ['any','positive','negative','neutral'];
 
 interface ReplyRule {
@@ -123,8 +125,9 @@ export default function RepliesPage() {
   }
 
   async function fetchComments() {
+    if (!tenant) return;
     setFetching(true);
-    const { data, error } = await invokeEdgeFunction('fetch-comments');
+    const { data, error } = await invokeEdgeFunction('fetch-comments', { body: { tenantId: tenant.id } });
     setFetching(false);
     if (error) { toast({ title: 'Fetch failed', description: error.message, variant: 'destructive' }); return; }
     const count = (data as { fetched?: number } | null)?.fetched ?? 0;
@@ -171,12 +174,7 @@ export default function RepliesPage() {
     if (!text?.trim() || !tenant) return;
     setSending(reply.id);
     try {
-      await commentRepliesApi.update(reply.id, {
-        replyText: text,
-        replyType: 'manual',
-        status: 'sent',
-        sentAt: new Date().toISOString(),
-      } as any);
+      await commentRepliesApi.send(reply.id, text);
       await logAudit({ tenantId: tenant.id, action: 'reply.sent', resourceId: reply.id });
       toast({ title: 'Reply sent' });
       setReplies(prev => prev.map(r => r.id === reply.id ? { ...r, reply_text: text, status: 'sent', reply_type: 'manual' } : r));

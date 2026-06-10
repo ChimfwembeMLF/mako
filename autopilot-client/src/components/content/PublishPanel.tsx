@@ -10,8 +10,10 @@ import {
   socialAccountsApi,
   mediaApi,
   contentAiApi,
+  whatsappApi,
   SocialAccount,
 } from '@/lib/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { invokeEdgeFunction } from '@/lib/edgeFunctions';
 import {
   buildPlatformPayloads,
@@ -21,7 +23,7 @@ import {
   validatePlatformPayload,
   PlatformMediaAttachment,
 } from '@/lib/platforms';
-import { normalizeMediaAsset, resolveMediaUrl, type MediaAsset } from '@/lib/mediaUrl';
+import { normalizeMediaAsset, type MediaAsset } from '@/lib/mediaUrl';
 import { PlatformPickerCarousel } from './PlatformPickerCarousel';
 import { PlatformPreviewCarousel } from './PlatformPreviewCarousel';
 import { ContentItem } from './types';
@@ -41,6 +43,16 @@ function toMediaAttachments(assets: MediaAsset[]): PlatformMediaAttachment[] {
   }));
 }
 
+/** Send relative /uploads paths so the API can resolve public URLs server-side. */
+function toPublishMediaUrl(url: string): string {
+  if (!url) return url;
+  if (url.startsWith('/uploads/')) return url;
+  if (/supabase\.co\/storage\//i.test(url)) return url;
+  const match = url.match(/\/uploads\/[^?#]+/);
+  if (match) return match[0];
+  return url;
+}
+
 function normalizePayloadsForPublish(
   payloads: Record<string, PlatformPayload>,
 ): Record<string, PlatformPayload> {
@@ -50,7 +62,7 @@ function normalizePayloadsForPublish(
       ...payload,
       media: payload.media?.map((m) => ({
         ...m,
-        url: resolveMediaUrl(m.url),
+        url: toPublishMediaUrl(m.url),
       })),
     };
   }
@@ -68,6 +80,8 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
   const [connectedAccounts, setConnectedAccounts] = useState<SocialAccount[]>([]);
   const [libraryAssets, setLibraryAssets] = useState<MediaAsset[]>([]);
   const initKeyRef = useRef('');
+  const [waTemplates, setWaTemplates] = useState<Array<{ name: string; language: string }>>([]);
+  const [waDefaultTemplate, setWaDefaultTemplate] = useState('hello_world');
 
   const loadLibrary = useCallback(async () => {
     if (!tenant?.id) return;
@@ -83,6 +97,33 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       setLibraryAssets([]);
     }
   }, [tenant?.id, item.id]);
+
+  useEffect(() => {
+    if (!tenant?.id || !selectedPlatforms.includes('whatsapp')) {
+      setWaTemplates([]);
+      return;
+    }
+    whatsappApi
+      .listTemplates(tenant.id)
+      .then((res) => {
+        setWaTemplates(res.templates ?? []);
+        if (res.defaultTemplate) setWaDefaultTemplate(res.defaultTemplate);
+        setPlatformPayloads((prev) => {
+          if (prev.whatsapp?.whatsappTemplate) return prev;
+          return {
+            ...prev,
+            whatsapp: {
+              ...prev.whatsapp,
+              content: prev.whatsapp?.content ?? '',
+              whatsappTemplate: res.defaultTemplate ?? 'hello_world',
+              whatsappTemplateLanguage: res.templates?.[0]?.language ?? 'en',
+              whatsappUseTemplate: true,
+            },
+          };
+        });
+      })
+      .catch(() => setWaTemplates([]));
+  }, [tenant?.id, selectedPlatforms.includes('whatsapp')]);
 
   useEffect(() => {
     if (!tenant?.id) return;
@@ -258,7 +299,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       const mediaByUrl = new Map<string, { url: string; type: string }>();
       for (const p of selectedPlatforms) {
         for (const m of publishPayloads[p]?.media ?? []) {
-          const url = resolveMediaUrl(m.url);
+          const url = toPublishMediaUrl(m.url);
           mediaByUrl.set(url, { url, type: m.type });
         }
       }
@@ -315,7 +356,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           <div className="pr-8">
             <h2 className="font-display text-xl font-semibold">Publish content</h2>
             <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
-              Grow Smarter, Sell Stronger with AgriWide — pick platforms and preview before publishing.
+              Grow Smarter, Sell Stronger with Tekrem Innvation Solutions — pick platforms and preview before publishing.
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="shrink-0">
@@ -331,6 +372,39 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           </Label>
           <PlatformPickerCarousel values={selectedPlatforms} onChange={setSelectedPlatforms} />
         </div>
+
+        {selectedPlatforms.includes('whatsapp') && (
+          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+            <Label className="text-sm font-medium">WhatsApp broadcast template</Label>
+            <p className="text-xs text-muted-foreground">
+              Proactive messages outside the 24h window require a Meta-approved template.
+            </p>
+            <Select
+              value={platformPayloads.whatsapp?.whatsappTemplate ?? waDefaultTemplate}
+              onValueChange={(name) => {
+                const tpl = waTemplates.find((t) => t.name === name);
+                updatePayload('whatsapp', {
+                  whatsappTemplate: name,
+                  whatsappTemplateLanguage: tpl?.language ?? 'en',
+                  whatsappUseTemplate: true,
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select template" />
+              </SelectTrigger>
+              <SelectContent>
+                {(waTemplates.length ? waTemplates : [{ name: waDefaultTemplate, language: 'en' }]).map(
+                  (t) => (
+                    <SelectItem key={`${t.name}-${t.language}`} value={t.name}>
+                      {t.name} ({t.language})
+                    </SelectItem>
+                  ),
+                )}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {selectedPlatforms.length > 0 && (
           <Button

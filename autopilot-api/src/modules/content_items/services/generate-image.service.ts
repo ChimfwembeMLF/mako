@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { MistralAgentsService } from '../../ai/services/mistral-agents.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
@@ -14,7 +13,6 @@ export class GenerateImageService {
     private readonly agents: MistralAgentsService,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
-    private readonly config: ConfigService,
     @InjectRepository(BrandProfiles)
     private readonly brandRepo: Repository<BrandProfiles>,
     @InjectRepository(MediaAssets)
@@ -46,15 +44,12 @@ export class GenerateImageService {
     const { publicUrl } = await this.agents.generateImage(fullPrompt, {
       tenantId: params.tenantId,
     });
-    const apiBase = (this.config.get<string>('API_PUBLIC_URL') || '').replace(/\/$/, '');
-    const mediaUrl =
-      publicUrl.startsWith('http') ? publicUrl : apiBase ? `${apiBase}${publicUrl}` : publicUrl;
 
     const asset = await this.mediaRepo.save(
       this.mediaRepo.create({
         tenantId: params.tenantId,
         contentId: params.contentId,
-        mediaUrl,
+        mediaUrl: publicUrl,
         mediaType: 'image',
         name: params.prompt.slice(0, 120),
         uploadedBy: params.userId,
@@ -68,7 +63,7 @@ export class GenerateImageService {
       tokensUsed: 100,
     });
 
-    return { media_url: mediaUrl, media_type: 'image', mediaAssetId: asset.id };
+    return { media_url: publicUrl, media_type: 'image', mediaAssetId: asset.id };
   }
 
   async generateSlideshow(params: {

@@ -13,10 +13,12 @@ import { Workspaces } from '../workspaces/entities/workspaces.entity';
 import { ApprovalWorkflows } from '../approval_workflows/entities/approval_workflows.entity';
 import { UserEntity } from '../user/user.entity';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
+import { TemplatesModule } from '../templates/templates.module';
 
 @Module({
   imports: [
     SubscriptionsModule,
+    TemplatesModule,
     TypeOrmModule.forFeature([
       Tenants,
       Profiles,

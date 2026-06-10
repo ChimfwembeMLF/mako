@@ -27,10 +27,11 @@ const ACTION_COLORS: Record<string, string> = {
   'media.delete':      'bg-red-100 text-red-700',
   'approval.approved': 'bg-green-100 text-green-700',
   'approval.rejected': 'bg-red-100 text-red-700',
+  'http': 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
 };
 
 const PAGE_SIZE = 25;
-const MODULES = ['all','content','leads','media','templates','replies','team','approval','reply_rule'];
+const MODULES = ['all','http','content','leads','media','templates','replies','team','approval','reply_rule'];
 
 export default function AuditLogsPage() {
   const { tenant } = useTenant();
@@ -156,7 +157,7 @@ export default function AuditLogsPage() {
                   </td>
                   <td className="p-3">
                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium font-mono
-                      ${ACTION_COLORS[log.action] ?? 'bg-muted text-muted-foreground'}`}>
+                      ${ACTION_COLORS[log.action] ?? (log.action.startsWith('http.') ? ACTION_COLORS.http : 'bg-muted text-muted-foreground')}`}>
                       {log.action}
                     </span>
                   </td>

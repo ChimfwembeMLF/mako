@@ -3,6 +3,7 @@ import {
   NotFoundException,
   UnauthorizedException,
   ForbiddenException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,6 +14,28 @@ import { ConfigService } from '@nestjs/config';
 import { SocialAccounts } from './entities/social_accounts.entity';
 import { SocialAccountsCreateDto } from './dto/create-social_accounts.dto';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
+import { summarizeAxiosError } from '../content-publishing/publish-error.util';
+import {
+  SocialAccountsOAuthService,
+  WhatsAppPhoneOption,
+} from './social_accounts-oauth.service';
+import {
+  getWhatsappPlatformCredentials,
+  isWhatsappPlatformEnabled,
+} from '../whatsapp/whatsapp-platform.util';
+
+export type WhatsappSetupFromMetaResult =
+  | {
+      ready: true;
+      setupToken: string;
+      phones: WhatsAppPhoneOption[];
+      source: 'facebook';
+    }
+  | {
+      ready: false;
+      needOAuth: true;
+      reason: 'no_facebook' | 'missing_scopes' | 'no_phones';
+    };
 
 @Injectable()
 export class SocialAccountsService {
@@ -24,6 +47,7 @@ export class SocialAccountsService {
     private readonly repo: Repository<SocialAccounts>,
     private readonly config: ConfigService,
     private readonly tenantMembersService: TenantMembersService,
+    private readonly oauth: SocialAccountsOAuthService,
   ) {
     const googleClientId = this.config.get<string>('GOOGLE_CLIENT_ID');
     const googleClientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET');
@@ -78,12 +102,20 @@ export class SocialAccountsService {
   }
 
   async refreshAccessTokenIfNeeded(account: SocialAccounts) {
-    if (!account.expiresAt) {
+    const bufferMs = 5 * 60 * 1000;
+    const expiresSoon =
+      account.expiresAt && account.expiresAt.getTime() - Date.now() <= bufferMs;
+
+    if (!expiresSoon && account.expiresAt) {
       return account;
     }
 
-    const bufferMs = 5 * 60 * 1000;
-    if (account.expiresAt.getTime() - Date.now() > bufferMs) {
+    return this.forceRefreshToken(account);
+  }
+
+  /** Refresh even when expiry is unknown or still in the future (e.g. before publish). */
+  async forceRefreshToken(account: SocialAccounts): Promise<SocialAccounts> {
+    if (!account.refreshToken && account.platform !== 'facebook' && account.platform !== 'instagram') {
       return account;
     }
 
@@ -99,10 +131,35 @@ export class SocialAccountsService {
       this.logger.warn('Unable to refresh social account token', {
         id: account.id,
         platform: account.platform,
-        error: error instanceof Error ? error.message : error,
+        error: summarizeAxiosError(error),
       });
       return account;
     }
+  }
+
+  async markDisconnectedAuth(account: SocialAccounts, reason?: string): Promise<SocialAccounts> {
+    this.clearStoredCredentials(account, reason);
+    this.logger.warn(
+      `Disconnected ${account.platform} account ${account.id}: ${reason ?? 'auth failure'}`,
+    );
+    return this.repo.save(account);
+  }
+
+  /** Mark account disconnected and wipe tokens (safe for NOT NULL access_token column). */
+  private clearStoredCredentials(account: SocialAccounts, reason?: string): void {
+    account.connected = false;
+    account.accessToken = '';
+    account.refreshToken = undefined;
+    account.expiresAt = undefined;
+    const meta = { ...(account.metadata ?? {}) };
+    delete meta.page_token;
+    delete meta.page_id;
+    delete meta.page_name;
+    if (reason) {
+      meta.auth_error = reason;
+      meta.auth_error_at = new Date().toISOString();
+    }
+    account.metadata = meta;
   }
 
   private async refreshProviderToken(account: SocialAccounts) {
@@ -279,10 +336,7 @@ export class SocialAccountsService {
     const acc = tenantId
       ? await this.findOneForTenant(id, tenantId, userId)
       : await this.findOneForUser(id, userId);
-    acc.connected = false;
-    acc.accessToken = null as any;
-    acc.refreshToken = null as any;
-    acc.expiresAt = null as any;
+    this.clearStoredCredentials(acc);
     const saved = await this.repo.save(acc);
     return this.toPublicAccount(saved);
   }
@@ -295,5 +349,88 @@ export class SocialAccountsService {
     }
     const res = await this.repo.delete(id);
     if (!res.affected) throw new NotFoundException();
+  }
+
+  /**
+   * Reuse a connected Facebook account when its token already has WhatsApp permissions.
+   * Returns needOAuth when Facebook is missing, lacks scopes, or has no listable numbers.
+   */
+  async prepareWhatsappFromExistingMeta(
+    tenantId: string,
+    userId: string,
+  ): Promise<WhatsappSetupFromMetaResult> {
+    await this.assertTenantAccess(userId, tenantId);
+
+    const facebook = await this.repo.findOne({
+      where: { tenantId, platform: 'facebook', connected: true },
+      order: { updated_at: 'DESC' },
+    });
+
+    if (!facebook?.accessToken?.trim()) {
+      return { ready: false, needOAuth: true, reason: 'no_facebook' };
+    }
+
+    const account = await this.refreshAccessTokenIfNeeded(facebook);
+    const accessToken = account.accessToken?.trim();
+    if (!accessToken) {
+      return { ready: false, needOAuth: true, reason: 'no_facebook' };
+    }
+
+    const hasWhatsAppScopes = await this.oauth.metaTokenHasWhatsAppPermissions(accessToken);
+    if (!hasWhatsAppScopes) {
+      return { ready: false, needOAuth: true, reason: 'missing_scopes' };
+    }
+
+    const phones = await this.oauth.discoverWhatsAppPhones(accessToken);
+    if (!phones.length) {
+      return { ready: false, needOAuth: true, reason: 'no_phones' };
+    }
+
+    const setupToken = this.oauth.createWhatsAppSetupToken({
+      userId,
+      tenantId,
+      accessToken,
+      expiresAt: account.expiresAt?.toISOString(),
+      phones,
+    });
+
+    return { ready: true, setupToken, phones, source: 'facebook' };
+  }
+
+  /** One-click WhatsApp for tenants when the operator configured platform-level Meta credentials. */
+  async enablePlatformWhatsapp(tenantId: string, userId: string) {
+    await this.assertTenantAccess(userId, tenantId);
+
+    if (!isWhatsappPlatformEnabled(this.config)) {
+      throw new BadRequestException(
+        'Platform WhatsApp is not configured. Set WHATSAPP_PLATFORM_PHONE_NUMBER_ID and WHATSAPP_PLATFORM_ACCESS_TOKEN on the server.',
+      );
+    }
+
+    const creds = getWhatsappPlatformCredentials(this.config);
+    if (!creds) {
+      throw new BadRequestException('Platform WhatsApp credentials are incomplete on the server.');
+    }
+
+    const displayName =
+      this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')?.trim() || 'AutoPilot WhatsApp';
+    const displayPhone = this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_PHONE')?.trim();
+
+    return this.connectAccount({
+      tenantId,
+      userId,
+      platform: 'whatsapp',
+      accountName: displayName,
+      externalId: creds.phoneNumberId,
+      username: displayPhone,
+      accessToken: '',
+      metadata: {
+        platform_managed: true,
+        phone_number_id: creds.phoneNumberId,
+        display_phone_number: displayPhone,
+        waba_id: this.config.get<string>('WHATSAPP_PLATFORM_WABA_ID')?.trim(),
+      },
+      connected: true,
+    });
   }
 }

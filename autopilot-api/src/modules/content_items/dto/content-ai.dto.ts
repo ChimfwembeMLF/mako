@@ -30,6 +30,10 @@ export class GenerateContentDto {
   platform?: string;
 
   @IsOptional()
+  @IsUUID()
+  templateId?: string;
+
+  @IsOptional()
   @IsBoolean()
   save?: boolean;
 }

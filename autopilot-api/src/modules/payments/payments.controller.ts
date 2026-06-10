@@ -4,9 +4,13 @@ import {
   Get,
   Param,
   Post,
+  Query,
+  Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiExcludeEndpoint, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PaymentsService } from './payments.service';
 
@@ -44,7 +48,28 @@ export class PaymentsController {
   @Get('deposits/tenant/:tenantId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  list(@Param('tenantId') tenantId: string) {
-    return this.payments.findByTenant(tenantId);
+  list(@Param('tenantId') tenantId: string, @Req() req: Request) {
+    return this.payments.findByTenant(tenantId, req.user?.['sub'] as string);
+  }
+
+  @Get('deposits/:depositId/invoice')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async invoice(
+    @Param('depositId') depositId: string,
+    @Query('tenantId') tenantId: string,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    const pdf = await this.payments.generateInvoicePdf(
+      depositId,
+      tenantId,
+      req.user?.['sub'] as string,
+    );
+    const filename = this.payments.getInvoiceFilename(depositId);
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Length', pdf.length);
+    res.send(pdf);
   }
 }

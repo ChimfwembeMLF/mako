@@ -18,6 +18,46 @@ export class TemplatesService {
     return this.repo.find({ where: { tenantId }, order: { updated_at: 'DESC' } });
   }
 
+  findActiveByTenant(tenantId: string) {
+    return this.repo.find({
+      where: { tenantId, isActive: true },
+      order: { updated_at: 'DESC' },
+    });
+  }
+
+  async findActiveForPlatform(tenantId: string, platform: string) {
+    const normalized = platform.toLowerCase();
+    const active = await this.findActiveByTenant(tenantId);
+    return (
+      active.find((t) => t.platforms?.map((p) => p.toLowerCase()).includes(normalized)) ??
+      active.find((t) => t.contentType?.toLowerCase() === normalized) ??
+      null
+    );
+  }
+
+  async findForGeneration(params: {
+    tenantId: string;
+    templateId?: string;
+    platform?: string;
+    contentType?: string;
+  }) {
+    if (params.templateId) {
+      return this.findOne(params.templateId, params.tenantId);
+    }
+    if (params.platform) {
+      const byPlatform = await this.findActiveForPlatform(params.tenantId, params.platform);
+      if (byPlatform) return byPlatform;
+    }
+    if (params.contentType) {
+      const active = await this.findActiveByTenant(params.tenantId);
+      return (
+        active.find((t) => t.contentType?.toLowerCase() === params.contentType!.toLowerCase()) ??
+        null
+      );
+    }
+    return null;
+  }
+
   async findOne(id: string, tenantId?: string) {
     const ent = await this.repo.findOne({
       where: tenantId ? { id, tenantId } : { id },

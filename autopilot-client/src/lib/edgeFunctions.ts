@@ -1,4 +1,4 @@
-import { brandProfilesApi, contentAiApi, paymentsApi, leadsApi } from '@/lib/api';
+import { brandProfilesApi, contentAiApi, paymentsApi, leadsApi, commentRepliesApi } from '@/lib/api';
 
 type EdgeBody = Record<string, unknown> | undefined;
 
@@ -38,6 +38,7 @@ export async function invokeEdgeFunction(
           tenantId,
           contentType: body.contentType as string | undefined,
           platform: body.platform as string | undefined,
+          templateId: body.templateId as string | undefined,
           save: body.contentType === 'reply' ? false : (body.save as boolean | undefined) ?? false,
         }),
       );
@@ -74,8 +75,10 @@ export async function invokeEdgeFunction(
       return runHandler(async () => {
         const result = await contentAiApi.publish(contentId, platforms, platformPayloads);
         if (!result.published) {
-          const msg = Object.values(result.results ?? {}).map((r) => r.message).join('; ');
-          throw new Error(msg || 'Publish failed');
+          const details = Object.entries(result.results ?? {})
+            .map(([p, r]) => `${p}: ${r.message}`)
+            .join('\n');
+          throw new Error(details || 'Publish failed');
         }
         return { message: 'Published successfully', ...result };
       });
@@ -137,11 +140,14 @@ export async function invokeEdgeFunction(
         },
       };
 
-    case 'fetch-comments':
-      return {
-        data: { fetched: 0 },
-        error: null,
-      };
+    case 'fetch-comments': {
+      const tenantId =
+        (body.tenantId as string | undefined) ??
+        (body.tenant_id as string | undefined) ??
+        activeTenantId();
+      if (!tenantId) return { data: null, error: { message: 'tenantId is required' } };
+      return runHandler(() => commentRepliesApi.fetch(tenantId));
+    }
 
     case 'parse-brand-document':
       return {

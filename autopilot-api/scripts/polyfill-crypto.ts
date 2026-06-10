@@ -1,7 +1,7 @@
 /**
- * @nestjs/typeorm calls crypto.randomUUID() without importing.
- * ts-node does not always expose global crypto — preload this before AppModule.
+ * Runtime polyfills for ts-node scripts (seed, storage migrate, etc.)
  */
+import '../src/websocket-polyfill';
 import { webcrypto } from 'node:crypto';
 
 if (typeof globalThis.crypto === 'undefined') {

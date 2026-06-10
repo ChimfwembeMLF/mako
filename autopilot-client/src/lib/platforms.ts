@@ -4,9 +4,11 @@ import {
   Linkedin,
   Mail,
   Megaphone,
+  MessageCircle,
   Twitter,
   LucideIcon,
 } from 'lucide-react';
+import { publishablePlatforms } from '@/lib/platform-capabilities';
 
 export interface PlatformMediaRules {
   maxAttachments: number;
@@ -32,7 +34,7 @@ export interface PlatformDef {
   media: PlatformMediaRules;
 }
 
-export const PLATFORMS: PlatformDef[] = [
+const ALL_PLATFORM_DEFS: PlatformDef[] = [
   {
     value: 'facebook',
     label: 'Facebook',
@@ -118,72 +120,39 @@ export const PLATFORMS: PlatformDef[] = [
     },
   },
   {
-    value: 'email',
-    label: 'Email',
-    icon: Mail,
-    color: '#10b981',
-    maxChars: 10000,
-    previewType: 'email',
-    media: {
-      maxAttachments: 10,
-      maxImages: 10,
-      maxVideos: 0,
-      maxImageSizeMB: 10,
-      maxVideoSizeMB: 0,
-      maxVideoDurationSec: 0,
-      recommendedImageSize: '600 px wide',
-      aspectRatio: 'Flexible',
-      supportsVideo: false,
-      supportsCarousel: false,
-      mediaNotes: 'Inline images recommended; keep total email size under 25 MB.',
-    },
-  },
-  {
-    value: 'ad_copy',
-    label: 'Ad Copy',
-    icon: Megaphone,
-    color: '#f59e0b',
-    maxChars: 500,
-    previewType: 'ad',
-    media: {
-      maxAttachments: 1,
-      maxImages: 1,
-      maxVideos: 1,
-      maxImageSizeMB: 5,
-      maxVideoSizeMB: 100,
-      maxVideoDurationSec: 60,
-      recommendedImageSize: '1200×628 px',
-      aspectRatio: '1.91:1',
-      supportsVideo: true,
-      supportsCarousel: false,
-      mediaNotes: 'Single hero image or short video for ad creative.',
-    },
-  },
-  {
-    value: 'tiktok',
-    label: 'TikTok',
-    icon: Instagram,
-    color: '#ff0050',
-    maxChars: 4000,
+    value: 'whatsapp',
+    label: 'WhatsApp',
+    icon: MessageCircle,
+    color: '#25d366',
+    maxChars: 4096,
     previewType: 'social',
     media: {
-      maxAttachments: 1,
+      maxAttachments: 0,
       maxImages: 0,
-      maxVideos: 1,
+      maxVideos: 0,
       maxImageSizeMB: 0,
-      maxVideoSizeMB: 4096,
-      maxVideoDurationSec: 600,
-      recommendedImageSize: '1080×1920 px',
-      aspectRatio: '9:16 vertical',
-      supportsVideo: true,
+      maxVideoSizeMB: 0,
+      maxVideoDurationSec: 0,
+      recommendedImageSize: 'N/A',
+      aspectRatio: 'N/A',
+      supportsVideo: false,
       supportsCarousel: false,
-      mediaNotes: 'Video-only feed posts. 9:16 vertical, 3 sec – 10 min.',
+      mediaNotes: 'Text broadcast to opted-in contacts. Media via template messages (coming soon).',
     },
   },
 ];
 
+/** Platforms available for publishing in Content Engine */
+export const PLATFORMS: PlatformDef[] = ALL_PLATFORM_DEFS.filter((p) =>
+  publishablePlatforms().some((c) => c.id === p.value),
+);
+
 export function platformOf(value: string): PlatformDef {
-  return PLATFORMS.find((p) => p.value === value) ?? PLATFORMS[0];
+  return (
+    ALL_PLATFORM_DEFS.find((p) => p.value === value) ??
+    PLATFORMS.find((p) => p.value === value) ??
+    PLATFORMS[0]
+  );
 }
 
 export type PlatformMediaAttachment = {
@@ -197,6 +166,9 @@ export type PlatformPayload = {
   content: string;
   title?: string;
   media?: PlatformMediaAttachment[];
+  whatsappTemplate?: string;
+  whatsappTemplateLanguage?: string;
+  whatsappUseTemplate?: boolean;
 };
 
 export function stripHtml(html: string): string {

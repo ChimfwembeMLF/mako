@@ -76,4 +76,14 @@ export class UserService {
   save(user: UserEntity): Promise<UserEntity> {
     return this.userRepository.save(user);
   }
+
+  async anonymizeUser(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      email: `deleted-${userId.slice(0, 8)}@anonymized.local`,
+      firstName: 'Deleted',
+      lastName: 'User',
+      phone: null,
+      providerId: null,
+    } as Partial<UserEntity>);
+  }
 }

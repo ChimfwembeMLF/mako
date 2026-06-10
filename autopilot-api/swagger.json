@@ -682,6 +682,155 @@
         ]
       }
     },
+    "/api/v1/templates": {
+      "get": {
+        "operationId": "TemplatesController_findAll",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Templates"
+        ]
+      },
+      "post": {
+        "operationId": "TemplatesController_create",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "get": {
+        "operationId": "TemplatesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Templates"
+        ]
+      },
+      "patch": {
+        "operationId": "TemplatesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Templates"
+        ]
+      },
+      "delete": {
+        "operationId": "TemplatesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
     "/api/v1/tenant-members/invite": {
       "post": {
         "operationId": "TenantMembersController_invite",
@@ -2216,6 +2365,34 @@
         ]
       }
     },
+    "/api/v1/content-items/{id}/details": {
+      "get": {
+        "operationId": "ContentItemsController_getDetails",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
     "/api/v1/content-items/{id}": {
       "get": {
         "operationId": "ContentItemsController_findOne",
@@ -2565,6 +2742,909 @@
         ]
       }
     },
+    "/api/v1/social-accounts/connect": {
+      "post": {
+        "operationId": "SocialAccountsController_connect",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialAccountsCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a social account manually (tokens/credentials)",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/tenant/{tenantId}": {
+      "get": {
+        "operationId": "SocialAccountsController_findByTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List connected social accounts for a tenant",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/me": {
+      "get": {
+        "operationId": "SocialAccountsController_getMyAccounts",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get connected social accounts for the current user",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/oauth/{platform}/authorize": {
+      "get": {
+        "operationId": "SocialAccountsController_startOAuth",
+        "parameters": [
+          {
+            "name": "platform",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "returnUrl",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start OAuth flow to connect a platform for a tenant",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/oauth/{platform}/callback": {
+      "get": {
+        "operationId": "SocialAccountsController_oauthCallback",
+        "parameters": [
+          {
+            "name": "platform",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error_description",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "OAuth callback — connects account and redirects to returnUrl",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/facebook/setup": {
+      "get": {
+        "operationId": "SocialAccountsController_getFacebookSetup",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview Facebook Pages from OAuth setup token",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/facebook/finalize": {
+      "post": {
+        "operationId": "SocialAccountsController_finalizeFacebook",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FacebookFinalizeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Finalize Facebook connect after selecting a Page",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/whatsapp/enable-platform": {
+      "post": {
+        "operationId": "SocialAccountsController_enablePlatformWhatsapp",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Enable platform-managed WhatsApp for a workspace (no client Meta setup)",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/whatsapp/setup-from-meta": {
+      "post": {
+        "operationId": "SocialAccountsController_setupWhatsappFromMeta",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Try WhatsApp setup using an existing Facebook connection (skips Meta login when scopes allow)",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/whatsapp/setup": {
+      "get": {
+        "operationId": "SocialAccountsController_getWhatsAppSetup",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Preview WhatsApp phone numbers from OAuth setup token",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/whatsapp/finalize": {
+      "post": {
+        "operationId": "SocialAccountsController_finalizeWhatsApp",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WhatsappFinalizeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Finalize WhatsApp connect after selecting a phone number",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/{id}/disconnect": {
+      "post": {
+        "operationId": "SocialAccountsController_disconnect",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect a social account",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/{id}": {
+      "delete": {
+        "operationId": "SocialAccountsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Remove a social account",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/messages": {
+      "get": {
+        "operationId": "WhatsappController_listMessages",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "take",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/messages/reply": {
+      "post": {
+        "operationId": "WhatsappController_reply",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates": {
+      "get": {
+        "operationId": "WhatsappController_listTemplates",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/conversations": {
+      "get": {
+        "operationId": "WhatsappController_conversations",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp"
+        ]
+      }
+    },
+    "/api/v1/leads/webhook": {
+      "post": {
+        "operationId": "LeadsController_webhook",
+        "parameters": [
+          {
+            "name": "x-webhook-secret",
+            "required": true,
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/leads/send-email": {
+      "post": {
+        "operationId": "LeadsController_sendEmail",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/leads": {
+      "post": {
+        "operationId": "LeadsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadsCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      },
+      "get": {
+        "operationId": "LeadsController_findAll",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/leads/{id}": {
+      "get": {
+        "operationId": "LeadsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      },
+      "patch": {
+        "operationId": "LeadsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadsUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      },
+      "delete": {
+        "operationId": "LeadsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/auto-reply-rules": {
+      "post": {
+        "operationId": "AutoReplyRulesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyRulesCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auto Reply Rules"
+        ]
+      },
+      "get": {
+        "operationId": "AutoReplyRulesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auto Reply Rules"
+        ]
+      }
+    },
+    "/api/v1/auto-reply-rules/{id}": {
+      "get": {
+        "operationId": "AutoReplyRulesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auto Reply Rules"
+        ]
+      },
+      "patch": {
+        "operationId": "AutoReplyRulesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoReplyRulesUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auto Reply Rules"
+        ]
+      },
+      "delete": {
+        "operationId": "AutoReplyRulesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Auto Reply Rules"
+        ]
+      }
+    },
+    "/api/v1/content-publications": {
+      "get": {
+        "operationId": "ContentPublicationsController_findByTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Publications"
+        ]
+      }
+    },
+    "/api/v1/content-publications/content/{contentId}": {
+      "get": {
+        "operationId": "ContentPublicationsController_findByContent",
+        "parameters": [
+          {
+            "name": "contentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Publications"
+        ]
+      }
+    },
     "/api/v1/media": {
       "get": {
         "operationId": "MediaController_findAll",
@@ -2858,57 +3938,12 @@
         ]
       }
     },
-    "/api/v1/templates": {
+    "/api/v1/payments/deposits/{depositId}/invoice": {
       "get": {
-        "operationId": "TemplatesController_findAll",
+        "operationId": "PaymentsController_invoice",
         "parameters": [
           {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Templates"
-        ]
-      },
-      "post": {
-        "operationId": "TemplatesController_create",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Templates"
-        ]
-      }
-    },
-    "/api/v1/templates/{id}": {
-      "get": {
-        "operationId": "TemplatesController_findOne",
-        "parameters": [
-          {
-            "name": "id",
+            "name": "depositId",
             "required": true,
             "in": "path",
             "schema": {
@@ -2935,516 +3970,7 @@
           }
         ],
         "tags": [
-          "Templates"
-        ]
-      },
-      "patch": {
-        "operationId": "TemplatesController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Templates"
-        ]
-      },
-      "delete": {
-        "operationId": "TemplatesController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Templates"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/connect": {
-      "post": {
-        "operationId": "SocialAccountsController_connect",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SocialAccountsCreateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Connect a social account manually (tokens/credentials)",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/tenant/{tenantId}": {
-      "get": {
-        "operationId": "SocialAccountsController_findByTenant",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "List connected social accounts for a tenant",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/me": {
-      "get": {
-        "operationId": "SocialAccountsController_getMyAccounts",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Get connected social accounts for the current user",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/oauth/{platform}/authorize": {
-      "get": {
-        "operationId": "SocialAccountsController_startOAuth",
-        "parameters": [
-          {
-            "name": "platform",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "returnUrl",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Start OAuth flow to connect a platform for a tenant",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/oauth/{platform}/callback": {
-      "get": {
-        "operationId": "SocialAccountsController_oauthCallback",
-        "parameters": [
-          {
-            "name": "platform",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "code",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "state",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "error",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "error_description",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "OAuth callback — connects account and redirects to returnUrl",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/{id}/disconnect": {
-      "post": {
-        "operationId": "SocialAccountsController_disconnect",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Disconnect a social account",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/social-accounts/{id}": {
-      "delete": {
-        "operationId": "SocialAccountsController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Remove a social account",
-        "tags": [
-          "Social Accounts"
-        ]
-      }
-    },
-    "/api/v1/leads/webhook": {
-      "post": {
-        "operationId": "LeadsController_webhook",
-        "parameters": [
-          {
-            "name": "x-webhook-secret",
-            "required": true,
-            "in": "header",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Leads"
-        ]
-      }
-    },
-    "/api/v1/leads/send-email": {
-      "post": {
-        "operationId": "LeadsController_sendEmail",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Leads"
-        ]
-      }
-    },
-    "/api/v1/leads": {
-      "post": {
-        "operationId": "LeadsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LeadsCreateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Leads"
-        ]
-      },
-      "get": {
-        "operationId": "LeadsController_findAll",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Leads"
-        ]
-      }
-    },
-    "/api/v1/leads/{id}": {
-      "get": {
-        "operationId": "LeadsController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Leads"
-        ]
-      },
-      "patch": {
-        "operationId": "LeadsController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LeadsUpdateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Leads"
-        ]
-      },
-      "delete": {
-        "operationId": "LeadsController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Leads"
+          "Payments"
         ]
       }
     },
@@ -4062,118 +4588,7 @@
         ]
       }
     },
-    "/api/v1/auto-reply-rules": {
-      "post": {
-        "operationId": "AutoReplyRulesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AutoReplyRulesCreateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Auto Reply Rules"
-        ]
-      },
-      "get": {
-        "operationId": "AutoReplyRulesController_findAll",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Auto Reply Rules"
-        ]
-      }
-    },
-    "/api/v1/auto-reply-rules/{id}": {
-      "get": {
-        "operationId": "AutoReplyRulesController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Auto Reply Rules"
-        ]
-      },
-      "patch": {
-        "operationId": "AutoReplyRulesController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AutoReplyRulesUpdateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Auto Reply Rules"
-        ]
-      },
-      "delete": {
-        "operationId": "AutoReplyRulesController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Auto Reply Rules"
-        ]
-      }
-    },
-    "/whatsapp_contacts": {
+    "/api/v1/whatsapp/contacts": {
       "post": {
         "operationId": "WhatsappContactsController_create",
         "parameters": [],
@@ -4192,31 +4607,22 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
-          "WhatsappContacts"
+          "WhatsApp Contacts"
         ]
       },
       "get": {
-        "operationId": "WhatsappContactsController_findAll",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "WhatsappContacts"
-        ]
-      }
-    },
-    "/whatsapp_contacts/{id}": {
-      "get": {
-        "operationId": "WhatsappContactsController_findOne",
+        "operationId": "WhatsappContactsController_findByTenant",
         "parameters": [
           {
-            "name": "id",
+            "name": "tenantId",
             "required": true,
-            "in": "path",
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -4227,8 +4633,49 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
-          "WhatsappContacts"
+          "WhatsApp Contacts"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/contacts/{id}": {
+      "get": {
+        "operationId": "WhatsappContactsController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp Contacts"
         ]
       },
       "patch": {
@@ -4238,6 +4685,14 @@
             "name": "id",
             "required": true,
             "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
             "schema": {
               "type": "string"
             }
@@ -4258,8 +4713,13 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
-          "WhatsappContacts"
+          "WhatsApp Contacts"
         ]
       },
       "delete": {
@@ -4272,6 +4732,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -4279,8 +4747,80 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
-          "WhatsappContacts"
+          "WhatsApp Contacts"
+        ]
+      }
+    },
+    "/api/v1/comment-replies/fetch": {
+      "post": {
+        "operationId": "CommentRepliesController_fetch",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FetchCommentsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Comment Replies"
+        ]
+      }
+    },
+    "/api/v1/comment-replies/{id}/send": {
+      "post": {
+        "operationId": "CommentRepliesController_send",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCommentReplyDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Comment Replies"
         ]
       }
     },
@@ -4303,6 +4843,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
           "Comment Replies"
         ]
@@ -4315,6 +4860,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
           "Comment Replies"
         ]
@@ -4338,6 +4888,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
           "Comment Replies"
         ]
@@ -4369,6 +4924,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
           "Comment Replies"
         ]
@@ -4390,6 +4950,11 @@
             "description": ""
           }
         },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
         "tags": [
           "Comment Replies"
         ]
@@ -4547,6 +5112,282 @@
         ]
       }
     },
+    "/privacy": {
+      "get": {
+        "operationId": "LegalController_privacy[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/privacy.html": {
+      "get": {
+        "operationId": "LegalController_privacy[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/terms": {
+      "get": {
+        "operationId": "LegalController_terms[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/terms.html": {
+      "get": {
+        "operationId": "LegalController_terms[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/data-deletion": {
+      "get": {
+        "operationId": "LegalController_dataDeletionInfo[0]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/data-deletion.html": {
+      "get": {
+        "operationId": "LegalController_dataDeletionInfo[1]",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/deletion-status": {
+      "get": {
+        "operationId": "LegalController_deletionStatus",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/data-deletion-request": {
+      "post": {
+        "operationId": "LegalController_requestDeletion",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataDeletionRequestDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/data-deletion": {
+      "post": {
+        "operationId": "LegalController_metaDataDeletion",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta": {
+      "get": {
+        "operationId": "LegalController_metaVerify",
+        "parameters": [
+          {
+            "name": "hub.mode",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hub.verify_token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hub.challenge",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      },
+      "post": {
+        "operationId": "LegalController_metaEvents",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/deauthorize": {
+      "post": {
+        "operationId": "LegalController_metaDeauthorize",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/backoffice/overview": {
+      "get": {
+        "operationId": "BackofficeController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/tenants": {
+      "get": {
+        "operationId": "BackofficeController_tenants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/tenants/{id}": {
+      "get": {
+        "operationId": "BackofficeController_tenantDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
     "/api/v1/system-settings/theme": {
       "get": {
         "operationId": "SystemSettingsController_getTheme",
@@ -4647,6 +5488,20 @@
         },
         "tags": [
           "SystemSettings"
+        ]
+      }
+    },
+    "/api/v1/platforms/capabilities": {
+      "get": {
+        "operationId": "PlatformsController_capabilities",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Platforms"
         ]
       }
     }
@@ -4873,19 +5728,61 @@
         "type": "object",
         "properties": {}
       },
-      "GenerateCampaignDto": {
-        "type": "object",
-        "properties": {}
-      },
       "SocialAccountsCreateDto": {
         "type": "object",
         "properties": {}
+      },
+      "FacebookFinalizeDto": {
+        "type": "object",
+        "properties": {
+          "setupToken": {
+            "type": "string",
+            "description": "Short-lived setup token from OAuth callback"
+          },
+          "pageId": {
+            "type": "string",
+            "description": "Selected Facebook Page ID"
+          }
+        },
+        "required": [
+          "setupToken",
+          "pageId"
+        ]
+      },
+      "WhatsappFinalizeDto": {
+        "type": "object",
+        "properties": {
+          "setupToken": {
+            "type": "string",
+            "description": "Short-lived setup token from OAuth callback"
+          },
+          "phoneNumberId": {
+            "type": "string",
+            "description": "Selected WhatsApp phone number ID from Meta"
+          }
+        },
+        "required": [
+          "setupToken",
+          "phoneNumberId"
+        ]
       },
       "LeadsCreateDto": {
         "type": "object",
         "properties": {}
       },
       "LeadsUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AutoReplyRulesCreateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AutoReplyRulesUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "GenerateCampaignDto": {
         "type": "object",
         "properties": {}
       },
@@ -4929,19 +5826,19 @@
         "type": "object",
         "properties": {}
       },
-      "AutoReplyRulesCreateDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "AutoReplyRulesUpdateDto": {
-        "type": "object",
-        "properties": {}
-      },
       "WhatsappContactsCreateDto": {
         "type": "object",
         "properties": {}
       },
       "WhatsappContactsUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "FetchCommentsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendCommentReplyDto": {
         "type": "object",
         "properties": {}
       },
@@ -4958,6 +5855,10 @@
         "properties": {}
       },
       "AuditLogsUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "DataDeletionRequestDto": {
         "type": "object",
         "properties": {}
       },

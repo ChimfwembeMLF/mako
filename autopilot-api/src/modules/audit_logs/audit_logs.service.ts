@@ -5,7 +5,18 @@ import { AuditLogs } from './entities/audit_logs.entity';
 import { AuditLogsCreateDto } from './dto/create-audit_logs.dto';
 import { AuditLogsUpdateDto } from './dto/update-audit_logs.dto';
 
-const NIL_UUID = '00000000-0000-0000-0000-000000000000';
+import { NIL_UUID } from '../../common/audit/audit-request.util';
+
+export type RequestAuditPayload = {
+  tenantId?: string;
+  userId?: string;
+  action: string;
+  resourceType?: string;
+  resourceId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: Record<string, unknown>;
+};
 
 @Injectable()
 export class AuditLogsService {
@@ -23,6 +34,22 @@ export class AuditLogsService {
       resourceId: dto.resourceId ?? NIL_UUID,
     });
     return this.repo.save(ent as AuditLogs);
+  }
+
+  /** Fire-and-forget HTTP request audit row (used by AuditInterceptor). */
+  async logRequest(payload: RequestAuditPayload): Promise<void> {
+    await this.repo.save(
+      this.repo.create({
+        tenantId: payload.tenantId,
+        userId: payload.userId,
+        action: payload.action,
+        resourceType: payload.resourceType ?? 'http',
+        resourceId: payload.resourceId ?? NIL_UUID,
+        metadata: payload.metadata as unknown as string,
+        ipAddress: payload.ipAddress,
+        userAgent: payload.userAgent,
+      }),
+    );
   }
 
   async findFiltered(opts: {
@@ -49,9 +76,13 @@ export class AuditLogsService {
       });
     }
     if (opts.module && opts.module !== 'all') {
-      qb.andWhere('log.action ILIKE :modulePrefix', {
-        modulePrefix: `${opts.module}.%`,
-      });
+      if (opts.module === 'http') {
+        qb.andWhere('log.action LIKE :httpPrefix', { httpPrefix: 'http.%' });
+      } else {
+        qb.andWhere('log.action ILIKE :modulePrefix', {
+          modulePrefix: `${opts.module}.%`,
+        });
+      }
     }
 
     const [rows, total] = await qb.getManyAndCount();
@@ -64,6 +95,8 @@ export class AuditLogsService {
       before_state: log.beforeState ?? null,
       after_state: log.afterState ?? null,
       metadata: log.metadata ?? null,
+      ip_address: log.ipAddress ?? null,
+      user_agent: log.userAgent ?? null,
       created_at: log.created_at,
       profiles: log.user
         ? {

@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Pen, Sparkles, Copy, Check, Trash2, Loader2, RefreshCw, Pencil,
-  ChevronDown, ChevronUp, Send,
+  ChevronDown, ChevronUp, Send, Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -80,6 +80,11 @@ function ContentCard({
           )}
         </div>
         <div className="flex gap-1 shrink-0">
+          <Button type="button" size="sm" variant="outline" className="h-8 text-xs" asChild>
+            <Link to={`/content/${item.id}`}>
+              <Eye className="h-3 w-3 mr-1" /> Details
+            </Link>
+          </Button>
           <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => onPublish(item)}>
             <Send className="h-3 w-3 mr-1" /> Publish
           </Button>

@@ -7,9 +7,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
 import axios from 'axios';
-import { createWriteStream, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
-import { pipeline } from 'stream/promises';
 import { SupabaseStorageService } from '../../media/supabase-storage.service';
 
 @Injectable()
@@ -36,12 +33,6 @@ export class MistralAgentsService {
 
   private get imageModel(): string {
     return this.config.get<string>('MISTRAL_IMAGE_AGENT_MODEL') || 'mistral-medium-latest';
-  }
-
-  private uploadsDir(): string {
-    const dir = join(process.cwd(), 'uploads');
-    if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-    return dir;
   }
 
   private async getOrCreateImageAgent(): Promise<string> {
@@ -107,28 +98,15 @@ export class MistralAgentsService {
     const buffer = Buffer.from(fileRes.data);
     const tenantId = options?.tenantId ?? 'shared';
 
-    if (this.storage.isEnabled()) {
-      const uploaded = await this.storage.uploadBuffer({
-        tenantId,
-        buffer,
-        contentType: 'image/png',
-        originalName: `ai-${fileId.slice(0, 8)}.png`,
-        prefix: 'ai',
-      });
-      this.logger.log(`Saved generated image → ${uploaded.publicUrl}`);
-      return { filePath: uploaded.storagePath, publicUrl: uploaded.publicUrl, fileId };
-    }
-
-    const filename = `ai-${Date.now()}-${fileId.slice(0, 8)}.png`;
-    const filePath = join(this.uploadsDir(), filename);
-    await pipeline(
-      (await import('stream')).Readable.from(buffer),
-      createWriteStream(filePath),
-    );
-
-    const publicUrl = `/uploads/${filename}`;
-    const port = this.config.get<string>('PORT') || '4000';
-    this.logger.log(`Saved generated image → ${publicUrl} (port ${port})`);
-    return { filePath, publicUrl, fileId };
+    this.storage.assertConfigured();
+    const uploaded = await this.storage.uploadBuffer({
+      tenantId,
+      buffer,
+      contentType: 'image/png',
+      originalName: `ai-${fileId.slice(0, 8)}.png`,
+      prefix: 'ai',
+    });
+    this.logger.log(`Saved generated image → ${uploaded.publicUrl}`);
+    return { filePath: uploaded.storagePath, publicUrl: uploaded.publicUrl, fileId };
   }
 }

@@ -37,4 +37,48 @@ export class LeadsService {
     const res = await this.repo.delete(id);
     if (res.affected === 0) throw new NotFoundException('Leads not found');
   }
+
+  private whatsappEmail(phone: string): string {
+    const digits = phone.replace(/\D/g, '');
+    return `wa+${digits}@inbox.autopilot`;
+  }
+
+  async findByWhatsappPhone(tenantId: string, phone: string): Promise<Leads | null> {
+    return this.repo.findOne({
+      where: { tenantId, email: this.whatsappEmail(phone) },
+    });
+  }
+
+  async upsertFromWhatsapp(params: {
+    tenantId: string;
+    userId: string;
+    phone: string;
+    name?: string;
+    message: string;
+  }): Promise<Leads> {
+    const email = this.whatsappEmail(params.phone);
+    const existing = await this.repo.findOne({ where: { tenantId: params.tenantId, email } });
+
+    if (existing) {
+      existing.message = params.message;
+      existing.status = existing.status === 'closed' ? 'open' : (existing.status ?? 'new');
+      if (params.name?.trim() && existing.name.startsWith('WhatsApp ')) {
+        existing.name = params.name.trim();
+      }
+      return this.repo.save(existing);
+    }
+
+    return this.repo.save(
+      this.repo.create({
+        tenantId: params.tenantId,
+        userId: params.userId,
+        name: params.name?.trim() || `WhatsApp ${params.phone}`,
+        email,
+        source: 'whatsapp',
+        message: params.message,
+        status: 'new',
+        classification: 'inbound',
+      }),
+    );
+  }
 }

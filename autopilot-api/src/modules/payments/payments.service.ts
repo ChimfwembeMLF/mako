@@ -1,20 +1,29 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { Deposits } from '../deposits/entities/deposits.entity';
+import { Tenants } from '../tenants/entities/tenants.entity';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { TenantMembersService } from '../tenant_members/tenant_members.service';
 import { normalizePlanKey, PlanKey, PLAN_CONFIG } from '../subscriptions/plan.constants';
+import { buildInvoiceNumber, invoiceDataFromDeposit, renderInvoiceHtml, InvoiceData } from './invoice.template';
+import { getInvoicePdfFilename, renderInvoicePdf } from './invoice.pdf';
 
 export interface ClientPaymentRecord {
   id: string;
+  invoiceNumber: string;
   plan: string | null | undefined;
   status: string | null | undefined;
   amount: string | null | undefined;
   currency: string | null | undefined;
   method: 'mobile_money';
+  network: string | null | undefined;
+  phone: string | null | undefined;
   createdAt: string;
+  paidAt: string | null;
+  canDownloadInvoice: boolean;
 }
 
 @Injectable()
@@ -24,7 +33,10 @@ export class PaymentsService {
   constructor(
     @InjectRepository(Deposits)
     private readonly depositsRepo: Repository<Deposits>,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
     private readonly subscriptions: SubscriptionsService,
+    private readonly tenantMembers: TenantMembersService,
     private readonly config: ConfigService,
   ) {}
 
@@ -109,7 +121,8 @@ export class PaymentsService {
     return { completed };
   }
 
-  async findByTenant(tenantId: string): Promise<ClientPaymentRecord[]> {
+  async findByTenant(tenantId: string, userId?: string): Promise<ClientPaymentRecord[]> {
+    if (userId) await this.assertTenantAccess(userId, tenantId);
     const rows = await this.depositsRepo.find({
       where: { tenantId },
       order: { created_at: 'DESC' },
@@ -117,15 +130,56 @@ export class PaymentsService {
     return rows.map((d) => this.toClientRecord(d));
   }
 
+  async generateInvoiceHtml(depositId: string, tenantId: string, userId: string): Promise<string> {
+    const data = await this.getInvoiceData(depositId, tenantId, userId);
+    return renderInvoiceHtml(data);
+  }
+
+  async generateInvoicePdf(depositId: string, tenantId: string, userId: string): Promise<Buffer> {
+    const data = await this.getInvoiceData(depositId, tenantId, userId);
+    return renderInvoicePdf(data);
+  }
+
+  getInvoiceFilename(depositId: string): string {
+    return getInvoicePdfFilename(depositId);
+  }
+
+  private async getInvoiceData(depositId: string, tenantId: string, userId: string): Promise<InvoiceData> {
+    await this.assertTenantAccess(userId, tenantId);
+    const deposit = await this.depositsRepo.findOne({ where: { depositId, tenantId } });
+    if (!deposit) throw new NotFoundException('Payment record not found');
+
+    const tenant = await this.tenantsRepo.findOne({
+      where: { id: tenantId },
+      relations: ['owner'],
+    });
+    if (!tenant) throw new NotFoundException('Tenant not found');
+
+    return invoiceDataFromDeposit(deposit, tenant, tenant.owner?.email);
+  }
+
+  private async assertTenantAccess(userId: string, tenantId: string) {
+    const memberships = await this.tenantMembers.findForUser(userId);
+    const allowed = memberships.some((m) => m.tenantId === tenantId && m.isActive);
+    if (!allowed) throw new ForbiddenException('You are not a member of this workspace');
+  }
+
   toClientRecord(d: Deposits): ClientPaymentRecord {
+    const status = (d.status ?? '').toUpperCase();
+    const isPaid = status === 'COMPLETED';
     return {
       id: d.depositId,
+      invoiceNumber: buildInvoiceNumber(d.depositId),
       plan: d.plan,
       status: d.status,
       amount: d.amount,
       currency: d.currency,
       method: 'mobile_money',
+      network: d.correspondent ?? null,
+      phone: d.phone ?? d.msisdn ?? null,
       createdAt: d.created_at.toISOString(),
+      paidAt: isPaid ? d.updated_at.toISOString() : null,
+      canDownloadInvoice: isPaid || status === 'ACCEPTED',
     };
   }
 }

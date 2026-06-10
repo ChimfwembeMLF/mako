@@ -14,8 +14,8 @@ import { Workspaces } from '../../workspaces/entities/workspaces.entity';
 import { UserEntity } from '../../user/user.entity';
 import { BrandProfiles } from '../../brand_profiles/entities/brand_profiles.entity';
 
-@Index(['tenantId', 'status', 'scheduledDate'], { unique: true })
-@Index(['workspaceId', 'status'], { unique: true })
+@Index(['tenantId', 'status', 'scheduledDate'])
+@Index(['workspaceId', 'status'])
 @Entity({ name: 'content_items' })
 export class ContentItems {
   @PrimaryGeneratedColumn('uuid')

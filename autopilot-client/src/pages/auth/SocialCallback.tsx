@@ -39,7 +39,7 @@ export default function SocialCallback() {
     completeOAuthLogin(token)
       .then(() => {
         toast({ title: "Success", description: "You are now logged in" });
-        navigate("/", { replace: true });
+        navigate("/dashboard", { replace: true });
       })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : "Failed to complete sign in";

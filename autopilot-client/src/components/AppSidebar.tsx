@@ -1,10 +1,12 @@
 import {
   Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply, Megaphone,
-  GitPullRequestArrow, Users, ClipboardList, ShieldCheck,
+  GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity,
   ChevronsUpDown, Building2, CreditCard, Download,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { Badge } from "@/components/ui/badge";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -44,6 +46,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { tenant, tenants, switchTenant } = useTenant();
+  const { isSuperAdmin } = usePermissions();
 
   return (
     <Sidebar collapsible="icon">
@@ -58,7 +61,7 @@ export function AppSidebar() {
               {!collapsed && (
                 <>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs font-semibold truncate text-sidebar-foreground">{tenant?.name ?? "BrandPilot"}</p>
+                    <p className="text-xs font-semibold truncate text-sidebar-foreground">{tenant?.name ?? "AutoPilot"}</p>
                     <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Marketing AI</p>
                   </div>
                   <ChevronsUpDown className="h-3.5 w-3.5 text-sidebar-foreground/40" />
@@ -86,7 +89,7 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Core</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <NavItem title="Dashboard" url="/" icon={Zap} exact />
+              <NavItem title="Dashboard" url="/dashboard" icon={Zap} exact />
               <NavItem title="Brand Brain" url="/brand-brain" icon={Brain} />
               <NavItem title="Content Engine" url="/content" icon={Pen} />
               <NavItem title="AI Campaigns" url="/campaigns" icon={Megaphone} />
@@ -139,6 +142,12 @@ export function AppSidebar() {
             <SidebarMenu>
               <NavItem title="Roles & Permissions" url="/admin/roles" icon={ShieldCheck} />
               <NavItem title="Maker-Checker" url="/admin/maker-checker" icon={GitPullRequestArrow} />
+              {isSuperAdmin && (
+                <>
+                  <NavItem title="Platform Backoffice" url="/admin/backoffice" icon={Activity} />
+                  <NavItem title="System Settings" url="/admin/system" icon={Settings} />
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

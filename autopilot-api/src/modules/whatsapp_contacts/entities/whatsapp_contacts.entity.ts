@@ -28,6 +28,10 @@ export class WhatsappContacts {
   optedInAt?: Date;
   @Column({ type: 'text', array: true, nullable: true })
   tags?: string[];
+
+  @Column({ type: 'uuid', nullable: true })
+  leadId?: string;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
   @ManyToOne(() => Tenants, { nullable: false })

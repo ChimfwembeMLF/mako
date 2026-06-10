@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Link2, Facebook, Linkedin, Instagram, Twitter, MessageCircle, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Link2, Facebook, Linkedin, Instagram, Twitter, MessageCircle, CheckCircle2, XCircle, Loader2, Phone } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,30 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/useTenant";
-import { socialAccountsApi, SocialAccount } from "@/lib/api";
+import { socialAccountsApi, platformsApi, SocialAccount } from "@/lib/api";
+import { capabilityOf } from "@/lib/platform-capabilities";
+import { Badge } from "@/components/ui/badge";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "google";
-type ManualPlatform = "twitter" | "tiktok" | "whatsapp";
+type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "google" | "whatsapp";
+type ManualPlatform = "twitter" | "tiktok";
 type PlatformId = OAuthPlatform | ManualPlatform;
 
-const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "google"];
+type WhatsAppPhoneOption = {
+  id: string;
+  displayPhoneNumber?: string;
+  verifiedName?: string;
+  wabaId: string;
+  wabaName?: string;
+};
+
+type FacebookPageOption = {
+  id: string;
+  name: string;
+  category?: string;
+};
+
+const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "google", "whatsapp"];
 
 const platforms: {
   id: PlatformId;
@@ -24,6 +41,7 @@ const platforms: {
   bgColor: string;
   description: string;
   oauth?: boolean;
+  manualFallback?: boolean;
   fields?: { key: string; label: string; placeholder: string; type?: string }[];
 }[] = [
   {
@@ -86,7 +104,9 @@ const platforms: {
     icon: MessageCircle,
     color: "text-green-600",
     bgColor: "bg-green-50",
-    description: "Send content via WhatsApp Business API",
+    description: "Connect via Meta and pick your WhatsApp Business phone number",
+    oauth: true,
+    manualFallback: true,
     fields: [
       { key: "phone_number_id", label: "Phone Number ID", placeholder: "WhatsApp Business phone number ID" },
       { key: "access_token", label: "Access Token", placeholder: "WhatsApp Business access token", type: "password" },
@@ -103,6 +123,22 @@ const PublisherConnect = () => {
   const [saving, setSaving] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [connectingOAuth, setConnectingOAuth] = useState<string | null>(null);
+
+  const [whatsappSetupToken, setWhatsappSetupToken] = useState<string | null>(null);
+  const [whatsappPhones, setWhatsappPhones] = useState<WhatsAppPhoneOption[]>([]);
+  const [selectedWhatsappPhone, setSelectedWhatsappPhone] = useState<string>("");
+  const [loadingWhatsappSetup, setLoadingWhatsappSetup] = useState(false);
+  const [finalizingWhatsapp, setFinalizingWhatsapp] = useState(false);
+
+  const [facebookSetupToken, setFacebookSetupToken] = useState<string | null>(null);
+  const [facebookPages, setFacebookPages] = useState<FacebookPageOption[]>([]);
+  const [facebookProfileName, setFacebookProfileName] = useState<string | null>(null);
+  const [selectedFacebookPage, setSelectedFacebookPage] = useState<string>("");
+  const [loadingFacebookSetup, setLoadingFacebookSetup] = useState(false);
+  const [finalizingFacebook, setFinalizingFacebook] = useState(false);
+
+  const [whatsappPlatformMode, setWhatsappPlatformMode] = useState(false);
+  const [whatsappPlatformLabel, setWhatsappPlatformLabel] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { tenant } = useTenant();
@@ -122,12 +158,30 @@ const PublisherConnect = () => {
   };
 
   useEffect(() => {
+    platformsApi
+      .capabilities()
+      .then((data) => {
+        const mode = data.whatsapp?.connectionMode;
+        setWhatsappPlatformMode(mode === "platform" && Boolean(data.whatsapp?.platformConfigured));
+        setWhatsappPlatformLabel(
+          data.whatsapp?.displayPhone || data.whatsapp?.displayName || null,
+        );
+      })
+      .catch(() => {
+        setWhatsappPlatformMode(false);
+      });
+  }, []);
+
+  useEffect(() => {
     if (tenant) loadAccounts();
   }, [tenant?.id]);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
     const error = searchParams.get("error");
+    const whatsappSetup = searchParams.get("whatsapp_setup");
+    const facebookSetup = searchParams.get("facebook_setup");
+
     if (connected) {
       toast({ title: "Connected!", description: `${connected} account linked to this workspace.` });
       loadAccounts();
@@ -139,7 +193,92 @@ const PublisherConnect = () => {
       searchParams.delete("error");
       setSearchParams(searchParams, { replace: true });
     }
+    if (whatsappSetup) {
+      setWhatsappPhones([]);
+      setWhatsappSetupToken(whatsappSetup);
+      searchParams.delete("whatsapp_setup");
+      setSearchParams(searchParams, { replace: true });
+    }
+    if (facebookSetup) {
+      setFacebookPages([]);
+      setFacebookSetupToken(facebookSetup);
+      searchParams.delete("facebook_setup");
+      setSearchParams(searchParams, { replace: true });
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (!facebookSetupToken) return;
+    if (facebookPages.length > 0) {
+      setLoadingFacebookSetup(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingFacebookSetup(true);
+    setSelectedFacebookPage("");
+
+    socialAccountsApi
+      .getFacebookSetup(facebookSetupToken)
+      .then((data) => {
+        if (cancelled) return;
+        const pages = data.pages ?? [];
+        setFacebookPages(pages);
+        setFacebookProfileName(data.profileName ?? null);
+        if (pages.length === 1) {
+          setSelectedFacebookPage(pages[0].id);
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "Failed to load Facebook Pages";
+        toast({ title: "Facebook setup failed", description: message, variant: "destructive" });
+        setFacebookSetupToken(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFacebookSetup(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [facebookSetupToken]);
+
+  useEffect(() => {
+    if (!whatsappSetupToken) return;
+    if (whatsappPhones.length > 0) {
+      setLoadingWhatsappSetup(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLoadingWhatsappSetup(true);
+    setSelectedWhatsappPhone("");
+
+    socialAccountsApi
+      .getWhatsappSetup(whatsappSetupToken)
+      .then((data) => {
+        if (cancelled) return;
+        const phones = data.phones ?? [];
+        setWhatsappPhones(phones);
+        if (phones.length === 1) {
+          setSelectedWhatsappPhone(phones[0].id);
+        }
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : "Failed to load WhatsApp numbers";
+        toast({ title: "WhatsApp setup failed", description: message, variant: "destructive" });
+        setWhatsappSetupToken(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingWhatsappSetup(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [whatsappSetupToken]);
 
   const startOAuthConnect = async (platform: OAuthPlatform) => {
     if (!tenant) {
@@ -159,12 +298,79 @@ const PublisherConnect = () => {
     }
   };
 
-  const handleManualConnect = async (platformId: ManualPlatform) => {
+  const startWhatsappConnect = async () => {
+    if (!tenant) {
+      toast({ title: "No workspace", description: "Select or create a workspace before connecting accounts.", variant: "destructive" });
+      return;
+    }
+
+    if (whatsappPlatformMode) {
+      setConnectingOAuth("whatsapp");
+      try {
+        await socialAccountsApi.enablePlatformWhatsapp(tenant.id);
+        toast({
+          title: "WhatsApp enabled",
+          description: "This workspace can send broadcasts and receive replies — add contacts in Lead Agent.",
+        });
+        loadAccounts();
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to enable WhatsApp";
+        toast({ title: "Error", description: message, variant: "destructive" });
+      } finally {
+        setConnectingOAuth(null);
+      }
+      return;
+    }
+
+    setConnectingOAuth("whatsapp");
+    try {
+      const result = await socialAccountsApi.setupWhatsappFromMeta(tenant.id);
+
+      if (result.ready) {
+        setWhatsappPhones(result.phones);
+        setWhatsappSetupToken(result.setupToken);
+        if (result.phones.length === 1) {
+          setSelectedWhatsappPhone(result.phones[0].id);
+        }
+        toast({
+          title: "Facebook account reused",
+          description: "Pick the WhatsApp number to link — no Meta login needed.",
+        });
+        setConnectingOAuth(null);
+        return;
+      }
+
+      if (result.reason === "missing_scopes") {
+        toast({
+          title: "WhatsApp permissions needed",
+          description: "Redirecting to Meta to grant WhatsApp access…",
+        });
+      } else if (result.reason === "no_facebook") {
+        toast({
+          title: "Sign in with Meta",
+          description: "Connect WhatsApp via Meta — or connect Facebook first for a faster setup next time.",
+        });
+      }
+
+      await startOAuthConnect("whatsapp");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to start WhatsApp connect";
+      toast({ title: "Connection failed", description: message, variant: "destructive" });
+      setConnectingOAuth(null);
+    }
+  };
+
+  const handleManualConnect = async (platformId: ManualPlatform | "whatsapp") => {
     if (!tenant) return;
 
     const accessToken = formValues.access_token;
     if (!accessToken) {
       toast({ title: "Missing token", description: "Access token is required.", variant: "destructive" });
+      return;
+    }
+
+    if (platformId === "whatsapp" && !formValues.phone_number_id) {
+      toast({ title: "Missing phone number ID", description: "Phone Number ID is required for WhatsApp.", variant: "destructive" });
       return;
     }
 
@@ -187,6 +393,57 @@ const PublisherConnect = () => {
       toast({ title: "Error", description: message, variant: "destructive" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleFinalizeFacebook = async () => {
+    if (!facebookSetupToken || !selectedFacebookPage) {
+      toast({ title: "Select a Page", description: "Choose a Facebook Page to connect.", variant: "destructive" });
+      return;
+    }
+
+    setFinalizingFacebook(true);
+    try {
+      await socialAccountsApi.finalizeFacebook({
+        setupToken: facebookSetupToken,
+        pageId: selectedFacebookPage,
+      });
+      toast({ title: "Connected!", description: "Facebook Page linked to this workspace." });
+      setFacebookSetupToken(null);
+      setFacebookPages([]);
+      setFacebookProfileName(null);
+      setSelectedFacebookPage("");
+      loadAccounts();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to connect Facebook Page";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setFinalizingFacebook(false);
+    }
+  };
+
+  const handleFinalizeWhatsapp = async () => {
+    if (!whatsappSetupToken || !selectedWhatsappPhone) {
+      toast({ title: "Select a number", description: "Choose a WhatsApp phone number to connect.", variant: "destructive" });
+      return;
+    }
+
+    setFinalizingWhatsapp(true);
+    try {
+      await socialAccountsApi.finalizeWhatsapp({
+        setupToken: whatsappSetupToken,
+        phoneNumberId: selectedWhatsappPhone,
+      });
+      toast({ title: "Connected!", description: "WhatsApp Business number linked to this workspace." });
+      setWhatsappSetupToken(null);
+      setWhatsappPhones([]);
+      setSelectedWhatsappPhone("");
+      loadAccounts();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to connect WhatsApp";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setFinalizingWhatsapp(false);
     }
   };
 
@@ -230,14 +487,22 @@ const PublisherConnect = () => {
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {platforms.map((platform) => {
+        {platforms
+          .filter((p) => capabilityOf(p.id)?.connect)
+          .map((platform) => {
+          const cap = capabilityOf(platform.id);
+          const isComingSoon = cap?.status === 'coming_soon';
           const account = getAccount(platform.id);
           const Icon = platform.icon;
-          const isOAuth = platform.oauth === true;
+          const isOAuth = platform.oauth === true && !(platform.id === "whatsapp" && whatsappPlatformMode);
           const isConnecting = connectingOAuth === platform.id;
+          const whatsappNotes =
+            platform.id === "whatsapp" && whatsappPlatformMode
+              ? `Included with AutoPilot${whatsappPlatformLabel ? ` (${whatsappPlatformLabel})` : ""} — click Enable, no Meta setup required.`
+              : cap?.notes ?? platform.description;
 
           return (
-            <Card key={platform.id} className="border-border/50 hover:shadow-card transition-shadow">
+            <Card key={platform.id} className={`border-border/50 hover:shadow-card transition-shadow ${isComingSoon ? 'opacity-75' : ''}`}>
               <CardContent className="p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
@@ -245,8 +510,15 @@ const PublisherConnect = () => {
                       <Icon className={`h-5 w-5 ${platform.color}`} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-sm">{platform.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{platform.description}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-semibold text-sm">{platform.name}</h3>
+                        {isComingSoon && (
+                          <Badge variant="secondary" className="text-[10px]">Coming soon</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {whatsappNotes}
+                      </p>
                       {account && (
                         <div className="flex items-center gap-1.5 mt-2">
                           <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
@@ -256,22 +528,52 @@ const PublisherConnect = () => {
                           )}
                         </div>
                       )}
+                      {platform.id === "whatsapp" && !account && !whatsappPlatformMode && getAccount("facebook") && (
+                        <p className="text-[11px] text-muted-foreground mt-1.5">
+                          Facebook connected — will reuse if WhatsApp permissions are already granted.
+                        </p>
+                      )}
                     </div>
                   </div>
-                  {account ? (
+                  {isComingSoon ? (
+                    <Button size="sm" variant="outline" disabled>
+                      Unavailable
+                    </Button>
+                  ) : account ? (
                     <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => handleDisconnect(account)}>
                       <XCircle className="h-3.5 w-3.5 mr-1" /> Disconnect
                     </Button>
-                  ) : isOAuth ? (
-                    <Button
-                      size="sm"
-                      className="gradient-primary text-primary-foreground border-0"
-                      disabled={!tenant || isConnecting || loadingAccounts}
-                      onClick={() => startOAuthConnect(platform.id as OAuthPlatform)}
-                    >
-                      {isConnecting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
-                      {isConnecting ? "Redirecting..." : "Connect"}
-                    </Button>
+                  ) : isOAuth || (platform.id === "whatsapp" && whatsappPlatformMode) ? (
+                    <div className="flex flex-col items-end gap-1.5">
+                      <Button
+                        size="sm"
+                        className="gradient-primary text-primary-foreground border-0"
+                        disabled={!tenant || isConnecting || loadingAccounts}
+                        onClick={() =>
+                          platform.id === "whatsapp"
+                            ? startWhatsappConnect()
+                            : startOAuthConnect(platform.id as OAuthPlatform)
+                        }
+                      >
+                        {isConnecting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
+                        {isConnecting
+                          ? whatsappPlatformMode && platform.id === "whatsapp"
+                            ? "Enabling..."
+                            : "Redirecting..."
+                          : whatsappPlatformMode && platform.id === "whatsapp"
+                            ? "Enable"
+                            : "Connect"}
+                      </Button>
+                      {platform.manualFallback && !whatsappPlatformMode && (
+                        <button
+                          type="button"
+                          className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
+                          onClick={() => setConnectDialog(platform.id)}
+                        >
+                          Enter credentials manually
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => setConnectDialog(platform.id)}>
                       <Link2 className="h-3.5 w-3.5 mr-1" /> Connect
@@ -302,7 +604,16 @@ const PublisherConnect = () => {
         </CardContent>
       </Card>
 
-      <Sheet open={!!connectDialog && !oauthPlatforms.includes(connectDialog as OAuthPlatform)} onOpenChange={(open) => { if (!open) { setConnectDialog(null); setFormValues({}); setAccountName(""); } }}>
+      <Sheet
+        open={!!connectDialog && (!oauthPlatforms.includes(connectDialog as OAuthPlatform) || (connectDialog === "whatsapp" && !whatsappPlatformMode))}
+        onOpenChange={(open) => {
+          if (!open) {
+            setConnectDialog(null);
+            setFormValues({});
+            setAccountName("");
+          }
+        }}
+      >
         <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
           <SheetHeader>
             <SheetTitle className="font-display">
@@ -311,6 +622,9 @@ const PublisherConnect = () => {
           </SheetHeader>
           {connectDialog && activePlatform?.fields && (
             <div className="space-y-4 mt-4">
+              <p className="text-xs text-muted-foreground">
+                Advanced: paste credentials from Meta Business Manager if OAuth is unavailable.
+              </p>
               <div className="space-y-2">
                 <Label>Account Name</Label>
                 <Input placeholder="e.g., My Business Page" value={accountName} onChange={(e) => setAccountName(e.target.value)} />
@@ -327,7 +641,7 @@ const PublisherConnect = () => {
                 </div>
               ))}
               <Button
-                onClick={() => handleManualConnect(connectDialog as ManualPlatform)}
+                onClick={() => handleManualConnect(connectDialog as ManualPlatform | "whatsapp")}
                 disabled={saving || !tenant}
                 className="w-full gradient-primary text-primary-foreground border-0"
               >
@@ -336,6 +650,139 @@ const PublisherConnect = () => {
               </Button>
             </div>
           )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet
+        open={!!facebookSetupToken}
+        onOpenChange={(open) => {
+          if (!open) {
+            setFacebookSetupToken(null);
+            setFacebookPages([]);
+            setFacebookProfileName(null);
+            setSelectedFacebookPage("");
+          }
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-display">Choose Facebook Page</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            <p className="text-sm text-muted-foreground">
+              Select the Page to publish from
+              {facebookProfileName ? ` for ${facebookProfileName}` : ""}.
+            </p>
+
+            {loadingFacebookSetup ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                Loading Pages…
+              </div>
+            ) : facebookPages.length === 0 ? (
+              <p className="text-sm text-destructive">
+                No Pages found. Close and try connecting again with a Meta account that manages a Page.
+              </p>
+            ) : (
+              <RadioGroup value={selectedFacebookPage} onValueChange={setSelectedFacebookPage}>
+                {facebookPages.map((page) => (
+                  <label
+                    key={page.id}
+                    htmlFor={`fb-${page.id}`}
+                    className="flex items-start gap-3 rounded-lg border border-border/60 p-3 cursor-pointer hover:bg-muted/40"
+                  >
+                    <RadioGroupItem value={page.id} id={`fb-${page.id}`} className="mt-0.5" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Facebook className="h-3.5 w-3.5 text-blue-600 shrink-0" />
+                        <span className="font-medium text-sm">{page.name}</span>
+                      </div>
+                      {page.category && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{page.category}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </RadioGroup>
+            )}
+
+            <Button
+              onClick={handleFinalizeFacebook}
+              disabled={finalizingFacebook || loadingFacebookSetup || !selectedFacebookPage}
+              className="w-full gradient-primary text-primary-foreground border-0"
+            >
+              {finalizingFacebook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
+              {finalizingFacebook ? "Connecting..." : "Connect Page"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet
+        open={!!whatsappSetupToken}
+        onOpenChange={(open) => {
+          if (!open) {
+            setWhatsappSetupToken(null);
+            setWhatsappPhones([]);
+            setSelectedWhatsappPhone("");
+          }
+        }}
+      >
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-display">Choose WhatsApp number</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            <p className="text-sm text-muted-foreground">
+              Select the WhatsApp Business phone number to use for this workspace.
+            </p>
+
+            {loadingWhatsappSetup ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                Loading phone numbers…
+              </div>
+            ) : whatsappPhones.length === 0 ? (
+              <p className="text-sm text-destructive">
+                No phone numbers found. Close and try connecting again from Meta Business Settings.
+              </p>
+            ) : (
+              <RadioGroup value={selectedWhatsappPhone} onValueChange={setSelectedWhatsappPhone}>
+                {whatsappPhones.map((phone) => (
+                  <label
+                    key={phone.id}
+                    htmlFor={`wa-${phone.id}`}
+                    className="flex items-start gap-3 rounded-lg border border-border/60 p-3 cursor-pointer hover:bg-muted/40"
+                  >
+                    <RadioGroupItem value={phone.id} id={`wa-${phone.id}`} className="mt-0.5" />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-3.5 w-3.5 text-green-600 shrink-0" />
+                        <span className="font-medium text-sm">
+                          {phone.displayPhoneNumber || phone.verifiedName || phone.id}
+                        </span>
+                      </div>
+                      {phone.verifiedName && phone.displayPhoneNumber && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{phone.verifiedName}</p>
+                      )}
+                      {phone.wabaName && (
+                        <p className="text-xs text-muted-foreground mt-0.5">WABA: {phone.wabaName}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </RadioGroup>
+            )}
+
+            <Button
+              onClick={handleFinalizeWhatsapp}
+              disabled={finalizingWhatsapp || loadingWhatsappSetup || !selectedWhatsappPhone}
+              className="w-full gradient-primary text-primary-foreground border-0"
+            >
+              {finalizingWhatsapp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
+              {finalizingWhatsapp ? "Connecting..." : "Connect WhatsApp"}
+            </Button>
+          </div>
         </SheetContent>
       </Sheet>
     </div>

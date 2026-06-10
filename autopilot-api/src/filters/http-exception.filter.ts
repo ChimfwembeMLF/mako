@@ -23,7 +23,15 @@ export class AllExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    console.log('exception', exception);
+    if (httpStatus >= HttpStatus.INTERNAL_SERVER_ERROR) {
+      const summary =
+        exception instanceof Error
+          ? exception.message
+          : typeof exception === 'string'
+            ? exception
+            : 'Unhandled error';
+      console.error(`[${httpStatus}] ${summary}`);
+    }
     const errorMessages = exception?.response?.message;
 
     let message;

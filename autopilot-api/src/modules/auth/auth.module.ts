@@ -46,6 +46,6 @@ import { MailModule } from '../mail/mail.module';
     LinkedInAuthService,
     InstagramAuthService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, RefreshTokenService],
 })
 export class AuthModule {}

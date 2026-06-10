@@ -5,7 +5,7 @@ import {
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck,
   ChevronsUpDown, Building2, CreditCard, Download, Menu, LogOut,
-  Sparkles, ChevronRight,
+  Sparkles, ChevronRight, Activity,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
@@ -70,6 +70,7 @@ const MORE_ITEMS: NavItem[] = [
   { title: "Audit Logs", url: "/audit", icon: ClipboardList, permission: P.audit.view },
   { title: "Roles & Permissions", url: "/admin/roles", icon: ShieldCheck, permission: P.admin.roles },
   { title: "Maker-Checker", url: "/admin/maker-checker", icon: GitPullRequestArrow, permission: P.admin.makerChecker },
+  { title: "Platform Backoffice", url: "/admin/backoffice", icon: Activity, superAdmin: true },
   { title: "System Settings", url: "/admin/system", icon: Settings, superAdmin: true },
   { title: "Export Data", url: "/export", icon: Download, permission: P.leads.export },
   { title: "Billing", url: "/billing", icon: CreditCard, permission: P.settings.billing },
@@ -252,11 +253,11 @@ function MobileNav() {
         </SheetHeader>
         <div className="overflow-y-auto p-4 space-y-6">
           <Link
-            to="/"
+            to="/dashboard"
             onClick={() => setOpen(false)}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-              pathname === "/" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
+              pathname === "/dashboard" ? "bg-primary text-primary-foreground" : "hover:bg-muted",
             )}
           >
             <Zap className="h-4 w-4" /> Dashboard
@@ -327,7 +328,7 @@ export function AppNavbar() {
       <div className="flex h-14 items-center gap-3 px-4 md:px-6">
         <MobileNav />
 
-        <Link to="/" className="flex items-center gap-2.5 shrink-0 mr-1">
+        <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0 mr-1">
           <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
             <Rocket className="h-4 w-4 text-primary-foreground" />
           </div>
@@ -335,7 +336,7 @@ export function AppNavbar() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
-          <NavPill to="/" end>Dashboard</NavPill>
+          <NavPill to="/dashboard" end>Dashboard</NavPill>
           {NAV_GROUPS.map((group) => (
             <NavDropdown key={group.label} group={group} />
           ))}

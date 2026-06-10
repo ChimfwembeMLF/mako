@@ -21,6 +21,29 @@ export class AutoReplyRulesService {
     return this.repo.find();
   }
 
+  findActiveForPlatform(tenantId: string, platform: string): Promise<AutoReplyRules[]> {
+    return this.repo.find({
+      where: { tenantId, platform, isActive: true },
+      order: { created_at: 'ASC' },
+    });
+  }
+
+  matchKeywordRule(
+    rules: AutoReplyRules[],
+    message: string,
+  ): AutoReplyRules | null {
+    const lower = message.toLowerCase();
+    for (const rule of rules) {
+      const keywords = rule.triggerKeywords ?? [];
+      if (!keywords.length) continue;
+      if (keywords.some((kw) => kw.trim() && lower.includes(kw.trim().toLowerCase()))) {
+        return rule;
+      }
+    }
+    const catchAll = rules.find((r) => !(r.triggerKeywords?.length));
+    return catchAll ?? null;
+  }
+
   async findOne(id: string): Promise<AutoReplyRules> {
     const ent = await this.repo.findOne({ where: { id } });
     if (!ent) throw new NotFoundException('AutoReplyRules not found');

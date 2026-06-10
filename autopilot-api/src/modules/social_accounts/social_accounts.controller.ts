@@ -21,9 +21,11 @@ import { ConfigService } from '@nestjs/config';
 import { SocialAccountsService } from './social_accounts.service';
 import { SocialAccountsOAuthService, SocialOAuthPlatform } from './social_accounts-oauth.service';
 import { SocialAccountsCreateDto } from './dto/create-social_accounts.dto';
+import { WhatsappFinalizeDto } from './dto/whatsapp-finalize.dto';
+import { FacebookFinalizeDto } from './dto/facebook-finalize.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
-const OAUTH_PLATFORMS: SocialOAuthPlatform[] = ['facebook', 'linkedin', 'instagram', 'google'];
+const OAUTH_PLATFORMS: SocialOAuthPlatform[] = ['facebook', 'linkedin', 'instagram', 'google', 'whatsapp'];
 
 @ApiTags('Social Accounts')
 @Controller('api/v1/social-accounts')
@@ -157,6 +159,31 @@ export class SocialAccountsController {
     const separator = returnUrl.includes('?') ? '&' : '?';
 
     try {
+      if (platform === 'whatsapp') {
+        const prepared = await this.oauth.prepareWhatsAppConnect(code, decoded.redirectUri);
+        const setupToken = this.oauth.createWhatsAppSetupToken({
+          userId: decoded.userId,
+          tenantId: decoded.tenantId,
+          accessToken: prepared.accessToken,
+          expiresAt: prepared.expiresAt?.toISOString(),
+          phones: prepared.phones,
+        });
+        return res.redirect(`${returnUrl}${separator}whatsapp_setup=${encodeURIComponent(setupToken)}`);
+      }
+
+      if (platform === 'facebook') {
+        const prepared = await this.oauth.prepareFacebookConnect(code, decoded.redirectUri);
+        const setupToken = this.oauth.createFacebookSetupToken({
+          userId: decoded.userId,
+          tenantId: decoded.tenantId,
+          accessToken: prepared.accessToken,
+          expiresAt: prepared.expiresAt?.toISOString(),
+          profile: prepared.profile,
+          pages: prepared.pages,
+        });
+        return res.redirect(`${returnUrl}${separator}facebook_setup=${encodeURIComponent(setupToken)}`);
+      }
+
       const result = await this.oauth.handleCallback(
         platform as SocialOAuthPlatform,
         code,
@@ -200,6 +227,124 @@ export class SocialAccountsController {
       return fb?.error?.message || err.message;
     }
     return err instanceof Error ? err.message : 'Connection failed';
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Preview Facebook Pages from OAuth setup token' })
+  @Get('facebook/setup')
+  getFacebookSetup(@Query('token') token?: string) {
+    if (!token?.trim()) {
+      throw new BadRequestException('token query parameter is required');
+    }
+    return this.oauth.getFacebookSetupPreview(token.trim());
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Finalize Facebook connect after selecting a Page' })
+  @Post('facebook/finalize')
+  async finalizeFacebook(@Req() req: Request, @Body() dto: FacebookFinalizeDto) {
+    const userId = this.getUserId(req);
+    const payload = this.oauth.verifyFacebookSetupToken(dto.setupToken);
+
+    if (payload.userId !== userId) {
+      throw new UnauthorizedException('Facebook setup token does not belong to this user');
+    }
+
+    const result = await this.oauth.buildFacebookConnectResult(payload, dto.pageId);
+
+    return this.service.connectAccount({
+      tenantId: payload.tenantId,
+      userId: payload.userId,
+      platform: result.platform,
+      accountName: result.accountName,
+      externalId: result.externalId,
+      username: result.username,
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+      expiresAt: result.expiresAt,
+      metadata: result.metadata,
+      connected: true,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Enable platform-managed WhatsApp for a workspace (no client Meta setup)' })
+  @Post('whatsapp/enable-platform')
+  enablePlatformWhatsapp(@Req() req: Request, @Query('tenantId') tenantId?: string) {
+    if (!tenantId) {
+      throw new BadRequestException('tenantId query parameter is required');
+    }
+    return this.service.enablePlatformWhatsapp(tenantId, this.getUserId(req));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Try WhatsApp setup using an existing Facebook connection (skips Meta login when scopes allow)',
+  })
+  @Post('whatsapp/setup-from-meta')
+  setupWhatsappFromMeta(@Req() req: Request, @Query('tenantId') tenantId?: string) {
+    if (!tenantId) {
+      throw new BadRequestException('tenantId query parameter is required');
+    }
+    return this.service.prepareWhatsappFromExistingMeta(tenantId, this.getUserId(req));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Preview WhatsApp phone numbers from OAuth setup token' })
+  @Get('whatsapp/setup')
+  getWhatsAppSetup(@Query('token') token?: string) {
+    if (!token?.trim()) {
+      throw new BadRequestException('token query parameter is required');
+    }
+    return this.oauth.getWhatsAppSetupPreview(token.trim());
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Finalize WhatsApp connect after selecting a phone number' })
+  @Post('whatsapp/finalize')
+  async finalizeWhatsApp(@Req() req: Request, @Body() dto: WhatsappFinalizeDto) {
+    const userId = this.getUserId(req);
+    const payload = this.oauth.verifyWhatsAppSetupToken(dto.setupToken);
+
+    if (payload.userId !== userId) {
+      throw new UnauthorizedException('WhatsApp setup token does not belong to this user');
+    }
+
+    const phone = payload.phones.find((p) => p.id === dto.phoneNumberId);
+    if (!phone) {
+      throw new BadRequestException('Selected phone number is not available for this setup session');
+    }
+
+    const accountName =
+      phone.verifiedName ||
+      phone.displayPhoneNumber ||
+      phone.wabaName ||
+      'WhatsApp Business';
+
+    return this.service.connectAccount({
+      tenantId: payload.tenantId,
+      userId: payload.userId,
+      platform: 'whatsapp',
+      accountName,
+      externalId: phone.id,
+      username: phone.displayPhoneNumber,
+      accessToken: payload.accessToken,
+      expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : undefined,
+      metadata: {
+        phone_number_id: phone.id,
+        display_phone_number: phone.displayPhoneNumber,
+        verified_name: phone.verifiedName,
+        waba_id: phone.wabaId,
+        waba_name: phone.wabaName,
+      },
+      connected: true,
+    });
   }
 
   @UseGuards(JwtAuthGuard)

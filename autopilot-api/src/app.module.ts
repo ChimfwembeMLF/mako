@@ -10,6 +10,7 @@ import { UserModule } from './modules/user/user.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { ContentCampaignsModule } from './modules/content_campaigns/content-campaigns.module';
 import { ContentItemsModule } from './modules/content_items/content_items.module';
+import { ContentPublicationsModule } from './modules/content_publications/content-publications.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { MediaModule } from './modules/media/media.module';
@@ -37,7 +38,12 @@ import { RolesModule } from './modules/auth/rbac/roles/roles.module';
 import { PermissionsModule } from './modules/auth/rbac/permissions/permissions.module';
 import { RolePermissionsModule } from './modules/auth/rbac/role_permissions/role_permissions.module';
 import { UserPermissionsModule } from './modules/auth/rbac/user_permissions/user_permissions.module';
+import { LegalModule } from './modules/legal/legal.module';
+import { BackofficeModule } from './modules/backoffice/backoffice.module';
 import { SystemSettingsModule } from './modules/system_settings/system_settings.module';
+import { AuditModule } from './common/audit/audit.module';
+import { PlatformsModule } from './modules/platforms/platforms.module';
+import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 
 @Module({
   imports: [
@@ -65,6 +71,7 @@ import { SystemSettingsModule } from './modules/system_settings/system_settings.
     UserPermissionsModule,
     BrandProfilesModule,
     ContentItemsModule,
+    ContentPublicationsModule,
     ContentCampaignsModule,
     SubscriptionsModule,
     PaymentsModule,
@@ -84,7 +91,12 @@ import { SystemSettingsModule } from './modules/system_settings/system_settings.
     AiUsageModule,
     AiModule,
     JobsModule,
+    LegalModule,
+    BackofficeModule,
     SystemSettingsModule,
+    AuditModule,
+    PlatformsModule,
+    WhatsappModule,
   ],
   providers: [
     {

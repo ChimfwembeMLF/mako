@@ -253,7 +253,7 @@
 
 ### 2.1 Remove Hardcoded Tenant Logic and Implement Workspaces
 
-**Problem:** Business-specific context for "Tekrem Innovations" and "AgriWide" is hardcoded in four files: `src/pages/ContentEngine.tsx` (lines 26-38), `supabase/functions/generate-content/index.ts` (lines 28-39), `supabase/functions/daily-content-workflow/index.ts` (lines 12-33), and `src/pages/ContactForm.tsx` (lines 12-39). Adding a new customer requires source code changes and redeployment.
+**Problem:** Business-specific context for "Tekrem Innovations" and "Tekrem Innvation Solutions" is hardcoded in four files: `src/pages/ContentEngine.tsx` (lines 26-38), `supabase/functions/generate-content/index.ts` (lines 28-39), `supabase/functions/daily-content-workflow/index.ts` (lines 12-33), and `src/pages/ContactForm.tsx` (lines 12-39). Adding a new customer requires source code changes and redeployment.
 
 - [ ] **ARCH-001 — Create the `workspaces` table**
   - Create migration `supabase/migrations/<timestamp>_add_workspaces.sql`:
@@ -314,7 +314,7 @@
   - Delete lines 28-40 in `supabase/functions/generate-content/index.ts` (the `systemContextMap` and `systemContext` logic).
   - The function already loads the full Brand Brain from the DB — the Brand Brain's `description` and `services` fields provide the equivalent context dynamically.
   - Remove the `system` field from the function's accepted request body.
-  - **DoD:** Calling `generate-content` without a `system` parameter generates on-brand content using only the Brand Brain. No reference to "Tekrem" or "AgriWide" appears in generated output for a new user's brand.
+  - **DoD:** Calling `generate-content` without a `system` parameter generates on-brand content using only the Brand Brain. No reference to "Tekrem" or "Tekrem Innvation Solutions" appears in generated output for a new user's brand.
 
 - [ ] **ARCH-006 — Remove hardcoded systems from `daily-content-workflow` Edge Function**
   - Delete the `systems` constant (lines 12-33) in `supabase/functions/daily-content-workflow/index.ts`.
@@ -326,7 +326,7 @@
   - Change the route from `/contact/:userId` to `/contact/:sourceId` (using the `lead_sources` table from SEC-003).
   - On mount, load the workspace name, logo, and description from the DB using the `source_id` to resolve the workspace. Render the form with dynamic branding.
   - Update `src/pages/SettingsPage.tsx` to generate contact form URLs using `source_id` instead of `user.id`.
-  - **DoD:** A new user creates a workspace named "Bright Coffee Co." The embeddable contact form at their unique URL displays "Bright Coffee Co." branding with no mention of Tekrem or AgriWide. The existing Tekrem/AgriWide URLs continue to work if their workspace slugs are migrated correctly.
+  - **DoD:** A new user creates a workspace named "Bright Coffee Co." The embeddable contact form at their unique URL displays "Bright Coffee Co." branding with no mention of Tekrem or Tekrem Innvation Solutions. The existing Tekrem/Tekrem Innvation Solutions URLs continue to work if their workspace slugs are migrated correctly.
 
 ---
 
@@ -745,7 +745,7 @@
 |---|---|
 | `src/App.tsx` | Added `TenantProvider`, `ErrorBoundary`, 11 new routes |
 | `src/components/AppSidebar.tsx` | Role-gated navigation groups (Core, Engagement, Assets, Governance, System Admin), tenant switcher dropdown |
-| `supabase/functions/generate-content/index.ts` | Removed hardcoded Tekrem/AgriWide system map; loads active tenant template by platform; falls back to system-seeded template; uses `tenant_id` for brand brain lookup |
+| `supabase/functions/generate-content/index.ts` | Removed hardcoded Tekrem/Tekrem Innvation Solutions system map; loads active tenant template by platform; falls back to system-seeded template; uses `tenant_id` for brand brain lookup |
 
 ### 5.7 RBAC Enforcement Points
 
@@ -765,7 +765,7 @@
 - [x] **NEXT-006** — WhatsApp contacts tab in Lead Agent: add manually, import CSV, toggle opt-in/opt-out, delete
 - [x] **NEXT-007** — `fetch-comments` Edge Function: polls Facebook Graph API + LinkedIn Shares API for comments on published posts → upserts into `post_replies`
 - [ ] **NEXT-008** — Supabase types regeneration: run `supabase gen types typescript --local > src/integrations/supabase/types.ts` after applying all migrations *(manual step — requires local Supabase running)*
-- [x] **NEXT-009** — `daily-content-workflow` and `repurpose-content` fully rewritten: removed Lovable gateway + hardcoded Tekrem/AgriWide systems; now use `_shared/mistral.ts`, tenant-scoped brand brain + template lookup, usage gate
+- [x] **NEXT-009** — `daily-content-workflow` and `repurpose-content` fully rewritten: removed Lovable gateway + hardcoded Tekrem/Tekrem Innvation Solutions systems; now use `_shared/mistral.ts`, tenant-scoped brand brain + template lookup, usage gate
 - [x] **NEXT-010** — Onboarding wizard (`OnboardingWizard.tsx`): detects brand brain absence, 3-step wizard (Welcome → Brand Brain → Done), integrated in `DashboardLayout`
 
 ### Phase 6 Additional Details

@@ -10,7 +10,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { useFormSuggestions } from '@/hooks/useFormSuggestions';
 import { SuggestedField } from '@/components/form/SuggestedField';
-import { contentItemsApi } from '@/lib/api';
+import { contentItemsApi, templatesApi } from '@/lib/api';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { invokeEdgeFunction } from '@/lib/edgeFunctions';
 import { MediaUpload } from '@/components/MediaUpload';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
@@ -53,6 +54,8 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   const [pendingMedia, setPendingMedia] = useState<{ url: string; type: string }[]>([]);
   const [pendingSlides, setPendingSlides] = useState<string[]>([]);
   const [editingImageUrl, setEditingImageUrl] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
+  const [templateId, setTemplateId] = useState<string>('');
 
   const contentFieldKeys = useMemo(() => ['theme', 'title'], []);
   const contentValues = useMemo(() => ({ theme, title }), [theme, title]);
@@ -74,6 +77,20 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
     }
   }, [item]);
 
+  useEffect(() => {
+    if (!tenant?.id) {
+      setTemplates([]);
+      return;
+    }
+    templatesApi
+      .findAll(tenant.id)
+      .then((rows) => {
+        const active = (Array.isArray(rows) ? rows : []).filter((t) => t.isActive !== false);
+        setTemplates(active.map((t) => ({ id: t.id, name: t.name, isActive: t.isActive })));
+      })
+      .catch(() => setTemplates([]));
+  }, [tenant?.id]);
+
   const handleGenerate = async () => {
     if (!user || !workspaceId) {
       toast({ title: 'Select a workspace first', variant: 'destructive' });
@@ -86,7 +103,13 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
     setGenerating(true);
     try {
       const { data, error } = await invokeEdgeFunction('generate-content', {
-        body: { theme, workspace_id: workspaceId, tenantId: tenant?.id },
+        body: {
+          theme,
+          draft: content.trim() || undefined,
+          workspace_id: workspaceId,
+          tenantId: tenant?.id,
+          templateId: templateId || undefined,
+        },
       });
       if (!error && data) {
         const result = data as { error?: string; content?: string; title?: string };
@@ -229,6 +252,24 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
 
         <div className="p-5 space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
+            {templates.length > 0 && (
+              <div className="space-y-2 sm:col-span-2">
+                <Label>Content template</Label>
+                <Select value={templateId || 'auto'} onValueChange={(v) => setTemplateId(v === 'auto' ? '' : v)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Auto (match platform / type)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="auto">Auto — pick best active template</SelectItem>
+                    {templates.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="content-theme">Campaign theme</Label>
               <SuggestedField

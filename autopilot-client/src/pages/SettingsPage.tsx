@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Settings as SettingsIcon, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -268,6 +269,12 @@ const SettingsPage = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <footer className="pt-8 mt-8 border-t text-sm text-muted-foreground flex flex-wrap gap-4">
+        <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy Policy</Link>
+        <Link to="/terms" className="hover:text-foreground hover:underline">Terms of Service</Link>
+        <Link to="/data-deletion" className="hover:text-foreground hover:underline">Data Deletion</Link>
+      </footer>
     </div>
   );
 };

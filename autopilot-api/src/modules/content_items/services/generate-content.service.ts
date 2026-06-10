@@ -11,6 +11,7 @@ import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.servic
 import { BrandProfiles } from '../../brand_profiles/entities/brand_profiles.entity';
 import { Workspaces } from '../../workspaces/entities/workspaces.entity';
 import { ContentItems } from '../entities/content_items.entity';
+import { TemplatesService } from '../../templates/templates.service';
 
 @Injectable()
 export class GenerateContentService {
@@ -18,6 +19,7 @@ export class GenerateContentService {
     private readonly mistral: MistralChatService,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
+    private readonly templates: TemplatesService,
     @InjectRepository(BrandProfiles)
     private readonly brandRepo: Repository<BrandProfiles>,
     @InjectRepository(Workspaces)
@@ -34,6 +36,7 @@ export class GenerateContentService {
     draft?: string;
     contentType?: string;
     platform?: string;
+    templateId?: string;
     save?: boolean;
   }) {
     const tenantId = await this.resolveTenantId(params.tenantId, params.workspaceId);
@@ -44,6 +47,12 @@ export class GenerateContentService {
 
     const brand = await this.loadBrand(tenantId, params.userId);
     const brandCtx = this.prompts.brandFromEntity(brand);
+    const template = await this.templates.findForGeneration({
+      tenantId,
+      templateId: params.templateId,
+      platform: params.platform,
+      contentType: params.contentType,
+    });
 
     const { data, tokensUsed } = await this.mistral.completeJson<{
       title?: string;
@@ -52,7 +61,7 @@ export class GenerateContentService {
       [
         {
           role: 'system',
-          content: this.prompts.contentGenerationSystem(brandCtx, params.platform),
+          content: this.prompts.contentGenerationSystem(brandCtx, params.platform, template),
         },
         {
           role: 'user',
@@ -99,7 +108,14 @@ export class GenerateContentService {
       contentItemId = item.id;
     }
 
-    return { title, content, contentItemId, tokensUsed };
+    return {
+      title,
+      content,
+      contentItemId,
+      tokensUsed,
+      templateId: template?.id,
+      templateName: template?.name,
+    };
   }
 
   private async resolveTenantId(tenantId?: string, workspaceId?: string): Promise<string> {

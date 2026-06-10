@@ -35,7 +35,7 @@ export class SocialAccounts {
   @Column({ type: 'text', nullable: true })
   username: string;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'text', nullable: true })
   accessToken: string;
 
   @Column({ type: 'text', nullable: true })

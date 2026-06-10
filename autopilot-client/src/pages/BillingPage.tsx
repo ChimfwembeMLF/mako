@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { PermissionGate } from '@/components/PermissionGate';
 import { CreditCard, Smartphone, Zap, Users, CheckCircle2, AlertTriangle, Loader2, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -36,8 +35,9 @@ const PLANS = [
 ];
 
 export default function BillingPage() {
-  const { tenant }   = useTenant();
-  const { can }      = usePermissions();
+  const { tenant, isOwner, loading: tenantLoading } = useTenant();
+  const { can, isSuperAdmin, loading: permLoading } = usePermissions();
+  const canAccessBilling = can(P.settings.billing) || isOwner || isSuperAdmin;
   const { toast }    = useToast();
   const [sub, setSub]         = useState<Subscription | null>(null);
   const [aiUsed, setAiUsed]   = useState(0);
@@ -130,8 +130,26 @@ export default function BillingPage() {
   const isAtAiLimit = aiLimit !== Infinity && aiLimit !== null && aiUsed >= aiLimit;
   const isAtSeatLimit = seatLimit !== '∞' && seats >= Number(seatLimit);
 
+  if (tenantLoading || permLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] text-muted-foreground gap-2">
+        <Loader2 className="h-5 w-5 animate-spin" /> Loading billing…
+      </div>
+    );
+  }
+
+  if (!canAccessBilling) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 rounded-md border border-dashed">
+          You don&apos;t have permission to access billing for this workspace.
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <PermissionGate require={P.settings.billing} fallback={true}>
+    <>
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="flex items-center gap-3">
           <CreditCard className="h-6 w-6 text-primary" />
@@ -258,6 +276,11 @@ export default function BillingPage() {
             Your subscription has been cancelled. Upgrade to restore full access.
           </div>
         )}
+
+        <Separator />
+
+        {/* Billing history & invoices */}
+        {tenant?.id && <TenantBillingRecords tenantId={tenant.id} />}
       </div>
 
       {/* Mobile Money Sheet */}
@@ -326,12 +349,6 @@ export default function BillingPage() {
           )}
         </SheetContent>
       </Sheet>
-        {/* Billing Records Table */}
-        {tenant?.id && (
-          <div className="mt-8">
-            <TenantBillingRecords tenantId={tenant.id} />
-          </div>
-        )}
-    </PermissionGate>
+    </>
   );
 }

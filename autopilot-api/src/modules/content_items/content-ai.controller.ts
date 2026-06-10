@@ -55,6 +55,7 @@ export class ContentAiController {
       draft: dto.draft,
       contentType: dto.contentType,
       platform: dto.platform,
+      templateId: dto.templateId,
       save: dto.save,
     });
   }

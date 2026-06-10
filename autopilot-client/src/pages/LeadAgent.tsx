@@ -9,7 +9,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { API_BASE_URL, leadsApi, leadSourcesApi, whatsappContactsApi } from "@/lib/api";
+import { API_BASE_URL, leadsApi, leadSourcesApi, whatsappContactsApi, whatsappApi } from "@/lib/api";
 import { invokeEdgeFunction } from "@/lib/edgeFunctions";
 import BulkEmailSheet from "@/components/BulkEmailDialog";
 import EmailTemplates from "@/components/EmailTemplates";
@@ -46,7 +46,7 @@ const statusColors: Record<string, string> = {
 
 interface WhatsAppContact {
   id: string; phone: string; name: string | null; opted_in: boolean;
-  opted_in_at: string | null; tags: string[]; created_at: string;
+  opted_in_at: string | null; tags: string[]; created_at: string; lead_id?: string | null;
 }
 
 const LeadAgent = () => {
@@ -66,6 +66,11 @@ const LeadAgent = () => {
   const [waPhone, setWaPhone] = useState("");
   const [waName, setWaName] = useState("");
   const [waLoading, setWaLoading] = useState(false);
+  const [waConversations, setWaConversations] = useState<Array<{ phone: string; lastMessage: string; lastAt: string; inboundCount: number }>>([]);
+  const [waReplyPhone, setWaReplyPhone] = useState("");
+  const [waReplyText, setWaReplyText] = useState("");
+  const [waReplying, setWaReplying] = useState(false);
+  const [activeTab, setActiveTab] = useState('leads');
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -76,7 +81,46 @@ const LeadAgent = () => {
     loadLeads();
     loadLeadSource();
   }, [user, tenant]);
-  useEffect(() => { if (tenant) loadWaContacts(); }, [tenant]);
+  useEffect(() => {
+    if (tenant) {
+      loadWaContacts();
+      loadWaConversations();
+    }
+  }, [tenant]);
+
+  const loadWaConversations = async () => {
+    if (!tenant) return;
+    try {
+      const rows = await whatsappApi.conversations(tenant.id);
+      setWaConversations(Array.isArray(rows) ? rows : []);
+    } catch {
+      setWaConversations([]);
+    }
+  };
+
+  const sendWaReply = async () => {
+    if (!tenant || !waReplyPhone.trim() || !waReplyText.trim()) return;
+    setWaReplying(true);
+    try {
+      const res = await whatsappApi.reply({
+        tenantId: tenant.id,
+        phone: waReplyPhone.trim(),
+        message: waReplyText.trim(),
+      });
+      if (!res.sent) throw new Error(res.message ?? "Send failed");
+      toast({ title: "WhatsApp reply sent" });
+      setWaReplyText("");
+      loadWaConversations();
+    } catch (err: unknown) {
+      toast({
+        title: "Reply failed",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setWaReplying(false);
+    }
+  };
 
   const loadLeadSource = async () => {
     if (!user || !tenant) return;
@@ -107,12 +151,9 @@ const LeadAgent = () => {
   const loadWaContacts = async () => {
     if (!tenant) return;
     try {
-      const all = await whatsappContactsApi.findAll();
-      const list = Array.isArray(all) ? all : [];
+      const list = await whatsappContactsApi.findAll(tenant.id);
       setWaContacts(
-        list
-          .filter((c: Record<string, unknown>) => c.tenantId === tenant.id)
-          .map((c: Record<string, unknown>) => ({
+        (Array.isArray(list) ? list : []).map((c: Record<string, unknown>) => ({
             id: String(c.id),
             phone: String(c.phone),
             name: c.name != null ? String(c.name) : null,
@@ -120,8 +161,10 @@ const LeadAgent = () => {
             opted_in_at: c.optedInAt != null ? String(c.optedInAt) : null,
             tags: (c.tags as string[]) ?? [],
             created_at: String(c.created_at ?? ""),
+            lead_id: c.leadId != null ? String(c.leadId) : null,
           })),
       );
+    if (activeTab === 'leads') void loadLeads();
     } catch {
       setWaContacts([]);
     }
@@ -148,7 +191,8 @@ const LeadAgent = () => {
   };
 
   const toggleOptIn = async (id: string, current: boolean) => {
-    await whatsappContactsApi.update(id, {
+    if (!tenant) return;
+    await whatsappContactsApi.update(id, tenant.id, {
       optedIn: !current,
       optedInAt: !current ? new Date().toISOString() : null,
     } as any);
@@ -156,7 +200,8 @@ const LeadAgent = () => {
   };
 
   const deleteWaContact = async (id: string) => {
-    await whatsappContactsApi.remove(id);
+    if (!tenant) return;
+    await whatsappContactsApi.remove(id, tenant.id);
     setWaContacts(prev => prev.filter(c => c.id !== id));
     toast({ title: "Contact removed" });
   };
@@ -353,7 +398,7 @@ const LeadAgent = () => {
         ))}
       </div>
 
-      <Tabs defaultValue="leads">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="leads">Leads ({leads.length})</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp ({waContacts.filter(c => c.opted_in).length} opted in)</TabsTrigger>
@@ -474,6 +519,45 @@ const LeadAgent = () => {
             </CardContent>
           </Card>
 
+          {/* Inbound conversations */}
+          {waConversations.length > 0 && (
+            <Card className="border-border/50">
+              <CardContent className="p-4 space-y-3">
+                <p className="font-medium text-sm">Recent conversations</p>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {waConversations.slice(0, 8).map((c) => (
+                    <button
+                      key={c.phone}
+                      type="button"
+                      className={`w-full text-left rounded-md border p-2 text-sm hover:bg-muted/50 ${waReplyPhone === c.phone ? 'border-primary' : ''}`}
+                      onClick={() => setWaReplyPhone(c.phone)}
+                    >
+                      <span className="font-medium">{c.phone}</span>
+                      <p className="text-xs text-muted-foreground truncate">{c.lastMessage}</p>
+                    </button>
+                  ))}
+                </div>
+                <div className="grid gap-2">
+                  <input
+                    className="w-full h-9 rounded-md border bg-background px-3 text-sm"
+                    placeholder="Reply to phone (E.164)"
+                    value={waReplyPhone}
+                    onChange={(e) => setWaReplyPhone(e.target.value)}
+                  />
+                  <textarea
+                    className="w-full min-h-[72px] rounded-md border bg-background px-3 py-2 text-sm"
+                    placeholder="Reply within 24h of their last message (session message)…"
+                    value={waReplyText}
+                    onChange={(e) => setWaReplyText(e.target.value)}
+                  />
+                  <Button size="sm" onClick={sendWaReply} disabled={waReplying || !waReplyPhone.trim() || !waReplyText.trim()}>
+                    {waReplying ? "Sending…" : "Send reply"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
             {[
@@ -501,6 +585,19 @@ const LeadAgent = () => {
                     <div>
                       <p className="text-sm font-medium">{c.name ?? c.phone}</p>
                       {c.name && <p className="text-xs text-muted-foreground">{c.phone}</p>}
+                      {c.lead_id && (
+                        <button
+                          type="button"
+                          className="text-[10px] text-primary hover:underline mt-0.5"
+                          onClick={() => {
+                            setActiveTab('leads');
+                            const lead = leads.find((l) => l.id === c.lead_id);
+                            if (lead) setSelectedLead(lead);
+                          }}
+                        >
+                          Linked lead — view in Leads tab
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">

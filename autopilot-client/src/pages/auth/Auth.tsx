@@ -45,7 +45,7 @@ const Auth = () => {
         await login(email, password);
         toast({ title: "Success", description: "Logged in successfully" });
       }
-      navigate("/");
+      navigate("/dashboard");
     } catch (err: unknown) {
       toast({ title: "Error", description: err instanceof Error ? err.message : "Authentication failed", variant: "destructive" });
     } finally {

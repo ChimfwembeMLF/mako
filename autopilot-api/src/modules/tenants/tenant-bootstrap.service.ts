@@ -17,6 +17,7 @@ import {
   TENANT_SCOPED_PERMISSIONS,
 } from '../auth/rbac/rbac.constants';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { TemplateSeedService } from '../templates/template-seed.service';
 
 @Injectable()
 export class TenantBootstrapService {
@@ -32,6 +33,7 @@ export class TenantBootstrapService {
     @InjectRepository(Workspaces) private readonly workspacesRepo: Repository<Workspaces>,
     @InjectRepository(ApprovalWorkflows) private readonly workflowsRepo: Repository<ApprovalWorkflows>,
     private readonly subscriptions: SubscriptionsService,
+    private readonly templateSeeds: TemplateSeedService,
   ) {}
 
   async ensurePermissionsSeeded(): Promise<void> {
@@ -51,7 +53,11 @@ export class TenantBootstrapService {
 
     const existingMember = await this.membersRepo.findOne({ where: { userId: user.id } });
     if (existingMember) {
-      return this.tenantsRepo.findOneOrFail({ where: { id: existingMember.tenantId } });
+      const tenant = await this.tenantsRepo.findOneOrFail({
+        where: { id: existingMember.tenantId },
+      });
+      await this.templateSeeds.ensureSeededForTenant(tenant.id, user.id);
+      return tenant;
     }
 
     await this.ensureProfile(user);
@@ -137,6 +143,7 @@ export class TenantBootstrapService {
 
     this.logger.log(`Bootstrapped tenant ${tenant.id} for user ${user.id}`);
     await this.subscriptions.ensureForTenant(tenant.id, 'free');
+    await this.templateSeeds.ensureSeededForTenant(tenant.id, user.id);
     return tenant;
   }
 

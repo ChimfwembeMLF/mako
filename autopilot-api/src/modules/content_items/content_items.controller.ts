@@ -50,6 +50,11 @@ export class ContentItemsController {
     return this.service.findAll(tenantId);
   }
 
+  @Get(':id/details')
+  getDetails(@Param('id') id: string) {
+    return this.service.getDetails(id);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string): Promise<ContentItems> {
     return this.service.findOne(id);

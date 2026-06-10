@@ -12,32 +12,50 @@ export class WhatsappContactsService {
     private readonly repo: Repository<WhatsappContacts>,
   ) {}
 
+  private normalizePhone(phone: string): string {
+    return phone.replace(/\D/g, '');
+  }
+
   async create(dto: WhatsappContactsCreateDto): Promise<WhatsappContacts> {
-    const ent = this.repo.create(dto);
+    const ent = this.repo.create({
+      ...dto,
+      phone: this.normalizePhone(dto.phone),
+      optedInAt: dto.optedIn ? dto.optedInAt ?? new Date() : undefined,
+    });
     return this.repo.save(ent as WhatsappContacts);
   }
 
-  async findAll(): Promise<WhatsappContacts[]> {
-    return this.repo.find();
+  async findByTenant(tenantId: string): Promise<WhatsappContacts[]> {
+    return this.repo.find({
+      where: { tenantId },
+      order: { created_at: 'DESC' },
+    });
   }
 
-  async findOne(id: string): Promise<WhatsappContacts> {
-    const ent = await this.repo.findOne({ where: { id } });
-    if (!ent) throw new NotFoundException('WhatsappContacts not found');
+  async findOne(id: string, tenantId?: string): Promise<WhatsappContacts> {
+    const ent = await this.repo.findOne({
+      where: tenantId ? { id, tenantId } : { id },
+    });
+    if (!ent) throw new NotFoundException('WhatsApp contact not found');
     return ent;
   }
 
   async update(
     id: string,
     dto: WhatsappContactsUpdateDto,
+    tenantId?: string,
   ): Promise<WhatsappContacts> {
-    await this.repo.update(id, dto as any);
-    return this.findOne(id);
+    await this.findOne(id, tenantId);
+    const patch = { ...dto } as Partial<WhatsappContacts>;
+    if (dto.phone) patch.phone = this.normalizePhone(dto.phone);
+    if (dto.optedIn === true && !dto.optedInAt) patch.optedInAt = new Date();
+    await this.repo.update(id, patch);
+    return this.findOne(id, tenantId);
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string, tenantId?: string): Promise<void> {
+    await this.findOne(id, tenantId);
     const res = await this.repo.delete(id);
-    if (res.affected === 0)
-      throw new NotFoundException('WhatsappContacts not found');
+    if (res.affected === 0) throw new NotFoundException('WhatsApp contact not found');
   }
 }

@@ -13,8 +13,7 @@ import { Tenants } from '../../tenants/entities/tenants.entity';
 import { ContentItems } from '../../content_items/entities/content_items.entity';
 import { AutoReplyRules } from '../../auto_reply_rules/entities/auto_reply_rules.entity';
 
-@Index(['contentId'], { unique: true })
-@Index(['ruleId'], { unique: true })
+@Index(['tenantId', 'externalCommentId'], { unique: true })
 @Entity({ name: 'comment_replies' })
 export class CommentReplies {
   @PrimaryGeneratedColumn('uuid')
