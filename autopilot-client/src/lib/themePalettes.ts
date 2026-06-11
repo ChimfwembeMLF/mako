@@ -11,7 +11,7 @@ export type ThemePalette = {
 export const THEME_PALETTES: ThemePalette[] = [
   {
     id: 'autopilot',
-    name: 'AutoPilot Orange',
+    name: 'Mako Co-pilot Orange',
     description: 'Default brand — warm orange with blue secondary',
     theme: {
       primary: '15 90% 55%',

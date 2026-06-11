@@ -127,7 +127,7 @@ function Nav() {
           <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-glow group-hover:scale-105 transition-transform">
             <Rocket className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-lg font-display">AutoPilot</span>
+          <span className="font-bold text-lg font-display">Mako Co-pilot</span>
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
@@ -203,7 +203,7 @@ function Hero() {
           </FadeIn>
           <FadeIn delay={160}>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              AutoPilot learns your brand, generates channel-perfect content, schedules posts, captures leads, and replies to comments — from one dashboard built for African businesses.
+              Mako Co-pilot learns your brand, generates channel-perfect content, schedules posts, captures leads, and replies to comments — from one dashboard built for African businesses.
             </p>
           </FadeIn>
           <FadeIn delay={240}>
@@ -229,7 +229,7 @@ function Hero() {
           <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-purple-500/20 rounded-3xl blur-2xl opacity-60" />
           <ScreenshotFrame
             src="/screenshots/dashboard.png"
-            alt="AutoPilot dashboard"
+            alt="Mako Co-pilot dashboard"
             url="app.autopilot.co/dashboard"
             mock={
               <div className="p-4 grid grid-cols-2 gap-3 min-h-[320px]">
@@ -350,7 +350,7 @@ function FinalCTA() {
         <div className="max-w-4xl mx-auto rounded-3xl gradient-primary p-12 text-center text-white shadow-2xl relative overflow-hidden">
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1vcGFjaXR5PSIwLjA4Ij48cGF0aCBkPSJNMzYgMzRoLTJWMGg2djM0aC00ek0zNiAzNGgtMlYwaC02djM0aDQuNXoiLz48L2c+PC9zdmc+')] opacity-40" />
           <Zap className="h-12 w-12 mx-auto mb-4 opacity-90 relative" />
-          <h2 className="text-3xl sm:text-4xl font-bold font-display relative">Ready to put AutoPilot to work?</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold font-display relative">Ready to put Mako Co-pilot to work?</h2>
           <p className="text-white/85 mt-4 text-lg max-w-xl mx-auto relative">Join brands across Africa generating consistent, on-brand content every day.</p>
           <Button size="lg" className="mt-8 bg-white text-primary hover:bg-white/90 relative" asChild>
             <Link to="/auth?mode=signup">Start free today <ArrowRight className="ml-2 h-4 w-4" /></Link>
@@ -366,7 +366,7 @@ function Footer() {
     <footer className="border-t py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between gap-8">
         <div>
-          <div className="flex items-center gap-2 font-display font-bold"><Rocket className="h-5 w-5 text-primary" /> AutoPilot</div>
+          <div className="flex items-center gap-2 font-display font-bold"><Rocket className="h-5 w-5 text-primary" /> Mako Co-pilot</div>
           <p className="text-sm text-muted-foreground mt-2 max-w-xs">AI marketing autopilot by Tekrem Innvation Solutions. Built in Zambia.</p>
         </div>
         <div className="flex gap-8 text-sm text-muted-foreground">
@@ -376,7 +376,7 @@ function Footer() {
           <Link to="/auth" className="hover:text-foreground">Sign in</Link>
         </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground mt-8">© {new Date().getFullYear()} AutoPilot · Tekrem Innvation Solutions</p>
+      <p className="text-center text-xs text-muted-foreground mt-8">© {new Date().getFullYear()} Mako Co-pilot · Tekrem Innvation Solutions</p>
     </footer>
   );
 }

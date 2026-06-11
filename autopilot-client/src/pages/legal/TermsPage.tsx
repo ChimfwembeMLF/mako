@@ -3,7 +3,7 @@ import { LegalLayout } from './LegalLayout';
 export default function TermsPage() {
   return (
     <LegalLayout title="Terms of Service">
-      <p>By using Tekrem Innovation Solutions - Autopilot, you agree to these terms.</p>
+      <p>By using Tekrem Innovation Solutions - Mako, you agree to these terms.</p>
       <h2>Acceptable use</h2>
       <ul>
         <li>Comply with Meta, LinkedIn, Google, TikTok, and applicable platform policies</li>

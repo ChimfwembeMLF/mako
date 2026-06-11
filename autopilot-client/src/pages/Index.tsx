@@ -1,8 +1,20 @@
-import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight } from "lucide-react";
+import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePermissions } from "@/hooks/usePermissions";
+import { P, type PermissionKey } from "@/lib/permissions";
 
-const modules = [
+type DashboardModule = {
+  title: string;
+  description: string;
+  icon: React.ComponentType<{ className?: string }>;
+  href: string;
+  gradient: string;
+  status: string;
+  permission?: PermissionKey;
+};
+
+const modules: DashboardModule[] = [
   {
     title: "Brand Brain",
     description: "Define your company identity, audience, and voice",
@@ -36,6 +48,33 @@ const modules = [
     status: "Ready",
   },
   {
+    title: "AI Chatbot",
+    description: "Brand Brain–powered assistant with document knowledge",
+    icon: Bot,
+    href: "/chatbot",
+    gradient: "gradient-accent",
+    status: "Ready",
+    permission: P.chatbot.view,
+  },
+  {
+    title: "Knowledge Library",
+    description: "Upload PDFs and docs for chatbot retrieval",
+    icon: BookOpen,
+    href: "/chatbot/knowledge",
+    gradient: "gradient-primary",
+    status: "Ready",
+    permission: P.chatbot.view,
+  },
+  {
+    title: "Conversation Log",
+    description: "Review widget and playground chat transcripts",
+    icon: History,
+    href: "/chatbot/sessions",
+    gradient: "gradient-secondary",
+    status: "Ready",
+    permission: P.chatbot.view,
+  },
+  {
     title: "Analytics",
     description: "Track performance and optimize automatically",
     icon: BarChart3,
@@ -46,6 +85,11 @@ const modules = [
 ];
 
 const Dashboard = () => {
+  const { can, loading } = usePermissions();
+  const visibleModules = loading
+    ? modules
+    : modules.filter((mod) => !mod.permission || can(mod.permission));
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
       {/* Hero */}
@@ -54,11 +98,11 @@ const Dashboard = () => {
           <div className="flex items-center gap-2 mb-3">
             <Zap className="h-5 w-5 text-primary-foreground" />
             <span className="text-primary-foreground/80 text-sm font-medium uppercase tracking-wider">
-              AI Marketing Autopilot
+              AI Marketing Mako
             </span>
           </div>
           <h1 className="text-3xl font-bold font-display text-primary-foreground mb-2">
-            Welcome to AutoPilot
+            Welcome to Mako Co-pilot
           </h1>
           <p className="text-primary-foreground/70 max-w-lg">
             Your autonomous marketing engine. Set up your Brand Brain first, then let AI handle content, publishing, leads, and optimization.
@@ -70,7 +114,7 @@ const Dashboard = () => {
 
       {/* Module cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {modules.map((mod) => (
+        {visibleModules.map((mod) => (
           <Link key={mod.title} to={mod.href}>
             <Card className="group hover:shadow-card transition-all duration-200 border-border/50 hover:border-primary/30 h-full">
               <CardContent className="p-5 space-y-3">

@@ -54,6 +54,11 @@ export const P = {
     review: 'approvals.review',
   },
   audit: { view: 'audit.view' },
+  chatbot: {
+    view:   'chatbot.view',
+    use:    'chatbot.use',
+    manage: 'chatbot.manage',
+  },
   admin: {
     roles:        'admin.roles',
     makerChecker: 'admin.maker_checker',

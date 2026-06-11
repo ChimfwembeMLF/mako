@@ -192,4 +192,14 @@ export class SupabaseStorageService {
       this.logger.warn(`Supabase delete failed for ${storagePath}: ${error.message}`);
     }
   }
+
+  async downloadBuffer(storagePath: string): Promise<Buffer> {
+    const client = this.getClient();
+    const { data, error } = await client.storage.from(this.bucket).download(storagePath);
+    if (error || !data) {
+      throw new BadRequestException(`Storage download failed: ${error?.message ?? 'empty response'}`);
+    }
+    const arrayBuffer = await data.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  }
 }

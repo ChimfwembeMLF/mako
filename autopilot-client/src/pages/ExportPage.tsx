@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { leadsApi, contentItemsApi, auditLogsApi } from '@/lib/api';
+import { leadsApi, contentItemsApi, auditLogsApi, chatbotApi, knowledgeApi } from '@/lib/api';
 import { useTenant } from '@/hooks/useTenant';
 import { usePermissions } from '@/hooks/usePermissions';
 import { P } from '@/lib/permissions';
 import { logAudit } from '@/lib/audit';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Download, FileSpreadsheet, FileText, Users, Image, CheckCircle2 } from 'lucide-react';
+import { Download, FileSpreadsheet, FileText, Users, Image, CheckCircle2, Bot, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 
 type ExportStatus = 'idle' | 'loading' | 'done' | 'error';
@@ -52,6 +52,22 @@ const EXPORTS: ExportCard[] = [
     icon: FileSpreadsheet,
     permission: P.audit.view,
     color: 'text-amber-500',
+  },
+  {
+    key: 'chatbot-sessions',
+    label: 'Chatbot Sessions',
+    description: 'Conversation sessions — channel, title, and last activity date.',
+    icon: Bot,
+    permission: P.chatbot.view,
+    color: 'text-indigo-500',
+  },
+  {
+    key: 'chatbot-knowledge',
+    label: 'Knowledge Library',
+    description: 'Uploaded documents with indexing status, chunk counts, and errors.',
+    icon: BookOpen,
+    permission: P.chatbot.view,
+    color: 'text-teal-500',
   },
 ];
 
@@ -115,6 +131,26 @@ export default function ExportPage() {
           resource_type: r.resourceType ?? r.resource_type,
           resource_id: r.resourceId ?? r.resource_id,
           metadata: JSON.stringify(r.metadata), created_at: r.created_at,
+        }));
+      } else if (key === 'chatbot-sessions') {
+        const list = await chatbotApi.listSessions(tenant.id);
+        rows = list.map((s) => ({
+          id: s.id,
+          channel: s.channel,
+          title: s.title ?? '',
+          last_message_at: s.lastMessageAt ?? '',
+          created_at: s.created_at,
+        }));
+      } else if (key === 'chatbot-knowledge') {
+        const list = await knowledgeApi.list(tenant.id);
+        rows = list.map((d) => ({
+          id: d.id,
+          title: d.title,
+          status: d.status,
+          chunk_count: d.chunkCount,
+          mime_type: d.mimeType ?? '',
+          error_message: d.errorMessage ?? '',
+          created_at: d.created_at,
         }));
       }
 

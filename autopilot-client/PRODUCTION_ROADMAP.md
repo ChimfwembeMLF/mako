@@ -1,6 +1,6 @@
-# BrandPilot — Production Engineering Roadmap
+# Mako — Production Engineering Roadmap
 
-> **Purpose:** Granular, developer-executable backlog for transforming BrandPilot from a prototype into a production-ready SaaS. Every task includes a Definition of Done (DoD). Tasks are ordered by dependency — complete them in sequence within each phase.
+> **Purpose:** Granular, developer-executable backlog for transforming Mako from a prototype into a production-ready SaaS. Every task includes a Definition of Done (DoD). Tasks are ordered by dependency — complete them in sequence within each phase.
 >
 > **Reference audit:** All file paths, table names, and column names below match the current codebase as of the audit date.
 
@@ -146,7 +146,7 @@
     const resendRes = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "BrandPilot <alerts@yourdomain.com>", to: [user.email], subject, html: htmlBody }),
+      body: JSON.stringify({ from: "Mako <alerts@yourdomain.com>", to: [user.email], subject, html: htmlBody }),
     });
     if (!resendRes.ok) throw new Error("Resend failed: " + await resendRes.text());
     ```
@@ -247,7 +247,7 @@
 
 ## Phase 2 — Architectural Scalability
 
-> These changes unlock the ability to sell BrandPilot to any customer, not just Tekrem.
+> These changes unlock the ability to sell Mako to any customer, not just Tekrem.
 
 ---
 

@@ -299,11 +299,14 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           : buildPlatformPayloads(item.content ?? '', item.title ?? '', selectedPlatforms);
       const publishPayloads = normalizePayloadsForPublish(rawPayloads);
 
-      const mediaByUrl = new Map<string, { url: string; type: string }>();
+      const mediaByUrl = new Map<string, { url: string; type: string; assetId?: string }>();
       for (const p of selectedPlatforms) {
         for (const m of publishPayloads[p]?.media ?? []) {
           const url = toPublishMediaUrl(m.url);
-          mediaByUrl.set(url, { url, type: m.type });
+          const asset = libraryAssets.find(
+            (a) => a.mediaUrl === m.url || toPublishMediaUrl(a.mediaUrl) === url,
+          );
+          mediaByUrl.set(url, { url, type: m.type, assetId: asset?.id });
         }
       }
       if (mediaByUrl.size > 0) {

@@ -4,7 +4,7 @@ export default function PrivacyPage() {
   return (
     <LegalLayout title="Privacy Policy">
       <p>
-        Tekrem Innovation Solutions - Autopilot respects your privacy. This policy explains what we collect, why, and your choices.
+        Tekrem Innovation Solutions - Mako respects your privacy. This policy explains what we collect, why, and your choices.
       </p>
       <h2>Information we collect</h2>
       <ul>

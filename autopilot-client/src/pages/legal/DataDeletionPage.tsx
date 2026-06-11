@@ -63,7 +63,7 @@ export default function DataDeletionPage() {
 
   return (
     <LegalLayout title="Data Deletion Instructions">
-      <p>Request removal of your Tekrem Innovation Solutions - Autopilot account and connected social data.</p>
+      <p>Request removal of your Tekrem Innovation Solutions - Mako account and connected social data.</p>
 
       <h2>Request by email</h2>
       <div className="not-prose space-y-3 max-w-md">

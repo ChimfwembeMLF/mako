@@ -1,4 +1,4 @@
-# Production deployment guide — Tekrem Innovation Solutions - Autopilot
+# Production deployment guide — Tekrem Innovation Solutions - Mako
 
 ## 1. Database
 

@@ -1,6 +1,6 @@
-# BrandPilot
+# Mako
 
-BrandPilot is an AI-assisted marketing operations platform for SMEs. It combines brand context management, content generation, social publishing workflows, lead capture/qualification, and lightweight analytics in one dashboard.
+Mako is an AI-assisted marketing operations platform for SMEs. It combines brand context management, content generation, social publishing workflows, lead capture/qualification, and lightweight analytics in one dashboard.
 
 ## What this project does
 

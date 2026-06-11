@@ -66,21 +66,45 @@ export class MediaService {
   async attachToContent(params: {
     tenantId: string;
     contentId: string;
-    items: Array<{ url: string; type?: string }>;
+    items: Array<{ url: string; type?: string; assetId?: string }>;
     userId: string;
   }) {
     this.storage.assertConfigured();
     const saved: MediaAssets[] = [];
 
     for (const item of params.items) {
-      const mediaUrl = await this.storage.ensureSupabaseUrl(item.url, params.tenantId);
-      const existing = await this.mediaRepo.findOne({
-        where: { tenantId: params.tenantId, contentId: params.contentId, mediaUrl },
-      });
+      const existing = await this.findExistingAsset(
+        params.tenantId,
+        item.url,
+        item.assetId,
+      );
+
       if (existing) {
-        saved.push(existing);
+        if (existing.contentId !== params.contentId) {
+          existing.contentId = params.contentId;
+          saved.push(await this.mediaRepo.save(existing));
+        } else {
+          saved.push(existing);
+        }
         continue;
       }
+
+      const mediaUrl = this.storage.isSupabaseUrl(item.url)
+        ? item.url
+        : await this.storage.ensureSupabaseUrl(item.url, params.tenantId);
+
+      const linked = await this.mediaRepo.findOne({
+        where: {
+          tenantId: params.tenantId,
+          contentId: params.contentId,
+          mediaUrl,
+        },
+      });
+      if (linked) {
+        saved.push(linked);
+        continue;
+      }
+
       saved.push(
         await this.mediaRepo.save(
           this.mediaRepo.create({
@@ -94,6 +118,32 @@ export class MediaService {
       );
     }
     return saved;
+  }
+
+  /** Reuse library assets by id or canonical storage URL — avoids re-uploading files. */
+  private async findExistingAsset(
+    tenantId: string,
+    url: string,
+    assetId?: string,
+  ): Promise<MediaAssets | null> {
+    if (assetId) {
+      const byId = await this.mediaRepo.findOne({ where: { id: assetId, tenantId } });
+      if (byId) return byId;
+    }
+
+    const direct = await this.mediaRepo.findOne({ where: { tenantId, mediaUrl: url } });
+    if (direct) return direct;
+
+    const storagePath = this.storage.isSupabaseUrl(url)
+      ? this.storage.pathFromPublicUrl(url)
+      : null;
+    if (!storagePath) return null;
+
+    return this.mediaRepo
+      .createQueryBuilder('m')
+      .where('m.tenant_id = :tenantId', { tenantId })
+      .andWhere('m.media_url LIKE :pattern', { pattern: `%${storagePath}%` })
+      .getOne();
   }
 
   async remove(id: string, tenantId: string) {

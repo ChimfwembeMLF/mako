@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
+  Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings, Bot,
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck,
   ChevronsUpDown, Building2, CreditCard, Download, Menu, LogOut,
-  Sparkles, ChevronRight, Activity,
+  Sparkles, ChevronRight, Activity, History,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { NotificationBell } from "@/components/NotificationBell";
@@ -52,6 +52,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: "Lead Agent", url: "/leads", icon: MessageSquare, description: "Qualify & reply to leads" },
       { title: "Replies", url: "/replies", icon: MessageSquareReply, description: "Auto-reply rules" },
+      { title: "Chatbot", url: "/chatbot", icon: Bot, description: "AI assistant & widget", permission: P.chatbot.view },
+      { title: "Conversation Log", url: "/chatbot/sessions", icon: History, description: "Widget & playground transcripts", permission: P.chatbot.view },
       { title: "Analytics", url: "/analytics", icon: BarChart3, description: "Performance insights" },
       { title: "Reports", url: "/reports", icon: ClipboardList, description: "On-demand insights" },
     ],
@@ -251,7 +253,7 @@ function MobileNav() {
             <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
               <Rocket className="h-4 w-4 text-primary-foreground" />
             </div>
-            BrandPilot
+            Mako
           </SheetTitle>
         </SheetHeader>
         <div className="overflow-y-auto p-4 space-y-6">
@@ -335,7 +337,7 @@ export function AppNavbar() {
           <div className="h-8 w-8 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
             <Rocket className="h-4 w-4 text-primary-foreground" />
           </div>
-          <span className="font-display font-bold text-base hidden sm:block tracking-tight">BrandPilot</span>
+          <span className="font-display font-bold text-base hidden sm:block tracking-tight">Mako</span>
         </Link>
 
         <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">

@@ -74,7 +74,10 @@ export class ContentItemsController {
   attachMedia(
     @Req() req: { user: JwtUser },
     @Param('id') id: string,
-    @Body() body: { tenantId: string; items: Array<{ url: string; type?: string }> },
+    @Body() body: {
+      tenantId: string;
+      items: Array<{ url: string; type?: string; assetId?: string }>;
+    },
   ) {
     return this.media.attachToContent({
       tenantId: body.tenantId,

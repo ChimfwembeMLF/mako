@@ -182,6 +182,8 @@ export type PlatformMediaAttachment = {
   type: 'image' | 'video';
   name?: string;
   fileSizeBytes?: number;
+  /** Existing media library asset — link instead of re-upload */
+  assetId?: string;
 };
 
 export type PlatformPayload = {

@@ -12,6 +12,6 @@ import { BrandProfileSeedService } from './brand-profile-seed.service';
   imports: [TypeOrmModule.forFeature([BrandProfiles]), AiModule],
   providers: [BrandProfilesService, ScrapeWebsiteService, ParseDocumentService, BrandProfileSeedService],
   controllers: [BrandProfilesController],
-  exports: [BrandProfilesService, BrandProfileSeedService],
+  exports: [BrandProfilesService, BrandProfileSeedService, ParseDocumentService],
 })
 export class BrandProfilesModule {}

@@ -56,7 +56,17 @@ Routes is following REST standard (Richardson level 3)
 </p>
 </details>`,
     )
-    .addBearerAuth();
+    .addBearerAuth()
+    .addApiKey(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'API Key',
+        description:
+          'Chatbot widget API key (`pk_live_…`). Create keys in AI Chatbot → Embed. Used for `/api/v1/widget/*` routes.',
+      },
+      'widget-api-key',
+    );
 
   if (appVersion) {
     documentBuilder.setVersion(appVersion);

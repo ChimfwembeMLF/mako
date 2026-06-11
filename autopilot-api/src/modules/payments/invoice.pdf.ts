@@ -25,7 +25,7 @@ function drawBox(doc: PdfDoc, x: number, y: number, w: number, h: number) {
 }
 
 export function getInvoicePdfFilename(depositId: string): string {
-  return `AutoPilot-Tax-Invoice-${buildInvoiceNumber(depositId)}.pdf`;
+  return `Mako Co-pilot-Tax-Invoice-${buildInvoiceNumber(depositId)}.pdf`;
 }
 
 export async function renderInvoicePdf(data: InvoiceData): Promise<Buffer> {
@@ -38,7 +38,7 @@ export async function renderInvoicePdf(data: InvoiceData): Promise<Buffer> {
     year: 'numeric',
   });
 
-  const description = `${data.planLabel} Plan — AutoPilot subscription (monthly)`;
+  const description = `${data.planLabel} Plan — Mako Co-pilot subscription (monthly)`;
   const paymentNote = data.network
     ? `${data.paymentMethod} · ${data.network}${data.phone ? ` · ${data.phone}` : ''}`
   : data.paymentMethod;

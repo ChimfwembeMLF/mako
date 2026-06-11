@@ -14,6 +14,11 @@ import { Leads } from '../leads/entities/leads.entity';
 import { ContentItems } from '../content_items/entities/content_items.entity';
 import { AiUsage } from '../ai_usage/entities/ai_usage.entity';
 import { Deposits } from '../deposits/entities/deposits.entity';
+import { ChatSession } from '../chatbot/entities/chat-session.entity';
+import { ChatMessage } from '../chatbot/entities/chat-message.entity';
+import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity';
+import { ChatbotConfig } from '../chatbot/entities/chatbot-config.entity';
+import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
 import { MailModule } from '../mail/mail.module';
 import { QueuesModule } from '../queues/queues.module';
 
@@ -31,6 +36,11 @@ import { QueuesModule } from '../queues/queues.module';
       ContentItems,
       AiUsage,
       Deposits,
+      ChatSession,
+      ChatMessage,
+      KnowledgeDocument,
+      ChatbotConfig,
+      ChatbotApiKey,
     ]),
     MailModule,
     forwardRef(() => QueuesModule),

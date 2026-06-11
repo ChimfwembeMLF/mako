@@ -16,6 +16,13 @@ import { Leads } from '../leads/entities/leads.entity';
 import { AuditLogs } from '../audit_logs/entities/audit_logs.entity';
 import { CommentReplies } from '../comment_replies/entities/comment_replies.entity';
 import { DataDeletionRequests } from '../legal/entities/data_deletion_requests.entity';
+import { ChatbotConfig } from '../chatbot/entities/chatbot-config.entity';
+import { ChatSession } from '../chatbot/entities/chat-session.entity';
+import { ChatMessage } from '../chatbot/entities/chat-message.entity';
+import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity';
+import { KnowledgeChunk } from '../chatbot/entities/knowledge-chunk.entity';
+import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
+import { IsNull, MoreThanOrEqual } from 'typeorm';
 
 @Injectable()
 export class BackofficeService {
@@ -34,9 +41,18 @@ export class BackofficeService {
     @InjectRepository(AuditLogs) private readonly auditRepo: Repository<AuditLogs>,
     @InjectRepository(CommentReplies) private readonly commentsRepo: Repository<CommentReplies>,
     @InjectRepository(DataDeletionRequests) private readonly deletionRepo: Repository<DataDeletionRequests>,
+    @InjectRepository(ChatbotConfig) private readonly chatbotConfigRepo: Repository<ChatbotConfig>,
+    @InjectRepository(ChatSession) private readonly chatSessionRepo: Repository<ChatSession>,
+    @InjectRepository(ChatMessage) private readonly chatMessageRepo: Repository<ChatMessage>,
+    @InjectRepository(KnowledgeDocument) private readonly knowledgeDocRepo: Repository<KnowledgeDocument>,
+    @InjectRepository(KnowledgeChunk) private readonly knowledgeChunkRepo: Repository<KnowledgeChunk>,
+    @InjectRepository(ChatbotApiKey) private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
   ) {}
 
   async getOverview() {
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
     const [
       tenantCount,
       userCount,
@@ -53,6 +69,21 @@ export class BackofficeService {
       aiRows,
       recentAudit,
       deletionRequests,
+      chatbotConfigs,
+      widgetsEnabled,
+      ragEnabled,
+      mistralLibraryEnabled,
+      ttsEnabled,
+      chatSessions,
+      chatSessionsWeek,
+      chatMessages,
+      knowledgeDocs,
+      knowledgeReady,
+      knowledgeFailed,
+      knowledgeChunks,
+      activeApiKeys,
+      sessionsByChannel,
+      knowledgeByStatus,
     ] = await Promise.all([
       this.tenantsRepo.count(),
       this.usersRepo.count(),
@@ -69,6 +100,31 @@ export class BackofficeService {
       this.aiUsageRepo.find({ order: { created_at: 'DESC' }, take: 1000 }),
       this.auditRepo.find({ order: { created_at: 'DESC' }, take: 12, relations: ['tenant', 'user'] }),
       this.deletionRepo.find({ order: { created_at: 'DESC' }, take: 8 }),
+      this.chatbotConfigRepo.count(),
+      this.chatbotConfigRepo.count({ where: { widgetEnabled: true } }),
+      this.chatbotConfigRepo.count({ where: { ragEnabled: true } }),
+      this.chatbotConfigRepo.count({ where: { useMistralLibrary: true } }),
+      this.chatbotConfigRepo.count({ where: { widgetTtsEnabled: true } }),
+      this.chatSessionRepo.count(),
+      this.chatSessionRepo.count({ where: { created_at: MoreThanOrEqual(weekAgo) } }),
+      this.chatMessageRepo.count(),
+      this.knowledgeDocRepo.count(),
+      this.knowledgeDocRepo.count({ where: { status: 'ready' } }),
+      this.knowledgeDocRepo.count({ where: { status: 'failed' } }),
+      this.knowledgeChunkRepo.count(),
+      this.chatbotKeyRepo.count({ where: { revokedAt: IsNull() } }),
+      this.chatSessionRepo
+        .createQueryBuilder('s')
+        .select('s.channel', 'channel')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('s.channel')
+        .getRawMany<{ channel: string; count: string }>(),
+      this.knowledgeDocRepo
+        .createQueryBuilder('d')
+        .select('d.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('d.status')
+        .getRawMany<{ status: string; count: string }>(),
     ]);
 
     const completedDeposits = deposits.filter((d) => d.status === 'completed' || d.status === 'COMPLETED');
@@ -105,11 +161,11 @@ export class BackofficeService {
 
     return {
       company: {
-        name: 'AutoPilot',
-        product: 'Tekrem Innvation Solutions AutoPilot',
+        name: 'Mako Co-pilot',
+        product: 'Tekrem Innvation Solutions Mako Co-pilot',
         tagline: 'Grow Smarter, Sell Stronger',
         description:
-          'AI-powered marketing autopilot for brands — content generation, multi-platform publishing, lead capture, and comment automation.',
+          'AI-powered marketing autopilot for brands — content generation, multi-platform publishing, lead capture, comment automation, and RAG chatbots with embeddable widgets.',
         operator: 'Tekrem Innvation Solutions',
         region: 'Zambia · Southern Africa',
         supportEmail: process.env.SUPPORT_EMAIL ?? 'support@agriwide.co',
@@ -130,6 +186,29 @@ export class BackofficeService {
         estimatedMrrZmw: mrrEstimate,
         revenueTotalZmw: revenueTotal,
         aiTokensLastPeriod: aiTokensTotal,
+        chatbotConfigs,
+        widgetsEnabled,
+        chatSessions,
+        chatSessionsLast7Days: chatSessionsWeek,
+        chatMessages,
+        knowledgeDocuments: knowledgeDocs,
+        knowledgeReady,
+        knowledgeFailed,
+        knowledgeChunks,
+        activeChatbotApiKeys: activeApiKeys,
+        ragEnabledTenants: ragEnabled,
+        mistralLibraryTenants: mistralLibraryEnabled,
+        ttsEnabledTenants: ttsEnabled,
+      },
+      chatbot: {
+        sessionsByChannel: Object.fromEntries(
+          sessionsByChannel.map((r) => [r.channel, parseInt(r.count, 10)]),
+        ),
+        knowledgeByStatus: Object.fromEntries(
+          knowledgeByStatus.map((r) => [r.status, parseInt(r.count, 10)]),
+        ),
+        aiTokensChatbot:
+          (aiByFunction['chatbot-message'] ?? 0) + (aiByFunction['ingest-document'] ?? 0),
       },
       planDistribution,
       aiByFunction,
@@ -183,6 +262,7 @@ export class BackofficeService {
         linkedInConfigured: Boolean(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET),
         pawapayConfigured: Boolean(process.env.PAWAPAY_API_TOKEN),
         metaWebhookTokenSet: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN),
+        widgetBundleConfigured: Boolean(process.env.CLIENT_URL || process.env.FRONTEND_URL),
       },
     };
   }
@@ -214,6 +294,20 @@ export class BackofficeService {
     const membersMap = new Map(memberCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]));
     const contentMap = new Map(contentCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]));
 
+    const chatbotFlags = await this.chatbotConfigRepo.find({
+      select: ['tenantId', 'widgetEnabled', 'ragEnabled'],
+    });
+    const widgetMap = new Map(chatbotFlags.map((c) => [c.tenantId, c.widgetEnabled]));
+    const ragMap = new Map(chatbotFlags.map((c) => [c.tenantId, c.ragEnabled]));
+
+    const sessionCounts = await this.chatSessionRepo
+      .createQueryBuilder('s')
+      .select('s.tenant_id', 'tenantId')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('s.tenant_id')
+      .getRawMany<{ tenantId: string; count: string }>();
+    const sessionsMap = new Map(sessionCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]));
+
     return tenants.map((t) => ({
       id: t.id,
       name: t.name,
@@ -224,6 +318,9 @@ export class BackofficeService {
       status: subByTenant.get(t.id)?.status ?? 'unknown',
       members: membersMap.get(t.id) ?? 0,
       contentItems: contentMap.get(t.id) ?? 0,
+      widgetEnabled: widgetMap.get(t.id) ?? false,
+      ragEnabled: ragMap.get(t.id) ?? false,
+      chatSessions: sessionsMap.get(t.id) ?? 0,
       createdAt: t.created_at,
     }));
   }
@@ -236,7 +333,27 @@ export class BackofficeService {
     if (!tenant) throw new NotFoundException('Tenant not found');
 
     const sub = await this.subsRepo.findOne({ where: { tenantId } });
-    const [members, contentItems, publications, socialAccounts, leads, aiUsage] = await Promise.all([
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const [
+      members,
+      contentItems,
+      publications,
+      socialAccounts,
+      leads,
+      aiUsage,
+      chatbotConfig,
+      chatSessions,
+      chatSessionsWeek,
+      chatMessages,
+      knowledgeDocs,
+      knowledgeReady,
+      knowledgeFailed,
+      knowledgeChunks,
+      activeKeys,
+      sessionsByChannel,
+    ] = await Promise.all([
       this.membersRepo.count({ where: { tenantId, isActive: true } }),
       this.contentRepo.count({ where: { tenantId } }),
       this.pubsRepo.count({ where: { tenantId, status: 'published' } }),
@@ -247,6 +364,22 @@ export class BackofficeService {
         .select('SUM(CAST(a.tokens_used AS INTEGER))', 'total')
         .where('a.tenant_id = :tenantId', { tenantId })
         .getRawOne<{ total: string | null }>(),
+      this.chatbotConfigRepo.findOne({ where: { tenantId }, order: { created_at: 'ASC' } }),
+      this.chatSessionRepo.count({ where: { tenantId } }),
+      this.chatSessionRepo.count({ where: { tenantId, created_at: MoreThanOrEqual(weekAgo) } }),
+      this.chatMessageRepo.count({ where: { tenantId } }),
+      this.knowledgeDocRepo.count({ where: { tenantId } }),
+      this.knowledgeDocRepo.count({ where: { tenantId, status: 'ready' } }),
+      this.knowledgeDocRepo.count({ where: { tenantId, status: 'failed' } }),
+      this.knowledgeChunkRepo.count({ where: { tenantId } }),
+      this.chatbotKeyRepo.count({ where: { tenantId, revokedAt: IsNull() } }),
+      this.chatSessionRepo
+        .createQueryBuilder('s')
+        .select('s.channel', 'channel')
+        .addSelect('COUNT(*)', 'count')
+        .where('s.tenant_id = :tenantId', { tenantId })
+        .groupBy('s.channel')
+        .getRawMany<{ channel: string; count: string }>(),
     ]);
 
     const recentDeposits = await this.depositsRepo.find({
@@ -273,6 +406,27 @@ export class BackofficeService {
         leads,
         aiTokens: parseInt(aiUsage?.total ?? '0', 10) || 0,
       },
+      chatbot: chatbotConfig
+        ? {
+            name: chatbotConfig.name,
+            widgetEnabled: chatbotConfig.widgetEnabled,
+            ragEnabled: chatbotConfig.ragEnabled,
+            useMistralLibrary: chatbotConfig.useMistralLibrary,
+            widgetTtsEnabled: chatbotConfig.widgetTtsEnabled,
+            isActive: chatbotConfig.isActive,
+            sessions: chatSessions,
+            sessionsLast7Days: chatSessionsWeek,
+            messages: chatMessages,
+            knowledgeDocuments: knowledgeDocs,
+            knowledgeReady,
+            knowledgeFailed,
+            knowledgeChunks,
+            activeApiKeys: activeKeys,
+            sessionsByChannel: Object.fromEntries(
+              sessionsByChannel.map((r) => [r.channel, parseInt(r.count, 10)]),
+            ),
+          }
+        : null,
       socialAccounts: socialAccounts.map((s) => ({
         id: s.id,
         platform: s.platform,

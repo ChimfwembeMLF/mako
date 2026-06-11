@@ -61,7 +61,7 @@ export function AppSidebar() {
               {!collapsed && (
                 <>
                   <div className="flex-1 text-left min-w-0">
-                    <p className="text-xs font-semibold truncate text-sidebar-foreground">{tenant?.name ?? "AutoPilot"}</p>
+                    <p className="text-xs font-semibold truncate text-sidebar-foreground">{tenant?.name ?? "Mako Co-pilot"}</p>
                     <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest">Marketing AI</p>
                   </div>
                   <ChevronsUpDown className="h-3.5 w-3.5 text-sidebar-foreground/40" />

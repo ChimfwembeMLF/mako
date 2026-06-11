@@ -18,6 +18,12 @@ import { Leads } from '../leads/entities/leads.entity';
 import { AuditLogs } from '../audit_logs/entities/audit_logs.entity';
 import { CommentReplies } from '../comment_replies/entities/comment_replies.entity';
 import { DataDeletionRequests } from '../legal/entities/data_deletion_requests.entity';
+import { ChatbotConfig } from '../chatbot/entities/chatbot-config.entity';
+import { ChatSession } from '../chatbot/entities/chat-session.entity';
+import { ChatMessage } from '../chatbot/entities/chat-message.entity';
+import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity';
+import { KnowledgeChunk } from '../chatbot/entities/knowledge-chunk.entity';
+import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
 
 @Module({
   imports: [
@@ -36,6 +42,12 @@ import { DataDeletionRequests } from '../legal/entities/data_deletion_requests.e
       AuditLogs,
       CommentReplies,
       DataDeletionRequests,
+      ChatbotConfig,
+      ChatSession,
+      ChatMessage,
+      KnowledgeDocument,
+      KnowledgeChunk,
+      ChatbotApiKey,
     ]),
   ],
   providers: [BackofficeService, SuperAdminGuard],

@@ -30,7 +30,7 @@ export function PostCommentInbox({
     return (
       <div className="py-16 text-center text-muted-foreground text-sm space-y-2">
         <MessageCircle className="h-8 w-8 mx-auto opacity-40" />
-        <p>No comments yet. Pull latest from your connected platforms.</p>
+        <p>No published posts yet. Publish to Facebook, Instagram, or LinkedIn, then pull comments.</p>
       </div>
     );
   }
@@ -48,7 +48,7 @@ export function PostCommentInbox({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span>
-          {posts.length} post{posts.length === 1 ? '' : 's'} with comments
+          {posts.length} published post{posts.length === 1 ? '' : 's'}
         </span>
         <select
           className="bg-muted/50 border rounded-md px-2 py-1 text-xs"

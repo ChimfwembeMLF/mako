@@ -509,6 +509,24 @@ export const backofficeApi = {
                 estimatedMrrZmw: number;
                 revenueTotalZmw: number;
                 aiTokensLastPeriod: number;
+                chatbotConfigs: number;
+                widgetsEnabled: number;
+                chatSessions: number;
+                chatSessionsLast7Days: number;
+                chatMessages: number;
+                knowledgeDocuments: number;
+                knowledgeReady: number;
+                knowledgeFailed: number;
+                knowledgeChunks: number;
+                activeChatbotApiKeys: number;
+                ragEnabledTenants: number;
+                mistralLibraryTenants: number;
+                ttsEnabledTenants: number;
+            };
+            chatbot: {
+                sessionsByChannel: Record<string, number>;
+                knowledgeByStatus: Record<string, number>;
+                aiTokensChatbot: number;
             };
             planDistribution: Record<string, number>;
             aiByFunction: Record<string, number>;
@@ -555,6 +573,7 @@ export const backofficeApi = {
                 linkedInConfigured: boolean;
                 pawapayConfigured: boolean;
                 metaWebhookTokenSet: boolean;
+                widgetBundleConfigured: boolean;
             };
         }>('/api/v1/backoffice/overview'),
 
@@ -570,6 +589,9 @@ export const backofficeApi = {
                 status: string;
                 members: number;
                 contentItems: number;
+                widgetEnabled: boolean;
+                ragEnabled: boolean;
+                chatSessions: number;
                 createdAt: string;
             }>
         >('/api/v1/backoffice/tenants'),
@@ -585,6 +607,23 @@ export const backofficeApi = {
             createdAt: string;
             subscription: { plan: string; status: string; billingPeriodEnd: string | null };
             stats: { members: number; contentItems: number; publications: number; leads: number; aiTokens: number };
+            chatbot: {
+                name: string;
+                widgetEnabled: boolean;
+                ragEnabled: boolean;
+                useMistralLibrary: boolean;
+                widgetTtsEnabled: boolean;
+                isActive: boolean;
+                sessions: number;
+                sessionsLast7Days: number;
+                messages: number;
+                knowledgeDocuments: number;
+                knowledgeReady: number;
+                knowledgeFailed: number;
+                knowledgeChunks: number;
+                activeApiKeys: number;
+                sessionsByChannel: Record<string, number>;
+            } | null;
             socialAccounts: Array<{ id: string; platform: string; connected: boolean; accountName: string }>;
             recentDeposits: Array<{
                 id: string;
@@ -1072,7 +1111,7 @@ export const paymentsApi = {
         const blob = await response.blob();
         const disposition = response.headers.get('Content-Disposition') ?? '';
         const nameMatch = disposition.match(/filename="([^"]+)"/);
-        const filename = nameMatch?.[1] ?? `AutoPilot-Invoice-${depositId.slice(0, 8)}.pdf`;
+        const filename = nameMatch?.[1] ?? `Mako Co-pilot-Invoice-${depositId.slice(0, 8)}.pdf`;
         const url = URL.createObjectURL(blob);
         if (view) {
           window.open(url, '_blank', 'noopener,noreferrer');
@@ -1151,7 +1190,11 @@ export const contentItemsApi = {
             body: JSON.stringify(data),
         }),
 
-    attachMedia: (id: string, tenantId: string, items: Array<{ url: string; type?: string }>) =>
+    attachMedia: (
+        id: string,
+        tenantId: string,
+        items: Array<{ url: string; type?: string; assetId?: string }>,
+    ) =>
         request<any>(`/api/v1/content-items/${id}/media`, {
             method: 'POST',
             body: JSON.stringify({ tenantId, items }),
@@ -1532,6 +1575,8 @@ export type PostInboxGroup = {
     pendingCount: number;
     totalComments: number;
     comments: CommentInboxNode[];
+    commentSyncSupported?: boolean;
+    commentSyncNote?: string;
 };
 
 export type TopPerformingPost = {
@@ -1716,6 +1761,313 @@ export type ReportCatalogItem = {
     name: string;
     description: string;
     category: string;
+};
+
+export type ChatbotConfig = {
+    id: string;
+    tenantId: string;
+    name: string;
+    welcomeMessage?: string;
+    systemPromptExtra?: string;
+    model: string;
+    temperature: number;
+    maxContextMessages: number;
+    ragEnabled: boolean;
+    ragTopK: number;
+    ragMinScore: number;
+    widgetEnabled: boolean;
+    widgetTheme?: Record<string, unknown>;
+    allowedOrigins?: string[];
+    isActive: boolean;
+    useMistralLibrary?: boolean;
+    mistralLibraryId?: string;
+    mistralAgentId?: string;
+    widgetTtsEnabled?: boolean;
+    mistralVoiceId?: string;
+};
+
+export type ChatCitation = {
+    documentId: string;
+    chunkId?: string;
+    title: string;
+    excerpt: string;
+};
+
+export type ChatMessage = {
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    citations?: ChatCitation[];
+    created_at: string;
+};
+
+export type TtsPresetVoice = {
+    id: string;
+    name: string;
+    gender?: string | null;
+    description?: string | null;
+    languages?: string[];
+    isCustom: boolean;
+};
+
+export type TtsVoiceList = {
+    presets: TtsPresetVoice[];
+    custom: Array<{ id: string; mistralVoiceId: string; name: string; created_at: string }>;
+    selectedVoiceId: string | null;
+};
+
+export type KnowledgeDocument = {
+    id: string;
+    title: string;
+    status: 'pending' | 'processing' | 'ready' | 'failed';
+    mimeType?: string;
+    chunkCount: number;
+    errorMessage?: string;
+    created_at: string;
+};
+
+export type ChatbotApiKeySummary = {
+    id: string;
+    keyPrefix: string;
+    label?: string;
+    lastUsedAt?: string;
+    revokedAt?: string;
+    created_at?: string;
+};
+
+export const chatbotApi = {
+    getConfig: (tenantId: string) =>
+        request<{ config: ChatbotConfig; keys: ChatbotApiKeySummary[] }>(
+            `/api/v1/chatbot/config?tenantId=${encodeURIComponent(tenantId)}`,
+        ),
+
+    updateConfig: (data: Partial<ChatbotConfig> & { tenantId: string }) => {
+        const body: Record<string, unknown> = { tenantId: data.tenantId };
+        const optionalKeys = [
+            'name',
+            'welcomeMessage',
+            'systemPromptExtra',
+            'brandProfileId',
+            'model',
+            'temperature',
+            'maxContextMessages',
+            'ragEnabled',
+            'ragTopK',
+            'ragMinScore',
+            'widgetEnabled',
+            'widgetTheme',
+            'allowedOrigins',
+            'isActive',
+            'useMistralLibrary',
+            'widgetTtsEnabled',
+            'mistralVoiceId',
+        ] as const;
+        for (const key of optionalKeys) {
+            const value = data[key];
+            if (value !== undefined && value !== null) {
+                body[key] = value;
+            }
+        }
+        if ('mistralVoiceId' in data && data.mistralVoiceId === '') {
+            body.mistralVoiceId = '';
+        }
+        return request<ChatbotConfig>('/api/v1/chatbot/config', {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        });
+    },
+
+    uploadAvatar: (file: File, tenantId: string) => {
+        const form = new FormData();
+        form.append('file', file);
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        return fetch(
+            `${API_BASE_URL}/api/v1/chatbot/config/avatar?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form },
+        ).then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+            }
+            return res.json() as Promise<ChatbotConfig>;
+        });
+    },
+
+    uploadAvatarModel: (file: File, tenantId: string) => {
+        const form = new FormData();
+        form.append('file', file);
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        return fetch(
+            `${API_BASE_URL}/api/v1/chatbot/config/avatar-model?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form },
+        ).then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+            }
+            return res.json() as Promise<ChatbotConfig>;
+        });
+    },
+
+    createApiKey: (tenantId: string, label?: string) =>
+        request<{ id: string; keyPrefix: string; secret: string; label?: string }>(
+            '/api/v1/chatbot/config/keys',
+            { method: 'POST', body: JSON.stringify({ tenantId, label }) },
+        ),
+
+    revokeApiKey: (tenantId: string, keyId: string) =>
+        request<void>(`/api/v1/chatbot/config/keys/${keyId}?tenantId=${encodeURIComponent(tenantId)}`, {
+            method: 'DELETE',
+        }),
+
+    listSessions: (tenantId: string, channel?: string) => {
+        const params = new URLSearchParams({ tenantId });
+        if (channel) params.set('channel', channel);
+        return request<Array<{ id: string; title?: string; channel: string; lastMessageAt?: string; created_at: string }>>(
+            `/api/v1/chatbot/sessions?${params}`,
+        );
+    },
+
+    createSession: (tenantId: string) =>
+        request<{ id: string }>('/api/v1/chatbot/sessions', {
+            method: 'POST',
+            body: JSON.stringify({ tenantId }),
+        }),
+
+    getMessages: (tenantId: string, sessionId: string) =>
+        request<ChatMessage[]>(
+            `/api/v1/chatbot/sessions/${sessionId}/messages?tenantId=${encodeURIComponent(tenantId)}`,
+        ),
+
+    sendMessage: (tenantId: string, sessionId: string, content: string) =>
+        request<{ messageId: string; content: string; citations: ChatCitation[] }>(
+            `/api/v1/chatbot/sessions/${sessionId}/messages?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST', body: JSON.stringify({ content }) },
+        ),
+
+    listTtsVoices: (tenantId: string) =>
+        request<TtsVoiceList>(
+            `/api/v1/chatbot/tts/voices?tenantId=${encodeURIComponent(tenantId)}`,
+        ),
+
+    cloneTtsVoice: (tenantId: string, name: string, file: File) => {
+        const form = new FormData();
+        form.append('file', file);
+        form.append('name', name);
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        return fetch(
+            `${API_BASE_URL}/api/v1/chatbot/tts/voices?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form },
+        ).then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+            }
+            return res.json() as Promise<{
+                voice: { id: string; mistralVoiceId: string; name: string; created_at: string };
+                selectedVoiceId: string;
+            }>;
+        });
+    },
+
+    deleteTtsVoice: (tenantId: string, voiceRowId: string) =>
+        request<void>(
+            `/api/v1/chatbot/tts/voices/${voiceRowId}?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'DELETE' },
+        ),
+
+    previewTtsVoice: async (
+        tenantId: string,
+        voiceId: string,
+        text?: string,
+    ): Promise<Blob> => {
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        const res = await fetch(
+            `${API_BASE_URL}/api/v1/chatbot/tts/preview?tenantId=${encodeURIComponent(tenantId)}`,
+            {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ voiceId, text }),
+            },
+        );
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+        }
+        return res.blob();
+    },
+
+    fetchSpeech: async (tenantId: string, sessionId: string, messageId: string): Promise<Blob> => {
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        const res = await fetch(
+            `${API_BASE_URL}/api/v1/chatbot/sessions/${sessionId}/messages/${messageId}/speech?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST', headers: { Authorization: `Bearer ${token}` } },
+        );
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+        }
+        return res.blob();
+    },
+
+    deleteSession: (tenantId: string, sessionId: string) =>
+        request<void>(
+            `/api/v1/chatbot/sessions/${sessionId}?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'DELETE' },
+        ),
+};
+
+export const knowledgeApi = {
+    list: (tenantId: string) =>
+        request<KnowledgeDocument[]>(`/api/v1/knowledge/documents?tenantId=${encodeURIComponent(tenantId)}`),
+
+    upload: (file: File, tenantId: string) => {
+        const form = new FormData();
+        form.append('file', file);
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        return fetch(
+            `${API_BASE_URL}/api/v1/knowledge/documents?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form },
+        ).then(async (res) => {
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+            }
+            return res.json() as Promise<KnowledgeDocument>;
+        });
+    },
+
+    rename: (tenantId: string, id: string, title: string) =>
+        request<KnowledgeDocument>(`/api/v1/knowledge/documents/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ tenantId, title }),
+        }),
+
+    delete: (tenantId: string, id: string) =>
+        request<void>(`/api/v1/knowledge/documents/${id}?tenantId=${encodeURIComponent(tenantId)}`, {
+            method: 'DELETE',
+        }),
+
+    reindex: (tenantId: string, id: string) =>
+        request<KnowledgeDocument>(
+            `/api/v1/knowledge/documents/${id}/reindex?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST' },
+        ),
+
+    syncMistral: (tenantId: string) =>
+        request<{ success: true }>(
+            `/api/v1/knowledge/documents/sync-mistral?tenantId=${encodeURIComponent(tenantId)}`,
+            { method: 'POST' },
+        ),
 };
 
 export const notificationsApi = {

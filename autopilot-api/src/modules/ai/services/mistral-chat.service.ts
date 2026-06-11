@@ -127,4 +127,89 @@ export class MistralChatService {
     );
     return { ok: result.content.toLowerCase().includes('ok'), model: result.model };
   }
+
+  get ttsModel(): string {
+    return this.config.get<string>('MISTRAL_TTS_MODEL') || 'voxtral-mini-tts-latest';
+  }
+
+  /** Mistral preset voice (Paul — neutral). Override via MISTRAL_TTS_VOICE_ID or per-tenant mistralVoiceId. */
+  get defaultTtsVoiceId(): string {
+    return (
+      this.config.get<string>('MISTRAL_TTS_VOICE_ID') ||
+      'c69964a6-ab8b-4f8a-9465-ec0925096ec8'
+    );
+  }
+
+  get embedModel(): string {
+    return this.config.get<string>('MISTRAL_EMBED_MODEL') || 'mistral-embed';
+  }
+
+  async speak(
+    text: string,
+    options?: { voiceId?: string; model?: string },
+  ): Promise<{ audioData: string; format: 'mp3' }> {
+    const input = text.trim().slice(0, 4096);
+    if (!input) {
+      throw new BadRequestException('No text to synthesize');
+    }
+    try {
+      const client = this.getClient();
+      const response = await client.audio.speech.complete({
+        model: options?.model ?? this.ttsModel,
+        input,
+        voiceId: options?.voiceId?.trim() || this.defaultTtsVoiceId,
+        responseFormat: 'mp3',
+        stream: false,
+      });
+
+      if (!response || typeof response !== 'object' || !('audioData' in response)) {
+        throw new BadRequestException('Mistral TTS returned an unexpected response');
+      }
+
+      const audioData = (response as { audioData?: string }).audioData;
+      if (!audioData?.trim()) {
+        throw new BadRequestException('Mistral TTS returned empty audio');
+      }
+
+      return { audioData, format: 'mp3' };
+    } catch (err) {
+      this.logger.error('Mistral TTS failed', err);
+      if (err instanceof HttpException) throw err;
+      if (isMistralNetworkError(err)) {
+        throw new ServiceUnavailableException(
+          'Cannot reach Mistral AI for text-to-speech. Check your connection.',
+        );
+      }
+      const msg = err instanceof Error ? err.message : 'TTS request failed';
+      throw new BadRequestException(msg);
+    }
+  }
+
+  async embed(text: string): Promise<number[]> {
+    const [embedding] = await this.embedBatch([text]);
+    return embedding;
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    if (!texts.length) return [];
+    try {
+      const client = this.getClient();
+      const response = await client.embeddings.create({
+        model: this.embedModel,
+        inputs: texts,
+      });
+      const data = response.data ?? [];
+      return data.map((d) => d.embedding ?? []);
+    } catch (err) {
+      this.logger.error('Mistral embedding failed', err);
+      if (err instanceof HttpException) throw err;
+      if (isMistralNetworkError(err)) {
+        throw new ServiceUnavailableException(
+          'Cannot reach Mistral AI for embeddings. Check your connection.',
+        );
+      }
+      const msg = err instanceof Error ? err.message : 'Embedding request failed';
+      throw new BadRequestException(msg);
+    }
+  }
 }

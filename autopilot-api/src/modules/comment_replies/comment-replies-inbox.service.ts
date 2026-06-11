@@ -5,6 +5,7 @@ import { CommentReplies } from './entities/comment_replies.entity';
 import { ContentItems } from '../content_items/entities/content_items.entity';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
+import { capabilityOf } from '../../constants/platform-capabilities';
 
 export type CommentInboxNode = {
   id: string;
@@ -42,6 +43,9 @@ export type PostInboxGroup = {
   pendingCount: number;
   totalComments: number;
   comments: CommentInboxNode[];
+  /** False when the platform cannot sync comments via standard OAuth (e.g. LinkedIn). */
+  commentSyncSupported: boolean;
+  commentSyncNote?: string;
 };
 
 @Injectable()
@@ -66,28 +70,29 @@ export class CommentRepliesInboxService {
       order: { created_at: 'ASC' },
     });
 
-    if (!comments.length) {
-      return { posts: [] };
-    }
-
-    const contentIds = [...new Set(comments.map((c) => c.contentId))];
-    const contents = await this.contentRepo.find({ where: { id: In(contentIds) } });
-    const contentById = new Map(contents.map((c) => [c.id, c]));
-
     const publications = await this.publicationsRepo.find({
-      where: { tenantId, status: 'published' },
+      where: contentId
+        ? { tenantId, contentId, status: 'published' }
+        : { tenantId, status: 'published' },
       order: { publishedAt: 'DESC' },
     });
 
+    const contentIds = [
+      ...new Set([
+        ...comments.map((c) => c.contentId),
+        ...publications.map((p) => p.contentId),
+      ]),
+    ];
+    const contents = contentIds.length
+      ? await this.contentRepo.find({ where: { id: In(contentIds) } })
+      : [];
+    const contentById = new Map(contents.map((c) => [c.id, c]));
+
     const pubByPostKey = new Map<string, ContentPublications>();
-    const pubByContentPlatform = new Map<string, ContentPublications>();
     for (const pub of publications) {
-      if (pub.externalPostId) {
-        const key = `${pub.contentId}:${pub.platform}:${pub.externalPostId}`;
-        if (!pubByPostKey.has(key)) pubByPostKey.set(key, pub);
-      }
-      const cpKey = `${pub.contentId}:${pub.platform}`;
-      if (!pubByContentPlatform.has(cpKey)) pubByContentPlatform.set(cpKey, pub);
+      if (!pub.externalPostId) continue;
+      const key = `${pub.contentId}:${pub.platform}:${pub.externalPostId}`;
+      if (!pubByPostKey.has(key)) pubByPostKey.set(key, pub);
     }
 
     const grouped = new Map<string, CommentReplies[]>();
@@ -98,56 +103,112 @@ export class CommentRepliesInboxService {
     }
 
     const posts: PostInboxGroup[] = [];
+    const seenKeys = new Set<string>();
+
     for (const [key, groupComments] of grouped) {
+      seenKeys.add(key);
       const sample = groupComments[0];
-      const pub =
-        pubByPostKey.get(key) ??
-        pubByContentPlatform.get(`${sample.contentId}:${sample.platform}`);
-      const content = contentById.get(sample.contentId);
+      const pub = pubByPostKey.get(key);
+      posts.push(
+        await this.buildPostGroup({
+          key,
+          contentId: sample.contentId,
+          platform: sample.platform,
+          externalPostId: sample.externalPostId,
+          pub,
+          content: contentById.get(sample.contentId),
+          groupComments,
+        }),
+      );
+    }
 
-      const postTitle =
-        pub?.publishedTitle?.trim() ||
-        content?.title?.trim() ||
-        'Published post';
-      const postContent =
-        stripHtml(pub?.publishedContent ?? content?.content ?? '');
-
-      let brandPageName: string | null = null;
-      if (pub?.socialAccountId) {
-        const account = await this.socialRepo.findOne({
-          where: { id: pub.socialAccountId },
-        });
-        brandPageName = account?.accountName ?? null;
-      }
-
-      posts.push({
-        key,
-        contentId: sample.contentId,
-        platform: sample.platform,
-        externalPostId: sample.externalPostId,
-        postTitle,
-        postContent: postContent.slice(0, 500),
-        postMedia: pub?.publishedMedia ?? [],
-        publishedAt: pub?.publishedAt?.toISOString() ?? null,
-        brandPageName,
-        likeCount: pub?.likeCount ?? 0,
-        commentCount: pub?.commentCount ?? groupComments.length,
-        shareCount: pub?.shareCount ?? 0,
-        viewCount: pub?.viewCount ?? 0,
-        engagementScore: pub?.engagementScore ?? 0,
-        pendingCount: groupComments.filter((c) => c.status === 'pending').length,
-        totalComments: groupComments.length,
-        comments: buildCommentTree(groupComments),
-      });
+    for (const pub of publications) {
+      if (!pub.externalPostId) continue;
+      const key = `${pub.contentId}:${pub.platform}:${pub.externalPostId}`;
+      if (seenKeys.has(key)) continue;
+      seenKeys.add(key);
+      posts.push(
+        await this.buildPostGroup({
+          key,
+          contentId: pub.contentId,
+          platform: pub.platform,
+          externalPostId: pub.externalPostId,
+          pub,
+          content: contentById.get(pub.contentId),
+          groupComments: [],
+        }),
+      );
     }
 
     posts.sort((a, b) => {
-      const aTime = latestActivity(a.comments);
-      const bTime = latestActivity(b.comments);
+      const aTime = a.comments.length
+        ? latestActivity(a.comments)
+        : a.publishedAt
+          ? new Date(a.publishedAt).getTime()
+          : 0;
+      const bTime = b.comments.length
+        ? latestActivity(b.comments)
+        : b.publishedAt
+          ? new Date(b.publishedAt).getTime()
+          : 0;
       return bTime - aTime;
     });
 
     return { posts };
+  }
+
+  private async buildPostGroup(params: {
+    key: string;
+    contentId: string;
+    platform: string;
+    externalPostId: string;
+    pub?: ContentPublications;
+    content?: ContentItems;
+    groupComments: CommentReplies[];
+  }): Promise<PostInboxGroup> {
+    const cap = capabilityOf(params.platform);
+    const commentSyncSupported = cap?.comments ?? false;
+
+    const postTitle =
+      params.pub?.publishedTitle?.trim() ||
+      params.content?.title?.trim() ||
+      'Published post';
+    const postContent = stripHtml(
+      params.pub?.publishedContent ?? params.content?.content ?? '',
+    );
+
+    let brandPageName: string | null = null;
+    if (params.pub?.socialAccountId) {
+      const account = await this.socialRepo.findOne({
+        where: { id: params.pub.socialAccountId },
+      });
+      brandPageName = account?.accountName ?? null;
+    }
+
+    return {
+      key: params.key,
+      contentId: params.contentId,
+      platform: params.platform,
+      externalPostId: params.externalPostId,
+      postTitle,
+      postContent: postContent.slice(0, 500),
+      postMedia: params.pub?.publishedMedia ?? [],
+      publishedAt: params.pub?.publishedAt?.toISOString() ?? null,
+      brandPageName,
+      likeCount: params.pub?.likeCount ?? 0,
+      commentCount: params.pub?.commentCount ?? params.groupComments.length,
+      shareCount: params.pub?.shareCount ?? 0,
+      viewCount: params.pub?.viewCount ?? 0,
+      engagementScore: params.pub?.engagementScore ?? 0,
+      pendingCount: params.groupComments.filter((c) => c.status === 'pending').length,
+      totalComments: params.groupComments.length,
+      comments: buildCommentTree(params.groupComments),
+      commentSyncSupported,
+      commentSyncNote: commentSyncSupported
+        ? undefined
+        : cap?.notes ??
+          'Comment sync is not available for this platform with the current connection.',
+    };
   }
 }
 

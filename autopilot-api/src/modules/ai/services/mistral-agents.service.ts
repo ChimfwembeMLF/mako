@@ -43,7 +43,7 @@ export class MistralAgentsService {
     const client = this.getClient();
     const agent = await client.beta.agents.create({
       model: this.imageModel,
-      name: 'AutoPilot Image Generator',
+      name: 'Mako Co-pilot Image Generator',
       description: 'Generates marketing images',
       instructions:
         'Generate high-quality marketing images when asked. Use the image_generation tool.',

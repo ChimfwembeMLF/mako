@@ -41,4 +41,22 @@ export const REPORT_CATALOG = [
     description: 'Pending replies, auto-replies sent, and comment volume.',
     category: 'engagement',
   },
+  {
+    id: 'chatbot-conversations',
+    name: 'Chatbot Conversations',
+    description: 'Sessions and messages by channel — playground, widget embed, and API.',
+    category: 'chatbot',
+  },
+  {
+    id: 'chatbot-knowledge',
+    name: 'Knowledge Library',
+    description: 'Uploaded documents, indexing status, chunk counts, and failures.',
+    category: 'chatbot',
+  },
+  {
+    id: 'chatbot-ai-usage',
+    name: 'Chatbot AI Usage',
+    description: 'Token usage for chat replies and knowledge document ingestion.',
+    category: 'chatbot',
+  },
 ] as const;

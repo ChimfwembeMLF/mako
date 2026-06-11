@@ -13,6 +13,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   leads: 'Leads',
   billing: 'Billing',
   engagement: 'Engagement',
+  chatbot: 'Chatbot',
 };
 
 type ExportFormat = 'pdf' | 'csv' | 'xlsx';

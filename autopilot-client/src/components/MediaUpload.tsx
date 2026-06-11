@@ -52,13 +52,14 @@ export function MediaUpload({ onUpload, label, disabled, contentId }: MediaUploa
   }
 
   function handleAddSelected() {
-    libraryFiles
-      .filter((f) => selected.has(f.id))
-      .forEach((f) => {
-        const type = f.mediaType === "video" ? "video" : "image";
-        onUpload(f.mediaUrl, type, f.id);
-      });
+    const picked = libraryFiles.filter((f) => selected.has(f.id));
+    if (!picked.length) return;
+    picked.forEach((f) => {
+      const type = f.mediaType === "video" ? "video" : "image";
+      onUpload(f.mediaUrl, type, f.id);
+    });
     setSelected(new Set());
+    toast({ title: `Added ${picked.length} from library` });
   }
 
   const uploadFile = useCallback(async (file: File) => {
@@ -110,7 +111,10 @@ export function MediaUpload({ onUpload, label, disabled, contentId }: MediaUploa
               <button
                 key={f.id}
                 type="button"
-                onClick={() => toggleSelect(f.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleSelect(f.id);
+                }}
                 className={`relative w-14 h-14 rounded-md border overflow-hidden ${selected.has(f.id) ? "ring-2 ring-primary" : ""}`}
               >
                 {f.mediaType === "video" ? (

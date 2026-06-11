@@ -2,6 +2,9 @@ import { Injectable, ForbiddenException } from '@nestjs/common';
 import { SubscriptionsService } from '../../subscriptions/subscriptions.service';
 import { AiUsageService } from '../../ai_usage/ai_usage.service';
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 @Injectable()
 export class AiUsageTrackerService {
   constructor(
@@ -16,6 +19,8 @@ export class AiUsageTrackerService {
     tokensUsed: number;
   }): Promise<void> {
     if (!params.tenantId || !params.userId) return;
+    // Widget visitors use ids like "widget:{visitorId}" — not valid ai_usage.user_id UUIDs
+    if (!UUID_RE.test(params.userId)) return;
     await this.aiUsage.create({
       tenantId: params.tenantId,
       userId: params.userId,

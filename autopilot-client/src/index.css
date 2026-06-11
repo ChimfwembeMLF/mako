@@ -198,3 +198,53 @@
 .brand-markdown-editor .w-md-editor-text-pre {
   color: hsl(var(--muted-foreground)) !important;
 }
+
+/* Compact markdown in chat bubbles (playground + sessions) */
+.chat-markdown .wmde-markdown {
+  background: transparent !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  line-height: 1.5 !important;
+  padding: 0 !important;
+}
+
+.chat-markdown .wmde-markdown p {
+  margin: 0 0 0.5em;
+}
+
+.chat-markdown .wmde-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.chat-markdown .wmde-markdown ul,
+.chat-markdown .wmde-markdown ol {
+  margin: 0.35em 0;
+  padding-left: 1.25em;
+}
+
+.chat-markdown .wmde-markdown h1,
+.chat-markdown .wmde-markdown h2,
+.chat-markdown .wmde-markdown h3,
+.chat-markdown .wmde-markdown h4 {
+  margin: 0.5em 0 0.35em;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.chat-markdown .wmde-markdown h1 {
+  font-size: 1.1em;
+}
+
+.chat-markdown .wmde-markdown code {
+  font-size: 0.9em;
+}
+
+.chat-markdown .wmde-markdown pre {
+  margin: 0.5em 0;
+  font-size: 0.85em;
+}
+
+.chat-markdown .wmde-markdown a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}

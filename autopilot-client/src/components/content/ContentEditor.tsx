@@ -51,7 +51,9 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   const [imagePrompt, setImagePrompt] = useState('');
   const [generatingImage, setGeneratingImage] = useState(false);
   const [generatingSlideshow, setGeneratingSlideshow] = useState(false);
-  const [pendingMedia, setPendingMedia] = useState<{ url: string; type: string }[]>([]);
+  const [pendingMedia, setPendingMedia] = useState<
+    { url: string; type: string; assetId?: string }[]
+  >([]);
   const [pendingSlides, setPendingSlides] = useState<string[]>([]);
   const [editingImageUrl, setEditingImageUrl] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
@@ -166,8 +168,12 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
         toast({ title: 'Content saved', description: 'Ready to publish when you are.' });
       }
       const mediaItems = [
-        ...pendingMedia.map((m) => ({ url: m.url, type: m.type })),
-        ...pendingSlides.map((url) => ({ url, type: 'image' })),
+        ...pendingMedia.map((m) => ({
+          url: m.url,
+          type: m.type,
+          assetId: m.assetId,
+        })),
+        ...pendingSlides.map((url) => ({ url, type: 'image' as const })),
       ];
       if (contentId && tenant?.id && mediaItems.length) {
         await contentItemsApi.attachMedia(contentId, tenant.id, mediaItems);
@@ -343,8 +349,12 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
               </div>
             </div>
             <MediaUpload
-              onUpload={(url, type) => {
-                setPendingMedia((prev) => [...prev, { url, type }]);
+              contentId={item?.id}
+              onUpload={(url, type, existingId) => {
+                setPendingMedia((prev) => {
+                  if (prev.some((m) => m.url === url)) return prev;
+                  return [...prev, { url, type, assetId: existingId }];
+                });
                 setPendingSlides([]);
               }}
             />

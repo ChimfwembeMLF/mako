@@ -46,12 +46,16 @@ import AuditLogsPage from "./pages/AuditLogsPage";
 import BillingPage from "./pages/BillingPage";
 import ExportPage from "./pages/ExportPage";
 import ReportsPage from "./pages/ReportsPage";
+import ChatbotPage from "./pages/chatbot/ChatbotPage";
+import ChatbotKnowledgePage from "./pages/chatbot/ChatbotKnowledgePage";
+import ChatbotSessionsPage from "./pages/chatbot/ChatbotSessionsPage";
 import WorkspacesPage from "./pages/WorkspacesPage";
 import SocialCallback from "./pages/auth/SocialCallback";
 import PrivacyPage from "./pages/legal/PrivacyPage";
 import TermsPage from "./pages/legal/TermsPage";
 import DataDeletionPage from "./pages/legal/DataDeletionPage";
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
+import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -105,6 +109,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <ChatbotWidgetLoader />
               <Routes>
                 {/* Public routes */}
                 <Route path="/auth" element={<PublicOnly><Auth /></PublicOnly>} />
@@ -140,6 +145,9 @@ const App = () => (
 
                   {/* Replies */}
                   <Route path="/replies" element={<RepliesPage />} />
+                  <Route path="/chatbot" element={<ChatbotPage />} />
+                  <Route path="/chatbot/knowledge" element={<ChatbotKnowledgePage />} />
+                  <Route path="/chatbot/sessions" element={<ChatbotSessionsPage />} />
 
                   {/* Approvals (maker-checker) */}
                   <Route path="/approvals" element={<ApprovalsPage />} />

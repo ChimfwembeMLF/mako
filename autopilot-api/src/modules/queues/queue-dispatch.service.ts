@@ -18,6 +18,8 @@ import {
   JOB_SYNC_TENANT_COMMENTS,
   JOB_WHATSAPP_INBOUND,
   AiTaskJobData,
+  IngestDocumentJobData,
+  JOB_INGEST_DOCUMENT,
   AutoPublishTenantJobData,
   LeadWebhookJobData,
   PublishContentJobData,
@@ -145,6 +147,20 @@ export class QueueDispatchService {
       removeOnComplete: 100,
     });
     return { jobId: job.id, queue: QUEUE_EMAIL };
+  }
+
+  async enqueueIngestDocument(data: IngestDocumentJobData) {
+    if (!this.isEnabled()) {
+      return { jobId: null, queue: QUEUE_AI, inline: true };
+    }
+    const job = await this.aiQueue.add(JOB_INGEST_DOCUMENT, data, {
+      jobId: `ingest-${data.tenantId}-${data.documentId}`,
+      attempts: 2,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: 50,
+      removeOnFail: 100,
+    });
+    return { jobId: job.id, queue: QUEUE_AI };
   }
 
   async enqueueAiTask(data: AiTaskJobData) {

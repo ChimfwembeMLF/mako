@@ -1,6 +1,6 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, Between } from 'typeorm';
+import { Repository, MoreThanOrEqual, Between, IsNull } from 'typeorm';
 import { Notifications } from './entities/notifications.entity';
 import { NotificationPreferences } from './entities/notification_preferences.entity';
 import { UserEntity } from '../user/user.entity';
@@ -14,6 +14,11 @@ import { Leads } from '../leads/entities/leads.entity';
 import { ContentItems } from '../content_items/entities/content_items.entity';
 import { AiUsage } from '../ai_usage/entities/ai_usage.entity';
 import { Deposits } from '../deposits/entities/deposits.entity';
+import { ChatSession } from '../chatbot/entities/chat-session.entity';
+import { ChatMessage } from '../chatbot/entities/chat-message.entity';
+import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity';
+import { ChatbotConfig } from '../chatbot/entities/chatbot-config.entity';
+import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
 import { REPORT_CATALOG } from './report-catalog';
 import {
   ReportExportFormat,
@@ -80,6 +85,16 @@ export class NotificationsService {
     private readonly aiUsageRepo: Repository<AiUsage>,
     @InjectRepository(Deposits)
     private readonly depositsRepo: Repository<Deposits>,
+    @InjectRepository(ChatSession)
+    private readonly chatSessionRepo: Repository<ChatSession>,
+    @InjectRepository(ChatMessage)
+    private readonly chatMessageRepo: Repository<ChatMessage>,
+    @InjectRepository(KnowledgeDocument)
+    private readonly knowledgeDocRepo: Repository<KnowledgeDocument>,
+    @InjectRepository(ChatbotConfig)
+    private readonly chatbotConfigRepo: Repository<ChatbotConfig>,
+    @InjectRepository(ChatbotApiKey)
+    private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
     private readonly mail: MailService,
     @Optional() private readonly queueDispatch?: QueueDispatchService,
   ) {}
@@ -501,6 +516,120 @@ export class NotificationsService {
           newThisWeek: weekComments,
         };
       }
+      case 'chatbot-conversations': {
+        const sessions = await this.chatSessionRepo.find({
+          where: { tenantId },
+          order: { lastMessageAt: 'DESC', created_at: 'DESC' },
+          take: 50,
+        });
+        const channelRows = await this.chatSessionRepo
+          .createQueryBuilder('s')
+          .select('s.channel', 'channel')
+          .addSelect('COUNT(*)', 'count')
+          .where('s.tenant_id = :tenantId', { tenantId })
+          .groupBy('s.channel')
+          .getRawMany<{ channel: string; count: string }>();
+        const byChannel = Object.fromEntries(
+          channelRows.map((r) => [r.channel, parseInt(r.count, 10)]),
+        );
+        const totalSessions = await this.chatSessionRepo.count({ where: { tenantId } });
+        const totalMessages = await this.chatMessageRepo.count({ where: { tenantId } });
+        const weekSessions = await this.chatSessionRepo.count({
+          where: { tenantId, created_at: MoreThanOrEqual(weekAgo) },
+        });
+        const config = await this.chatbotConfigRepo.findOne({
+          where: { tenantId },
+          order: { created_at: 'ASC' },
+        });
+        return {
+          reportId,
+          generatedAt: new Date().toISOString(),
+          botName: config?.name ?? 'Website Assistant',
+          widgetEnabled: config?.widgetEnabled ?? false,
+          totalSessions,
+          sessionsThisWeek: weekSessions,
+          totalMessages,
+          byChannel,
+          recentSessions: sessions.slice(0, 20).map((s) => ({
+            id: s.id,
+            channel: s.channel,
+            title: s.title,
+            lastMessageAt: s.lastMessageAt,
+            createdAt: s.created_at,
+          })),
+        };
+      }
+      case 'chatbot-knowledge': {
+        const docs = await this.knowledgeDocRepo.find({
+          where: { tenantId },
+          order: { created_at: 'DESC' },
+        });
+        const byStatus: Record<string, number> = {};
+        let totalChunks = 0;
+        for (const d of docs) {
+          byStatus[d.status] = (byStatus[d.status] ?? 0) + 1;
+          totalChunks += d.chunkCount ?? 0;
+        }
+        const config = await this.chatbotConfigRepo.findOne({
+          where: { tenantId },
+          order: { created_at: 'ASC' },
+        });
+        return {
+          reportId,
+          generatedAt: new Date().toISOString(),
+          ragEnabled: config?.ragEnabled ?? true,
+          useMistralLibrary: config?.useMistralLibrary ?? false,
+          totalDocuments: docs.length,
+          totalChunks,
+          byStatus,
+          documents: docs.map((d) => ({
+            id: d.id,
+            title: d.title,
+            status: d.status,
+            chunkCount: d.chunkCount,
+            mimeType: d.mimeType,
+            errorMessage: d.errorMessage,
+            createdAt: d.created_at,
+          })),
+        };
+      }
+      case 'chatbot-ai-usage': {
+        const sub = await this.subsRepo.findOne({ where: { tenantId } });
+        const from = sub?.billingPeriodStart ?? weekAgo;
+        const to = sub?.billingPeriodEnd ?? new Date();
+        const usage = await this.aiUsageRepo.find({
+          where: { tenantId, created_at: Between(from, to) },
+        });
+        const chatbotFunctions = ['chatbot-message', 'ingest-document'];
+        const chatbotUsage = usage.filter((u) => chatbotFunctions.includes(u.functionName));
+        const byFunction: Record<string, { calls: number; tokens: number }> = {};
+        for (const u of chatbotUsage) {
+          const cur = byFunction[u.functionName] ?? { calls: 0, tokens: 0 };
+          cur.calls += 1;
+          cur.tokens += parseInt(u.tokensUsed, 10) || 0;
+          byFunction[u.functionName] = cur;
+        }
+        const activeKeys = await this.chatbotKeyRepo.count({
+          where: { tenantId, revokedAt: IsNull() },
+        });
+        const config = await this.chatbotConfigRepo.findOne({
+          where: { tenantId },
+          order: { created_at: 'ASC' },
+        });
+        return {
+          reportId,
+          generatedAt: new Date().toISOString(),
+          billingPeriod: { from, to },
+          widgetEnabled: config?.widgetEnabled ?? false,
+          activeApiKeys: activeKeys,
+          totalCalls: chatbotUsage.length,
+          totalTokens: chatbotUsage.reduce(
+            (sum, u) => sum + (parseInt(u.tokensUsed, 10) || 0),
+            0,
+          ),
+          byFunction,
+        };
+      }
       default:
         return { reportId, error: 'Unknown report type' };
     }
@@ -515,7 +644,7 @@ export class NotificationsService {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user?.email) return;
 
-    const text = `${body}\n\n— AutoPilot`;
+    const text = `${body}\n\n— Mako Co-pilot`;
     if (this.queueDispatch?.isEnabled()) {
       await this.queueDispatch.enqueueEmail({
         to: user.email,

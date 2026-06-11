@@ -339,7 +339,16 @@ export class FetchCommentsService {
         };
       });
     } catch (err) {
-      this.logger.warn('LinkedIn comment fetch requires r_member_social / partner access', err);
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined;
+      const liMessage =
+        axios.isAxiosError(err) &&
+        (err.response?.data as { message?: string; status?: number })?.message;
+      this.logger.warn(
+        `LinkedIn comment fetch failed (${status ?? 'error'}): ${
+          liMessage ??
+          'requires r_member_social — LinkedIn only grants this to Marketing API / partner-approved apps. Publishing works with w_member_social; comment sync does not.'
+        }`,
+      );
       return [];
     }
   }

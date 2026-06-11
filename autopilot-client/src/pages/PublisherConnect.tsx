@@ -86,7 +86,7 @@ const platforms: {
     icon: Twitter,
     color: "text-foreground",
     bgColor: "bg-muted",
-    description: "Tweet directly from AutoPilot",
+    description: "Tweet directly from Mako Co-pilot",
     fields: [
       { key: "api_key", label: "API Key (Consumer Key)", placeholder: "Consumer Key from developer portal", type: "password" },
       { key: "api_secret", label: "API Secret (Consumer Secret)", placeholder: "Consumer Secret from developer portal", type: "password" },
@@ -580,7 +580,7 @@ const PublisherConnect = () => {
           const isConnecting = connectingOAuth === platform.id;
           const whatsappNotes =
             platform.id === "whatsapp" && whatsappPlatformMode
-              ? `Included with AutoPilot${whatsappPlatformLabel ? ` (${whatsappPlatformLabel})` : ""} — click Enable, no Meta setup required.`
+              ? `Included with Mako Co-pilot${whatsappPlatformLabel ? ` (${whatsappPlatformLabel})` : ""} — click Enable, no Meta setup required.`
               : cap?.notes ?? platform.description;
 
           return (

@@ -45,7 +45,7 @@ export class LegalController {
   @Get('api/v1/legal/urls')
   legalUrls() {
     const urls = resolveLegalUrls(this.config);
-    const appName = this.config.get<string>('APP_NAME') ?? 'Tekrem Innovation Solutions - Autopilot';
+    const appName = this.config.get<string>('APP_NAME') ?? 'Tekrem Innovation Solutions - Mako';
     const supportEmail =
       this.config.get<string>('SUPPORT_EMAIL')?.trim() ?? 'support@agriwide.co';
     return { appName, supportEmail, ...urls };
@@ -108,7 +108,7 @@ export class LegalController {
   private sendPublicHtml(res: Response, filename: string) {
     try {
       const html = readFileSync(join(process.cwd(), 'public', filename), 'utf8');
-      const appName = this.config.get<string>('APP_NAME') ?? 'Tekrem Innovation Solutions - Autopilot';
+      const appName = this.config.get<string>('APP_NAME') ?? 'Tekrem Innovation Solutions - Mako';
       const frontend = (this.config.get<string>('FRONTEND_URL') ?? '').replace(/\/$/, '');
       const supportEmail =
         this.config.get<string>('SUPPORT_EMAIL')?.trim() ?? 'support@agriwide.co';

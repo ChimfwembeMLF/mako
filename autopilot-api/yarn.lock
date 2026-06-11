@@ -357,6 +357,33 @@
     lodash.isundefined "^3.0.1"
     lodash.uniq "^4.5.0"
 
+"@gltf-transform/core@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/@gltf-transform/core/-/core-4.4.0.tgz"
+  integrity sha512-cOPxOhHFFz5hwmix+li1+Nnq5qMV/QD3fTCsVlApxxFACtFdjkt2R/juseD4gvZ7D2c/yl6OilKH0pvI735YyQ==
+  dependencies:
+    property-graph "^4.1.0"
+
+"@gltf-transform/extensions@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/@gltf-transform/extensions/-/extensions-4.4.0.tgz"
+  integrity sha512-ZwEgFkkqnUR7d4m6roK9BycxxdoqJNtVyo7w5ShJ9syKBoQiXw2QrTSLwXaUAImSrEIl9Jh/wZTtvSVyviQuXg==
+  dependencies:
+    "@gltf-transform/core" "^4.4.0"
+    ktx-parse "^1.1.0"
+
+"@gltf-transform/functions@^4.4.0":
+  version "4.4.0"
+  resolved "https://registry.npmjs.org/@gltf-transform/functions/-/functions-4.4.0.tgz"
+  integrity sha512-CaSTAVAd2NXNWsxdgvq090rKHqy7AQlcNWV4ec7xtQyS8WEv3S3gVN27ikWmdB8nWEsXUbOIDhtPMLbXI6xDJg==
+  dependencies:
+    "@gltf-transform/core" "^4.4.0"
+    "@gltf-transform/extensions" "^4.4.0"
+    ktx-parse "^1.1.0"
+    ndarray "^1.0.19"
+    ndarray-lanczos "^0.3.0"
+    ndarray-pixels "^5.0.1"
+
 "@humanwhocodes/config-array@^0.13.0":
   version "0.13.0"
   dependencies:
@@ -369,6 +396,23 @@
 
 "@humanwhocodes/object-schema@^2.0.3":
   version "2.0.3"
+
+"@img/colour@^1.0.0":
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/@img/colour/-/colour-1.1.0.tgz"
+  integrity sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==
+
+"@img/sharp-libvips-linux-x64@1.2.4":
+  version "1.2.4"
+  resolved "https://registry.npmjs.org/@img/sharp-libvips-linux-x64/-/sharp-libvips-linux-x64-1.2.4.tgz"
+  integrity sha512-tJxiiLsmHc9Ax1bz3oaOYBURTXGIRDODBqhveVHonrHJ9/+k89qbLl0bcJns+e4t4rvaNBxaEZsFtSfAdquPrw==
+
+"@img/sharp-linux-x64@0.34.5":
+  version "0.34.5"
+  resolved "https://registry.npmjs.org/@img/sharp-linux-x64/-/sharp-linux-x64-0.34.5.tgz"
+  integrity sha512-MEzd8HPKxVxVenwAa+JRPwEC7QFjoPWuS5NZnBt6B3pu7EG2Ge0id1oLHZpPJdn3OQK+BQDiw9zStiHBTJQQQQ==
+  optionalDependencies:
+    "@img/sharp-libvips-linux-x64" "1.2.4"
 
 "@inquirer/ansi@^1.0.2":
   version "1.0.2"
@@ -1221,6 +1265,11 @@
   integrity sha512-zYZb0+nJhOHtPpGDb3vqPjwpdeGlGC157VpkqNQL+UU2qwoacoQ7MpsAmUptI/0Oa127X32JzWDqQVEXp2RcIA==
   dependencies:
     "@types/express" "*"
+
+"@types/ndarray@^1.0.11", "@types/ndarray@^1.0.14":
+  version "1.0.14"
+  resolved "https://registry.npmjs.org/@types/ndarray/-/ndarray-1.0.14.tgz"
+  integrity sha512-oANmFZMnFQvb219SSBIhI1Ih/r4CvHDOzkWyJS/XRqkMrGH5/kaPSA1hQhdIBzouaE+5KpE/f5ylI9cujmckQg==
 
 "@types/node@*", "@types/node@^25.2.2", "@types/node@>=18":
   version "25.2.2"
@@ -2386,6 +2435,13 @@ css-select@^5.1.0:
 css-what@^6.1.0:
   version "6.2.2"
 
+cwise-compiler@^1.0.0:
+  version "1.1.3"
+  resolved "https://registry.npmjs.org/cwise-compiler/-/cwise-compiler-1.1.3.tgz"
+  integrity sha512-WXlK/m+Di8DMMcCjcWr4i+XzcQra9eCdXIJrgh4TUgh0pIS/yJduLxS9JgefsHJ/YVLdgPtXm9r62W92MvanEQ==
+  dependencies:
+    uniq "^1.0.0"
+
 date-fns@^2.29.3:
   version "2.30.0"
   dependencies:
@@ -2448,7 +2504,7 @@ depd@^2.0.0, depd@~2.0.0:
 detect-indent@^6.0.0:
   version "6.1.0"
 
-detect-libc@^2.0.0, detect-libc@^2.0.1:
+detect-libc@^2.0.0, detect-libc@^2.0.1, detect-libc@^2.1.2:
   version "2.1.2"
 
 detect-newline@^3.0.0, detect-newline@^3.1.0:
@@ -2549,6 +2605,11 @@ dotenv@^16.4.5, dotenv@^16.6.1:
 
 dotenv@17.2.3:
   version "17.2.3"
+
+draco3dgltf@^1.5.7:
+  version "1.5.7"
+  resolved "https://registry.npmjs.org/draco3dgltf/-/draco3dgltf-1.5.7.tgz"
+  integrity sha512-LeqcpmoHIyYUi0z70/H3tMkGj8QhqVxq6FJGPjlzR24BNkQ6jyMheMvFKJBI0dzGZrEOUyQEmZ8axM1xRrbRiw==
 
 duck@^0.1.12:
   version "0.1.12"
@@ -3511,6 +3572,11 @@ ioredis@^5.0.4, ioredis@5.9.2:
     redis-parser "^3.0.0"
     standard-as-callback "^2.1.0"
 
+iota-array@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/iota-array/-/iota-array-1.0.0.tgz"
+  integrity sha512-pZ2xT+LOHckCatGQ3DcG/a+QuEqvoxqkiL7tvE8nn3uuu+f6i1TtpB5/FtWFbxUuVr5PZCx8KskuGatbJDXOWA==
+
 ipaddr.js@1.9.1:
   version "1.9.1"
 
@@ -3521,6 +3587,11 @@ is-binary-path@~2.1.0:
   version "2.1.0"
   dependencies:
     binary-extensions "^2.0.0"
+
+is-buffer@^1.0.2:
+  version "1.1.6"
+  resolved "https://registry.npmjs.org/is-buffer/-/is-buffer-1.1.6.tgz"
+  integrity sha512-NcdALwpXkTm5Zvvbk7owOUSvVvBKDgKP5/ewfXEznmQFfs4ZRmanOeKBTjRVjka3QFoN6XJ+9F3USqfHqTaU5w==
 
 is-callable@^1.2.7:
   version "1.2.7"
@@ -4116,6 +4187,11 @@ keyv@^4.5.3:
 
 kleur@^3.0.3:
   version "3.0.3"
+
+ktx-parse@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/ktx-parse/-/ktx-parse-1.1.0.tgz"
+  integrity sha512-mKp3y+FaYgR7mXWAbyyzpa/r1zDWeaunH+INJO4fou3hb45XuNSwar+7llrRyvpMWafxSIi99RNFJ05MHedaJQ==
 
 lazystream@^1.0.0:
   version "1.0.1"
@@ -4830,6 +4906,39 @@ mute-stream@^2.0.0:
 natural-compare@^1.4.0:
   version "1.4.0"
 
+ndarray-lanczos@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.npmjs.org/ndarray-lanczos/-/ndarray-lanczos-0.3.0.tgz"
+  integrity sha512-5kBmmG3Zvyj77qxIAC4QFLKuYdDIBJwCG+DukT6jQHNa1Ft74/hPH1z5mbQXeHBt8yvGPBGVrr3wEOdJPYYZYg==
+  dependencies:
+    "@types/ndarray" "^1.0.11"
+    ndarray "^1.0.19"
+
+ndarray-ops@^1.2.2:
+  version "1.2.2"
+  resolved "https://registry.npmjs.org/ndarray-ops/-/ndarray-ops-1.2.2.tgz"
+  integrity sha512-BppWAFRjMYF7N/r6Ie51q6D4fs0iiGmeXIACKY66fLpnwIui3Wc3CXiD/30mgLbDjPpSLrsqcp3Z62+IcHZsDw==
+  dependencies:
+    cwise-compiler "^1.0.0"
+
+ndarray-pixels@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.npmjs.org/ndarray-pixels/-/ndarray-pixels-5.0.1.tgz"
+  integrity sha512-IBtrpefpqlI8SPDCGjXk4v5NV5z7r3JSuCbfuEEXaM0vrOJtNGgYUa4C3Lt5H+qWdYF4BCPVFsnXhNC7QvZwkw==
+  dependencies:
+    "@types/ndarray" "^1.0.14"
+    ndarray "^1.0.19"
+    ndarray-ops "^1.2.2"
+    sharp "^0.34.0"
+
+ndarray@^1.0.19:
+  version "1.0.19"
+  resolved "https://registry.npmjs.org/ndarray/-/ndarray-1.0.19.tgz"
+  integrity sha512-B4JHA4vdyZU30ELBw3g7/p9bZupyew5a7tX1Y/gGeF2hafrPaQZhgrGQfsvgfYbgdFZjYwuEcnaobeM/WMW+HQ==
+  dependencies:
+    iota-array "^1.0.0"
+    is-buffer "^1.0.2"
+
 negotiator@^1.0.0:
   version "1.0.0"
 
@@ -5331,6 +5440,11 @@ prompts@^2.0.1:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
 
+property-graph@^4.1.0:
+  version "4.1.0"
+  resolved "https://registry.npmjs.org/property-graph/-/property-graph-4.1.0.tgz"
+  integrity sha512-AvPcP7XECNWy4LGmFQ77k7un4lSKM4eS29PTvW4ck95uYeLxXPWJM7hLuBqK91FaHqCcgJvIUCuNJjjxKE7VKQ==
+
 proto-list@~1.2.1:
   version "1.2.4"
 
@@ -5763,6 +5877,40 @@ sha.js@^2.4.12:
     inherits "^2.0.4"
     safe-buffer "^5.2.1"
     to-buffer "^1.2.0"
+
+sharp@^0.34.0:
+  version "0.34.5"
+  resolved "https://registry.npmjs.org/sharp/-/sharp-0.34.5.tgz"
+  integrity sha512-Ou9I5Ft9WNcCbXrU9cMgPBcCK8LiwLqcbywW3t4oDV37n1pzpuNLsYiAV8eODnjbtQlSDwZ2cUEeQz4E54Hltg==
+  dependencies:
+    "@img/colour" "^1.0.0"
+    detect-libc "^2.1.2"
+    semver "^7.7.3"
+  optionalDependencies:
+    "@img/sharp-darwin-arm64" "0.34.5"
+    "@img/sharp-darwin-x64" "0.34.5"
+    "@img/sharp-libvips-darwin-arm64" "1.2.4"
+    "@img/sharp-libvips-darwin-x64" "1.2.4"
+    "@img/sharp-libvips-linux-arm" "1.2.4"
+    "@img/sharp-libvips-linux-arm64" "1.2.4"
+    "@img/sharp-libvips-linux-ppc64" "1.2.4"
+    "@img/sharp-libvips-linux-riscv64" "1.2.4"
+    "@img/sharp-libvips-linux-s390x" "1.2.4"
+    "@img/sharp-libvips-linux-x64" "1.2.4"
+    "@img/sharp-libvips-linuxmusl-arm64" "1.2.4"
+    "@img/sharp-libvips-linuxmusl-x64" "1.2.4"
+    "@img/sharp-linux-arm" "0.34.5"
+    "@img/sharp-linux-arm64" "0.34.5"
+    "@img/sharp-linux-ppc64" "0.34.5"
+    "@img/sharp-linux-riscv64" "0.34.5"
+    "@img/sharp-linux-s390x" "0.34.5"
+    "@img/sharp-linux-x64" "0.34.5"
+    "@img/sharp-linuxmusl-arm64" "0.34.5"
+    "@img/sharp-linuxmusl-x64" "0.34.5"
+    "@img/sharp-wasm32" "0.34.5"
+    "@img/sharp-win32-arm64" "0.34.5"
+    "@img/sharp-win32-ia32" "0.34.5"
+    "@img/sharp-win32-x64" "0.34.5"
 
 shebang-command@^1.2.0:
   version "1.2.0"
@@ -6260,6 +6408,11 @@ unicode-trie@^2.0.0:
   dependencies:
     pako "^0.2.5"
     tiny-inflate "^1.0.0"
+
+uniq@^1.0.0:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/uniq/-/uniq-1.0.1.tgz"
+  integrity sha512-Gw+zz50YNKPDKXs+9d+aKAjVwpjNwqzvNpLigIruT4HA9lMZNdMqs9x07kKHB/L9WRzqp4+DlTU5s4wG2esdoA==
 
 universalify@^2.0.0:
   version "2.0.1"

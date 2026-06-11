@@ -442,7 +442,7 @@ export class SocialAccountsService {
     }
 
     const displayName =
-      this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')?.trim() || 'AutoPilot WhatsApp';
+      this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')?.trim() || 'Mako Co-pilot WhatsApp';
     const displayPhone = this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_PHONE')?.trim();
 
     return this.connectAccount({

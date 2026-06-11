@@ -29,9 +29,9 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(to: string, resetLink: string): Promise<void> {
-    const subject = 'Reset your BrandPilot password';
+    const subject = 'Reset your Mako password';
     const text = [
-      'You requested a password reset for your BrandPilot account.',
+      'You requested a password reset for your Mako account.',
       '',
       `Reset your password: ${resetLink}`,
       '',
@@ -50,7 +50,7 @@ export class MailService {
       subject,
       text,
       html: `
-        <p>You requested a password reset for your BrandPilot account.</p>
+        <p>You requested a password reset for your Mako account.</p>
         <p><a href="${resetLink}">Reset your password</a></p>
         <p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>
       `,
@@ -64,7 +64,7 @@ export class MailService {
     workspaceName: string,
     signupLink: string,
   ): Promise<void> {
-    const appName = this.config.get<string>('APP_NAME') ?? 'AutoPilot';
+    const appName = this.config.get<string>('APP_NAME') ?? 'Mako Co-pilot';
     const subject = `You've been invited to ${workspaceName} on ${appName}`;
     const text = [
       `You've been invited to join "${workspaceName}" on ${appName}.`,

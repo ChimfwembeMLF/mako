@@ -43,8 +43,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "BrandPilot — AI Marketing",
-        short_name: "BrandPilot",
+        name: "Mako — AI Marketing",
+        short_name: "Mako",
         description: "AI-powered social media content generation and lead management.",
         theme_color: "#6366f1",
         background_color: "#0f0f12",

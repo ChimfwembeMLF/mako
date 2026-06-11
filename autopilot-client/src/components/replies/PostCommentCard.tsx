@@ -78,9 +78,18 @@ export function PostCommentCard({
 
       <CardContent className="p-0 border-t bg-muted/10">
         {post.comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-6 px-4">
-            No comments on this post yet. Pull comments to sync.
-          </p>
+          <div className="text-sm text-muted-foreground text-center py-6 px-4 space-y-2">
+            {post.commentSyncSupported === false && post.commentSyncNote ? (
+              <>
+                <p className="text-amber-700 dark:text-amber-400 font-medium">
+                  Comments cannot be synced for {post.platform}
+                </p>
+                <p className="text-xs leading-relaxed">{post.commentSyncNote}</p>
+              </>
+            ) : (
+              <p>No comments on this post yet. Pull comments to sync.</p>
+            )}
+          </div>
         ) : (
           <Accordion type="single" collapsible defaultValue="comments" className="w-full">
             <AccordionItem value="comments" className="border-0">

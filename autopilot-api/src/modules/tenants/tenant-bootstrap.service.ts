@@ -50,6 +50,27 @@ export class TenantBootstrapService {
       })),
       ['key'],
     );
+
+    const roleChatbotKeys: Record<string, string[]> = {
+      Owner: ['chatbot.view', 'chatbot.use', 'chatbot.manage'],
+      Admin: ['chatbot.view', 'chatbot.use', 'chatbot.manage'],
+      Publisher: ['chatbot.view', 'chatbot.use'],
+    };
+    for (const [roleName, keys] of Object.entries(roleChatbotKeys)) {
+      const roles = await this.rolesRepo.find({ where: { name: roleName } });
+      for (const role of roles) {
+        for (const permissionKey of keys) {
+          const exists = await this.rolePermissionsRepo.findOne({
+            where: { roleId: role.id, permissionKey },
+          });
+          if (!exists) {
+            await this.rolePermissionsRepo.save(
+              this.rolePermissionsRepo.create({ roleId: role.id, permissionKey }),
+            );
+          }
+        }
+      }
+    }
   }
 
   async bootstrapForUser(user: UserEntity): Promise<Tenants> {

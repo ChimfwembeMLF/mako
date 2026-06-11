@@ -34,7 +34,7 @@ export class PlatformsService {
           ...p,
           oauth: false,
           notes:
-            'Included with AutoPilot — enable for this workspace. No Meta Developer setup required for your clients.',
+            'Included with Mako Co-pilot — enable for this workspace. No Meta Developer setup required for your clients.',
         };
       }
 

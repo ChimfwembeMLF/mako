@@ -13,6 +13,13 @@ export const JOB_WHATSAPP_INBOUND = 'whatsapp-inbound';
 export const JOB_LEAD_WEBHOOK = 'lead-webhook';
 export const JOB_SEND_EMAIL = 'send-email';
 export const JOB_AI_TASK = 'ai-task';
+export const JOB_INGEST_DOCUMENT = 'ingest-document';
+
+export type IngestDocumentJobData = {
+  tenantId: string;
+  documentId: string;
+  userId: string;
+};
 
 export const ALL_QUEUES = [
   QUEUE_CONTENT_PUBLISH,

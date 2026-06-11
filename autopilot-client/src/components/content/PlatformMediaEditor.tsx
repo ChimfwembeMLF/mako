@@ -42,6 +42,7 @@ export function PlatformMediaEditor({
         type,
         name: asset.name ?? undefined,
         fileSizeBytes: asset.fileSizeBytes ?? undefined,
+        assetId: asset.id,
       },
     ]);
     onChange(next);

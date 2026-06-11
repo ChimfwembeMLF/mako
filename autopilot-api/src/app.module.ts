@@ -47,6 +47,7 @@ import { WhatsappModule } from './modules/whatsapp/whatsapp.module';
 import { QueuesModule } from './modules/queues/queues.module';
 import { SocialInboxModule } from './modules/social_inbox/social-inbox.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ChatbotModule } from './modules/chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -103,6 +104,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
     QueuesModule,
     SocialInboxModule,
     NotificationsModule,
+    ChatbotModule,
   ],
   providers: [
     {

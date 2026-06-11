@@ -1,0 +1,271 @@
+openapi: 3.0.3
+info:
+  title: Mako Chatbot Widget API
+  version: 1.0.0
+  description: |
+    Public API for embedding the Mako chatbot on websites and building custom chat UIs.
+
+    **Authentication:** Create an API key in the dashboard (AI Chatbot → Embed). Pass it as:
+    ```
+    Authorization: Bearer pk_live_xxxxxxxx
+    ```
+
+    **Requirements:** Widget must be enabled for the tenant. Keys are scoped to one chatbot config.
+
+    **Full Swagger UI:** `{server}/documentation` (filter by tag `Widget`)
+
+servers:
+  - url: http://localhost:4000
+    description: Local development
+  - url: https://api.example.com
+    description: Production (replace with your API_PUBLIC_URL)
+
+tags:
+  - name: Widget
+    description: API-key authenticated endpoints for embedded chat
+
+security:
+  - widgetApiKey: []
+
+paths:
+  /api/v1/widget/config:
+    get:
+      tags: [Widget]
+      summary: Get widget configuration
+      description: Returns bot name, welcome message, theme, and TTS settings.
+      operationId: getWidgetConfig
+      responses:
+        '200':
+          description: Widget configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WidgetConfigResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/widget/sessions:
+    post:
+      tags: [Widget]
+      summary: Create a chat session
+      description: |
+        Starts a new conversation. Returns a `sessionId` and `visitorId`.
+        Store both client-side; send `X-Visitor-Id` on subsequent message requests.
+      operationId: createWidgetSession
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWidgetSessionRequest'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWidgetSessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/v1/widget/sessions/{sessionId}/messages:
+    post:
+      tags: [Widget]
+      summary: Send a user message
+      description: Sends a message and returns the assistant reply with optional RAG citations.
+      operationId: sendWidgetMessage
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+        - $ref: '#/components/parameters/VisitorIdHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '201':
+          description: Assistant reply
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssistantMessageResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Visitor ID does not match session
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/v1/widget/sessions/{sessionId}/messages/{messageId}/speech:
+    post:
+      tags: [Widget]
+      summary: Text-to-speech for an assistant message
+      description: Returns MPEG audio when TTS is enabled on the chatbot config.
+      operationId: speakWidgetMessage
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: messageId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/VisitorIdHeader'
+      responses:
+        '200':
+          description: MPEG audio
+          content:
+            audio/mpeg:
+              schema:
+                type: string
+                format: binary
+        '400':
+          description: TTS not enabled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Visitor ID does not match session
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  securitySchemes:
+    widgetApiKey:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: Chatbot API key from the Embed tab (`pk_live_...`)
+
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    VisitorIdHeader:
+      name: X-Visitor-Id
+      in: header
+      required: false
+      description: Visitor ID returned from session creation. Required when session was created with a visitorId.
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+    NotFound:
+      description: Resource not found or widget disabled
+
+  schemas:
+    WidgetTheme:
+      type: object
+      additionalProperties: true
+      properties:
+        primaryColor:
+          type: string
+          example: '#6366f1'
+        gradientFrom:
+          type: string
+          example: '#6366f1'
+        gradientTo:
+          type: string
+          example: '#a855f7'
+        gradientAngle:
+          type: integer
+          example: 135
+        avatarUrl:
+          type: string
+          format: uri
+        position:
+          type: string
+          enum: [bottom-right, bottom-left]
+
+    WidgetConfigResponse:
+      type: object
+      required: [name, isActive, ttsEnabled, theme]
+      properties:
+        name:
+          type: string
+          example: Website Assistant
+        welcomeMessage:
+          type: string
+          example: Hi! How can I help you today?
+        theme:
+          $ref: '#/components/schemas/WidgetTheme'
+        isActive:
+          type: boolean
+        ttsEnabled:
+          type: boolean
+
+    CreateWidgetSessionRequest:
+      type: object
+      properties:
+        visitorId:
+          type: string
+          description: Stable ID for this visitor (generated if omitted)
+        metadata:
+          type: object
+          additionalProperties: true
+
+    CreateWidgetSessionResponse:
+      type: object
+      required: [sessionId, visitorId]
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+        visitorId:
+          type: string
+        welcomeMessageId:
+          type: string
+          format: uuid
+          nullable: true
+
+    SendMessageRequest:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 8000
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ChatCitation:
+      type: object
+      properties:
+        documentId:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: string
+
+    AssistantMessageResponse:
+      type: object
+      required: [messageId, role, content, citations]
+      properties:
+        messageId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [assistant]
+        content:
+          type: string
+        citations:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChatCitation'

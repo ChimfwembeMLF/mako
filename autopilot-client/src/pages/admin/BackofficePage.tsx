@@ -4,7 +4,7 @@ import {
   Building2, Users, CreditCard, Sparkles, Activity, Server, Settings,
   TrendingUp, Globe, Zap, CheckCircle2, XCircle, Loader2, ArrowLeft,
   FileText, Share2, MessageSquare, ClipboardList, Shield, ExternalLink,
-  ChevronRight,
+  ChevronRight, Bot, BookOpen, Key,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -131,6 +131,49 @@ function TenantDetailSheet({
                   </div>
                 ))}
               </div>
+              {detail.chatbot && (
+                <div>
+                  <p className="text-sm font-medium mb-2 flex items-center gap-2">
+                    <Bot className="h-4 w-4" /> AI Chatbot
+                  </p>
+                  <div className="rounded-lg border p-3 space-y-3 text-sm">
+                    <div className="flex flex-wrap gap-2">
+                      {detail.chatbot.widgetEnabled && <Badge variant="default">Widget live</Badge>}
+                      {detail.chatbot.ragEnabled && <Badge variant="secondary">RAG</Badge>}
+                      {detail.chatbot.useMistralLibrary && <Badge variant="outline">Mistral Library</Badge>}
+                      {detail.chatbot.widgetTtsEnabled && <Badge variant="outline">TTS</Badge>}
+                      {!detail.chatbot.isActive && <Badge variant="destructive">Inactive</Badge>}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        ['Sessions', detail.chatbot.sessions],
+                        ['Last 7 days', detail.chatbot.sessionsLast7Days],
+                        ['Messages', detail.chatbot.messages],
+                        ['Knowledge docs', detail.chatbot.knowledgeDocuments],
+                        ['Ready', detail.chatbot.knowledgeReady],
+                        ['Failed', detail.chatbot.knowledgeFailed],
+                        ['Chunks', detail.chatbot.knowledgeChunks],
+                        ['API keys', detail.chatbot.activeApiKeys],
+                      ].map(([label, val]) => (
+                        <div key={String(label)} className="rounded border px-2 py-1.5">
+                          <p className="text-xs text-muted-foreground">{label}</p>
+                          <p className="font-semibold">{val}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {Object.keys(detail.chatbot.sessionsByChannel).length > 0 && (
+                      <div>
+                        <p className="text-xs text-muted-foreground mb-1">Sessions by channel</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(detail.chatbot.sessionsByChannel).map(([ch, n]) => (
+                            <Badge key={ch} variant="outline" className="capitalize">{ch}: {n}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
               <div>
                 <p className="text-sm font-medium mb-2">Connected accounts</p>
                 {detail.socialAccounts.length === 0 ? (
@@ -212,7 +255,7 @@ function BackofficeContent() {
     );
   }
 
-  const { company, stats, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, env } = overview;
+  const { company, stats, chatbot, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, env } = overview;
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-8">
@@ -244,9 +287,10 @@ function BackofficeContent() {
           <TabsTrigger value="tenants">Tenants ({stats.tenants})</TabsTrigger>
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="ai">AI Usage</TabsTrigger>
+          <TabsTrigger value="chatbot">Chatbot ({stats.chatSessions})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="health">Platform Health</TabsTrigger>
-          <TabsTrigger value="company">About AutoPilot</TabsTrigger>
+          <TabsTrigger value="company">About Mako Co-pilot</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -261,6 +305,12 @@ function BackofficeContent() {
             <StatCard label="Comment replies" value={stats.commentReplies} icon={MessageSquare} />
             <StatCard label="Audit events" value={stats.auditLogs} icon={ClipboardList} />
             <StatCard label="Pending deletions" value={stats.pendingDataDeletions} icon={Shield} />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Chat sessions" value={stats.chatSessions} icon={Bot} sub={`${stats.chatSessionsLast7Days} last 7 days`} />
+            <StatCard label="Chat messages" value={stats.chatMessages} icon={MessageSquare} />
+            <StatCard label="Knowledge docs" value={stats.knowledgeDocuments} icon={BookOpen} sub={`${stats.knowledgeReady} ready · ${stats.knowledgeFailed} failed`} />
+            <StatCard label="Widgets live" value={stats.widgetsEnabled} icon={Globe} sub={`${stats.chatbotConfigs} configs · ${stats.activeChatbotApiKeys} API keys`} />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -315,6 +365,8 @@ function BackofficeContent() {
                     <th className="pb-2 pr-4">Plan</th>
                     <th className="pb-2 pr-4">Members</th>
                     <th className="pb-2 pr-4">Content</th>
+                    <th className="pb-2 pr-4">Widget</th>
+                    <th className="pb-2 pr-4">Sessions</th>
                     <th className="pb-2">Joined</th>
                   </tr>
                 </thead>
@@ -330,6 +382,14 @@ function BackofficeContent() {
                       <td className="py-3 pr-4"><Badge variant="outline" className="capitalize">{t.plan}</Badge></td>
                       <td className="py-3 pr-4">{t.members}</td>
                       <td className="py-3 pr-4">{t.contentItems}</td>
+                      <td className="py-3 pr-4">
+                        {t.widgetEnabled ? (
+                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        ) : (
+                          <XCircle className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </td>
+                      <td className="py-3 pr-4">{t.chatSessions}</td>
                       <td className="py-3 text-muted-foreground">{new Date(t.createdAt).toLocaleDateString()}</td>
                     </tr>
                   ))}
@@ -389,6 +449,77 @@ function BackofficeContent() {
                     </div>
                   ))
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="chatbot" className="space-y-6 mt-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Chatbot configs" value={stats.chatbotConfigs} icon={Bot} />
+            <StatCard label="Widgets enabled" value={stats.widgetsEnabled} icon={Globe} />
+            <StatCard label="RAG enabled" value={stats.ragEnabledTenants} icon={BookOpen} />
+            <StatCard label="Active API keys" value={stats.activeChatbotApiKeys} icon={Key} />
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard label="Total sessions" value={stats.chatSessions} icon={MessageSquare} sub={`${stats.chatSessionsLast7Days} last 7 days`} />
+            <StatCard label="Messages" value={stats.chatMessages} icon={MessageSquare} />
+            <StatCard label="Knowledge chunks" value={stats.knowledgeChunks} icon={BookOpen} sub={`${stats.knowledgeDocuments} documents`} />
+            <StatCard label="Chatbot AI tokens" value={chatbot.aiTokensChatbot.toLocaleString()} icon={Sparkles} />
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader><CardTitle className="text-base">Sessions by channel</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {Object.entries(chatbot.sessionsByChannel).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No chat sessions yet</p>
+                ) : (
+                  Object.entries(chatbot.sessionsByChannel)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([channel, count]) => (
+                      <div key={channel} className="flex justify-between text-sm">
+                        <span className="capitalize">{channel}</span>
+                        <Badge variant="secondary">{count}</Badge>
+                      </div>
+                    ))
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Knowledge by status</CardTitle></CardHeader>
+              <CardContent className="space-y-2">
+                {Object.entries(chatbot.knowledgeByStatus).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No knowledge documents yet</p>
+                ) : (
+                  Object.entries(chatbot.knowledgeByStatus)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([status, count]) => (
+                      <div key={status} className="flex justify-between text-sm">
+                        <span className="capitalize">{status.replace(/_/g, ' ')}</span>
+                        <Badge variant={status === 'failed' ? 'destructive' : 'secondary'}>{count}</Badge>
+                      </div>
+                    ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Feature adoption</CardTitle>
+              <CardDescription>Tenants with chatbot capabilities enabled</CardDescription>
+            </CardHeader>
+            <CardContent className="grid sm:grid-cols-3 gap-4 text-sm">
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Mistral Library</p>
+                <p className="text-xl font-bold">{stats.mistralLibraryTenants}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Widget TTS</p>
+                <p className="text-xl font-bold">{stats.ttsEnabledTenants}</p>
+              </div>
+              <div className="rounded-lg border p-3">
+                <p className="text-xs text-muted-foreground">Knowledge failed</p>
+                <p className="text-xl font-bold text-destructive">{stats.knowledgeFailed}</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -462,7 +593,11 @@ function BackofficeContent() {
                 <EnvRow label="LinkedIn OAuth" ok={env.linkedInConfigured} />
                 <EnvRow label="PawaPay billing" ok={env.pawapayConfigured} />
                 <EnvRow label="Meta webhook token" ok={env.metaWebhookTokenSet} />
+                <EnvRow label="Widget bundle (CLIENT_URL)" ok={env.widgetBundleConfigured} />
                 <div className="flex justify-between text-sm pt-1"><span>Connected social</span><span>{stats.connectedSocialAccounts}</span></div>
+                <p className="text-xs text-muted-foreground pt-2">
+                  Chatbot widget is served from the client app. Mistral powers RAG, embeddings, and optional workflow escalation.
+                </p>
                 <p className="text-xs text-muted-foreground pt-2 break-all">API: {env.apiPublicUrl || 'not set'}</p>
                 {env.clientUrl && <p className="text-xs text-muted-foreground break-all">Client: {env.clientUrl}</p>}
               </CardContent>
@@ -500,6 +635,9 @@ function BackofficeContent() {
                   <li><strong>Publisher & Scheduler</strong> — OAuth connect, per-platform publish, calendar</li>
                   <li><strong>Lead Agent</strong> — capture, score, and follow up on leads</li>
                   <li><strong>Replies</strong> — comment sync + AI auto-reply rules</li>
+                  <li><strong>AI Chatbot</strong> — RAG-powered assistant with playground, 3D avatar, and TTS</li>
+                  <li><strong>Knowledge Library</strong> — document upload, chunking, and vector search for chatbot context</li>
+                  <li><strong>Embeddable Widget</strong> — gradient-themed chat widget with API keys and OpenAPI integration docs</li>
                   <li><strong>Billing</strong> — PawaPay mobile money subscriptions (ZMW)</li>
                 </ul>
               </div>
@@ -527,7 +665,7 @@ function BackofficeContent() {
 
               <div className="rounded-lg border bg-muted/30 p-4 flex items-start gap-3">
                 <Zap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <p><strong className="text-foreground">{company.tagline}</strong> — AutoPilot is built for African agribusiness and growing brands that need enterprise marketing automation without enterprise cost. See <code className="text-xs bg-muted px-1 rounded">autopilot-api/docs/DEPLOY.md</code> for production deployment.</p>
+                <p><strong className="text-foreground">{company.tagline}</strong> — Mako Co-pilot is built for African agribusiness and growing brands that need enterprise marketing automation without enterprise cost. See <code className="text-xs bg-muted px-1 rounded">autopilot-api/docs/DEPLOY.md</code> for production deployment.</p>
               </div>
             </CardContent>
           </Card>
