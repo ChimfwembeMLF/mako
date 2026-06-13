@@ -29,6 +29,7 @@
     "deploy:prod": "npm run build && npm run migrations:run && npx pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
     "deploy:pm2": "npm run build && npx pm2 startOrRestart ecosystem.config.cjs --env production --update-env",
     "seed:dev": "ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/seed.ts",
+    "seed:prod": "NODE_ENV=production ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/seed-production.ts",
     "migrations:run": "typeorm-ts-node-commonjs migration:run -d database/data-source.ts",
     "migrations:revert": "typeorm-ts-node-commonjs migration:revert -d database/data-source.ts",
     "migrations:show": "typeorm-ts-node-commonjs migration:show -d database/data-source.ts",

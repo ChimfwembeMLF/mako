@@ -13,25 +13,34 @@ export class ChatbotWidgetSeedService {
 
   /**
    * Enable the embeddable widget for a tenant and ensure a usable API key exists.
-   * Uses DEMO_WIDGET_API_KEY when set (match VITE_WIDGET_API_KEY in the client).
+   * Uses `opts.secret`, then MAKO_WIDGET_API_KEY / DEMO_WIDGET_API_KEY (match VITE_WIDGET_API_KEY in the client).
    */
-  async ensureSeededForTenant(tenantId: string): Promise<{ secret?: string; action: string }> {
+  async ensureSeededForTenant(
+    tenantId: string,
+    opts?: { secret?: string; label?: string },
+  ): Promise<{ secret?: string; action: string }> {
     const config = await this.chatbotConfig.getOrCreate(tenantId);
 
     if (!config.widgetEnabled || !config.isActive) {
       await this.chatbotConfig.update(tenantId, { widgetEnabled: true, isActive: true });
     }
 
-    const demoKey = process.env.DEMO_WIDGET_API_KEY?.trim();
-    if (demoKey) {
+    const fixedKey =
+      opts?.secret?.trim() ||
+      process.env.MAKO_WIDGET_API_KEY?.trim() ||
+      process.env.DEMO_WIDGET_API_KEY?.trim();
+    if (fixedKey) {
+      const label =
+        opts?.label ??
+        (process.env.MAKO_WIDGET_API_KEY ? 'Mako embed' : 'Demo embed');
       await this.apiKeys.ensureWidgetKey({
         tenantId,
         configId: config.id,
-        secret: demoKey,
-        label: 'Demo embed',
+        secret: fixedKey,
+        label,
       });
-      this.logger.log(`Widget API key synced from DEMO_WIDGET_API_KEY for tenant ${tenantId}`);
-      return { secret: demoKey, action: 'synced' };
+      this.logger.log(`Widget API key synced for tenant ${tenantId}`);
+      return { secret: fixedKey, action: 'synced' };
     }
 
     const keys = await this.apiKeys.listKeys(tenantId);

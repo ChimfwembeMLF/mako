@@ -20,7 +20,7 @@ async function bootstrap() {
       process.exit(1);
     }
     if (process.env.DB_SYNCHRONIZE === 'true') {
-      console.warn('WARNING: DB_SYNCHRONIZE=true in production — use migrations instead');
+      console.warn('WARNING: DB_SYNCHRONIZE=true in production — use migrations instead (npm run migrations:run)');
     }
     if (!process.env.API_PUBLIC_URL?.startsWith('https://')) {
       console.warn('WARNING: API_PUBLIC_URL should be a public HTTPS URL for social media publishing');

@@ -34,6 +34,8 @@ cp docs/env.mako.production.template .env   # then edit secrets
 npm ci
 npm run build
 npm run migrations:run
+# After first owner signs up (or if tenant already exists):
+npm run seed:prod
 npm run pm2:start
 
 # After code updates
@@ -68,6 +70,7 @@ npm run pm2:startup   # run the sudo command it prints
 | Script | Purpose |
 |--------|---------|
 | `npm run pm2:start` | First production start |
+| `npm run seed:prod` | Permissions, plans, theme, Mako widget key (no demo users) |
 | `npm run deploy:prod` | Build + migrations + restart |
 | `npm run deploy:pm2` | Build + restart (no migrate) |
 | `npm run pm2:restart` | Restart running process |
