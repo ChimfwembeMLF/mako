@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useTenant } from "@/hooks/useTenant";
 import { usePermissions } from "@/hooks/usePermissions";
 import { P } from "@/lib/permissions";
-import { chatbotApi, knowledgeApi, type ChatMessage, type ChatbotConfig } from "@/lib/api";
+import { chatbotApi, knowledgeApi, resolveApiBaseUrl, type ChatMessage, type ChatbotConfig } from "@/lib/api";
 import { KNOWLEDGE_UPLOAD_ACCEPT, KNOWLEDGE_UPLOAD_HINT } from "@/lib/knowledge-upload";
 import { preloadAvatarModel } from "@/lib/chat-avatar";
 import { preloadGltfAvatar } from "@/components/chatbot/avatar/gltf-setup";
@@ -176,7 +176,7 @@ export default function ChatbotPage() {
     );
   }
 
-  const apiBase = import.meta.env.VITE_API_BASE_URL || window.location.origin;
+  const apiBase = resolveApiBaseUrl();
   const widgetSnippet = embedKeySecret
     ? `<script async src="${window.location.origin}/widget/v1/loader.js" data-key="${embedKeySecret}" data-api="${apiBase}"></script>`
     : `<script async src="${window.location.origin}/widget/v1/loader.js" data-key="pk_live_YOUR_KEY" data-api="${apiBase}"></script>`;

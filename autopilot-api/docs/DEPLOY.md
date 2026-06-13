@@ -81,13 +81,29 @@ npm run pm2:startup   # run the sudo command it prints
 
 Or one-shot setup: `bash scripts/pm2-setup.sh`
 
+**Process file:** `ecosystem.config.json` (PM2 app name: `autopilot-api`, port `5000` in production).
+
+```bash
+# Direct PM2 (equivalent to npm run pm2:start)
+npx pm2 start ecosystem.config.json --env production
+npx pm2 startOrRestart ecosystem.config.json --env production --update-env
+```
+
+Secrets live in `.env` on the server — NestJS loads them at boot; PM2 does not parse `.env`.
+
 ---
 
 ## 3. Client environment
 
 ```env
-VITE_API_BASE_URL=https://api.yourdomain.com
+# Protocol-relative — matches page protocol (http or https)
+VITE_API_BASE_URL=//makoapi.tekreminnovations.com
 ```
+
+| Host | Role |
+|------|------|
+| `mako.tekreminnovations.com` | Frontend (static SPA) |
+| `makoapi.tekreminnovations.com` | API (NestJS / PM2) |
 
 Build & deploy static files:
 ```bash

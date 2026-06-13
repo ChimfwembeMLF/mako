@@ -16,22 +16,22 @@ jwt:
 google:
   client_id: GOOGLE ID HERE
   client_secret: GOOGLE SECRET HERE
-  callback_url: https://mako.tekreminnovations.com/api/v1/auth/google/redirect
+  callback_url: https://makoapi.tekreminnovations.com/api/v1/auth/google/redirect
 
 facebook: 
   app_secret: FACEBOOK SECRET HERE
   app_id: FACEBOOK APP ID HERE
-  callback_url: https://mako.tekreminnovations.com/api/v1/auth/facebook/redirect
+  callback_url: https://makoapi.tekreminnovations.com/api/v1/auth/facebook/redirect
   
 linkedin:
   client_id: LINKEDIN CLIENT ID HERE
   client_secret: LINKEDIN CLIENT SECRET HERE
-  callback_url: https://mako.tekreminnovations.com/api/v1/auth/linkedin/redirect
+  callback_url: https://makoapi.tekreminnovations.com/api/v1/auth/linkedin/redirect
 
 instagram:
   client_id: INSTAGRAM APP ID HERE
   client_secret: INSTAGRAM APP SECRET HERE
-  callback_url: https://mako.tekreminnovations.com/api/v1/auth/instagram/redirect
+  callback_url: https://makoapi.tekreminnovations.com/api/v1/auth/instagram/redirect
 
 Session:
   secret: 'jnskmmksdsmkdsdscscs'  

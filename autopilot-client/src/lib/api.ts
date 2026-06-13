@@ -4,7 +4,21 @@ import { ApiError, reportApiFailure, reportApiSuccess } from './api-errors';
 
 export { ApiError, isNetworkError, isAuthError } from './api-errors';
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+/** Resolves VITE_API_BASE_URL; `//host` uses the page protocol (http or https). */
+export function resolveApiBaseUrl(): string {
+  const raw = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (!raw?.trim()) return 'http://localhost:4000';
+  const configured = raw.trim().replace(/^["']|["']$/g, '');
+  if (configured.startsWith('//')) {
+    if (typeof window !== 'undefined' && window.location?.protocol) {
+      return `${window.location.protocol}${configured}`;
+    }
+    return `https:${configured}`;
+  }
+  return configured;
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
 
 // ----------------------------------------------------------------------
 // Types (derived from the OpenAPI spec)
