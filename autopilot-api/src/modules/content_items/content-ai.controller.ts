@@ -193,6 +193,12 @@ export class ContentAiController {
     const item = await this.contentRepo.findOne({ where: { id: contentId } });
     if (!item) throw new NotFoundException('Content item not found');
 
+    await this.contentRepo.update(contentId, {
+      publishAttempts: 0,
+      publishFailedReason: undefined,
+      ...(item.status === 'publish_failed' ? { status: 'approved' } : {}),
+    });
+
     const data = {
       tenantId: item.tenantId,
       contentId,

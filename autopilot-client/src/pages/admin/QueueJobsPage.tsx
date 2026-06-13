@@ -265,25 +265,31 @@ function QueueJobsContent() {
                     <TableCell>
                       <Badge variant={job.state === 'failed' ? 'destructive' : 'secondary'}>{job.state}</Badge>
                     </TableCell>
-                    <TableCell>{job.attemptsMade ?? 0}</TableCell>
+                    <TableCell>
+                      {(job.attemptsMade ?? 0)}/{job.maxAttempts ?? 5}
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground">{formatTime(job.timestamp)}</TableCell>
                     <TableCell className="text-xs text-muted-foreground max-w-[240px] truncate">
                       {job.failedReason ?? (job.data ? JSON.stringify(job.data) : '—')}
                     </TableCell>
                     <TableCell>
                       {job.state === 'failed' && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => void handleRetry(job)}
-                          disabled={retryingId === String(job.id)}
-                        >
-                          {retryingId === String(job.id) ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            'Retry'
-                          )}
-                        </Button>
+                        (job.attemptsMade ?? 0) >= (job.maxAttempts ?? 5) ? (
+                          <span className="text-xs text-muted-foreground">Max retries</span>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => void handleRetry(job)}
+                            disabled={retryingId === String(job.id)}
+                          >
+                            {retryingId === String(job.id) ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              'Retry'
+                            )}
+                          </Button>
+                        )
                       )}
                     </TableCell>
                   </TableRow>

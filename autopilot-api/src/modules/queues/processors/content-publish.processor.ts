@@ -6,6 +6,7 @@ import {
   JOB_PUBLISH_CONTENT,
   JOB_AUTO_PUBLISH_SCAN,
   JOB_AUTO_PUBLISH_TENANT,
+  QUEUE_JOB_MAX_ATTEMPTS,
   AutoPublishTenantJobData,
   PublishContentJobData,
 } from '../queue.constants';
@@ -46,6 +47,21 @@ export class ContentPublishProcessor extends WorkerHost {
       platforms: data.platforms,
       platformPayloads: data.platformPayloads,
     });
+
+    if (!result.published) {
+      const reasons = Object.entries(result.results ?? {})
+        .map(([p, r]) => `${p}: ${r.message}`)
+        .join('; ');
+      const attempt = job.attemptsMade + 1;
+      const maxAttempts = job.opts.attempts ?? QUEUE_JOB_MAX_ATTEMPTS;
+      if (attempt >= maxAttempts) {
+        this.logger.error(
+          `Publish failed for ${data.contentId} after ${attempt} attempt(s): ${reasons}`,
+        );
+      }
+      throw new Error(reasons || 'Publish failed on all platforms');
+    }
+
     return result;
   }
 

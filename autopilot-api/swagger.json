@@ -682,6 +682,44 @@
         ]
       }
     },
+    "/api/v1/subscriptions/tenant/{tenantId}/auto-renew": {
+      "patch": {
+        "operationId": "SubscriptionsController_setAutoRenew",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoRenewDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Subscriptions"
+        ]
+      }
+    },
     "/api/v1/plans": {
       "get": {
         "operationId": "PlansController_list",
@@ -6145,6 +6183,59 @@
         ]
       }
     },
+    "/api/v1/legal/data-protection/consent": {
+      "post": {
+        "operationId": "LegalController_recordConsent",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DataProtectionConsentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      },
+      "get": {
+        "operationId": "LegalController_consentStatus",
+        "parameters": [
+          {
+            "name": "visitorId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "version",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
     "/api/v1/webhooks/meta/data-deletion": {
       "post": {
         "operationId": "LegalController_metaDataDeletion",
@@ -7395,6 +7486,54 @@
           "Widget"
         ]
       }
+    },
+    "/api/v1/search": {
+      "get": {
+        "operationId": "SearchController_query",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/v1/search/ask": {
+      "post": {
+        "operationId": "SearchController_ask",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SearchAskDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Search"
+        ]
+      }
     }
   },
   "info": {
@@ -7504,6 +7643,10 @@
         "properties": {}
       },
       "TenantsUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AutoRenewDto": {
         "type": "object",
         "properties": {}
       },
@@ -7844,6 +7987,10 @@
         "type": "object",
         "properties": {}
       },
+      "DataProtectionConsentDto": {
+        "type": "object",
+        "properties": {}
+      },
       "UpdatePlansDto": {
         "type": "object",
         "properties": {}
@@ -7992,6 +8139,10 @@
           "content",
           "citations"
         ]
+      },
+      "SearchAskDto": {
+        "type": "object",
+        "properties": {}
       }
     }
   }

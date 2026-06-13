@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -26,6 +31,7 @@ import {
   SendEmailJobData,
   SyncTenantCommentsJobData,
   WhatsappInboundJobData,
+  QUEUE_JOB_MAX_ATTEMPTS,
 } from './queue.constants';
 
 @Injectable()
@@ -48,7 +54,7 @@ export class QueueDispatchService {
   async enqueuePublish(data: PublishContentJobData) {
     const job = await this.publishQueue.add(JOB_PUBLISH_CONTENT, data, {
       jobId: `publish-${data.tenantId}-${data.contentId}-${Date.now()}`,
-      attempts: 3,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 5000 },
       removeOnComplete: 100,
       removeOnFail: 200,
@@ -63,7 +69,7 @@ export class QueueDispatchService {
       {},
       {
         jobId: `auto-publish-scan-${Math.floor(Date.now() / 60000)}`,
-        attempts: 2,
+        attempts: QUEUE_JOB_MAX_ATTEMPTS,
         removeOnComplete: 20,
       },
     );
@@ -74,7 +80,7 @@ export class QueueDispatchService {
     const minute = Math.floor(Date.now() / 60000);
     const job = await this.publishQueue.add(JOB_AUTO_PUBLISH_TENANT, data, {
       jobId: `auto-publish-${data.tenantId}-${minute}`,
-      attempts: 2,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       removeOnComplete: 50,
     });
     return { jobId: job.id, queue: QUEUE_CONTENT_PUBLISH };
@@ -101,7 +107,7 @@ export class QueueDispatchService {
   async enqueueSyncTenantComments(data: SyncTenantCommentsJobData) {
     const job = await this.commentsQueue.add(JOB_SYNC_TENANT_COMMENTS, data, {
       jobId: `comments-${data.tenantId}-${Math.floor(Date.now() / 60000)}`,
-      attempts: 3,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 3000 },
       removeOnComplete: 50,
     });
@@ -114,7 +120,7 @@ export class QueueDispatchService {
       {},
       {
         jobId: `comments-all-${Math.floor(Date.now() / 60000)}`,
-        attempts: 2,
+        attempts: QUEUE_JOB_MAX_ATTEMPTS,
         removeOnComplete: 20,
       },
     );
@@ -123,7 +129,7 @@ export class QueueDispatchService {
 
   async enqueueWhatsappInbound(data: WhatsappInboundJobData) {
     const job = await this.webhooksQueue.add(JOB_WHATSAPP_INBOUND, data, {
-      attempts: 3,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 2000 },
       removeOnComplete: 200,
       removeOnFail: 500,
@@ -133,7 +139,7 @@ export class QueueDispatchService {
 
   async enqueueLeadWebhook(data: LeadWebhookJobData) {
     const job = await this.webhooksQueue.add(JOB_LEAD_WEBHOOK, data, {
-      attempts: 3,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 2000 },
       removeOnComplete: 100,
     });
@@ -142,7 +148,7 @@ export class QueueDispatchService {
 
   async enqueueEmail(data: SendEmailJobData) {
     const job = await this.emailQueue.add(JOB_SEND_EMAIL, data, {
-      attempts: 5,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 3000 },
       removeOnComplete: 100,
     });
@@ -155,7 +161,7 @@ export class QueueDispatchService {
     }
     const job = await this.aiQueue.add(JOB_INGEST_DOCUMENT, data, {
       jobId: `ingest-${data.tenantId}-${data.documentId}`,
-      attempts: 2,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 5000 },
       removeOnComplete: 50,
       removeOnFail: 100,
@@ -169,7 +175,7 @@ export class QueueDispatchService {
       jobId: tenantId
         ? `ai-${data.type}-${tenantId}-${Date.now()}`
         : `ai-${data.type}-${data.userId}-${Date.now()}`,
-      attempts: 2,
+      attempts: QUEUE_JOB_MAX_ATTEMPTS,
       backoff: { type: 'exponential', delay: 4000 },
       removeOnComplete: 100,
       removeOnFail: 200,
@@ -251,21 +257,37 @@ export class QueueDispatchService {
     if (!job) {
       throw new NotFoundException(`Job ${jobId} not found in queue ${queueName}`);
     }
+    this.assertCanRetry(job);
     await job.retry();
     return this.serializeJob(queueName, job);
   }
 
   async retryAllFailed(queueName: string, limit = 100) {
     const queue = this.queueByName(queueName);
-    if (!queue) return { retried: 0 };
+    if (!queue) return { retried: 0, skipped: 0 };
 
     const jobs = await queue.getJobs(['failed'], 0, limit - 1);
     let retried = 0;
+    let skipped = 0;
     for (const job of jobs) {
-      await job.retry();
-      retried += 1;
+      try {
+        this.assertCanRetry(job);
+        await job.retry();
+        retried += 1;
+      } catch {
+        skipped += 1;
+      }
     }
-    return { retried };
+    return { retried, skipped };
+  }
+
+  private assertCanRetry(job: NonNullable<Awaited<ReturnType<Queue['getJob']>>>) {
+    const maxAttempts = job.opts.attempts ?? QUEUE_JOB_MAX_ATTEMPTS;
+    if (job.attemptsMade >= maxAttempts) {
+      throw new BadRequestException(
+        `Job has failed ${job.attemptsMade} time(s) (max ${maxAttempts}) and cannot be retried`,
+      );
+    }
   }
 
   private async getJob(queueName: string, jobId: string) {
@@ -287,6 +309,7 @@ export class QueueDispatchService {
       returnvalue: job.returnvalue,
       failedReason: job.failedReason,
       attemptsMade: job.attemptsMade,
+      maxAttempts: job.opts.attempts ?? QUEUE_JOB_MAX_ATTEMPTS,
       timestamp: job.timestamp,
       finishedOn: job.finishedOn,
     };

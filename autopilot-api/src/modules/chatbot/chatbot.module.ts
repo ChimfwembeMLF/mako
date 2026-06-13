@@ -29,6 +29,7 @@ import { MistralChatbotLibraryService } from './services/mistral-chatbot-library
 import { ChatbotTtsVoiceService } from './services/chatbot-tts-voice.service';
 import { WidgetApiKeyGuard } from './guards/widget-api-key.guard';
 import { IngestDocumentProcessor } from './processors/ingest-document.processor';
+import { ChatbotWidgetSeedService } from './chatbot-widget-seed.service';
 
 @Module({
   imports: [
@@ -62,7 +63,8 @@ import { IngestDocumentProcessor } from './processors/ingest-document.processor'
     ChatbotTtsVoiceService,
     WidgetApiKeyGuard,
     IngestDocumentProcessor,
+    ChatbotWidgetSeedService,
   ],
-  exports: [ChatbotConfigService, KnowledgeIngestService],
+  exports: [ChatbotConfigService, KnowledgeIngestService, ChatbotWidgetSeedService],
 })
 export class ChatbotModule {}

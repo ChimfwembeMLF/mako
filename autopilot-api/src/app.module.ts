@@ -48,6 +48,7 @@ import { QueuesModule } from './modules/queues/queues.module';
 import { SocialInboxModule } from './modules/social_inbox/social-inbox.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
+import { SearchModule } from './modules/search/search.module';
 
 @Module({
   imports: [
@@ -105,6 +106,7 @@ import { ChatbotModule } from './modules/chatbot/chatbot.module';
     SocialInboxModule,
     NotificationsModule,
     ChatbotModule,
+    SearchModule,
   ],
   providers: [
     {

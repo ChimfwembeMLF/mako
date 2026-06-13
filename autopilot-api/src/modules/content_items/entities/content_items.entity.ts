@@ -54,6 +54,8 @@ export class ContentItems {
   externalPostId?: string;
   @Column({ type: 'text', nullable: true })
   publishFailedReason?: string;
+  @Column({ type: 'int', default: 0 })
+  publishAttempts: number;
   @DeleteDateColumn({ type: 'timestamptz' })
   deleted_at?: Date;
   @CreateDateColumn({ type: 'timestamptz' })

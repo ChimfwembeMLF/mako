@@ -1,19 +1,31 @@
-import { Body, Controller, Get, Post, Query, Req, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Response, Request } from 'express';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import { IsEmail } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { DataDeletionService } from './data-deletion.service';
+import { DataProtectionConsentService } from './data-protection-consent.service';
 import { resolveLegalUrls } from './legal-urls.util';
 import { WhatsappInboundService } from '../whatsapp/whatsapp-inbound.service';
 import { SocialMessagingInboundService } from '../social_inbox/social-messaging-inbound.service';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
+import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 class DataDeletionRequestDto {
   @IsEmail()
   email: string;
+}
+
+class DataProtectionConsentDto {
+  @IsString()
+  @IsNotEmpty()
+  visitorId: string;
+
+  @IsOptional()
+  @IsString()
+  consentVersion?: string;
 }
 
 @ApiTags('Legal')
@@ -21,6 +33,7 @@ class DataDeletionRequestDto {
 export class LegalController {
   constructor(
     private readonly deletion: DataDeletionService,
+    private readonly consent: DataProtectionConsentService,
     private readonly config: ConfigService,
     private readonly whatsappInbound: WhatsappInboundService,
     private readonly socialMessagingInbound: SocialMessagingInboundService,
@@ -57,8 +70,34 @@ export class LegalController {
   }
 
   @Post('api/v1/legal/data-deletion-request')
-  requestDeletion(@Body() dto: DataDeletionRequestDto) {
-    return this.deletion.requestByEmail(dto.email);
+  @UseGuards(OptionalJwtAuthGuard)
+  requestDeletion(@Body() dto: DataDeletionRequestDto, @Req() req: Request) {
+    const userId = req.user?.['sub'] as string | undefined;
+    return this.deletion.requestByEmail(dto.email, {
+      userId,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+  }
+
+  @Post('api/v1/legal/data-protection/consent')
+  @UseGuards(OptionalJwtAuthGuard)
+  recordConsent(@Body() dto: DataProtectionConsentDto, @Req() req: Request) {
+    const userId = req.user?.['sub'] as string | undefined;
+    return this.consent.recordConsent({
+      visitorId: dto.visitorId,
+      userId,
+      consentVersion: dto.consentVersion,
+      ipAddress: req.ip,
+      userAgent: req.headers['user-agent'],
+    });
+  }
+
+  @Get('api/v1/legal/data-protection/consent')
+  async consentStatus(@Query('visitorId') visitorId: string, @Query('version') version?: string) {
+    if (!visitorId?.trim()) return { accepted: false };
+    const row = await this.consent.hasConsent(visitorId.trim(), version);
+    return row ?? { accepted: false };
   }
 
   /** Meta Platform Data Deletion Callback URL (App Dashboard → Settings → Basic) */

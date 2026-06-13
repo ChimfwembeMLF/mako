@@ -44,12 +44,13 @@ export class PaymentsService {
     @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
-  /** Server-only flag; accepts legacy env name for local dev. */
+  /** Server-only flag; defaults to true in development for local testing. */
   private devAutoCompleteEnabled(): boolean {
-    return (
-      this.config.get<string>('PAYMENTS_DEV_AUTO_COMPLETE') === 'true' ||
-      this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') === 'true'
-    );
+    const explicit = this.config.get<string>('PAYMENTS_DEV_AUTO_COMPLETE');
+    if (explicit === 'true') return true;
+    if (explicit === 'false') return false;
+    if (this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') === 'true') return true;
+    return this.config.get<string>('NODE_ENV') === 'development';
   }
 
   async initiateDeposit(params: {
@@ -57,6 +58,7 @@ export class PaymentsService {
     plan: string;
     phone?: string;
     correspondent?: string;
+    isRenewal?: boolean;
   }) {
     const plan = normalizePlanKey(params.plan);
     if (plan === 'free') {
@@ -78,23 +80,49 @@ export class PaymentsService {
         msisdn: params.phone,
         correspondent: params.correspondent ?? 'MTN_MOMO_ZMB',
         provider: 'mobile_money',
+        isRenewal: params.isRenewal ?? false,
       }),
     );
 
-    if (this.devAutoCompleteEnabled()) {
+    const autoComplete = this.devAutoCompleteEnabled();
+    if (autoComplete) {
       await this.completeDeposit(deposit.depositId);
     }
 
-    const autoComplete = this.devAutoCompleteEnabled();
+    const isRenewal = params.isRenewal ?? false;
     return {
       paymentId: deposit.depositId,
-      status: deposit.status,
+      status: autoComplete ? 'COMPLETED' : deposit.status,
+      activated: autoComplete,
       plan,
       amount,
+      isRenewal,
       message: autoComplete
-        ? 'Payment completed successfully'
-        : 'Payment request sent — approve the prompt on your phone',
+        ? isRenewal
+          ? 'Subscription renewed successfully'
+          : 'Payment completed — your plan is now active'
+        : isRenewal
+          ? 'Renewal payment sent — approve the prompt on your phone'
+          : 'Payment request sent — approve the prompt on your phone',
     };
+  }
+
+  async initiateRenewalDeposit(tenantId: string) {
+    const sub = await this.subscriptions.getRenewalContext(tenantId);
+    const plan = normalizePlanKey(sub.plan);
+    if (plan === 'free') {
+      throw new Error('Free plan does not renew');
+    }
+    if (!sub.renewalPhone) {
+      throw new Error('No saved mobile money number for auto-renew');
+    }
+    return this.initiateDeposit({
+      tenantId,
+      plan,
+      phone: sub.renewalPhone,
+      correspondent: sub.renewalCorrespondent ?? 'MTN_MOMO_ZMB',
+      isRenewal: true,
+    });
   }
 
   async completeDeposit(depositId: string) {
@@ -106,13 +134,28 @@ export class PaymentsService {
 
     await this.depositsRepo.update(deposit.id, { status: 'COMPLETED' });
     const plan = normalizePlanKey(deposit.plan) as PlanKey;
-    await this.subscriptions.activatePlan(deposit.tenantId, plan);
-    this.logger.log(`Activated ${plan} for tenant ${deposit.tenantId} via deposit ${depositId}`);
-    void this.notifications?.notifyPaymentSuccess({
-      tenantId: deposit.tenantId,
-      plan,
-      amount: deposit.amount ? Number(deposit.amount) : undefined,
+    const paidAt = new Date();
+    await this.subscriptions.activatePlan(deposit.tenantId, plan, paidAt);
+    await this.subscriptions.onPaymentCompleted(deposit.tenantId, {
+      phone: deposit.phone ?? deposit.msisdn,
+      correspondent: deposit.correspondent,
     });
+    this.logger.log(
+      `${deposit.isRenewal ? 'Renewed' : 'Activated'} ${plan} for tenant ${deposit.tenantId} via deposit ${depositId}`,
+    );
+    if (deposit.isRenewal) {
+      void this.notifications?.notifyRenewalSuccess({
+        tenantId: deposit.tenantId,
+        plan,
+        amount: deposit.amount ? Number(deposit.amount) : undefined,
+      });
+    } else {
+      void this.notifications?.notifyPaymentSuccess({
+        tenantId: deposit.tenantId,
+        plan,
+        amount: deposit.amount ? Number(deposit.amount) : undefined,
+      });
+    }
     return { tenantId: deposit.tenantId, plan, status: 'COMPLETED' };
   }
 

@@ -14,8 +14,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { CreditCard, Smartphone, Zap, Users, CheckCircle2, AlertTriangle, Loader2, Clock } from 'lucide-react';
+import { CreditCard, Smartphone, Zap, Users, CheckCircle2, AlertTriangle, Loader2, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
+
+function maskPhone(phone: string | null | undefined): string {
+  if (!phone) return '—';
+  if (phone.length <= 4) return phone;
+  return `${'*'.repeat(Math.min(phone.length - 4, 6))}${phone.slice(-4)}`;
+}
 
 interface Subscription {
   plan: string;
@@ -27,6 +34,10 @@ interface Subscription {
   aiCallsUsed: number;
   aiCallsRemaining: number | null;
   dailyWorkflowEnabled: boolean;
+  autoRenewEnabled: boolean;
+  renewalPhone: string | null;
+  renewalCorrespondent: string | null;
+  hasRenewalMethod: boolean;
 }
 
 export default function BillingPage() {
@@ -47,12 +58,53 @@ export default function BillingPage() {
   const [mmNetwork, setMmNetwork]     = useState('MTN_MOMO_ZMB');
   const [mmSubmitting, setMmSubmitting] = useState(false);
   const [mmDepositId, setMmDepositId] = useState<string | null>(null);
+  const [mmCompleted, setMmCompleted] = useState(false);
+  const [autoRenewSaving, setAutoRenewSaving] = useState(false);
 
   useEffect(() => {
     plansApi.list().then(setPlans).catch(() => setPlans([]));
   }, []);
 
   useEffect(() => { if (tenant) load(); }, [tenant]);
+
+  useEffect(() => {
+    if (!mmDepositId || !tenant || mmCompleted) return;
+
+    let cancelled = false;
+    let attempts = 0;
+    const maxAttempts = 60;
+
+    async function poll() {
+      if (cancelled || mmCompleted) return;
+      try {
+        const deposits = await paymentsApi.listDeposits(tenant!.id);
+        const dep = deposits.find((d) => d.id === mmDepositId);
+        if (dep?.status?.toUpperCase() === 'COMPLETED') {
+          setMmCompleted(true);
+          toast({
+            title: 'Plan activated!',
+            description: `You're now on the ${dep.plan ?? mmPlan} plan.`,
+          });
+          setMmOpen(false);
+          setMmDepositId(null);
+          await load();
+          return;
+        }
+      } catch {
+        /* retry */
+      }
+      attempts += 1;
+      if (attempts < maxAttempts && !cancelled) {
+        setTimeout(poll, 5000);
+      }
+    }
+
+    const timer = setTimeout(poll, 3000);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [mmDepositId, tenant, mmCompleted, mmPlan]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -85,6 +137,29 @@ export default function BillingPage() {
     setLoading(false);
   }
 
+  async function handleAutoRenewToggle(enabled: boolean) {
+    if (!tenant) return;
+    setAutoRenewSaving(true);
+    try {
+      const summary = await subscriptionsApi.setAutoRenew(tenant.id, enabled);
+      setSub(summary);
+      toast({
+        title: enabled ? 'Auto-renew enabled' : 'Auto-renew disabled',
+        description: enabled
+          ? 'We will charge your saved mobile money number before each billing period ends.'
+          : 'You will need to renew manually on the Billing page.',
+      });
+    } catch (e: unknown) {
+      toast({
+        title: 'Could not update auto-renew',
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
+    } finally {
+      setAutoRenewSaving(false);
+    }
+  }
+
   async function handleUpgrade(plan: string) {
     if (!tenant || plan === 'free') return;
     openMobileMoney(plan);
@@ -95,6 +170,7 @@ export default function BillingPage() {
     setMmPhone('');
     setMmNetwork('MTN_MOMO_ZMB');
     setMmDepositId(null);
+    setMmCompleted(false);
     setMmOpen(true);
   }
 
@@ -108,8 +184,18 @@ export default function BillingPage() {
         phone: mmPhone.trim(),
         correspondent: mmNetwork,
       });
-      setMmDepositId(result.paymentId);
-      toast({ title: 'Payment request sent!', description: result.message });
+      const completed =
+        result.activated === true || result.status?.toUpperCase() === 'COMPLETED';
+      if (completed) {
+        setMmCompleted(true);
+        toast({ title: 'Plan activated!', description: result.message });
+        setMmOpen(false);
+        setMmDepositId(null);
+        await load();
+      } else {
+        setMmDepositId(result.paymentId);
+        toast({ title: 'Payment request sent!', description: result.message });
+      }
     } catch (e: unknown) {
       toast({
         title: 'Payment failed',
@@ -123,9 +209,20 @@ export default function BillingPage() {
 
   const currentPlan = sub?.plan ?? 'free';
   const planConfig = plans.find(p => p.key === currentPlan);
-  const aiLimit = sub?.aiCallsLimit ?? planConfig?.aiCallsLimit ?? 100;
+  // null means unlimited — do not use ?? which treats null as missing
+  const aiLimit =
+    sub != null
+      ? sub.aiCallsLimit
+      : planConfig?.aiCallsLimit !== undefined
+        ? planConfig.aiCallsLimit
+        : 100;
   const aiPct = aiLimit === null ? 0 : Math.min((aiUsed / aiLimit) * 100, 100);
-  const seatLimit = sub?.seatLimit ?? planConfig?.seatLimit ?? 2;
+  const seatLimit =
+    sub != null
+      ? sub.seatLimit
+      : planConfig?.seatLimit !== undefined
+        ? planConfig.seatLimit
+        : 2;
   const seatPct = seatLimit === null ? 0 : Math.min((seats / seatLimit) * 100, 100);
   const isAtAiLimit = aiLimit !== null && aiUsed >= aiLimit;
   const isAtSeatLimit = seatLimit !== null && seats >= seatLimit;
@@ -198,10 +295,74 @@ export default function BillingPage() {
                 </div>
                 <Progress value={seatPct} className={`h-2 ${isAtSeatLimit ? '[&>div]:bg-destructive' : ''}`} />
               </div>
-              <p className="text-xs text-muted-foreground">Upgrade plan to add more seats.</p>
+              <p className="text-xs text-muted-foreground">
+                {seatLimit === null ? 'Unlimited seats on your plan.' : 'Upgrade plan to add more seats.'}
+              </p>
             </div>
           </div>
         )}
+
+        {/* Auto-renew */}
+        {!loading && currentPlan !== 'free' && (
+          <div className="rounded-lg border bg-card p-5 space-y-3">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <RefreshCw className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-medium">Auto-renew subscription</p>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {sub?.hasRenewalMethod
+                    ? `Charges ${maskPhone(sub.renewalPhone)} before your period ends.`
+                    : 'Pay once with mobile money to save your number for automatic renewals.'}
+                </p>
+              </div>
+              <Switch
+                checked={sub?.autoRenewEnabled ?? false}
+                disabled={autoRenewSaving || !sub?.hasRenewalMethod}
+                onCheckedChange={(v) => void handleAutoRenewToggle(v)}
+                aria-label="Toggle auto-renew"
+              />
+            </div>
+          </div>
+        )}
+
+        <Separator />
+
+        {/* Payment methods */}
+        <div>
+          <h2 className="text-base font-semibold mb-3">Payment methods</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="rounded-lg border bg-card p-4 flex items-start gap-3 ring-1 ring-primary/20 border-primary/30">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <Smartphone className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium">Mobile money</p>
+                  <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">Available</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  MTN MoMo, Airtel Money, and Zamtel Kwacha — pay and renew in ZMW.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-4 flex items-start gap-3 opacity-75">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <CreditCard className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium">Card / debit</p>
+                  <Badge variant="outline" className="text-[10px]">Coming soon</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Visa and Mastercard will be supported for international and local card payments.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <Separator />
 
@@ -241,15 +402,28 @@ export default function BillingPage() {
                     {upgrading === plan.key ? 'Redirecting…' : isCurrent ? 'Current Plan' : `Upgrade to ${plan.label}`}
                   </Button> */}
                   {plan.key !== 'free' && !isCurrent && (
-                    <Button
-                      className="w-full"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openMobileMoney(plan.key)}
-                    >
-                      <Smartphone className="h-3.5 w-3.5 mr-1.5" />
-                      {isCurrent ? 'Current Plan' : `Upgrade to ${plan.label}`}
-                    </Button>
+                    <div className="space-y-2">
+                      <Button
+                        className="w-full"
+                        variant={plan.highlight ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => openMobileMoney(plan.key)}
+                      >
+                        <Smartphone className="h-3.5 w-3.5 mr-1.5" />
+                        Pay with mobile money
+                      </Button>
+                      <Button
+                        className="w-full"
+                        variant="ghost"
+                        size="sm"
+                        disabled
+                        title="Card payments coming soon"
+                      >
+                        <CreditCard className="h-3.5 w-3.5 mr-1.5" />
+                        Pay with card
+                        <Badge variant="outline" className="ml-auto text-[10px]">Coming soon</Badge>
+                      </Button>
+                    </div>
                   )}
                 </div>
               );

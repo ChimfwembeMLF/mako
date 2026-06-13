@@ -349,6 +349,9 @@ function Pricing() {
             ))}
           </div>
         )}
+        <p className="text-center text-xs text-muted-foreground mt-6">
+          Mobile money available today · Card payments coming soon
+        </p>
       </div>
     </section>
   );

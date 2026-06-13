@@ -1,4 +1,5 @@
-import { ImagePlus, X, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { ImagePlus, X, AlertTriangle, Check, ChevronUp, ChevronDown } from 'lucide-react';
 import {
   PlatformMediaAttachment,
   platformOf,
@@ -16,6 +17,7 @@ interface PlatformMediaEditorProps {
   libraryAssets: MediaAsset[];
   onChange: (media: PlatformMediaAttachment[]) => void;
   onApplyToAll?: () => void;
+  onApplyAssetsToAll?: (assets: MediaAsset[]) => void;
   className?: string;
 }
 
@@ -25,12 +27,14 @@ export function PlatformMediaEditor({
   libraryAssets,
   onChange,
   onApplyToAll,
+  onApplyAssetsToAll,
   className,
 }: PlatformMediaEditorProps) {
   const def = platformOf(platform);
   const rules = def.media;
   const media = payload.media ?? [];
   const validation = validatePlatformPayload(platform, payload);
+  const [selectedLibraryIds, setSelectedLibraryIds] = useState<Set<string>>(new Set());
 
   function addAsset(asset: MediaAsset) {
     if (media.some((m) => m.url === asset.mediaUrl)) return;
@@ -52,7 +56,59 @@ export function PlatformMediaEditor({
     onChange(media.filter((_, i) => i !== index));
   }
 
+  function moveAttachment(index: number, direction: -1 | 1) {
+    const target = index + direction;
+    if (target < 0 || target >= media.length) return;
+    const next = [...media];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item);
+    onChange(next);
+  }
+
+  function toggleLibrarySelect(assetId: string) {
+    setSelectedLibraryIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(assetId)) next.delete(assetId);
+      else next.add(assetId);
+      return next;
+    });
+  }
+
+  function selectedAssets(): MediaAsset[] {
+    return libraryAssets.filter((a) => selectedLibraryIds.has(a.id));
+  }
+
+  function addSelectedToPlatform() {
+    const assets = selectedAssets();
+    if (!assets.length) return;
+    let next = [...media];
+    for (const asset of assets) {
+      if (next.some((m) => m.url === asset.mediaUrl)) continue;
+      const type = asset.mediaType === 'video' ? 'video' : 'image';
+      next = trimMediaForPlatform(platform, [
+        ...next,
+        {
+          url: asset.mediaUrl,
+          type,
+          name: asset.name ?? undefined,
+          fileSizeBytes: asset.fileSizeBytes ?? undefined,
+          assetId: asset.id,
+        },
+      ]);
+    }
+    onChange(next);
+    setSelectedLibraryIds(new Set());
+  }
+
+  function applySelectedToAllPlatforms() {
+    const assets = selectedAssets();
+    if (!assets.length || !onApplyAssetsToAll) return;
+    onApplyAssetsToAll(assets);
+    setSelectedLibraryIds(new Set());
+  }
+
   const available = libraryAssets.filter((a) => !media.some((m) => m.url === a.mediaUrl));
+  const hasSelection = selectedLibraryIds.size > 0;
 
   return (
     <div className={cn('space-y-3', className)}>
@@ -66,11 +122,13 @@ export function PlatformMediaEditor({
             {media.length} / {rules.maxAttachments}
           </span>
         </div>
-        {onApplyToAll && media.length > 0 && (
-          <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onApplyToAll}>
-            Apply to all platforms
-          </Button>
-        )}
+        <div className="flex items-center gap-1 flex-wrap">
+          {onApplyToAll && media.length > 0 && (
+            <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onApplyToAll}>
+              Copy {def.label} attachments to all
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="rounded-lg border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
@@ -81,54 +139,124 @@ export function PlatformMediaEditor({
       </div>
 
       {media.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
-          {media.map((m, i) => (
-            <div key={`${m.url}-${i}`} className="relative group">
-              {m.type === 'video' ? (
-                <div className="w-16 h-16 rounded-lg border bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
-                  Video
-                </div>
-              ) : (
-                <img
-                  src={resolveMediaUrl(m.url)}
-                  alt=""
-                  className="w-16 h-16 rounded-lg border object-cover"
-                />
-              )}
-              <button
-                type="button"
-                onClick={() => removeAt(i)}
-                className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                aria-label="Remove attachment"
+        <div className="space-y-2">
+          <p className="text-[11px] text-muted-foreground">Drag order: first attachment publishes first (carousels, galleries).</p>
+          <div className="space-y-2">
+            {media.map((m, i) => (
+              <div
+                key={`${m.url}-${i}`}
+                className="flex items-center gap-2 rounded-lg border bg-background/80 px-2 py-1.5"
               >
-                <X className="h-2.5 w-2.5" />
-              </button>
-            </div>
-          ))}
+                <span className="text-[10px] font-medium text-muted-foreground w-4 shrink-0">{i + 1}</span>
+                <div className="relative shrink-0">
+                  {m.type === 'video' ? (
+                    <div className="w-14 h-14 rounded-md border bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
+                      Video
+                    </div>
+                  ) : (
+                    <img
+                      src={resolveMediaUrl(m.url)}
+                      alt=""
+                      className="w-14 h-14 rounded-md border object-cover"
+                    />
+                  )}
+                </div>
+                <div className="flex flex-col gap-0.5 shrink-0">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    disabled={i === 0}
+                    onClick={() => moveAttachment(i, -1)}
+                    aria-label="Move attachment up"
+                  >
+                    <ChevronUp className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    disabled={i === media.length - 1}
+                    onClick={() => moveAttachment(i, 1)}
+                    aria-label="Move attachment down"
+                  >
+                    <ChevronDown className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+                <p className="text-[11px] text-muted-foreground flex-1 min-w-0 truncate">
+                  {m.name ?? (m.type === 'video' ? 'Video' : 'Image')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => removeAt(i)}
+                  className="h-7 w-7 shrink-0 rounded-full bg-destructive/10 text-destructive flex items-center justify-center hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                  aria-label="Remove attachment"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground">No attachments for {def.label} yet.</p>
+        <p className="text-xs text-muted-foreground">No attachments for {def.label} yet — pick from the library below.</p>
       )}
 
       {available.length > 0 && media.length < rules.maxAttachments && (
-        <div className="space-y-1.5">
-          <p className="text-[11px] text-muted-foreground">Add from library</p>
-          <div className="flex flex-wrap gap-2 max-h-24 overflow-y-auto">
-            {available.map((a) => (
-              <button
-                key={a.id}
-                type="button"
-                onClick={() => addAsset(a)}
-                className="w-12 h-12 rounded-md border overflow-hidden hover:ring-2 hover:ring-primary/40 transition-all"
-              >
-                {a.mediaType === 'video' ? (
-                  <div className="w-full h-full bg-muted text-[9px] flex items-center justify-center">Vid</div>
-                ) : (
-                  <img src={resolveMediaUrl(a.mediaUrl)} alt="" className="w-full h-full object-cover" />
-                )}
-              </button>
-            ))}
+        <div className="space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Select from library (click to toggle), then add to this platform or all platforms
+          </p>
+          <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+            {available.map((a) => {
+              const selected = selectedLibraryIds.has(a.id);
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  onClick={() => toggleLibrarySelect(a.id)}
+                  className={cn(
+                    'relative w-12 h-12 rounded-md border overflow-hidden transition-all',
+                    selected
+                      ? 'ring-2 ring-primary border-primary'
+                      : 'hover:ring-2 hover:ring-primary/40',
+                  )}
+                  aria-pressed={selected}
+                >
+                  {a.mediaType === 'video' ? (
+                    <div className="w-full h-full bg-muted text-[9px] flex items-center justify-center">Vid</div>
+                  ) : (
+                    <img src={resolveMediaUrl(a.mediaUrl)} alt="" className="w-full h-full object-cover" />
+                  )}
+                  {selected && (
+                    <span className="absolute inset-0 bg-primary/20 flex items-center justify-center">
+                      <Check className="h-4 w-4 text-primary" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
+          {hasSelection && (
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="secondary" size="sm" className="h-7 text-xs" onClick={addSelectedToPlatform}>
+                Add {selectedLibraryIds.size} to {def.label}
+              </Button>
+              {onApplyAssetsToAll && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={applySelectedToAllPlatforms}
+                >
+                  Apply {selectedLibraryIds.size} to all platforms
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       )}
 

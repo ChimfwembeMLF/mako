@@ -2,7 +2,7 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContentItems } from '../entities/content_items.entity';
-import { PublishContentService } from './publish-content.service';
+import { PublishContentService, MAX_CONTENT_PUBLISH_ATTEMPTS } from './publish-content.service';
 import { isContentDue } from '../utils/schedule.util';
 import { QueueDispatchService } from '../../queues/queue-dispatch.service';
 
@@ -133,7 +133,13 @@ export class AutoPublishService {
   }
 
   private async findDueItems(): Promise<ContentItems[]> {
-    const items = await this.contentRepo.find({ where: { status: 'approved' } });
-    return items.filter((item) => isContentDue(item));
+    const items = await this.contentRepo.find({
+      where: [{ status: 'approved' }, { status: 'scheduled' }],
+    });
+    return items.filter(
+      (item) =>
+        isContentDue(item) &&
+        (item.publishAttempts ?? 0) < MAX_CONTENT_PUBLISH_ATTEMPTS,
+    );
   }
 }

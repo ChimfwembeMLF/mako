@@ -173,7 +173,14 @@ export class BackofficeService {
         region: 'Zambia · Southern Africa',
         supportEmail: process.env.SUPPORT_EMAIL ?? 'support@agriwide.co',
         website: process.env.COMPANY_WEBSITE ?? 'https://agriwide.co',
-        legal: resolveLegalUrls(this.config),
+        legal: (() => {
+          const urls = resolveLegalUrls(this.config);
+          return {
+            privacy: urls.privacyPolicyUrl,
+            terms: urls.termsOfServiceUrl,
+            dataDeletion: urls.dataDeletionUrl,
+          };
+        })(),
       },
       stats: {
         tenants: tenantCount,

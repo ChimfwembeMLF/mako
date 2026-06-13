@@ -129,17 +129,6 @@ export function invoiceDataFromDeposit(
   };
 }
 
-const WATERMARK_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="280" height="280" opacity="0.06">
-  <defs>
-    <linearGradient id="wm" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#6366f1"/>
-      <stop offset="100%" style="stop-color:#ec4899"/>
-    </linearGradient>
-  </defs>
-  <circle cx="100" cy="100" r="90" fill="none" stroke="url(#wm)" stroke-width="6"/>
-  <path d="M60 140 L100 50 L140 140 M72 115 H128" fill="none" stroke="url(#wm)" stroke-width="10" stroke-linecap="round"/>
-</svg>`;
-
 export function renderInvoiceHtml(data: InvoiceData): string {
   const dateStr = new Date(data.paidAt ?? data.issuedAt).toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -183,20 +172,8 @@ export function renderInvoiceHtml(data: InvoiceData): string {
       gap: 24px;
       margin-bottom: 8px;
     }
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; }
     .brand-logo { height: 96px; width: auto; display: block; object-fit: contain; }
-    .brand-logo-fallback {
-      height: 96px;
-      min-width: 96px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      font-weight: 800;
-      color: #6366f1;
-    }
-    .brand-name { font-size: 26px; font-weight: 800; letter-spacing: 0.04em; line-height: 1; }
-    .brand-tagline { font-size: 9px; letter-spacing: 0.12em; color: #333; margin-top: 4px; font-weight: 600; }
     .company-block { text-align: right; font-size: 12px; line-height: 1.55; max-width: 320px; }
     .company-block .legal { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
     .tpin { color: #2563eb; font-weight: 700; }
@@ -229,14 +206,6 @@ export function renderInvoiceHtml(data: InvoiceData): string {
       border-radius: 0 0 8px 8px;
       overflow: hidden;
       margin-bottom: 0;
-    }
-    .watermark {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      pointer-events: none;
-      z-index: 0;
     }
     table.items {
       width: 100%;
@@ -343,10 +312,6 @@ export function renderInvoiceHtml(data: InvoiceData): string {
     <div class="top-row">
       <div class="brand">
         ${renderInvoiceLogoHtml()}
-        <div>
-          <div class="brand-name">${escapeHtml(data.companyName.toUpperCase())}</div>
-          <div class="brand-tagline">${escapeHtml(data.companyTagline)}</div>
-        </div>
       </div>
       <div class="company-block">
         <div class="legal">${escapeHtml(data.companyLegalName.toUpperCase())}</div>
@@ -386,7 +351,6 @@ export function renderInvoiceHtml(data: InvoiceData): string {
     </div>
 
     <div class="table-wrap">
-      <div class="watermark">${WATERMARK_SVG}</div>
       <table class="items">
         <thead>
           <tr>

@@ -4,6 +4,9 @@ export const QUEUE_WEBHOOKS = 'webhooks';
 export const QUEUE_AI = 'ai';
 export const QUEUE_EMAIL = 'email';
 
+/** Max BullMQ attempts (initial run + retries). Jobs are not retried beyond this. */
+export const QUEUE_JOB_MAX_ATTEMPTS = 5;
+
 export const JOB_PUBLISH_CONTENT = 'publish-content';
 export const JOB_AUTO_PUBLISH_SCAN = 'auto-publish-scan';
 export const JOB_AUTO_PUBLISH_TENANT = 'auto-publish-tenant';

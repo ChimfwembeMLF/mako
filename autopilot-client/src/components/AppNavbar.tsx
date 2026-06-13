@@ -1,18 +1,14 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings, Bot,
-  Rocket, Link2, Image, LayoutTemplate, MessageSquareReply,
-  GitPullRequestArrow, Users, ClipboardList, ShieldCheck,
-  ChevronsUpDown, Building2, CreditCard, Download, Menu, LogOut,
-  Sparkles, ChevronRight, Activity, History,
+  Zap, Settings, CreditCard, ChevronsUpDown, Building2,
+  Menu, LogOut, Rocket, ChevronRight, Search, Sparkles,
 } from "lucide-react";
-import { NavLink } from "@/components/NavLink";
 import { NotificationBell } from "@/components/NotificationBell";
+import { GlobalSearch, GlobalSearchTrigger, useGlobalSearchShortcut } from "@/components/GlobalSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { usePermissions } from "@/hooks/usePermissions";
-import { P, type PermissionKey } from "@/lib/permissions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -25,74 +21,9 @@ import {
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import Logo from "./Logo";
-
-type NavItem = {
-  title: string;
-  url: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description?: string;
-  /** Tenant permission required (any of if array) */
-  permission?: PermissionKey | PermissionKey[];
-  /** Platform Super Admin only */
-  superAdmin?: boolean;
-};
-type NavGroup = { label: string; items: NavItem[] };
-
-const NAV_GROUPS: NavGroup[] = [
-  {
-    label: "Studio",
-    items: [
-      { title: "Brand Brain", url: "/brand-brain", icon: Brain, description: "Identity, voice & audience" },
-      { title: "Content Engine", url: "/content", icon: Pen, description: "Generate on-brand content" },
-      { title: "Scheduler", url: "/scheduler", icon: CalendarClock, description: "Plan & publish posts" },
-      { title: "Publisher", url: "/publisher", icon: Link2, description: "Connect social accounts" },
-    ],
-  },
-  {
-    label: "Engage",
-    items: [
-      { title: "Lead Agent", url: "/leads", icon: MessageSquare, description: "Qualify & reply to leads" },
-      { title: "Replies", url: "/replies", icon: MessageSquareReply, description: "Auto-reply rules" },
-      { title: "Chatbot", url: "/chatbot", icon: Bot, description: "AI assistant & widget", permission: P.chatbot.view },
-      { title: "Conversation Log", url: "/chatbot/sessions", icon: History, description: "Widget & playground transcripts", permission: P.chatbot.view },
-      { title: "Analytics", url: "/analytics", icon: BarChart3, description: "Performance insights" },
-      { title: "Reports", url: "/reports", icon: ClipboardList, description: "On-demand insights" },
-    ],
-  },
-  {
-    label: "Library",
-    items: [
-      { title: "Media Library", url: "/media", icon: Image, description: "Images & assets" },
-      { title: "Templates", url: "/templates", icon: LayoutTemplate, description: "Reusable content" },
-      { title: "Workspaces", url: "/workspaces", icon: Building2, description: "Organize by brand" },
-    ],
-  },
-];
-
-const MORE_ITEMS: NavItem[] = [
-  { title: "Approvals", url: "/approvals", icon: GitPullRequestArrow, permission: P.approvals.view },
-  { title: "Team", url: "/team", icon: Users, permission: P.team.view },
-  { title: "Audit Logs", url: "/audit", icon: ClipboardList, permission: P.audit.view },
-  { title: "Roles & Permissions", url: "/admin/roles", icon: ShieldCheck, permission: P.admin.roles },
-  { title: "Maker-Checker", url: "/admin/maker-checker", icon: GitPullRequestArrow, permission: P.admin.makerChecker },
-  { title: "Platform Backoffice", url: "/admin/backoffice", icon: Activity, superAdmin: true },
-  { title: "Job Queues", url: "/admin/queues", icon: Activity, superAdmin: true },
-  { title: "System Settings", url: "/admin/system", icon: Settings, superAdmin: true },
-  { title: "Export Data", url: "/export", icon: Download, permission: P.leads.export },
-  { title: "Billing", url: "/billing", icon: CreditCard, permission: P.settings.billing },
-  { title: "Settings", url: "/settings", icon: Settings, permission: P.settings.view },
-];
-
-function useVisibleNavItems(items: NavItem[]) {
-  const { canAny, isSuperAdmin, loading } = usePermissions();
-  if (loading) return [];
-  return items.filter((item) => {
-    if (item.superAdmin) return isSuperAdmin;
-    if (!item.permission) return true;
-    const perms = Array.isArray(item.permission) ? item.permission : [item.permission];
-    return canAny(...perms);
-  });
-}
+import {
+  NAV_GROUPS, MORE_ITEMS, filterNavItems, type NavGroup,
+} from "@/lib/nav-config";
 
 function isActivePath(pathname: string, url: string, exact = false) {
   if (exact) return pathname === url;
@@ -239,7 +170,8 @@ function UserMenu() {
 function MobileNav() {
   const [open, setOpen] = useState(false);
   const { pathname } = useLocation();
-  const visibleMore = useVisibleNavItems(MORE_ITEMS);
+  const { canAny, isSuperAdmin, loading } = usePermissions();
+  const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -326,72 +258,91 @@ function MobileNav() {
 
 export function AppNavbar() {
   const { pathname } = useLocation();
-  const visibleMore = useVisibleNavItems(MORE_ITEMS);
+  const { canAny, isSuperAdmin, loading } = usePermissions();
+  const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
   const moreActive = visibleMore.some((item) => isActivePath(pathname, item.url));
 
+  const [searchOpen, setSearchOpen] = useState(false);
+  const openSearch = useCallback(() => setSearchOpen(true), []);
+  useGlobalSearchShortcut(openSearch);
+
   return (
-    <header className="sticky top-0 z-50 border-b border-border/40 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 py-4 mb-4">
-      <div className="flex h-14 items-center gap-3 px-4 md:px-6">
-        <MobileNav />
+    <>
+      <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
-        <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0 mr-1 py-4">
-          <Logo />
-        </Link>
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/75 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 py-4 mb-4">
+        <div className="flex h-14 items-center gap-3 px-4 md:px-6">
+          <MobileNav />
 
-        <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
-          <NavPill to="/dashboard" end>Dashboard</NavPill>
-          {NAV_GROUPS.map((group) => (
-            <NavDropdown key={group.label} group={group} />
-          ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all outline-none",
-                  moreActive
-                    ? "text-primary-foreground bg-primary shadow-sm shadow-primary/25"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/80",
-                )}
-              >
-                More
-                <ChevronRight className="h-3 w-3 rotate-90 opacity-60" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="center" className="w-52">
-              {visibleMore.map((item) => (
-                <DropdownMenuItem key={item.url} asChild>
-                  <Link
-                    to={item.url}
-                    className={cn(
-                      "flex items-center gap-2 w-full",
-                      isActivePath(pathname, item.url) && "text-primary",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4" />
-                    {item.title}
-                  </Link>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </nav>
+          <Link to="/dashboard" className="flex items-center gap-2.5 shrink-0 mr-1 py-4">
+            <Logo />
+          </Link>
 
-        <div className="flex items-center gap-2 ml-auto">
-          <Button
-            asChild
-            size="sm"
-            className="hidden md:inline-flex gap-1.5 rounded-full gradient-primary border-0 shadow-glow hover:opacity-90"
-          >
-            <Link to="/content">
-              <Sparkles className="h-3.5 w-3.5" />
-              Create
-            </Link>
-          </Button>
-          <NotificationBell />
-          <TenantSwitcher />
-          <UserMenu />
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            <NavPill to="/dashboard" end>Dashboard</NavPill>
+            {NAV_GROUPS.map((group) => (
+              <NavDropdown key={group.label} group={group} />
+            ))}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "inline-flex items-center gap-1 px-3.5 py-1.5 rounded-full text-sm font-medium transition-all outline-none",
+                    moreActive
+                      ? "text-primary-foreground bg-primary shadow-sm shadow-primary/25"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80",
+                  )}
+                >
+                  More
+                  <ChevronRight className="h-3 w-3 rotate-90 opacity-60" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-52">
+                {visibleMore.map((item) => (
+                  <DropdownMenuItem key={item.url} asChild>
+                    <Link
+                      to={item.url}
+                      className={cn(
+                        "flex items-center gap-2 w-full",
+                        isActivePath(pathname, item.url) && "text-primary",
+                      )}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.title}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </nav>
+
+          <div className="flex items-center gap-2 ml-auto">
+            <GlobalSearchTrigger onClick={openSearch} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden shrink-0"
+              onClick={openSearch}
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </Button>
+            <Button
+              asChild
+              size="sm"
+              className="hidden md:inline-flex gap-1.5 rounded-full gradient-primary border-0 shadow-glow hover:opacity-90"
+            >
+              <Link to="/content">
+                <Sparkles className="h-3.5 w-3.5" />
+                Create
+              </Link>
+            </Button>
+            <NotificationBell />
+            <TenantSwitcher />
+            <UserMenu />
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+    </>
   );
 }

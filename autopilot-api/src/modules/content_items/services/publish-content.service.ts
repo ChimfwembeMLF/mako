@@ -15,6 +15,10 @@ import { ContentToPublish, MediaAttachment } from '../../content-publishing/inte
 import { SupabaseStorageService } from '../../media/supabase-storage.service';
 import { ContentPublicationsService } from '../../content_publications/content-publications.service';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { QUEUE_JOB_MAX_ATTEMPTS } from '../../queues/queue.constants';
+import { instagramRequiresMedia, hasPublishableMedia } from '../utils/instagram-publish.util';
+
+export const MAX_CONTENT_PUBLISH_ATTEMPTS = QUEUE_JOB_MAX_ATTEMPTS;
 
 type PlatformPayloadStored = {
   content?: string;
@@ -102,20 +106,25 @@ export class PublishContentService {
 
       let media: MediaAttachment[];
       let publishedMedia: Array<{ url: string; type?: string; name?: string }> | undefined;
-      if (pp?.media?.length) {
-        media = await Promise.all(
-          pp.media.map(async (m, i) => {
-            const canonical = assetUrlByKey.get(this.mediaUrlKey(m.url)) ?? m.url;
-            const media_url = await this.resolveMediaUrl(canonical, item.tenantId);
-            return {
-              id: `payload-${platform}-${i}`,
-              media_url,
-              media_type: (m.type === 'video' ? 'video' : 'image') as MediaAttachment['media_type'],
-              alt_text: m.name,
-            };
-          }),
-        );
-        publishedMedia = media.map((m) => ({ url: m.media_url, type: m.media_type }));
+      if (pp && Array.isArray(pp.media)) {
+        if (pp.media.length === 0) {
+          media = [];
+          publishedMedia = [];
+        } else {
+          media = await Promise.all(
+            pp.media.map(async (m, i) => {
+              const canonical = assetUrlByKey.get(this.mediaUrlKey(m.url)) ?? m.url;
+              const media_url = await this.resolveMediaUrl(canonical, item.tenantId);
+              return {
+                id: `payload-${platform}-${i}`,
+                media_url,
+                media_type: (m.type === 'video' ? 'video' : 'image') as MediaAttachment['media_type'],
+                alt_text: m.name,
+              };
+            }),
+          );
+          publishedMedia = media.map((m) => ({ url: m.media_url, type: m.media_type }));
+        }
       } else {
         media = await Promise.all(
           defaultMedia.map(async (m) => ({
@@ -124,6 +133,24 @@ export class PublishContentService {
           })),
         );
         publishedMedia = media.map((m) => ({ url: m.media_url, type: m.media_type }));
+      }
+
+      if (instagramRequiresMedia(platform) && !hasPublishableMedia(media)) {
+        const message =
+          'Instagram requires at least one image or video attachment — skipped';
+        results[platform] = { published: false, message };
+        await this.publications.record({
+          tenantId: item.tenantId,
+          contentId: item.id,
+          userId: params.userId,
+          platform,
+          publishedContent,
+          publishedTitle,
+          publishedMedia: [],
+          status: 'failed',
+          errorMessage: message,
+        });
+        continue;
       }
 
       const socialAccount = await this.socialRepo.findOne({
@@ -163,6 +190,7 @@ export class PublishContentService {
         status: 'published',
         publishedAt: new Date(),
         publishFailedReason: undefined,
+        publishAttempts: 0,
         externalPostId: primaryExternalId,
       } as Partial<ContentItems>);
 
@@ -180,8 +208,12 @@ export class PublishContentService {
       const reasons = Object.entries(results)
         .map(([p, r]) => `${p}: ${r.message}`)
         .join('; ');
+      const nextAttempts = (item.publishAttempts ?? 0) + 1;
+      const exhausted = nextAttempts >= MAX_CONTENT_PUBLISH_ATTEMPTS;
       await this.contentRepo.update(item.id, {
         publishFailedReason: reasons,
+        publishAttempts: nextAttempts,
+        ...(exhausted ? { status: 'publish_failed' as const } : {}),
       } as Partial<ContentItems>);
 
       void this.notifications?.notifyPublishFailed({
@@ -189,7 +221,9 @@ export class PublishContentService {
         userId: params.userId,
         contentId: item.id,
         title: item.title,
-        reason: reasons,
+        reason: exhausted
+          ? `${reasons} (stopped after ${MAX_CONTENT_PUBLISH_ATTEMPTS} attempts)`
+          : reasons,
       });
     }
 

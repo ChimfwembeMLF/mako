@@ -2,8 +2,8 @@ server:
   port: 4000
 
 db:
-  username: 'postgres'
-  password: 'pass104'
+  username: 'thecodefather'
+  password: ''
   host: 'localhost'
   synchronize: true
   database: 'autopilot_dev'

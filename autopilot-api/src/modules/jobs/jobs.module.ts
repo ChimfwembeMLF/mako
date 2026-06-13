@@ -10,6 +10,7 @@ import {
   DailyContentWorkflowCron,
   PaymentsCron,
 } from './content-jobs.cron';
+import { SubscriptionRenewalCron } from './subscription-renewal.cron';
 
 @Module({
   imports: [
@@ -19,6 +20,12 @@ import {
     PaymentsModule,
     QueuesModule,
   ],
-  providers: [AutoPublishCron, CommentSyncCron, DailyContentWorkflowCron, PaymentsCron],
+  providers: [
+    AutoPublishCron,
+    CommentSyncCron,
+    DailyContentWorkflowCron,
+    PaymentsCron,
+    SubscriptionRenewalCron,
+  ],
 })
 export class JobsModule {}

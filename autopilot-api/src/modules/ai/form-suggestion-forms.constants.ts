@@ -45,15 +45,30 @@ export const FORM_SUGGESTION_LABELS: Record<string, string> = {
   bannedTopics: 'Banned topics',
   competitors: 'Competitors',
   keywords: 'Keywords & phrases',
-  theme: 'Campaign theme',
+  theme: 'Theme',
   title: 'Post title',
-  name: 'Campaign name',
-  goal: 'Campaign goal',
+  name: 'Name',
+  goal: 'Goal',
   serviceName: 'Business / service name',
   welcomeMessage: 'WhatsApp welcome message',
   menuTitle: 'Menu option label',
   menuDescription: 'Menu option short hint',
   menuResponse: 'Reply when customer picks this option',
+};
+
+/** Per-form labels when the same field key means something different (e.g. theme). */
+export const FORM_SUGGESTION_LABELS_BY_FORM: Partial<
+  Record<FormSuggestionType, Partial<Record<string, string>>>
+> = {
+  content: {
+    theme: 'Post theme / topic',
+    title: 'Post title',
+  },
+  campaign: {
+    name: 'Campaign name',
+    theme: 'Campaign theme (multi-post narrative)',
+    goal: 'Campaign goal / KPIs',
+  },
 };
 
 /** Hints so AI varies format and length per field */
@@ -84,14 +99,8 @@ export const FORM_SUGGESTION_FORMAT_HINTS: Record<string, string> = {
     'Mix: comma names, bullet list with one-line positioning each, comparison note',
   keywords:
     'Mix: comma phrases, hashtag-style list, grouped keyword bullets',
-  theme:
-    'Mix: short hook, multi-angle theme bullets, 1–2 sentence campaign brief',
   title:
     'Mix: punchy headline, question title, listicle-style (“3 ways to…”)',
-  name:
-    'Mix: short campaign codename, descriptive series title, seasonal name',
-  goal:
-    'Mix: KPI one-liner, bullet objectives, outcome + metric note',
   serviceName: 'Mix: short brand name, name + tagline, descriptive business name',
   welcomeMessage:
     'Mix: friendly one-liner with {serviceName}, question hook, brief “how can we help”',
@@ -100,6 +109,46 @@ export const FORM_SUGGESTION_FORMAT_HINTS: Record<string, string> = {
   menuResponse:
     'Mix: factual reply paragraph, bullet facts, hours + contact + next step',
 };
+
+/** Per-form hints — overrides shared keys like theme/name/goal */
+export const FORM_SUGGESTION_FORMAT_HINTS_BY_FORM: Partial<
+  Record<FormSuggestionType, Partial<Record<string, string>>>
+> = {
+  content: {
+    theme:
+      'Single social POST topic only. Mix: one-line angle, content pillar, bullet sub-ideas for one post — not a multi-day campaign',
+    title:
+      'Mix: punchy headline, question title, listicle-style (“3 ways to…”)',
+  },
+  campaign: {
+    name:
+      'CAMPAIGN series title only. Mix: short codename, seasonal launch name, descriptive multi-post series title — not a post headline',
+    theme:
+      'CAMPAIGN PLANNING only: overarching narrative for a multi-post series. Mix: 1–2 sentence brief, bullet story arc (tease → educate → proof → CTA), strategic positioning — NOT post hooks, captions, or individual post ideas',
+    goal:
+      'Business/marketing objectives for the whole campaign. Mix: KPI + metric one-liner, bullet objectives, funnel outcome note',
+  },
+};
+
+/** Extra system instructions per form type */
+export const FORM_SUGGESTION_FORM_BRIEFS: Record<FormSuggestionType, string> = {
+  'brand-brain':
+    'Brand profile setup — suggest realistic values for company identity fields.',
+  content:
+    'Single social post composer — suggest one post topic and headline. Do not plan multi-post campaigns.',
+  campaign:
+    'Multi-post campaign planner (name, theme, goal). Suggest campaign-level planning only: series names, overarching narratives, and measurable objectives. Do NOT write post captions, hooks, hashtags, or individual post copy — that happens when the user clicks Generate.',
+  'whatsapp-menu':
+    'WhatsApp flow menu — suggest business name, welcome text, and menu option labels/replies.',
+};
+
+export function formFieldLabel(form: FormSuggestionType, field: string): string {
+  return FORM_SUGGESTION_LABELS_BY_FORM[form]?.[field] ?? FORM_SUGGESTION_LABELS[field] ?? field;
+}
+
+export function formFieldHint(form: FormSuggestionType, field: string): string | undefined {
+  return FORM_SUGGESTION_FORMAT_HINTS_BY_FORM[form]?.[field] ?? FORM_SUGGESTION_FORMAT_HINTS[field];
+}
 
 export const SUGGESTIONS_PER_FIELD = 4;
 export const MAX_SUGGESTION_LENGTH: Record<'input' | 'textarea', number> = {

@@ -74,7 +74,7 @@ export function NotificationBell() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-80">
+      <DropdownMenuContent align="end" className="w-96">
         <DropdownMenuLabel className="flex items-center justify-between">
           <span>Notifications</span>
           {unread > 0 && (
@@ -103,15 +103,24 @@ export function NotificationBell() {
                 to={n.link ?? '/settings'}
                 onClick={() => void markRead(n)}
                 className={cn(
-                  'block w-full px-3 py-2.5 text-left hover:bg-muted/80 rounded-sm',
+                  'flex w-full flex-col gap-1.5 px-3 py-3 hover:bg-muted/80 rounded-sm',
                   !n.read && 'bg-primary/5',
                 )}
               >
-                <p className="text-sm font-medium leading-snug">{n.title}</p>
-                <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{n.body}</p>
-                <p className="text-[10px] text-muted-foreground mt-1">
+                <span className="block text-sm font-semibold leading-tight text-foreground">
+                  {n.title}
+                </span>
+                {n.body ? (
+                  <span className="block text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                    {n.body}
+                  </span>
+                ) : null}
+                <time
+                  dateTime={n.created_at}
+                  className="block text-[10px] text-muted-foreground/70 pt-0.5"
+                >
                   {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                </p>
+                </time>
               </Link>
             </DropdownMenuItem>
           ))

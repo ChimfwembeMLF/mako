@@ -39,6 +39,10 @@ export type NotificationType =
   | 'publish_queued'
   | 'billing_payment'
   | 'subscription_ending'
+  | 'subscription_renewal'
+  | 'subscription_renewal_failed'
+  | 'subscription_past_due'
+  | 'subscription_expired'
   | 'weekly_digest'
   | 'hot_lead'
   | 'comment_pending';
@@ -250,12 +254,90 @@ export class NotificationsService {
     await this.notifyTenantAdmins(params.tenantId, {
       type: 'billing_payment',
       title: 'Payment received',
-      body: `Your ${params.plan} plan is now active${params.amount ? ` (ZMW ${params.amount})` : ''}.`,
+      body: `Your ${params.plan} plan is now active${params.amount ? ` (ZMW ${params.amount})` : ''}. Auto-renew is enabled for your saved mobile money number.`,
       link: '/billing',
-      metadata: { plan: params.plan },
+      metadata: { plan: params.plan, autoRenew: true },
       email: true,
       emailCategory: 'emailBilling',
     });
+  }
+
+  async notifyRenewalSuccess(params: {
+    tenantId: string;
+    plan: string;
+    amount?: number;
+  }): Promise<void> {
+    await this.notifyTenantAdmins(params.tenantId, {
+      type: 'subscription_renewal',
+      title: 'Subscription renewed',
+      body: `Your ${params.plan} plan was renewed successfully${params.amount ? ` (ZMW ${params.amount})` : ''}.`,
+      link: '/billing',
+      metadata: { plan: params.plan, renewed: true },
+      email: true,
+      emailCategory: 'emailBilling',
+    });
+  }
+
+  async notifyRenewalInitiated(tenantId: string, plan: string, paymentId: string): Promise<void> {
+    await this.notifyTenantAdmins(tenantId, {
+      type: 'subscription_renewal',
+      title: 'Auto-renewal started',
+      body: `We sent a mobile money prompt to renew your ${plan} plan. Approve it on your phone to continue uninterrupted.`,
+      link: '/billing',
+      metadata: { plan, paymentId, autoRenew: true },
+      email: true,
+      emailCategory: 'emailBilling',
+    });
+  }
+
+  async notifyRenewalFailed(tenantId: string, plan: string, reason: string): Promise<void> {
+    await this.notifyTenantAdmins(tenantId, {
+      type: 'subscription_renewal_failed',
+      title: 'Auto-renewal failed',
+      body: `Could not renew your ${plan} plan: ${reason}. Update billing on the Billing page.`,
+      link: '/billing',
+      metadata: { plan, reason },
+      email: true,
+      emailCategory: 'emailBilling',
+    });
+  }
+
+  async notifySubscriptionPastDue(tenantId: string, plan: string): Promise<void> {
+    if (await this.recentTenantNotification(tenantId, 'subscription_past_due', 24)) return;
+    await this.notifyTenantAdmins(tenantId, {
+      type: 'subscription_past_due',
+      title: 'Subscription past due',
+      body: `Your ${plan} plan billing period has ended. Renew now to restore full access.`,
+      link: '/billing',
+      metadata: { plan },
+      email: true,
+      emailCategory: 'emailBilling',
+    });
+  }
+
+  async notifySubscriptionExpired(tenantId: string, plan: string): Promise<void> {
+    await this.notifyTenantAdmins(tenantId, {
+      type: 'subscription_expired',
+      title: 'Subscription expired',
+      body: `Your ${plan} plan was not renewed and has been downgraded to Free.`,
+      link: '/billing',
+      metadata: { plan },
+      email: true,
+      emailCategory: 'emailBilling',
+    });
+  }
+
+  private async recentTenantNotification(
+    tenantId: string,
+    type: NotificationType,
+    withinHours: number,
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - withinHours * 60 * 60 * 1000);
+    const row = await this.notificationsRepo.findOne({
+      where: { tenantId, type, created_at: MoreThanOrEqual(since) },
+      order: { created_at: 'DESC' },
+    });
+    return !!row;
   }
 
   async checkSubscriptionEndingSoon(): Promise<number> {
@@ -272,15 +354,24 @@ export class NotificationsService {
 
     let sent = 0;
     for (const sub of subs) {
+      if (sub.plan === 'free') continue;
       const daysLeft = Math.ceil(
         (sub.billingPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
       );
+      const remindDays = [7, 3, 1];
+      if (!remindDays.includes(daysLeft)) continue;
+      if (await this.recentTenantNotification(sub.tenantId, 'subscription_ending', 20)) continue;
+
+      const autoRenewNote = sub.autoRenewEnabled && sub.renewalPhone
+        ? ' Auto-renew is enabled — we will charge your saved mobile money number.'
+        : ' Renew on the Billing page to avoid interruption.';
+
       await this.notifyTenantAdmins(sub.tenantId, {
         type: 'subscription_ending',
         title: 'Subscription ending soon',
-        body: `Your billing period ends in ${daysLeft} day(s). Renew on the Billing page to avoid interruption.`,
+        body: `Your billing period ends in ${daysLeft} day(s).${autoRenewNote}`,
         link: '/billing',
-        metadata: { daysLeft, plan: sub.plan },
+        metadata: { daysLeft, plan: sub.plan, autoRenew: sub.autoRenewEnabled },
         email: true,
         emailCategory: 'emailBilling',
       });

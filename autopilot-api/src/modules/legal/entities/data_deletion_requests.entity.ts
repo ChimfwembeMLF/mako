@@ -18,6 +18,15 @@ export class DataDeletionRequests {
   @Column({ type: 'text', nullable: true })
   email?: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  userId?: string;
+
+  @Column({ type: 'text', nullable: true })
+  ipAddress?: string;
+
+  @Column({ type: 'text', nullable: true })
+  userAgent?: string;
+
   /** pending | completed | failed */
   @Column({ type: 'text', default: 'pending' })
   status: string;

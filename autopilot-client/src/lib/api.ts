@@ -879,6 +879,7 @@ export type QueueJobStatus = {
     returnvalue?: unknown;
     failedReason?: string;
     attemptsMade?: number;
+    maxAttempts?: number;
     timestamp?: number;
     finishedOn?: number;
 };
@@ -1065,19 +1066,30 @@ export const contentCampaignsApi = {
         }),
 };
 
+export type SubscriptionSummary = {
+    plan: string;
+    status: string;
+    dailyWorkflowEnabled: boolean;
+    aiCallsLimit: number | null;
+    aiCallsUsed: number;
+    aiCallsRemaining: number | null;
+    seatLimit: number | null;
+    billingPeriodStart: string;
+    billingPeriodEnd: string;
+    autoRenewEnabled: boolean;
+    renewalPhone: string | null;
+    renewalCorrespondent: string | null;
+    hasRenewalMethod: boolean;
+};
+
 export const subscriptionsApi = {
     getForTenant: (tenantId: string) =>
-        request<{
-            plan: string;
-            status: string;
-            dailyWorkflowEnabled: boolean;
-            aiCallsLimit: number | null;
-            aiCallsUsed: number;
-            aiCallsRemaining: number | null;
-            seatLimit: number | null;
-            billingPeriodStart: string;
-            billingPeriodEnd: string;
-        }>(`/api/v1/subscriptions/tenant/${tenantId}`),
+        request<SubscriptionSummary>(`/api/v1/subscriptions/tenant/${tenantId}`),
+    setAutoRenew: (tenantId: string, enabled: boolean) =>
+        request<SubscriptionSummary>(
+            `/api/v1/subscriptions/tenant/${tenantId}/auto-renew`,
+            { method: 'PATCH', body: JSON.stringify({ enabled }) },
+        ),
 };
 
 export type PublicPlan = {
@@ -1092,13 +1104,65 @@ export type PublicPlan = {
     highlight: boolean;
 };
 
+function optionalAuthHeaders(): HeadersInit {
+    const token = getAuthToken();
+    return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+export const legalApi = {
+    recordConsent: (data: { visitorId: string; consentVersion?: string }) =>
+        request<{
+            id: string;
+            visitorId: string;
+            userId: string | null;
+            consentVersion: string;
+            accepted: boolean;
+            createdAt: string;
+        }>('/api/v1/legal/data-protection/consent', {
+            method: 'POST',
+            requireAuth: false,
+            headers: optionalAuthHeaders(),
+            body: JSON.stringify(data),
+        }),
+    consentStatus: (visitorId: string, version?: string) => {
+        const params = new URLSearchParams({ visitorId });
+        if (version) params.set('version', version);
+        return request<{ accepted: boolean; id?: string; createdAt?: string }>(
+            `/api/v1/legal/data-protection/consent?${params}`,
+            { requireAuth: false },
+        );
+    },
+    requestDataDeletion: (email: string) =>
+        request<{
+            id: string;
+            confirmationCode: string;
+            status: string;
+            createdAt: string;
+        }>('/api/v1/legal/data-deletion-request', {
+            method: 'POST',
+            requireAuth: false,
+            headers: optionalAuthHeaders(),
+            body: JSON.stringify({ email }),
+        }),
+    deletionStatus: (code: string) =>
+        request<{
+            id: string;
+            confirmationCode: string;
+            status: string;
+            platform: string;
+            email: string | null;
+            completedAt: string | null;
+            createdAt: string;
+        }>(`/api/v1/legal/deletion-status?code=${encodeURIComponent(code)}`, { requireAuth: false }),
+};
+
 export const plansApi = {
-    list: () => request<PublicPlan[]>('/api/v1/plans'),
+    list: () => request<PublicPlan[]>('/api/v1/plans', { requireAuth: false }),
 };
 
 export const paymentsApi = {
     initiateDeposit: (data: { tenantId: string; plan: string; phone?: string; correspondent?: string }) =>
-        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string }>(
+        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; activated?: boolean }>(
             '/api/v1/payments/deposits/initiate',
             { method: 'POST', body: JSON.stringify(data) },
         ),
@@ -1758,6 +1822,33 @@ export const aiApi = {
         }),
 
     health: () => request<{ status: string; model?: string }>('/api/v1/ai/health'),
+};
+
+// ==================== Global Search ====================
+export type SearchResultType = 'content' | 'lead' | 'template' | 'knowledge' | 'audit';
+
+export interface SearchResult {
+    type: SearchResultType;
+    id: string;
+    title: string;
+    subtitle?: string;
+    url: string;
+}
+
+export const searchApi = {
+    query: (params: { tenantId: string; q: string }) => {
+        const qs = new URLSearchParams({
+            tenantId: params.tenantId,
+            q: params.q.trim(),
+        });
+        return request<SearchResult[]>(`/api/v1/search?${qs.toString()}`);
+    },
+
+    ask: (data: { tenantId: string; q: string }) =>
+        request<{ answer: string; links: Array<{ title: string; url: string }> }>(
+            '/api/v1/search/ask',
+            { method: 'POST', body: JSON.stringify(data) },
+        ),
 };
 
 // ==================== Ai Usage ====================

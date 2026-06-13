@@ -243,6 +243,21 @@ export function trimMediaForPlatform(
   return out;
 }
 
+/** Platforms that cannot publish without at least one image or video. */
+export function platformRequiresMedia(platform: string): boolean {
+  return platform.toLowerCase() === 'instagram';
+}
+
+export function instagramHasMedia(
+  payload: PlatformPayload | undefined,
+  linkedMediaCount = 0,
+): boolean {
+  if (payload && Array.isArray(payload.media)) {
+    return payload.media.length > 0;
+  }
+  return linkedMediaCount > 0;
+}
+
 export interface PlatformValidation {
   charCount: number;
   overCharLimit: boolean;
@@ -308,7 +323,9 @@ export function validatePlatformPayload(
     }
   }
 
-  if (media.length === 0 && def.previewType === 'social' && platform === 'instagram') {
+  if (media.length === 0 && platformRequiresMedia(platform)) {
+    errors.push(`${def.label} requires at least one image or video attachment.`);
+  } else if (media.length === 0 && def.previewType === 'social' && platform === 'instagram') {
     warnings.push('Instagram posts perform best with at least one image or video.');
   }
 

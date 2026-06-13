@@ -50,10 +50,10 @@ async function bootstrap() {
     isSystemAdmin: boolean;
   }[] = [
     {
-      email: 'superadmin@brandpilot.test',
+      email: 'superadmin@mako.test',
       password: 'password123',
-      firstName: 'Platform',
-      lastName: 'Super Admin',
+      firstName: 'Mako',
+      lastName: 'Market Co-pilot',
       role: RoleType.SUPER_ADMIN,
       isSystemAdmin: true,
     },
@@ -140,6 +140,25 @@ async function bootstrap() {
     }
   }
   console.log(`Tenant defaults seeded for ${allTenants.length} tenant(s).`);
+
+  const ownerUser = await usersRepo.findOne({ where: { email: 'owner@brandpilot.test' } });
+  if (ownerUser) {
+    const ownerTenant = await tenantsRepo.findOne({ where: { ownerId: ownerUser.id } });
+    if (ownerTenant) {
+      const { ChatbotWidgetSeedService } = await import(
+        '../src/modules/chatbot/chatbot-widget-seed.service'
+      );
+      const widgetSeed = app.get(ChatbotWidgetSeedService);
+      const widgetResult = await widgetSeed.ensureSeededForTenant(ownerTenant.id);
+      if (widgetResult.secret) {
+        console.log(`\nWidget embed key (${widgetResult.action}):`);
+        console.log(`  ${widgetResult.secret}`);
+        console.log('  Set VITE_WIDGET_API_KEY in autopilot-client/.env to this value.');
+      } else {
+        console.log(`\nWidget embed: ${widgetResult.action} (existing key in database).`);
+      }
+    }
+  }
 
   console.log('\nSeed complete.');
   console.log('Demo accounts (password: password123):');

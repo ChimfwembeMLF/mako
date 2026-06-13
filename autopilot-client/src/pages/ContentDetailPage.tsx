@@ -7,6 +7,8 @@ import {
   Pencil,
   RotateCcw,
   Send,
+  Clock,
+  AlertTriangle,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,7 +30,8 @@ import {
   type CommentInboxNode,
   type PostInboxGroup,
 } from '@/lib/api';
-import { platformOf, type PlatformPayload } from '@/lib/platforms';
+import { platformOf, type PlatformPayload, platformRequiresMedia, instagramHasMedia } from '@/lib/platforms';
+import { formatScheduledAt } from '@/lib/schedule';
 import { PostCommentCard } from '@/components/replies/PostCommentCard';
 import { PostMediaGallery } from '@/components/replies/PostMediaGallery';
 import { mergePublicationWithInbox, plainText } from '@/components/replies/postInboxUtils';
@@ -69,6 +72,8 @@ type ContentDetails = {
     campaignTheme?: string;
     workspaceId?: string;
     publishFailedReason?: string;
+    scheduledDate?: string;
+    scheduledTime?: string;
     created_at?: string;
     publishedAt?: string;
   };
@@ -92,12 +97,19 @@ function toContentItem(item: ContentDetails['item']): ContentItem {
 function DraftPlatformSection({
   platform,
   draft,
+  scheduledAt,
+  linkedMediaCount,
 }: {
   platform: string;
   draft?: PlatformPayload;
+  scheduledAt?: string | null;
+  linkedMediaCount?: number;
 }) {
   const plat = platformOf(platform);
   const Icon = plat.icon;
+  const needsMedia = platformRequiresMedia(platform);
+  const hasMedia = instagramHasMedia(draft, linkedMediaCount ?? 0);
+  const instagramBlocked = needsMedia && !hasMedia;
 
   if (!draft) {
     return (
@@ -108,22 +120,39 @@ function DraftPlatformSection({
   }
 
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-3">
-      <div className="flex items-center gap-2">
+    <div
+      className={`rounded-xl border bg-card p-4 space-y-3 ${instagramBlocked ? 'border-amber-500/50 ring-1 ring-amber-500/20' : ''}`}
+    >
+      <div className="flex items-center gap-2 flex-wrap">
         <span
           className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
           style={{ backgroundColor: `${plat.color}18` }}
         >
           <Icon size={16} style={{ color: plat.color }} />
         </span>
-        <div>
+        <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{plat.label}</p>
           <p className="text-xs text-muted-foreground">Draft — not published yet</p>
         </div>
-        <Badge variant="secondary" className="ml-auto capitalize text-[10px]">
+        {scheduledAt && (
+          <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
+            <Clock className="h-3 w-3" />
+            {scheduledAt}
+          </Badge>
+        )}
+        <Badge variant="secondary" className="capitalize text-[10px]">
           draft
         </Badge>
       </div>
+      {instagramBlocked && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <span>
+            Instagram requires at least one image or video. This platform will be skipped when
+            scheduled or manual publish runs until you add attachments.
+          </span>
+        </div>
+      )}
       {draft.title && <p className="text-sm font-medium">{draft.title}</p>}
       <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
         {plainText(draft.content ?? '')}
@@ -293,6 +322,20 @@ export default function ContentDetailPage() {
     () => (data ? toContentItem(data.item) : null),
     [data],
   );
+
+  const scheduledAtLabel = useMemo(() => {
+    if (!data?.item) return null;
+    return formatScheduledAt(data.item.scheduledDate, data.item.scheduledTime);
+  }, [data]);
+
+  const instagramIssues = useMemo(() => {
+    if (!data) return [];
+    return platforms.filter((p) => {
+      if (!platformRequiresMedia(p)) return false;
+      const draft = data.item.platformPayloads?.[p];
+      return !instagramHasMedia(draft, data.media.length);
+    });
+  }, [data, platforms]);
 
   const editorWorkspaceId = data?.item.workspaceId ?? activeWorkspace ?? null;
 
@@ -470,6 +513,12 @@ export default function ContentDetailPage() {
                 {item.status}
               </Badge>
             )}
+            {scheduledAtLabel && (
+              <Badge variant="outline" className="gap-1">
+                <Clock className="h-3 w-3" />
+                Scheduled {scheduledAtLabel}
+              </Badge>
+            )}
             {item.created_at && <span>Created {new Date(item.created_at).toLocaleString()}</span>}
             {item.publishedAt && (
               <span>· Last published {new Date(item.publishedAt).toLocaleString()}</span>
@@ -509,6 +558,49 @@ export default function ContentDetailPage() {
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           <p className="font-medium">Last publish had errors</p>
           <p className="text-xs mt-1 whitespace-pre-wrap">{item.publishFailedReason}</p>
+        </div>
+      )}
+
+      {instagramIssues.length > 0 && (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
+          <p className="font-medium flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            Instagram blocked — missing attachments
+          </p>
+          <p className="text-xs mt-1 text-amber-800/90 dark:text-amber-200/90">
+            {instagramIssues.map((p) => platformOf(p).label).join(', ')} will not publish until you
+            add at least one image or video in Edit or Publish.
+          </p>
+        </div>
+      )}
+
+      {scheduledAtLabel && platforms.length > 0 && (
+        <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            Scheduled posting
+          </p>
+          <ul className="space-y-1.5">
+            {platforms.map((platform) => {
+              const plat = platformOf(platform);
+              const Icon = plat.icon;
+              const blocked =
+                platformRequiresMedia(platform) &&
+                !instagramHasMedia(item.platformPayloads?.[platform], media.length);
+              return (
+                <li key={platform} className="flex items-center gap-2 text-sm flex-wrap">
+                  <Icon size={14} style={{ color: plat.color }} />
+                  <span className="font-medium">{plat.label}</span>
+                  <span className="text-muted-foreground">· {scheduledAtLabel}</span>
+                  {blocked && (
+                    <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-500/40">
+                      No media — skipped
+                    </Badge>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
         </div>
       )}
 
@@ -610,6 +702,8 @@ export default function ContentDetailPage() {
                     key={`draft-${platform}`}
                     platform={platform}
                     draft={item.platformPayloads?.[platform]}
+                    scheduledAt={scheduledAtLabel}
+                    linkedMediaCount={media.length}
                   />
                 );
               })}

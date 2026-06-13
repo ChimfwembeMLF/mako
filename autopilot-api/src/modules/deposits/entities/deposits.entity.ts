@@ -35,6 +35,8 @@ export class Deposits {
   phone?: string;
   @Column({ type: 'text', nullable: true })
   provider?: string;
+  @Column({ type: 'boolean', default: false })
+  isRenewal: boolean;
   @Column({ type: 'jsonb', nullable: true })
   rawPayload?: string;
   @CreateDateColumn({ type: 'timestamptz' })

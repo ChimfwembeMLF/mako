@@ -28,6 +28,21 @@ export class TenantSubscriptions {
   @Column({ type: 'timestamptz' })
   billingPeriodEnd: Date;
 
+  @Column({ type: 'boolean', default: false })
+  autoRenewEnabled: boolean;
+
+  @Column({ type: 'text', nullable: true })
+  renewalPhone?: string;
+
+  @Column({ type: 'text', nullable: true })
+  renewalCorrespondent?: string;
+
+  @Column({ type: 'int', default: 0 })
+  renewalAttempts: number;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  lastRenewalAttemptAt?: Date;
+
   @UpdateDateColumn({ type: 'timestamptz' })
   updated_at: Date;
 

@@ -4,8 +4,9 @@ import { LegalLayout } from './LegalLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { API_BASE_URL } from '@/lib/api';
+import { legalApi } from '@/lib/api';
 
 export default function DataDeletionPage() {
   const [searchParams] = useSearchParams();
@@ -13,22 +14,28 @@ export default function DataDeletionPage() {
   const { toast } = useToast();
   const [email, setEmail] = useState('');
   const [statusCode, setStatusCode] = useState(codeFromUrl);
-  const [status, setStatus] = useState<Record<string, unknown> | null>(null);
+  const [status, setStatus] = useState<Awaited<ReturnType<typeof legalApi.deletionStatus>> | null>(null);
   const [loading, setLoading] = useState(false);
 
   async function requestDeletion() {
     if (!email.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/legal/data-deletion-request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim() }),
+      const body = await legalApi.requestDataDeletion(email.trim());
+      setStatusCode(body.confirmationCode);
+      setStatus({
+        id: body.id,
+        confirmationCode: body.confirmationCode,
+        status: body.status,
+        platform: 'email',
+        email: email.trim().toLowerCase(),
+        completedAt: null,
+        createdAt: body.createdAt,
       });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? body.message ?? 'Request failed');
-      setStatusCode(body.confirmationCode ?? '');
-      toast({ title: 'Deletion requested', description: `Confirmation code: ${body.confirmationCode}` });
+      toast({
+        title: 'Deletion request saved',
+        description: `Your request was recorded. Confirmation code: ${body.confirmationCode}`,
+      });
     } catch (err: unknown) {
       toast({
         title: 'Request failed',
@@ -44,11 +51,7 @@ export default function DataDeletionPage() {
     if (!statusCode.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/legal/deletion-status?code=${encodeURIComponent(statusCode.trim())}`,
-      );
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.error ?? 'Not found');
+      const body = await legalApi.deletionStatus(statusCode.trim());
       setStatus(body);
     } catch (err: unknown) {
       toast({
@@ -97,7 +100,20 @@ export default function DataDeletionPage() {
           Check status
         </Button>
         {status && (
-          <pre className="text-xs bg-muted p-3 rounded-lg overflow-auto">{JSON.stringify(status, null, 2)}</pre>
+          <div className="text-sm space-y-2 rounded-lg border bg-muted/40 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">Status</span>
+              <Badge variant={status.status === 'completed' ? 'secondary' : 'destructive'}>
+                {status.status}
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground break-all">Code: {status.confirmationCode}</p>
+            {status.email && <p className="text-xs">Email: {status.email}</p>}
+            <p className="text-xs text-muted-foreground">
+              Requested {new Date(status.createdAt).toLocaleString()}
+              {status.completedAt ? ` · Completed ${new Date(status.completedAt).toLocaleString()}` : ''}
+            </p>
+          </div>
         )}
       </div>
 

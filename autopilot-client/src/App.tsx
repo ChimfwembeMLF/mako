@@ -56,6 +56,7 @@ import TermsPage from "./pages/legal/TermsPage";
 import DataDeletionPage from "./pages/legal/DataDeletionPage";
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
 import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
+import { DataProtectionBanner } from "@/components/DataProtectionBanner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -110,6 +111,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <ChatbotWidgetLoader />
+              <DataProtectionBanner />
               <Routes>
                 {/* Public routes */}
                 <Route path="/auth" element={<PublicOnly><Auth /></PublicOnly>} />

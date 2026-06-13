@@ -1,6 +1,6 @@
 import PDFDocument = require('pdfkit');
 import { InvoiceData, buildInvoiceNumber } from './invoice.template';
-import { INVOICE_LOGO_HEIGHT_PX, invoiceLogoWidth, resolveInvoiceLogoPath } from './invoice-logo.util';
+import { drawMakoLogoPdf, INVOICE_LOGO_HEIGHT_PX } from './invoice-logo.util';
 
 type PdfDoc = PDFKit.PDFDocument;
 
@@ -45,34 +45,21 @@ export async function renderInvoicePdf(data: InvoiceData): Promise<Buffer> {
   : data.paymentMethod;
 
   let y = MARGIN;
+  const headerTop = y;
 
-  const logoPath = resolveInvoiceLogoPath();
-  let brandTextX = MARGIN + 44;
-  if (logoPath) {
-    doc.image(logoPath, MARGIN, y, { height: INVOICE_LOGO_HEIGHT_PX });
-    brandTextX = MARGIN + invoiceLogoWidth() + 12;
-  } else {
-    doc.circle(MARGIN + 18, y + 18, 16).lineWidth(2).strokeColor('#6366f1').stroke();
-    doc.fontSize(14).fillColor('#6366f1').font('Helvetica-Bold')
-      .text('M', MARGIN + 12, y + 10, { width: 20, align: 'center' });
-  }
+  const logo = drawMakoLogoPdf(doc, MARGIN, headerTop, INVOICE_LOGO_HEIGHT_PX);
 
-  doc.fontSize(22).fillColor('#111').font('Helvetica-Bold')
-    .text(data.companyName.toUpperCase(), brandTextX, y);
-  doc.fontSize(7).fillColor('#333').font('Helvetica-Bold')
-    .text(data.companyTagline, brandTextX, y + 26, { characterSpacing: 1 });
-
-  // Company block (right)
+  // Company block (right, aligned with logo row)
   doc.fontSize(10).fillColor('#111').font('Helvetica-Bold')
-    .text(data.companyLegalName.toUpperCase(), MARGIN, y, { width: CONTENT_W, align: 'right' });
+    .text(data.companyLegalName.toUpperCase(), MARGIN, headerTop, { width: CONTENT_W, align: 'right' });
   doc.font('Helvetica').fontSize(9)
-    .text(data.companyAddress, MARGIN, y + 14, { width: CONTENT_W, align: 'right' });
+    .text(data.companyAddress, MARGIN, headerTop + 14, { width: CONTENT_W, align: 'right' });
   if (data.companyTpin) {
     doc.fillColor('#2563eb').font('Helvetica-Bold')
-      .text(`TPIN: ${data.companyTpin}`, MARGIN, y + 28, { width: CONTENT_W, align: 'right' });
+      .text(`TPIN: ${data.companyTpin}`, MARGIN, headerTop + 28, { width: CONTENT_W, align: 'right' });
   }
 
-  y += logoPath ? INVOICE_LOGO_HEIGHT_PX + 8 : 52;
+  y = headerTop + (logo.drawn ? logo.height + 8 : 0);
 
   // TAX INVOICE title
   doc.fontSize(32).fillColor('#dc2626').font('Helvetica-Bold')

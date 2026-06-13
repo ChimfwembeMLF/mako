@@ -7,12 +7,13 @@ import { AiUsageTrackerService } from './ai-usage-tracker.service';
 import { BrandProfiles } from '../../brand_profiles/entities/brand_profiles.entity';
 import {
   FORM_SUGGESTION_FIELDS,
-  FORM_SUGGESTION_FORMAT_HINTS,
-  FORM_SUGGESTION_LABELS,
+  FORM_SUGGESTION_FORM_BRIEFS,
   FormSuggestionType,
   INPUT_STYLE_FIELDS,
   MAX_SUGGESTION_LENGTH,
   SUGGESTIONS_PER_FIELD,
+  formFieldHint,
+  formFieldLabel,
 } from '../form-suggestion-forms.constants';
 import { brandContextBlock } from '../prompts/brand-fields';
 
@@ -28,26 +29,6 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
     'Web design, SEO, social media management',
     '- Mobile app development\n- API integrations\n- Monthly retainers\n- Training workshops',
     'End-to-end digital presence: strategy session → build → launch → 90-day optimization.',
-  ],
-  theme: [
-    'Weekly productivity tip for busy founders',
-    '- Product spotlight\n- Customer quote\n- Behind-the-scenes\n- Limited offer',
-    'Launch week: announce the feature, share social proof, answer objections, drive sign-ups.',
-  ],
-  title: [
-    '3 reasons teams switch to us',
-    'What changed after we shipped v2?',
-    'Quick note on pricing (and why it’s worth it)',
-  ],
-  goal: [
-    'Drive 200 trial sign-ups in 30 days',
-    '- Build awareness\n- Capture leads\n- Retarget warm traffic',
-    'Primary: newsletter growth. Secondary: demo bookings from LinkedIn.',
-  ],
-  name: [
-    'Spring Launch',
-    'Trust Builder Series — Week 1',
-    'Q3 Product Education Campaign',
   ],
   toneOfVoice: [
     'Friendly, expert, plain English — no jargon',
@@ -120,6 +101,38 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   ],
 };
 
+const FALLBACK_BY_FORM: Partial<Record<FormSuggestionType, Record<string, string[]>>> = {
+  campaign: {
+    name: [
+      'Spring Launch Series',
+      'Trust Builder — 7-Day Content Run',
+      'Q3 Product Education Campaign',
+    ],
+    theme: [
+      'Launching our new product for SMEs — build awareness, educate on benefits, then drive trial sign-ups over 7 posts',
+      '- Post arc: tease the problem\n- Educate on our approach\n- Share customer proof\n- Address objections\n- Limited-time offer + CTA',
+      'Re-engage dormant leads with a value-first content series before a seasonal promotion.',
+    ],
+    goal: [
+      'Drive 150 trial sign-ups in 30 days',
+      '- Build top-of-funnel awareness\n- Educate on core value prop\n- Generate 40 qualified demo requests',
+      'Primary: grow newsletter list by 500. Secondary: lift LinkedIn engagement 25%.',
+    ],
+  },
+  content: {
+    theme: [
+      'Weekly productivity tip for busy founders',
+      '- Product spotlight\n- Customer quote\n- Behind-the-scenes\n- Limited offer',
+      'Launch week: announce the feature, share social proof, answer objections, drive sign-ups.',
+    ],
+    title: [
+      '3 reasons teams switch to us',
+      'What changed after we shipped v2?',
+      'Quick note on pricing (and why it’s worth it)',
+    ],
+  },
+};
+
 @Injectable()
 export class FormSuggestionsService {
   constructor(
@@ -154,12 +167,13 @@ export class FormSuggestionsService {
 
     const fieldList = fields
       .map((f) => {
-        const hint = FORM_SUGGESTION_FORMAT_HINTS[f];
-        return hint
-          ? `- ${f} (${FORM_SUGGESTION_LABELS[f] ?? f}): ${hint}`
-          : `- ${f}: ${FORM_SUGGESTION_LABELS[f] ?? f}`;
+        const hint = formFieldHint(params.form, f);
+        const label = formFieldLabel(params.form, f);
+        return hint ? `- ${f} (${label}): ${hint}` : `- ${f}: ${label}`;
       })
       .join('\n');
+
+    const formBrief = FORM_SUGGESTION_FORM_BRIEFS[params.form];
 
     try {
       const { data, tokensUsed } = await this.mistral.completeJson<{
@@ -170,6 +184,8 @@ export class FormSuggestionsService {
             role: 'system',
             content: `You write varied placeholder suggestions for marketing form fields.
 Return ONLY JSON: { "suggestions": { "fieldKey": ["suggestion1", "suggestion2", ...] } }
+
+Form context: ${formBrief}
 
 Rules:
 - Exactly ${SUGGESTIONS_PER_FIELD} suggestions per field key.
@@ -208,14 +224,15 @@ Rules:
       });
 
       return {
-        suggestions: this.normalize(fields, data.suggestions),
+        suggestions: this.normalize(params.form, fields, data.suggestions),
       };
     } catch {
-      return { suggestions: this.fallbackOnly(fields) };
+      return { suggestions: this.fallbackOnly(params.form, fields) };
     }
   }
 
   private normalize(
+    form: FormSuggestionType,
     fields: string[],
     raw?: Record<string, string[]>,
   ): Record<string, string[]> {
@@ -230,7 +247,7 @@ Rules:
             .filter(Boolean)
             .slice(0, SUGGESTIONS_PER_FIELD)
         : [];
-      out[field] = items.length >= 2 ? items : this.fallbackFor(field);
+      out[field] = items.length >= 2 ? items : this.fallbackFor(form, field);
     }
     return out;
   }
@@ -241,18 +258,23 @@ Rules:
     return `${trimmed.slice(0, maxLen - 1).trimEnd()}…`;
   }
 
-  private fallbackOnly(fields: string[]): Record<string, string[]> {
-    return Object.fromEntries(fields.map((f) => [f, this.fallbackFor(f)]));
+  private fallbackOnly(form: FormSuggestionType, fields: string[]): Record<string, string[]> {
+    return Object.fromEntries(fields.map((f) => [f, this.fallbackFor(form, f)]));
   }
 
-  private fallbackFor(field: string): string[] {
+  private fallbackFor(form: FormSuggestionType, field: string): string[] {
+    const formSpecific = FALLBACK_BY_FORM[form]?.[field];
+    if (formSpecific?.length) {
+      return formSpecific.slice(0, SUGGESTIONS_PER_FIELD);
+    }
     if (FALLBACK_SUGGESTIONS[field]?.length) {
       return FALLBACK_SUGGESTIONS[field].slice(0, SUGGESTIONS_PER_FIELD);
     }
+    const label = formFieldLabel(form, field);
     return [
-      `Short ${FORM_SUGGESTION_LABELS[field] ?? field} example`,
+      `Short ${label} example`,
       `- Point one\n- Point two\n- Point three`,
-      `Note: a longer ${FORM_SUGGESTION_LABELS[field] ?? field} description with a bit more context for the user.`,
+      `Note: a longer ${label} description with a bit more context for the user.`,
     ];
   }
 }

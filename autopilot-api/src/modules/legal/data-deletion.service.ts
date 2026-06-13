@@ -22,13 +22,33 @@ export class DataDeletionService {
     private readonly users: UserService,
   ) {}
 
-  async requestByEmail(email: string): Promise<{ confirmationCode: string }> {
+  async requestByEmail(
+    email: string,
+    meta?: { userId?: string; ipAddress?: string; userAgent?: string },
+  ): Promise<{
+    id: string;
+    confirmationCode: string;
+    status: string;
+    createdAt: string;
+  }> {
     const code = randomBytes(12).toString('hex');
-    await this.repo.save(
-      this.repo.create({ confirmationCode: code, email: email.trim().toLowerCase(), platform: 'email' }),
+    const row = await this.repo.save(
+      this.repo.create({
+        confirmationCode: code,
+        email: email.trim().toLowerCase(),
+        platform: 'email',
+        userId: meta?.userId,
+        ipAddress: meta?.ipAddress,
+        userAgent: meta?.userAgent,
+      }),
     );
     void this.processDeletion(code).catch((err) => this.logger.error('Deletion failed', err));
-    return { confirmationCode: code };
+    return {
+      id: row.id,
+      confirmationCode: code,
+      status: row.status,
+      createdAt: row.created_at.toISOString(),
+    };
   }
 
   async handleMetaSignedRequest(signedRequest: string): Promise<{ url: string; confirmation_code: string }> {
@@ -60,11 +80,13 @@ export class DataDeletionService {
     const row = await this.repo.findOne({ where: { confirmationCode: code } });
     if (!row) throw new NotFoundException('Deletion request not found');
     return {
+      id: row.id,
       confirmationCode: row.confirmationCode,
       status: row.status,
       platform: row.platform,
-      completedAt: row.completedAt,
-      createdAt: row.created_at,
+      email: row.email ?? null,
+      completedAt: row.completedAt?.toISOString() ?? null,
+      createdAt: row.created_at.toISOString(),
     };
   }
 

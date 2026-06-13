@@ -1,6 +1,10 @@
 import PDFDocument = require('pdfkit');
 import ExcelJS from 'exceljs';
 import { REPORT_CATALOG } from './report-catalog';
+import {
+  REPORT_PDF_LOGO_HEIGHT_PX,
+  drawMakoLogoPdf,
+} from '../payments/invoice-logo.util';
 
 export type ReportExportFormat = 'pdf' | 'csv' | 'xlsx';
 
@@ -146,16 +150,33 @@ export async function renderReportPdf(
   sections: ReportSection[],
   title: string,
 ): Promise<Buffer> {
-  const doc = new PDFDocument({ size: 'A4', margin: 40 });
+  const MARGIN = 40;
+  const doc = new PDFDocument({ size: 'A4', margin: MARGIN });
   const done = collectPdf(doc);
-  const pageWidth = 595.28 - 80;
+  const pageWidth = 595.28 - MARGIN * 2;
 
-  doc.fontSize(18).font('Helvetica-Bold').fillColor('#111').text(title, { align: 'left' });
-  doc.moveDown(0.5);
-  doc.fontSize(9).font('Helvetica').fillColor('#666').text(
-    `Generated ${new Date().toLocaleString()}`,
-  );
-  doc.moveDown(1);
+  const drawReportHeader = () => {
+    const headerTop = doc.y;
+    const logo = drawMakoLogoPdf(doc, MARGIN, headerTop, REPORT_PDF_LOGO_HEIGHT_PX);
+    const textY = headerTop + (logo.drawn ? logo.height + 10 : 0);
+    doc
+      .fontSize(16)
+      .font('Helvetica-Bold')
+      .fillColor('#111')
+      .text(title, MARGIN, textY, { width: pageWidth });
+    doc
+      .fontSize(9)
+      .font('Helvetica')
+      .fillColor('#666')
+      .text(`Generated ${new Date().toLocaleString()}`, MARGIN, doc.y + 2, { width: pageWidth });
+    doc.y = doc.y + 18;
+  };
+
+  drawReportHeader();
+
+  doc.on('pageAdded', () => {
+    doc.y = MARGIN;
+  });
 
   for (const section of sections) {
     doc.fontSize(12).font('Helvetica-Bold').fillColor('#111').text(section.title);
@@ -165,7 +186,7 @@ export async function renderReportPdf(
     const colWidth = pageWidth / colCount;
 
     doc.fontSize(8).font('Helvetica-Bold');
-    let x = 40;
+    let x = MARGIN;
     const headerY = doc.y;
     for (const h of section.headers) {
       doc.text(h, x, headerY, { width: colWidth - 4, ellipsis: true });
@@ -177,7 +198,7 @@ export async function renderReportPdf(
     for (const row of section.rows) {
       if (doc.y > 750) doc.addPage();
       const rowY = doc.y;
-      x = 40;
+      x = MARGIN;
       for (let i = 0; i < colCount; i++) {
         doc.text(row[i] ?? '', x, rowY, { width: colWidth - 4, ellipsis: true });
         x += colWidth;

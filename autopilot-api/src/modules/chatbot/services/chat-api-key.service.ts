@@ -23,6 +23,44 @@ export class ChatApiKeyService {
     return createHash('sha256').update(raw).digest('hex');
   }
 
+  /** Idempotently register a known secret (dev seed / fixed demo key). */
+  async ensureWidgetKey(params: {
+    tenantId: string;
+    configId: string;
+    secret: string;
+    label?: string;
+  }): Promise<void> {
+    const { tenantId, configId, secret, label } = params;
+    if (!secret.startsWith('pk_live_')) {
+      throw new Error('Widget API key must start with pk_live_');
+    }
+
+    const prefix = secret.split('_').slice(0, 3).join('_');
+    const keyHash = this.hashKey(secret);
+
+    const existing = await this.keyRepo.findOne({
+      where: { tenantId, configId, keyPrefix: prefix },
+    });
+
+    if (existing) {
+      existing.keyHash = keyHash;
+      existing.revokedAt = null;
+      if (label) existing.label = label;
+      await this.keyRepo.save(existing);
+      return;
+    }
+
+    await this.keyRepo.save(
+      this.keyRepo.create({
+        tenantId,
+        configId,
+        keyPrefix: prefix,
+        keyHash,
+        label: label ?? 'Demo embed',
+      }),
+    );
+  }
+
   async createKey(params: {
     tenantId: string;
     configId: string;

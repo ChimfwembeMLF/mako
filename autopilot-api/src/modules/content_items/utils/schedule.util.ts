@@ -1,8 +1,9 @@
 import { ContentItems } from '../entities/content_items.entity';
 
-/** True when an approved item's scheduled date/time is in the past. */
+/** True when a schedulable item's date/time is in the past. */
 export function isContentDue(item: ContentItems, now = new Date()): boolean {
-  if (item.status !== 'approved') return false;
+  const schedulable = item.status === 'approved' || item.status === 'scheduled';
+  if (!schedulable) return false;
   if (!item.scheduledDate) return false;
 
   const dateStr =
