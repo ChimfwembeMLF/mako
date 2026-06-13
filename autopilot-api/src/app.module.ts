@@ -49,6 +49,7 @@ import { SocialInboxModule } from './modules/social_inbox/social-inbox.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { SearchModule } from './modules/search/search.module';
+import { HealthModule } from './modules/health/health.module';
 
 @Module({
   imports: [
@@ -110,6 +111,7 @@ import { SearchModule } from './modules/search/search.module';
     NotificationsModule,
     ChatbotModule,
     SearchModule,
+    HealthModule,
   ],
   providers: [
     {
