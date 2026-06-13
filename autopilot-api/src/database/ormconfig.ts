@@ -10,6 +10,13 @@ export function typeOrmConfigFactory(
 ): TypeOrmModuleOptions {
   const isProduction = process.env.NODE_ENV === 'production';
 
+  const certPath = configService.get<string>('CERTIFICATE_PATH')?.trim();
+  const certName = configService.get<string>('CERTIFICATE_NAME')?.trim();
+  const ssl =
+    isProduction && certPath && certName
+      ? { ca: readFileSync(path.join(process.cwd(), certPath, certName)) }
+      : false;
+
   return {
     type: 'postgres',
     host: configService.get<string>('DB_HOST') || 'localhost',
@@ -22,16 +29,6 @@ export function typeOrmConfigFactory(
     cache: false,
     namingStrategy: new SnakeNamingStrategy(),
     subscribers: [UserSubscriber],
-    ssl: isProduction
-      ? {
-          ca: readFileSync(
-            path.join(
-              process.cwd(),
-              configService.get<string>('CERTIFICATE_PATH') || '',
-              configService.get<string>('CERTIFICATE_NAME') || '',
-            ),
-          ),
-        }
-      : false,
+    ssl,
   };
 }

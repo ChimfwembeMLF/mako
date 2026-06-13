@@ -25,11 +25,29 @@ npm run db:migrate:show   # optional — list applied migrations
 
 ## 2. API environment (required)
 
-Copy `docs/env.production.template` to `.env` on your server and fill in values.
+Copy `docs/env.mako.production.template` (or `docs/env.production.template`) to `.env` on your server and fill in values.
+
+Build & start with PM2 (production):
+```bash
+cd autopilot-api
+cp docs/env.mako.production.template .env   # then edit secrets
+npm ci
+npm run build
+npm run migrations:run
+npm run pm2:start
+
+# After code updates
+npm run deploy:prod
+
+npm run pm2:status
+npm run pm2:logs
+npm run pm2:save
+npm run pm2:startup   # run the sudo command it prints
+```
 
 | Variable | Production value |
 |----------|------------------|
-| `PORT` | `4000` (or host default) |
+| `PORT` | `5000` (see `config/production.yml`) |
 | `NODE_ENV` | `production` |
 | `DB_SYNCHRONIZE` | `false` |
 | `JWT_SECRET` | Strong random string |
@@ -43,13 +61,22 @@ Copy `docs/env.production.template` to `.env` on your server and fill in values.
 | `META_WEBHOOK_VERIFY_TOKEN` | Random string for Meta webhook verify |
 | `COMMENT_SYNC_CRON_ENABLED` | `true` |
 
-Build & start:
-```bash
-cd autopilot-api
-npm ci
-npm run build
-npm run start:prod
-```
+---
+
+## 2b. PM2 scripts (`package.json`)
+
+| Script | Purpose |
+|--------|---------|
+| `npm run pm2:start` | First production start |
+| `npm run deploy:prod` | Build + migrations + restart |
+| `npm run deploy:pm2` | Build + restart (no migrate) |
+| `npm run pm2:restart` | Restart running process |
+| `npm run pm2:logs` | Tail logs |
+| `npm run pm2:status` | Process status |
+| `npm run pm2:save` | Save PM2 process list |
+| `npm run pm2:startup` | Generate boot script |
+
+Or one-shot setup: `bash scripts/pm2-setup.sh`
 
 ---
 
