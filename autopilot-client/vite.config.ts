@@ -4,6 +4,9 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+/** Workbox precache size cap (4 GiB) — default is 2 MiB */
+const WORKBOX_MAX_PRECACHE_BYTES = 4 * 1024 * 1024 * 1024;
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -21,8 +24,8 @@ export default defineConfig(({ mode }) => ({
       showMaximumFileSizeToCacheInBytesWarning: true,
       includeAssets: ["favicon.ico", "icons/*.png"],
       workbox: {
-        // Allow large vendor chunks in the service worker precache (default is 2 MiB)
-        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+        // Precache large production bundles (default Workbox limit is 2 MiB)
+        maximumFileSizeToCacheInBytes: WORKBOX_MAX_PRECACHE_BYTES,
         // Cache strategy: app shell + API responses
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
