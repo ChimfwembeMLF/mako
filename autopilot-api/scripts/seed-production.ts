@@ -1,5 +1,10 @@
 import 'reflect-metadata';
+import { loadEnvFiles } from './load-env';
+
+loadEnvFiles();
+
 import { NestFactory } from '@nestjs/core';
+import { ConfigService } from '@nestjs/config';
 import { DataSource, Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { TenantBootstrapService } from '../src/modules/tenants/tenant-bootstrap.service';
@@ -10,7 +15,7 @@ import { UserEntity } from '../src/modules/user/user.entity';
  * Production bootstrap — permissions, theme, billing plans, tenant defaults, Mako widget key.
  * Does NOT create demo users.
  *
- * Required env:
+ * Env (in .env on server):
  *   MAKO_WIDGET_API_KEY — must match VITE_WIDGET_API_KEY in autopilot-client
  *   SEED_MAKO_OWNER_EMAIL — production owner account (or exactly one tenant in DB)
  *
@@ -44,21 +49,21 @@ async function resolveMakoTenant(
   );
 }
 
-async function bootstrap() {
-  const widgetKey = process.env.MAKO_WIDGET_API_KEY?.trim();
-  if (!widgetKey) {
-    throw new Error(
-      'MAKO_WIDGET_API_KEY is required — use the same value as VITE_WIDGET_API_KEY in autopilot-client',
-    );
-  }
-  if (!widgetKey.startsWith('pk_live_')) {
-    throw new Error('MAKO_WIDGET_API_KEY must start with pk_live_');
-  }
+function resolveWidgetKey(config: ConfigService): string | undefined {
+  return (
+    config.get<string>('MAKO_WIDGET_API_KEY')?.trim() ||
+    config.get<string>('DEMO_WIDGET_API_KEY')?.trim() ||
+    process.env.MAKO_WIDGET_API_KEY?.trim() ||
+    process.env.DEMO_WIDGET_API_KEY?.trim()
+  );
+}
 
+async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule, {
     logger: ['log', 'error', 'warn'],
   });
 
+  const config = app.get(ConfigService);
   const bootstrapService = app.get(TenantBootstrapService);
   const dataSource = app.get(DataSource);
   const tenantsRepo = dataSource.getRepository(Tenants);
@@ -105,15 +110,33 @@ async function bootstrap() {
   console.log(`Tenant defaults seeded for ${allTenants.length} tenant(s).`);
 
   const makoTenant = await resolveMakoTenant(tenantsRepo, usersRepo);
-  console.log(`Syncing Mako widget API key for tenant ${makoTenant.name} (${makoTenant.id})...`);
-  const widgetResult = await widgetSeed.ensureSeededForTenant(makoTenant.id, {
-    secret: widgetKey,
-    label: 'Mako embed',
-  });
-  console.log(`Widget embed key ${widgetResult.action}.`);
-  if (widgetResult.secret) {
-    console.log(`  ${widgetResult.secret}`);
-    console.log('  Must match VITE_WIDGET_API_KEY in autopilot-client build env.');
+  const widgetKey = resolveWidgetKey(config);
+
+  console.log(`Syncing Mako widget for tenant ${makoTenant.name} (${makoTenant.id})...`);
+  if (widgetKey) {
+    if (!widgetKey.startsWith('pk_live_')) {
+      throw new Error('MAKO_WIDGET_API_KEY must start with pk_live_');
+    }
+    const widgetResult = await widgetSeed.ensureSeededForTenant(makoTenant.id, {
+      secret: widgetKey,
+      label: 'Mako embed',
+    });
+    console.log(`Widget embed key ${widgetResult.action}.`);
+    if (widgetResult.secret) {
+      console.log(`  ${widgetResult.secret}`);
+      console.log('  Must match VITE_WIDGET_API_KEY in autopilot-client build env.');
+    }
+  } else {
+    console.warn(
+      'MAKO_WIDGET_API_KEY not set in .env — enabling widget and keeping/creating a key without syncing a fixed secret.',
+    );
+    console.warn('Add to .env: MAKO_WIDGET_API_KEY=pk_live_... (same as VITE_WIDGET_API_KEY) and re-run seed:prod');
+    const widgetResult = await widgetSeed.ensureSeededForTenant(makoTenant.id);
+    console.log(`Widget embed: ${widgetResult.action}`);
+    if (widgetResult.secret) {
+      console.log(`  Generated key: ${widgetResult.secret}`);
+      console.log('  Set this as VITE_WIDGET_API_KEY in autopilot-client and MAKO_WIDGET_API_KEY in .env');
+    }
   }
 
   console.log('\nProduction seed complete.');
