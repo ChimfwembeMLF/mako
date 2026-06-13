@@ -1,13 +1,18 @@
 {
   "apps": [
     {
-      "name": "autopilot-api",
+      "name": "Mako API Production",
       "script": "dist/main.js",
       "cwd": ".",
-      "instances": 1,
-      "exec_mode": "fork",
-      "autorestart": true,
+      "node_args": ["--max_old_space_size=8192"],
+      "instances": "max",
+      "exec_mode": "cluster",
       "watch": false,
+      "error_file": "/var/log/pm2/mako-api-error.log",
+      "out_file": "/var/log/pm2/mako-api-output.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss.SSS",
+      "merge_logs": true,
+      "autorestart": true,
       "max_memory_restart": "1G",
       "min_uptime": "10s",
       "max_restarts": 10,
@@ -15,10 +20,6 @@
       "kill_timeout": 10000,
       "listen_timeout": 30000,
       "time": true,
-      "merge_logs": true,
-      "error_file": "logs/pm2-error.log",
-      "out_file": "logs/pm2-out.log",
-      "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
       "env": {
         "NODE_ENV": "development",
         "PORT": 4000

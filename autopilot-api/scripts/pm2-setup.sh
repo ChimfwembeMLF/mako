@@ -14,14 +14,14 @@ if [[ ! -f .env ]]; then
   fi
 fi
 
-mkdir -p logs
+mkdir -p logs /var/log/pm2 2>/dev/null || sudo mkdir -p /var/log/pm2
 npm run build
 npm run migrations:run
 npm run pm2:start
 npm run pm2:save
 
 echo ""
-echo "autopilot-api is running on port \${PORT:-5000} (PM2 name: autopilot-api)"
+echo "Mako API Production is running on port \${PORT:-5000}"
 echo "  npm run pm2:status"
 echo "  npm run pm2:logs"
 echo ""

@@ -81,13 +81,15 @@ npm run pm2:startup   # run the sudo command it prints
 
 Or one-shot setup: `bash scripts/pm2-setup.sh`
 
-**Process file:** `ecosystem.config.json` (PM2 app name: `autopilot-api`, port `5000` in production).
+**Process file:** `ecosystem.config.json` (PM2 app name: `Mako API Production`, cluster mode, port `5000`).
 
 ```bash
-# Direct PM2 (equivalent to npm run pm2:start)
+sudo mkdir -p /var/log/pm2 && sudo chown "$USER" /var/log/pm2
 npx pm2 start ecosystem.config.json --env production
 npx pm2 startOrRestart ecosystem.config.json --env production --update-env
 ```
+
+Logs: `/var/log/pm2/mako-api-output.log`, `/var/log/pm2/mako-api-error.log`
 
 Secrets live in `.env` on the server — NestJS loads them at boot; PM2 does not parse `.env`.
 
