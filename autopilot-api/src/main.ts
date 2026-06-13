@@ -40,10 +40,10 @@ async function bootstrap() {
       ];
 
   app.enableCors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    origin: '*',
+    // methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    // allowedHeaders: ['Content-Type', 'Authorization'],
+    // credentials: true,
   });
 
   app.useStaticAssets(join(process.cwd(), 'public'));
