@@ -24,29 +24,36 @@ import { UserEntity } from '../src/modules/user/user.entity';
 async function resolveMakoTenant(
   tenantsRepo: Repository<Tenants>,
   usersRepo: Repository<UserEntity>,
-): Promise<Tenants> {
+): Promise<Tenants | null> {
   const ownerEmail = process.env.SEED_MAKO_OWNER_EMAIL?.trim();
   if (ownerEmail) {
     const user = await usersRepo.findOne({ where: { email: ownerEmail } });
     if (!user) {
-      throw new Error(`SEED_MAKO_OWNER_EMAIL not found: ${ownerEmail}`);
+      console.warn(`SEED_MAKO_OWNER_EMAIL not found: ${ownerEmail} — sign up first, then re-run seed:prod`);
+      return null;
     }
     const tenant = await tenantsRepo.findOne({ where: { ownerId: user.id } });
     if (!tenant) {
-      throw new Error(`No tenant owned by ${ownerEmail} — sign up first, then re-run seed:prod`);
+      console.warn(`No tenant for ${ownerEmail} — sign up via the app, then re-run seed:prod`);
+      return null;
     }
     return tenant;
   }
 
   const tenants = await tenantsRepo.find({ select: ['id', 'ownerId', 'name', 'slug'] });
+  if (tenants.length === 0) {
+    console.warn('No tenants in database — core seed done; sign up via the app, then re-run seed:prod for widget/tenant data');
+    return null;
+  }
   if (tenants.length === 1) {
     console.log(`Using sole tenant: ${tenants[0].name} (${tenants[0].slug})`);
     return tenants[0];
   }
 
-  throw new Error(
-    'Set SEED_MAKO_OWNER_EMAIL to your production owner account email (multiple tenants in database).',
+  console.warn(
+    `Found ${tenants.length} tenants — set SEED_MAKO_OWNER_EMAIL in .env and re-run seed:prod to sync the widget key`,
   );
+  return null;
 }
 
 function resolveWidgetKey(config: ConfigService): string | undefined {
@@ -110,6 +117,12 @@ async function bootstrap() {
   console.log(`Tenant defaults seeded for ${allTenants.length} tenant(s).`);
 
   const makoTenant = await resolveMakoTenant(tenantsRepo, usersRepo);
+  if (!makoTenant) {
+    console.log('\nProduction seed complete (global data only — no tenant/widget sync).');
+    await app.close();
+    return;
+  }
+
   const widgetKey = resolveWidgetKey(config);
 
   console.log(`Syncing Mako widget for tenant ${makoTenant.name} (${makoTenant.id})...`);
