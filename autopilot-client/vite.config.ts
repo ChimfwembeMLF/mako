@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
+      disable: process.env.DISABLE_PWA === "true",
       registerType: "autoUpdate",
       // Don't fail production builds when a chunk exceeds Workbox precache limit
       showMaximumFileSizeToCacheInBytesWarning: true,
