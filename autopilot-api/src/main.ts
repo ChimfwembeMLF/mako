@@ -6,6 +6,7 @@ import { existsSync } from 'fs';
 import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
+import type { Request, Response } from 'express';
 import * as session from 'express-session';
 import * as passport from 'passport';
 
@@ -36,6 +37,19 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   });
+
+  app.getHttpAdapter().get('/api/v1/health', (req: Request, res: Response) => {
+    res.status(200).json({
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV,
+      port: process.env.PORT,
+      service: 'Mako API',
+      version: '1.0.0'
+    });
+  });
+  
   app.useStaticAssets(join(process.cwd(), 'public'));
 
   if (!process.env.SUPABASE_URL?.trim() || !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
