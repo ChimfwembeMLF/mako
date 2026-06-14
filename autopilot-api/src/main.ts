@@ -8,7 +8,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
 import { resolveApiPublicUrl } from './common/env-urls.util';
-import { resolveCorsOrigins } from './common/cors.util';
+import { corsMiddleware, resolveCorsOrigins } from './common/cors.util';
 import type { RequestHandler } from 'express';
 import type { SessionOptions } from 'express-session';
 import * as passport from 'passport';
@@ -116,6 +116,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
   });
+
+  // Before session/passport — OPTIONS must not fall through to Nest 404.
+  app.use(corsMiddleware);
 
   const isProduction = process.env.NODE_ENV === 'production';
 

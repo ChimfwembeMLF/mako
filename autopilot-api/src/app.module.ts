@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
@@ -50,9 +50,6 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
-import { corsMiddleware } from './common/cors.util';
-import { widgetCorsMiddleware } from './common/widget-cors.middleware';
-import { WidgetController } from './modules/chatbot/widget.controller';
 
 @Module({
   imports: [
@@ -123,9 +120,4 @@ import { WidgetController } from './modules/chatbot/widget.controller';
     },
   ],
 })
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(corsMiddleware).forRoutes('*');
-    consumer.apply(widgetCorsMiddleware).forRoutes(WidgetController);
-  }
-}
+export class AppModule {}

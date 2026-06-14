@@ -32,7 +32,10 @@
         "DB_USERNAME": "mako",
         "DB_DATABASE": "mako_prod",
         "DB_SYNCHRONIZE": "false",
-        "DB_SSL": "false"
+        "DB_SSL": "false",
+        "FRONTEND_URL": "https://mako-33f20.web.app",
+        "CORS_ORIGIN": "https://mako-33f20.web.app",
+        "API_PUBLIC_URL": "https://makoapi.tekreminnovations.com"
       }
     }
   ]

@@ -1,5 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { MAKO_CORS_BUILD, resolveCorsOrigins } from '../../common/cors.util';
 
 @ApiTags('Health')
 @Controller('api/v1/health')
@@ -15,6 +16,8 @@ export class HealthController {
       service: 'Mako API',
       version: '1.0.0',
       apiMode: 'cross-origin',
+      corsBuild: MAKO_CORS_BUILD,
+      corsOrigins: resolveCorsOrigins(),
     };
   }
 }

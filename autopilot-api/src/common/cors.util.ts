@@ -1,7 +1,8 @@
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import type { NextFunction, Request, Response } from 'express';
+import { widgetCorsMiddleware } from './widget-cors.middleware';
 
-export const MAKO_CORS_BUILD = 'cors-v7';
+export const MAKO_CORS_BUILD = 'cors-v8';
 
 const WIDGET_PREFIX = '/api/v1/widget';
 
@@ -34,10 +35,10 @@ export function applyCorsHeaders(req: Request, res: Response): void {
   res.setHeader('Vary', 'Origin');
 }
 
-/** Nest/Express middleware — handles preflight before route matching. Skips embeddable widget routes. */
+/** Express middleware — register in main.ts before session/routes so OPTIONS preflight succeeds. */
 export function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
   if (req.path.startsWith(WIDGET_PREFIX)) {
-    next();
+    widgetCorsMiddleware(req, res, next);
     return;
   }
 
@@ -50,6 +51,8 @@ export function corsMiddleware(req: Request, res: Response, next: NextFunction):
       res.status(204).end();
       return;
     }
+    res.status(403).end();
+    return;
   }
 
   next();
