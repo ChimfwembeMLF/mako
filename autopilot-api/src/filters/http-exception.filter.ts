@@ -6,17 +6,19 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
+import { resolveFrontendUrl } from '../common/env-urls.util';
+
+const OAUTH_REDIRECT_PATH = /^\/api\/v1\/auth\/[^/]+\/redirect(?:\?|$)/;
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
   constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
 
   catch(exception: any, host: ArgumentsHost): void {
-    // In certain situations `httpAdapter` might not be available in the
-    // constructor method, thus we should resolve it here.
     const { httpAdapter } = this.httpAdapterHost;
-
     const ctx = host.switchToHttp();
+    const request = ctx.getRequest();
+    const response = ctx.getResponse();
 
     const httpStatus =
       exception instanceof HttpException
@@ -36,15 +38,38 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let message;
     if (!errorMessages) {
-      message = 'Internal Server Error';
-    } else {
-      if (typeof errorMessages === 'string') {
-        message = errorMessages;
-      } else if (Array.isArray(errorMessages)) {
-        message = errorMessages[0];
-      } else if (typeof errorMessages === 'object') {
-        message = errorMessages.message;
+      message = exception instanceof Error ? exception.message : 'Internal Server Error';
+    } else if (typeof errorMessages === 'string') {
+      message = errorMessages;
+    } else if (Array.isArray(errorMessages)) {
+      message = errorMessages[0];
+    } else if (typeof errorMessages === 'object') {
+      message = errorMessages.message;
+    }
+
+    const path = httpAdapter.getRequestUrl(request);
+    if (
+      request.method === 'GET' &&
+      OAUTH_REDIRECT_PATH.test(path.split('?')[0] ?? path)
+    ) {
+      const frontend = resolveFrontendUrl();
+      const errorText =
+        httpStatus === HttpStatus.UNAUTHORIZED
+          ? 'Sign-in session expired. Please try Google sign-in again.'
+          : String(message || 'Authentication failed');
+      if (typeof response.redirect === 'function') {
+        response.redirect(
+          HttpStatus.FOUND,
+          `${frontend}/auth/callback?error=${encodeURIComponent(errorText)}`,
+        );
+      } else {
+        httpAdapter.reply(
+          response,
+          { success: false, statusCode: httpStatus, error: errorText },
+          httpStatus,
+        );
       }
+      return;
     }
 
     const responseBody = {
@@ -52,9 +77,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode: httpStatus,
       error: message,
       timestamp: new Date().toISOString(),
-      path: httpAdapter.getRequestUrl(ctx.getRequest()),
+      path,
     };
 
-    httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+    httpAdapter.reply(response, responseBody, httpStatus);
   }
 }

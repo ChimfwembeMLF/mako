@@ -6,10 +6,21 @@ import { existsSync } from 'fs';
 import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
-import * as session from 'express-session';
+import { configureExpressSession } from './config/session.config';
+import { resolveApiPublicUrl } from './common/env-urls.util';
 import * as passport from 'passport';
 
+function normalizeLegacyEnv(): void {
+  if (process.env.APP_URL && !process.env.FRONTEND_URL) {
+    process.env.FRONTEND_URL = process.env.APP_URL;
+  }
+  if (process.env.API_URL && !process.env.API_PUBLIC_URL) {
+    process.env.API_PUBLIC_URL = process.env.API_URL;
+  }
+}
+
 async function bootstrap() {
+  normalizeLegacyEnv();
   const logLevels = (process.env.LOG_LEVEL?.split(',') ?? ['error', 'warn', 'log']) as LogLevel[];
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
@@ -17,6 +28,8 @@ async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction) {
+    app.set('trust proxy', 1);
+
     const sessionSecret = process.env.SESSION_SECRET?.trim();
     if (!sessionSecret || sessionSecret === 'dev_session_secret') {
       console.error('FATAL: Set a strong SESSION_SECRET in production');
@@ -25,7 +38,8 @@ async function bootstrap() {
     if (process.env.DB_SYNCHRONIZE === 'true') {
       console.warn('WARNING: DB_SYNCHRONIZE=true in production — use migrations instead (npm run migrations:run)');
     }
-    if (!process.env.API_PUBLIC_URL?.startsWith('https://')) {
+    const apiPublicUrl = resolveApiPublicUrl();
+    if (!apiPublicUrl.startsWith('https://')) {
       console.warn('WARNING: API_PUBLIC_URL should be a public HTTPS URL for social media publishing');
     }
   }
@@ -39,7 +53,19 @@ async function bootstrap() {
         'https://mako.tekreminnovations.com',
       ];
 
-  app.enableCors();
+  app.enableCors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (corsOrigins.includes(origin)) return callback(null, origin);
+      console.warn('Blocked CORS request from:', origin);
+      return callback(null, false);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Visitor-Id'],
+    credentials: true,
+  });
+
+  await configureExpressSession(app, isProduction);
 
   app.useStaticAssets(join(process.cwd(), 'public'));
 
@@ -55,17 +81,6 @@ async function bootstrap() {
     app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
   }
 
-  // Enable express-session so Passport can store OAuth2 `state` in session
-  const sessionSecret = process.env.SESSION_SECRET || 'dev_session_secret';
-  app.use(
-    session({
-      secret: sessionSecret,
-      resave: false,
-      saveUninitialized: false,
-    }),
-  );
-
-  // Initialize passport and session support for OAuth state handling
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -80,8 +95,6 @@ async function bootstrap() {
   console.log(`Application listening on http://0.0.0.0:${port}`);
   console.log(`Documentation on http://localhost:${port}/documentation`);
   console.log(`Bull Board on http://localhost:${port}/admin/queues`);
-
-
 }
 
 bootstrap();

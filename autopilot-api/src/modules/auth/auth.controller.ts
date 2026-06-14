@@ -24,6 +24,7 @@ import { FacebookAuthService } from './facebook-auth.service';
 import { LinkedInAuthService } from './linkedin-auth.service';
 import { InstagramAuthService } from './instagram-auth.service';
 import { ConfigService } from '@nestjs/config';
+import { resolveFrontendUrl } from '../../common/env-urls.util';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -56,7 +57,7 @@ export class AuthController {
     private readonly instagramAuthService: InstagramAuthService,
     private readonly config: ConfigService,
   ) {
-    this.frontendUrl = this.config.get('FRONTEND_URL') || 'http://localhost:3000';
+    this.frontendUrl = resolveFrontendUrl(this.config);
   }
 
   @Post('register')
@@ -121,10 +122,17 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const profile = req.user as SocialOAuthUser & { refreshToken?: string };
-    const user = await this.googleAuthService.authenticate(profile.accessToken!);
-    const tokens = await this.authService.completeAuthentication(user);
-    return res.redirect(`${this.frontendUrl}/auth/callback?token=${tokens.token}`);
+    try {
+      const profile = req.user as SocialOAuthUser & { refreshToken?: string };
+      const user = await this.googleAuthService.authenticate(profile.accessToken!);
+      const tokens = await this.authService.completeAuthentication(user);
+      return res.redirect(`${this.frontendUrl}/auth/callback?token=${tokens.token}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Google authentication failed';
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`,
+      );
+    }
   }
 
   @Post('google-auth')

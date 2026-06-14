@@ -32,4 +32,10 @@ export function loadEnvFiles(): void {
   if (process.env.DB_NAME && !process.env.DB_DATABASE) {
     process.env.DB_DATABASE = process.env.DB_NAME;
   }
+  if (process.env.APP_URL && !process.env.FRONTEND_URL) {
+    process.env.FRONTEND_URL = process.env.APP_URL;
+  }
+  if (process.env.API_URL && !process.env.API_PUBLIC_URL) {
+    process.env.API_PUBLIC_URL = process.env.API_URL;
+  }
 }
