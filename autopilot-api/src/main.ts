@@ -14,8 +14,6 @@ import * as passport from 'passport';
 // Same CJS pattern as passport — avoids broken default import at runtime under PM2
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const expressSession = require('express-session') as (options: SessionOptions) => RequestHandler;
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const cors = require('cors') as typeof import('cors');
 
 function resolveCorsOrigins(): string[] {
   return process.env.CORS_ORIGIN
@@ -28,27 +26,23 @@ function resolveCorsOrigins(): string[] {
       ];
 }
 
-function applyCors(app: NestExpressApplication): void {
+function buildCorsOptions(): import('@nestjs/common/interfaces/external/cors-options.interface').CorsOptions {
   const corsOrigins = resolveCorsOrigins();
-  console.log(`[cors] allowed origins: ${corsOrigins.join(', ')}`);
-
-  app.use(
-    cors({
-      origin: (
-        origin: string | undefined,
-        callback: (err: Error | null, allow?: boolean | string) => void,
-      ) => {
-        if (!origin) return callback(null, true);
-        if (corsOrigins.includes(origin)) return callback(null, origin);
-        console.warn('[cors] blocked origin:', origin);
-        return callback(null, false);
-      },
-      credentials: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Visitor-Id', 'Accept'],
-      optionsSuccessStatus: 204,
-    }),
-  );
+  return {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean | string) => void,
+    ) => {
+      if (!origin) return callback(null, true);
+      if (corsOrigins.includes(origin)) return callback(null, origin);
+      console.warn('[cors] blocked origin:', origin);
+      return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Visitor-Id', 'Accept'],
+    optionsSuccessStatus: 204,
+  };
 }
 
 function normalizeLegacyEnv(): void {
@@ -127,14 +121,14 @@ async function configureExpressSession(
 
 async function bootstrap() {
   normalizeLegacyEnv();
-  console.log('[boot] Mako API starting (session-fix-v3, cors-v4)');
+  console.log('[boot] Mako API starting (session-fix-v3, cors-v5)');
+  console.log(`[cors] allowed origins: ${resolveCorsOrigins().join(', ')}`);
 
   const logLevels = (process.env.LOG_LEVEL?.split(',') ?? ['error', 'warn', 'log']) as LogLevel[];
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
+    cors: buildCorsOptions(),
   });
-
-  applyCors(app);
 
   const isProduction = process.env.NODE_ENV === 'production';
 
