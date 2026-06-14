@@ -8,7 +8,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
 import { resolveApiPublicUrl } from './common/env-urls.util';
-import { corsMiddleware, isCorsAllowAll, resolveCorsOrigins } from './common/cors.util';
+import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
 import type { RequestHandler } from 'express';
 import type { SessionOptions } from 'express-session';
 import * as passport from 'passport';
@@ -108,20 +108,18 @@ async function configureExpressSession(
 
 async function bootstrap() {
   normalizeLegacyEnv();
-  const corsOrigins = resolveCorsOrigins();
   console.log('[boot] Mako API starting (cross-origin mode)');
-  console.log(
-    '[cors]',
-    isCorsAllowAll() ? 'allow all origins (CORS_ALLOW_ALL=true)' : `allowed origins: ${corsOrigins.join(', ')}`,
-  );
+  console.log('[cors]', describeCorsMode());
 
   const logLevels = (process.env.LOG_LEVEL?.split(',') ?? ['error', 'warn', 'log']) as LogLevel[];
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
   });
 
-  // Before session/passport — OPTIONS must not fall through to Nest 404.
-  app.use(corsMiddleware);
+  const corsOptions = buildNestCorsOptions();
+  if (corsOptions) {
+    app.enableCors(corsOptions);
+  }
 
   const isProduction = process.env.NODE_ENV === 'production';
 

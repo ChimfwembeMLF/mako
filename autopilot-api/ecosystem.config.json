@@ -34,7 +34,8 @@
         "DB_SYNCHRONIZE": "false",
         "DB_SSL": "false",
         "FRONTEND_URL": "https://mako-33f20.web.app",
-        "CORS_ALLOW_ALL": "true",
+        "CORS_ORIGIN": "https://mako-33f20.web.app,http://localhost:5173,http://localhost:3000",
+        "CORS_CREDENTIALS": "true",
         "API_PUBLIC_URL": "https://makoapi.tekreminnovations.com"
       }
     }
