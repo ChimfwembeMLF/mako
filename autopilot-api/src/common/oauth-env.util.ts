@@ -29,3 +29,43 @@ export function warnProductionOAuthEnv(): void {
     }
   }
 }
+
+function isLocalhostUrl(value: string | undefined): boolean {
+  if (!value) return false;
+  return /localhost|127\.0\.0\.1/i.test(value);
+}
+
+/** Safe summary for /health — no secrets. */
+export function summarizeOAuthEnv(): {
+  ready: boolean;
+  frontendUrl: string | null;
+  apiPublicUrl: string | null;
+  localhostCallbacks: string[];
+  missingPublisherCallbacks: string[];
+} {
+  const localhostCallbacks: string[] = [];
+  for (const key of [...LOGIN_CALLBACK_KEYS, ...PUBLISHER_CALLBACK_KEYS]) {
+    const value = process.env[key]?.trim();
+    if (isLocalhostUrl(value)) localhostCallbacks.push(key);
+  }
+
+  const missingPublisherCallbacks = PUBLISHER_CALLBACK_KEYS.filter(
+    (key) => !process.env[key]?.trim(),
+  );
+
+  const frontendUrl = process.env.FRONTEND_URL?.trim() || null;
+  const apiPublicUrl =
+    process.env.API_PUBLIC_URL?.trim() || process.env.API_BASE_URL?.trim() || null;
+
+  return {
+    ready:
+      localhostCallbacks.length === 0 &&
+      missingPublisherCallbacks.length === 0 &&
+      !!frontendUrl &&
+      !isLocalhostUrl(frontendUrl),
+    frontendUrl,
+    apiPublicUrl,
+    localhostCallbacks,
+    missingPublisherCallbacks,
+  };
+}

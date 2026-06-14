@@ -1,3 +1,4 @@
+import type { Express, Request, Response } from 'express';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import type { RequestHandler } from 'express';
@@ -10,6 +11,10 @@ export const SPA_BYPASS_PREFIXES = [
   '/admin',
 ] as const;
 
+/** Matches client-side routes only (excludes API/OAuth paths at registration time). */
+export const SPA_CLIENT_ROUTE =
+  /^(?!\/(?:api|uploads|documentation|admin)(?:\/|$)).+/;
+
 export function shouldBypassSpa(pathname: string): boolean {
   return SPA_BYPASS_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
@@ -18,7 +23,7 @@ export function shouldBypassSpa(pathname: string): boolean {
 
 /**
  * Serve Vite assets + index.html for client routes only.
- * Registered in main.ts after Nest routes so OAuth/API paths are never swallowed.
+ * Must run after `await app.init()` so Nest API/OAuth routes register first.
  */
 export function configureSpaFallback(
   app: NestExpressApplication,
@@ -31,27 +36,28 @@ export function configureSpaFallback(
   ) => RequestHandler;
 
   const indexHtml = join(clientDist, 'index.html');
+  const expressApp = app.getHttpAdapter().getInstance() as Express;
 
-  app.use(
+  expressApp.use(
     expressStatic(clientDist, {
       index: false,
       fallthrough: true,
     }),
   );
 
-  app.use((req, res, next) => {
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      next();
-      return;
-    }
-    if (shouldBypassSpa(req.path)) {
-      next();
-      return;
-    }
-    res.sendFile(indexHtml, (err) => {
-      if (err) next(err);
-    });
-  });
+  const sendIndex = (_req: Request, res: Response) => {
+    res.sendFile(indexHtml);
+  };
 
-  console.log('[client] SPA fallback active — /api, /uploads, /documentation, /admin bypass React');
+  // Regex routes never match /api/* — OAuth full-page navigations reach Nest
+  expressApp.get(SPA_CLIENT_ROUTE, sendIndex);
+  expressApp.head(SPA_CLIENT_ROUTE, sendIndex);
+
+  // Root path
+  expressApp.get('/', sendIndex);
+  expressApp.head('/', (_req, res) => res.sendFile(indexHtml));
+
+  console.log(
+    '[client] SPA fallback active — /api, /uploads, /documentation, /admin never serve React',
+  );
 }

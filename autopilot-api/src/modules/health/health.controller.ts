@@ -7,6 +7,7 @@ import {
   describeCorsMode,
 } from '../../common/cors.util';
 import { isClientDistAvailable, isServeClientEnabled } from '../../common/client-dist.util';
+import { summarizeOAuthEnv } from '../../common/oauth-env.util';
 
 @ApiTags('Health')
 @Controller('api/v1/health')
@@ -28,6 +29,7 @@ export class HealthController {
       corsMode: describeCorsMode(),
       corsDisabled: isCorsDisabled(),
       corsOrigins: resolveCorsOrigins(),
+      oauth: summarizeOAuthEnv(),
     };
   }
 }

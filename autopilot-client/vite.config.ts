@@ -24,7 +24,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      disable: process.env.DISABLE_PWA === "true",
+      // OAuth full-page redirects break when a service worker serves index.html for /api/*
+      disable: process.env.DISABLE_PWA === "true" || mode === "production",
       registerType: "autoUpdate",
       // Don't fail production builds when a chunk exceeds Workbox precache limit
       showMaximumFileSizeToCacheInBytesWarning: true,
@@ -32,7 +33,9 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         // Precache large production bundles (default Workbox limit is 2 MiB)
         maximumFileSizeToCacheInBytes: WORKBOX_MAX_PRECACHE_BYTES,
-        // Cache strategy: app shell + API responses
+        // SPA shell for client routes only — never intercept OAuth/API navigations
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api/, /^\/uploads/, /^\/documentation/, /^\/admin/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {

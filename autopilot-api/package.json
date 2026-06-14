@@ -11,7 +11,7 @@
   "scripts": {
     "prebuild": "rimraf dist tsconfig.build.tsbuildinfo",
     "build": "nest build",
-    "build:client": "cd ../autopilot-client && VITE_API_BASE_URL= yarn build",
+    "build:client": "cd ../autopilot-client && DISABLE_PWA=true VITE_API_BASE_URL= yarn build",
     "copy:client": "node scripts/copy-client-dist.js",
     "build:all": "yarn build:client && yarn copy:client && yarn build",
     "install:client": "cd ../autopilot-client && yarn install",
@@ -35,6 +35,7 @@
     "deploy:pm2": "bash scripts/deploy-production.sh",
     "env:check": "node scripts/show-loaded-env.js",
     "db:test": "NODE_ENV=production node scripts/test-db-connection.js",
+    "oauth:check": "NODE_ENV=production node scripts/check-oauth-env.js",
     "seed:dev": "ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/seed.ts",
     "seed:prod": "NODE_ENV=production ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/seed-production.ts",
     "migrations:run": "yarn migrations:run:dev",

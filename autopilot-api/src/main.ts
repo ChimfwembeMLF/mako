@@ -169,6 +169,8 @@ async function bootstrap() {
 
   setupSwagger(app);
 
+  await app.init();
+
   if (serveClient) {
     configureSpaFallback(app, resolveClientDistPath());
   }

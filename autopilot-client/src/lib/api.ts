@@ -220,7 +220,7 @@ async function refreshAccessToken(): Promise<string | null> {
         if (!refreshToken) return null;
 
         try {
-            const response = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+            const response = await fetch(`${resolveApiBaseUrl()}/api/v1/auth/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ refreshToken }),
@@ -262,7 +262,7 @@ async function request<T>(
 
     let response: Response;
     try {
-        response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        response = await fetch(`${resolveApiBaseUrl()}${endpoint}`, {
             ...rest,
             headers: requestHeaders,
         });
@@ -304,7 +304,10 @@ async function request<T>(
 
     const contentType = response.headers.get('content-type') ?? '';
     if (!contentType.includes('application/json')) {
-        return undefined as T;
+        throw new ApiError(
+            'Server returned a non-JSON response (often a cached app page). Hard-refresh or clear site data, then retry.',
+            { status: response.status },
+        );
     }
 
     try {
