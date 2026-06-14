@@ -2,7 +2,7 @@ import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-option
 import type { NextFunction, Request, Response } from 'express';
 import { widgetCorsMiddleware } from './widget-cors.middleware';
 
-export const MAKO_CORS_BUILD = 'cors-v9';
+export const MAKO_CORS_BUILD = 'cors-v11';
 
 const WIDGET_PREFIX = '/api/v1/widget';
 
@@ -19,6 +19,11 @@ export function resolveCorsOrigins(): string[] {
   const frontend = process.env.FRONTEND_URL?.trim();
   const defaults = ['http://localhost:3000', 'http://localhost:5173'];
   return [...new Set([...fromEnv, ...(frontend ? [frontend] : []), ...defaults])];
+}
+
+function setAllowOrigin(res: Response, value: string): void {
+  if (res.getHeader('Access-Control-Allow-Origin')) return;
+  res.setHeader('Access-Control-Allow-Origin', value);
 }
 
 function setCommonCorsHeaders(res: Response, credentials: boolean): void {
@@ -39,10 +44,10 @@ export function applyCorsHeaders(req: Request, res: Response): void {
 
   if (isCorsAllowAll()) {
     if (typeof origin === 'string' && origin.length > 0) {
-      res.setHeader('Access-Control-Allow-Origin', origin);
+      setAllowOrigin(res, origin);
       res.setHeader('Vary', 'Origin');
     } else {
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      setAllowOrigin(res, '*');
     }
     setCommonCorsHeaders(res, false);
     return;
@@ -54,14 +59,18 @@ export function applyCorsHeaders(req: Request, res: Response): void {
     return;
   }
 
-  res.setHeader('Access-Control-Allow-Origin', origin);
+  setAllowOrigin(res, origin);
   res.setHeader('Vary', 'Origin');
   setCommonCorsHeaders(res, true);
 }
 
 /** Express middleware — register in main.ts before session/routes so OPTIONS preflight succeeds. */
 export function corsMiddleware(req: Request, res: Response, next: NextFunction): void {
-  if (req.path.startsWith(WIDGET_PREFIX)) {
+  const isWidget = req.path.startsWith(WIDGET_PREFIX);
+
+  // Allow-all: one code path for app + widget (avoids duplicate ACAO from two middlewares).
+  // Restricted mode: widget stays permissive for third-party embeds.
+  if (isWidget && !isCorsAllowAll()) {
     widgetCorsMiddleware(req, res, next);
     return;
   }

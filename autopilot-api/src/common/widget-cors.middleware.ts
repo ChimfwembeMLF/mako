@@ -4,9 +4,11 @@ import type { NextFunction, Request, Response } from 'express';
 export function widgetCorsMiddleware(req: Request, res: Response, next: NextFunction): void {
   const origin = req.headers.origin;
   if (typeof origin === 'string' && origin.length > 0) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
+    if (!res.getHeader('Access-Control-Allow-Origin')) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
     res.setHeader('Vary', 'Origin');
-  } else {
+  } else if (!res.getHeader('Access-Control-Allow-Origin')) {
     res.setHeader('Access-Control-Allow-Origin', '*');
   }
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');

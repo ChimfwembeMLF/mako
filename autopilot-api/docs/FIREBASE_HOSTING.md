@@ -138,6 +138,41 @@ In the browser (Firebase app) → Network: requests go to `makoapi.tekreminnovat
 
 ---
 
+## 7. Troubleshooting CORS
+
+### Duplicate `Access-Control-Allow-Origin` header
+
+If the browser reports:
+
+> The 'Access-Control-Allow-Origin' header contains multiple values 'https://..., https://...'
+
+**Cause:** LiteSpeed on `makoapi.tekreminnovations.com` is adding CORS headers **and** NestJS is also adding them. Browsers reject duplicated values.
+
+**Fix:** On the **`makoapi`** vhost only, remove any LiteSpeed/CyberPanel CORS configuration:
+
+- CyberPanel → Websites → **makoapi.tekreminnovations.com** → vHost Conf / Rewrite Rules
+- Delete `Header set Access-Control-*` rules, `extraHeaders` with `Access-Control-*`, or “Enable CORS” toggles
+- CORS must be handled **only by NestJS** (`CORS_ALLOW_ALL=true` in `.env`)
+
+Then:
+
+```bash
+systemctl restart lsws
+```
+
+Verify a **single** origin header:
+
+```bash
+curl -s -D - -o /dev/null -X OPTIONS \
+  -H "Origin: https://mako-33f20.web.app" \
+  -H "Access-Control-Request-Method: GET" \
+  https://makoapi.tekreminnovations.com/api/v1/plans | grep -i access-control-allow-origin
+```
+
+Expected: **one** line, e.g. `access-control-allow-origin: https://mako-33f20.web.app`
+
+---
+
 ## Same-origin alternative
 
 If you later host the SPA on CyberPanel with a LiteSpeed `/api` proxy, see `docs/SAME_ORIGIN_PROXY.md`.
