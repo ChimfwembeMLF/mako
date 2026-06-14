@@ -50,6 +50,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
+import { ClientStaticModule } from './client-static.module';
 
 @Module({
   imports: [
@@ -112,6 +113,7 @@ import { HealthModule } from './modules/health/health.module';
     ChatbotModule,
     SearchModule,
     HealthModule,
+    ClientStaticModule.register(),
   ],
   providers: [
     {

@@ -5,7 +5,7 @@ import { withWorkspace } from './workspace-query';
 
 export { ApiError, isNetworkError, isAuthError } from './api-errors';
 
-/** Resolves API base URL. Empty VITE_API_BASE_URL = same origin (Vite dev proxy). Firebase prod uses makoapi URL. */
+/** Resolves API base URL. Empty VITE_API_BASE_URL = same origin (Nest serves SPA or Vite dev proxy). */
 export function resolveApiBaseUrl(): string {
   const raw = import.meta.env.VITE_API_BASE_URL as string | undefined;
   const configured = raw?.trim().replace(/^["']|["']$/g, '') ?? '';

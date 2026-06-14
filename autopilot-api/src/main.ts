@@ -9,6 +9,7 @@ import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
 import { resolveApiPublicUrl } from './common/env-urls.util';
 import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
+import { isClientDistAvailable, isServeClientEnabled } from './common/client-dist.util';
 import type { RequestHandler } from 'express';
 import type { SessionOptions } from 'express-session';
 import * as passport from 'passport';
@@ -108,7 +109,8 @@ async function configureExpressSession(
 
 async function bootstrap() {
   normalizeLegacyEnv();
-  console.log('[boot] Mako API starting (cross-origin mode)');
+  const serveClient = isServeClientEnabled() && isClientDistAvailable();
+  console.log('[boot] Mako API starting', serveClient ? '(SPA + API same server)' : '(cross-origin mode)');
   console.log('[cors]', describeCorsMode());
 
   const logLevels = (process.env.LOG_LEVEL?.split(',') ?? ['error', 'warn', 'log']) as LogLevel[];

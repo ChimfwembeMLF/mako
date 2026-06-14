@@ -22,21 +22,22 @@
       "time": true,
       "env": {
         "NODE_ENV": "development",
-        "PORT": 4000
+        "PORT": 4000,
+        "SERVE_CLIENT": "false"
       },
       "env_production": {
         "NODE_ENV": "production",
         "PORT": 4005,
+        "SERVE_CLIENT": "true",
+        "CORS_DISABLED": "true",
         "DB_HOST": "localhost",
         "DB_PORT": "5432",
         "DB_USERNAME": "mako",
         "DB_DATABASE": "mako_prod",
         "DB_SYNCHRONIZE": "false",
         "DB_SSL": "false",
-        "FRONTEND_URL": "https://mako-33f20.web.app",
-        "CORS_ORIGIN": "https://mako-33f20.web.app,http://localhost:5173,http://localhost:3000",
-        "CORS_CREDENTIALS": "true",
-        "API_PUBLIC_URL": "https://makoapi.tekreminnovations.com"
+        "FRONTEND_URL": "https://mako.tekreminnovations.com",
+        "API_PUBLIC_URL": "https://mako.tekreminnovations.com"
       }
     }
   ]

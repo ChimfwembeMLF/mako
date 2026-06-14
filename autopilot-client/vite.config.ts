@@ -28,7 +28,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       // Don't fail production builds when a chunk exceeds Workbox precache limit
       showMaximumFileSizeToCacheInBytesWarning: true,
-      includeAssets: ["favicon.ico", "icons/*.png"],
+      includeAssets: ["favicon.svg", "icons/*.png"],
       workbox: {
         // Precache large production bundles (default Workbox limit is 2 MiB)
         maximumFileSizeToCacheInBytes: WORKBOX_MAX_PRECACHE_BYTES,
