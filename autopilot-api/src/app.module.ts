@@ -1,4 +1,4 @@
-import { Module, MiddlewareConsumer, NestModule, RequestMethod } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
@@ -51,6 +51,7 @@ import { ChatbotModule } from './modules/chatbot/chatbot.module';
 import { SearchModule } from './modules/search/search.module';
 import { HealthModule } from './modules/health/health.module';
 import { widgetCorsMiddleware } from './common/widget-cors.middleware';
+import { WidgetController } from './modules/chatbot/widget.controller';
 
 @Module({
   imports: [
@@ -123,8 +124,6 @@ import { widgetCorsMiddleware } from './common/widget-cors.middleware';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(widgetCorsMiddleware)
-      .forRoutes({ path: 'api/v1/widget*', method: RequestMethod.ALL });
+    consumer.apply(widgetCorsMiddleware).forRoutes(WidgetController);
   }
 }
