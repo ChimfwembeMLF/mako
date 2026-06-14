@@ -15,11 +15,19 @@ if [[ ! -f .env ]]; then
 fi
 
 mkdir -p logs /var/log/pm2 2>/dev/null || sudo mkdir -p /var/log/pm2
-npm run build
-npm run db:sync
-npm run migrations:run
-npm run pm2:start
-npm run pm2:save
+
+if [[ -f ../autopilot-client/package.json ]]; then
+  echo "==> Full deploy (install + build client + API + PM2)"
+  bash scripts/deploy-production.sh --with-migrations
+else
+  echo "==> Client repo not found — API-only build"
+  yarn install
+  yarn build
+  yarn migrations:run:prod
+  yarn pm2:start
+fi
+
+yarn pm2:save
 
 echo ""
 echo "Mako API Production is running on port \${PORT:-5000}"

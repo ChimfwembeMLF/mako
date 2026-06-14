@@ -93,11 +93,9 @@ No separate `/api` context. Nest handles routing.
 
 ```bash
 cd /path/to/autopilot-api
-git pull
-yarn install
-yarn build:all
-yarn migrations:run:prod   # if needed
-pm2 startOrRestart ecosystem.config.json --env production --update-env
+yarn deploy:prod    # install + build client & API + migrate + PM2 restart
+# or without migrations:
+yarn deploy:pm2
 ```
 
 ---
