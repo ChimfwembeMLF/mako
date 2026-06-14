@@ -2,7 +2,52 @@
 
 Firebase (`mako-33f20.web.app`) calls the API on `makoapi.tekreminnovations.com`. CORS is handled **only by NestJS** via `app.enableCors()` in `main.ts`.
 
-**Do not** add `Access-Control-*` headers on the makoapi LiteSpeed vhost — that causes duplicate `Access-Control-Allow-Origin` and browsers block the request.
+CyberPanel’s UI vHost editor may **not** match the file LiteSpeed actually loads. Always edit:
+
+```
+/usr/local/lsws/conf/vhosts/makoapi.tekreminnovations.com/vhconf.conf
+```
+
+A clean reference config is in `docs/makoapi.vhconf.conf.example`.
+
+## Remove duplicate CORS (common bug)
+
+If `vhconf.conf` contains blocks like these, **delete them** (they duplicate Nest headers and use the wrong origin `mako.tekreminnovations.com`):
+
+```apache
+# DELETE — global extraHeaders CORS block
+extraHeaders <<<END_extraHeaders
+Access-Control-Allow-Origin: https://mako.tekreminnovations.com
+...
+END_extraHeaders
+
+# DELETE — OPTIONS rewrite (Nest handles preflight)
+rewrite { ... RewriteCond %{REQUEST_METHOD} OPTIONS ... }
+
+# DELETE — CORS inside context / extraHeaders
+context / {
+  extraHeaders <<<END_extraHeaders
+  Access-Control-Allow-Origin: https://mako.tekreminnovations.com
+  ...
+  END_extraHeaders
+}
+```
+
+Also fix SSL if it points at `mako.tekreminnovations.com` certs — use **makoapi** certs:
+
+```apache
+vhssl {
+  keyFile   /etc/letsencrypt/live/makoapi.tekreminnovations.com/privkey.pem
+  certFile  /etc/letsencrypt/live/makoapi.tekreminnovations.com/fullchain.pem
+  certChain 1
+}
+```
+
+Then:
+
+```bash
+systemctl restart lsws
+```
 
 ## Correct makoapi vhost (proxy only)
 

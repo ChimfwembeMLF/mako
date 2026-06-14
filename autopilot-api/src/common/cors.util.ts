@@ -1,6 +1,13 @@
 import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
-export const MAKO_CORS_BUILD = 'cors-v13';
+export const MAKO_CORS_BUILD = 'cors-v14';
+
+/** LiteSpeed sometimes merges duplicate Origin headers into one comma-separated value. */
+export function normalizeRequestOrigin(origin: string | undefined): string | undefined {
+  if (!origin) return undefined;
+  const first = origin.split(',')[0]?.trim();
+  return first || undefined;
+}
 
 export function isCorsAllowAll(): boolean {
   return process.env.CORS_ALLOW_ALL === 'true';
@@ -55,8 +62,9 @@ export function buildNestCorsOptions(): CorsOptions | false {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean | string) => void,
     ) => {
-      if (!origin) return callback(null, true);
-      if (origins.includes(origin)) return callback(null, origin);
+      const normalized = normalizeRequestOrigin(origin);
+      if (!normalized) return callback(null, true);
+      if (origins.includes(normalized)) return callback(null, normalized);
       console.warn('[cors] blocked origin:', origin);
       return callback(null, false);
     },

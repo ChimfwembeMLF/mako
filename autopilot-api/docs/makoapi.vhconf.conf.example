@@ -1,0 +1,64 @@
+# LiteSpeed vhost — makoapi.tekreminnovations.com
+# Install: /usr/local/lsws/conf/vhosts/makoapi.tekreminnovations.com/vhconf.conf
+#
+# Firebase client (mako-33f20.web.app) → makoapi cross-origin.
+# context / proxies ALL API routes including /api/v1/auth/*, /api/v1/plans, etc.
+# CORS + OPTIONS preflight are handled here (Nest has CORS_DISABLED=true).
+
+docRoot                   /home/mako.tekreminnovations.com/public_html/autopilot-api/public
+vhDomain                  makoapi.tekreminnovations.com
+adminEmails               admin@tekreminnovations.com
+enableGzip                1
+
+errorlog /usr/local/lsws/autopilot-api/error.log {
+  useServer               0
+  logLevel                DEBUG
+}
+accesslog /usr/local/lsws/autopilot-api/access.log {
+  useServer               0
+  rollingSize             10M
+}
+
+extprocessor node_backend {
+  type                    proxy
+  address                 127.0.0.1:4005
+  maxConns                100
+  initTimeout             60
+  retryTimeout            0
+  respBuffer              0
+}
+
+rewrite {
+  enable                  1
+  RewriteCond             %{REQUEST_METHOD} ^OPTIONS
+  RewriteRule               ^(.*)$ - [R=204,L]
+}
+
+extraHeaders <<<END_extraHeaders
+Access-Control-Allow-Origin: https://mako-33f20.web.app
+Access-Control-Allow-Credentials: true
+Access-Control-Allow-Methods: GET, POST, PUT, DELETE, PATCH, OPTIONS
+Access-Control-Allow-Headers: Content-Type, Authorization, X-Visitor-Id, Accept
+Access-Control-Max-Age: 86400
+END_extraHeaders
+
+context / {
+  type                    proxy
+  handler                 node_backend
+  addDefaultCharset       off
+}
+
+context /.well-known/acme-challenge {
+  location                /home/mako.tekreminnovations.com/public_html/autopilot-api/public/.well-known/acme-challenge
+  allowBrowse             1
+  rewrite {
+    enable                0
+  }
+  addDefaultCharset       off
+}
+
+vhssl {
+  keyFile                 /etc/letsencrypt/live/makoapi.tekreminnovations.com/privkey.pem
+  certFile                /etc/letsencrypt/live/makoapi.tekreminnovations.com/fullchain.pem
+  certChain               1
+}
