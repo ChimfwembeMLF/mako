@@ -15,6 +15,14 @@ const PUBLISHER_CALLBACK_KEYS = [
   'WHATSAPP_SOCIAL_CALLBACK_URL',
 ] as const;
 
+/** Publisher callbacks required for oauth.ready (YouTube/Google optional). */
+const REQUIRED_PUBLISHER_CALLBACK_KEYS = [
+  'FACEBOOK_SOCIAL_CALLBACK_URL',
+  'INSTAGRAM_SOCIAL_CALLBACK_URL',
+  'LINKEDIN_SOCIAL_CALLBACK_URL',
+  'WHATSAPP_SOCIAL_CALLBACK_URL',
+] as const;
+
 /** Warn when production OAuth redirect URIs still point at localhost (common .env.production mistake). */
 export function warnProductionOAuthEnv(): void {
   if (process.env.NODE_ENV !== 'production') return;
@@ -49,9 +57,15 @@ export function summarizeOAuthEnv(): {
     if (isLocalhostUrl(value)) localhostCallbacks.push(key);
   }
 
-  const missingPublisherCallbacks = PUBLISHER_CALLBACK_KEYS.filter(
-    (key) => !process.env[key]?.trim(),
-  );
+  const missingPublisherCallbacks: string[] = [
+    ...REQUIRED_PUBLISHER_CALLBACK_KEYS.filter((key) => !process.env[key]?.trim()),
+  ];
+  if (
+    process.env.TIKTOK_CLIENT_KEY?.trim() &&
+    !process.env.TIKTOK_SOCIAL_CALLBACK_URL?.trim()
+  ) {
+    missingPublisherCallbacks.push('TIKTOK_SOCIAL_CALLBACK_URL');
+  }
 
   const frontendUrl = process.env.FRONTEND_URL?.trim() || null;
   const apiPublicUrl =
