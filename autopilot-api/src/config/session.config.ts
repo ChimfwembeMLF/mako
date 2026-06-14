@@ -1,18 +1,37 @@
 import { RedisStore } from 'connect-redis';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import session from 'express-session';
+import type { RequestHandler } from 'express';
+import type { SessionOptions } from 'express-session';
 import { createClient, type RedisClientType } from 'redis';
 
 let redisSessionClient: RedisClientType | null = null;
+
+/** CJS-safe loader — avoids `import default` breaking at runtime under PM2. */
+function expressSession(): (options: SessionOptions) => RequestHandler {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const loaded = require('express-session') as
+    | ((options: SessionOptions) => RequestHandler)
+    | { default: (options: SessionOptions) => RequestHandler };
+
+  if (typeof loaded === 'function') {
+    return loaded;
+  }
+  if (typeof loaded?.default === 'function') {
+    return loaded.default;
+  }
+
+  throw new TypeError('express-session middleware could not be loaded');
+}
 
 export async function configureExpressSession(
   app: NestExpressApplication,
   isProduction: boolean,
 ): Promise<void> {
+  const session = expressSession();
   const sessionSecret = process.env.SESSION_SECRET || 'dev_session_secret';
   const maxAgeMs = Number(process.env.SESSION_EXPIRY || 86400) * 1000;
 
-  const sessionOptions: session.SessionOptions = {
+  const sessionOptions: SessionOptions = {
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
