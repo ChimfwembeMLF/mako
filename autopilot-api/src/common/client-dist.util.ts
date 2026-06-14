@@ -23,10 +23,3 @@ export function isServeClientEnabled(): boolean {
   if (process.env.SERVE_CLIENT === 'true') return true;
   return process.env.NODE_ENV === 'production';
 }
-
-export const CLIENT_STATIC_EXCLUDES = [
-  '/api*',
-  '/uploads*',
-  '/documentation*',
-  '/admin*',
-];

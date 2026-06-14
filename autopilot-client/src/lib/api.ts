@@ -14,7 +14,8 @@ export function resolveApiBaseUrl(): string {
     if (typeof window !== 'undefined' && window.location?.origin) {
       return window.location.origin;
     }
-    return 'http://localhost:4000';
+    // Build time / SSR — use relative URLs in the browser at runtime
+    return '';
   }
 
   if (configured.startsWith('//')) {
@@ -196,7 +197,8 @@ export function getRefreshToken(): string | null {
 }
 
 export function getSocialLoginUrl(provider: 'google' | 'facebook' | 'linkedin' | 'instagram') {
-    return `${API_BASE_URL}/api/v1/auth/${provider}`;
+    const base = resolveApiBaseUrl().replace(/\/$/, '');
+    return base ? `${base}/api/v1/auth/${provider}` : `/api/v1/auth/${provider}`;
 }
 
 // ----------------------------------------------------------------------

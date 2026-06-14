@@ -59,6 +59,7 @@ export class SocialAccountsController {
 
   private getApiBaseUrl(req: Request): string {
     return (
+      this.config.get<string>('API_PUBLIC_URL') ||
       this.config.get<string>('API_BASE_URL') ||
       `${req.protocol}://${req.get('host')}`
     );

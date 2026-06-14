@@ -9,7 +9,9 @@ import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
 import { resolveApiPublicUrl } from './common/env-urls.util';
 import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
-import { isClientDistAvailable, isServeClientEnabled } from './common/client-dist.util';
+import { isClientDistAvailable, isServeClientEnabled, resolveClientDistPath } from './common/client-dist.util';
+import { configureSpaFallback } from './common/spa-fallback';
+import { warnProductionOAuthEnv } from './common/oauth-env.util';
 import type { RequestHandler } from 'express';
 import type { SessionOptions } from 'express-session';
 import * as passport from 'passport';
@@ -109,6 +111,7 @@ async function configureExpressSession(
 
 async function bootstrap() {
   normalizeLegacyEnv();
+  warnProductionOAuthEnv();
   const serveClient = isServeClientEnabled() && isClientDistAvailable();
   console.log('[boot] Mako API starting', serveClient ? '(SPA + API same server)' : '(cross-origin mode)');
   console.log('[cors]', describeCorsMode());
@@ -165,6 +168,10 @@ async function bootstrap() {
   );
 
   setupSwagger(app);
+
+  if (serveClient) {
+    configureSpaFallback(app, resolveClientDistPath());
+  }
 
   const port = Number(process.env.PORT) || 4000;
   await app.listen(port, '0.0.0.0');

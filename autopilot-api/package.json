@@ -34,6 +34,7 @@
     "deploy:prod": "bash scripts/deploy-production.sh --with-migrations",
     "deploy:pm2": "bash scripts/deploy-production.sh",
     "env:check": "node scripts/show-loaded-env.js",
+    "db:test": "NODE_ENV=production node scripts/test-db-connection.js",
     "seed:dev": "ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/seed.ts",
     "seed:prod": "NODE_ENV=production ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/seed-production.ts",
     "migrations:run": "yarn migrations:run:dev",
