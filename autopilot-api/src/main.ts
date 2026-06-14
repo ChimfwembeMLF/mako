@@ -39,12 +39,7 @@ async function bootstrap() {
         'https://mako.tekreminnovations.com',
       ];
 
-  app.enableCors({
-    origin: corsOrigins,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Visitor-Id'],
-    credentials: true,
-  });
+  app.enableCors();
 
   app.useStaticAssets(join(process.cwd(), 'public'));
 
