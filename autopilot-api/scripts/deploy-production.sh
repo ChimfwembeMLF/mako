@@ -23,7 +23,7 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "==> Installing API dependencies (yarn)"
-yarn install --immutable 2>/dev/null || yarn install
+yarn install --ignore-engines --frozen-lockfile 2>/dev/null || yarn install --ignore-engines
 
 if [[ -f "$CLIENT/package.json" ]]; then
   echo "==> Installing client dependencies (npm)"

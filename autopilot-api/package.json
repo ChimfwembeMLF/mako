@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20 <=24"
+    "node": ">=20"
   },
   "scripts": {
     "prebuild": "rimraf dist tsconfig.build.tsbuildinfo",
@@ -14,7 +14,7 @@
     "build:client": "cd resources/client && npm run build:prod",
     "build:all": "yarn build:client && yarn build",
     "install:client": "cd resources/client && npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts",
-    "install:all": "yarn install && yarn install:client",
+    "install:all": "yarn install --ignore-engines && yarn install:client",
     "dev:client": "cd resources/client && npm run dev",
     "dev": "concurrently -n api,web -c blue,magenta \"yarn start:dev\" \"yarn dev:client\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
