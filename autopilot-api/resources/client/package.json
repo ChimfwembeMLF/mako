@@ -9,7 +9,7 @@
     "build:prod": "DISABLE_PWA=true VITE_API_BASE_URL= vite build && node ../../scripts/strip-client-dist-pwa.js",
     "build:skip-pwa": "DISABLE_PWA=true vite build",
     "build:firebase": "vite build --mode production",
-    "deploy:firebase": "yarn build:firebase && yarn firebase deploy --only hosting",
+    "deploy:firebase": "yarn build:firebase && npx firebase-tools deploy --only hosting",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -98,17 +98,18 @@
     "eslint": "^9.32.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
-    "firebase-tools": "^15.20.0",
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
-    "supabase": "^2.84.4",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=20 <=24"
   }
 }

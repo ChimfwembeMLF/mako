@@ -26,7 +26,7 @@ yarn install --immutable 2>/dev/null || yarn install
 
 if [[ -f "$CLIENT/package.json" ]]; then
   echo "==> Installing client dependencies ($CLIENT)"
-  (cd "$CLIENT" && yarn install --immutable 2>/dev/null || yarn install --mode skip-build 2>/dev/null || yarn install)
+  (cd "$CLIENT" && yarn install --ignore-engines --immutable 2>/dev/null || yarn install --ignore-engines --mode skip-build 2>/dev/null || yarn install --ignore-engines)
 else
   echo "WARN: resources/client not found — build:client will fail unless client/dist already exists"
 fi

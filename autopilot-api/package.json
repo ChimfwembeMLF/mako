@@ -6,14 +6,14 @@
   "private": true,
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=20"
+    "node": ">=20 <=24"
   },
   "scripts": {
     "prebuild": "rimraf dist tsconfig.build.tsbuildinfo",
     "build": "nest build",
     "build:client": "cd resources/client && yarn build:prod",
     "build:all": "yarn build:client && yarn build",
-    "install:client": "cd resources/client && yarn install --mode skip-build",
+    "install:client": "cd resources/client && yarn install --ignore-engines --mode skip-build",
     "install:all": "yarn install && yarn install:client",
     "dev:client": "cd resources/client && yarn dev",
     "dev": "concurrently -n api,web -c blue,magenta \"yarn start:dev\" \"yarn dev:client\"",

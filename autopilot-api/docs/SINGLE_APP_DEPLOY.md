@@ -107,6 +107,14 @@ No separate `/api` context. Nest handles routing.
 
 ## 4. Deploy on VPS
 
+**Node.js:** use **20 LTS** (or 22/24). Node 25 is not supported by some build tools. On the server:
+
+```bash
+nvm install 20
+nvm use 20
+node -v   # should print v20.x
+```
+
 ```bash
 cd autopilot-api
 cp docs/env.mako.production.server.template .env   # edit secrets
