@@ -5,7 +5,7 @@ import {
   resolveClientDistPath,
 } from './common/client-dist.util';
 
-/** SPA static files are registered in main.ts (configureSpaFallback) so /api/* OAuth is never swallowed. */
+/** Client build check; assets + SPA 404 filter are wired in main.ts / SpaNotFoundFilter. */
 @Module({})
 export class ClientStaticModule {
   static register(): DynamicModule {

@@ -8,7 +8,8 @@ import {
 import { HttpAdapterHost } from '@nestjs/core';
 import { resolveFrontendUrl } from '../common/env-urls.util';
 
-const OAUTH_REDIRECT_PATH = /^\/api\/v1\/auth\/[^/]+\/redirect(?:\?|$)/;
+const OAUTH_REDIRECT_PATH =
+  /^\/api\/v1\/(?:auth\/[^/]+\/redirect|social-accounts\/oauth\/[^/]+\/callback)(?:\/|\?|$)/;
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -53,15 +54,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
       OAUTH_REDIRECT_PATH.test(path.split('?')[0] ?? path)
     ) {
       const frontend = resolveFrontendUrl();
+      const isPublisherCallback = path.includes('/social-accounts/oauth/');
       const errorText =
         httpStatus === HttpStatus.UNAUTHORIZED
-          ? 'Sign-in session expired. Please try Google sign-in again.'
+          ? 'Sign-in session expired. Please try again.'
           : String(message || 'Authentication failed');
+      const redirectBase = isPublisherCallback
+        ? `${frontend}/publisher`
+        : `${frontend}/auth/callback`;
+      const redirectUrl = `${redirectBase}?error=${encodeURIComponent(errorText)}`;
       if (typeof response.redirect === 'function') {
-        response.redirect(
-          HttpStatus.FOUND,
-          `${frontend}/auth/callback?error=${encodeURIComponent(errorText)}`,
-        );
+        response.redirect(HttpStatus.FOUND, redirectUrl);
       } else {
         httpAdapter.reply(
           response,

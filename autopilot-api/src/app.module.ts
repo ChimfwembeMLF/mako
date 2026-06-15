@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
+import { SpaNotFoundFilter } from './filters/spa-not-found.filter';
 import { typeOrmConfigFactory } from './database/ormconfig';
 
 import { AuthModule } from './modules/auth/auth.module';
@@ -116,6 +117,10 @@ import { ClientStaticModule } from './client-static.module';
     ClientStaticModule.register(),
   ],
   providers: [
+    {
+      provide: APP_FILTER,
+      useClass: SpaNotFoundFilter,
+    },
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

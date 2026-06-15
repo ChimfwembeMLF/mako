@@ -1,6 +1,20 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
 
+/** Paths handled by Nest — must never receive the React index.html fallback. */
+export const SPA_BYPASS_PREFIXES = [
+  '/api',
+  '/uploads',
+  '/documentation',
+  '/admin',
+] as const;
+
+export function shouldBypassSpa(pathname: string): boolean {
+  return SPA_BYPASS_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
 /** Paths checked for the Vite production build (newest first). */
 export function resolveClientDistPath(): string {
   const cwd = process.cwd();

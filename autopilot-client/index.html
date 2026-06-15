@@ -25,6 +25,30 @@
   <meta name="twitter:title" content="Tekrem Mako Co-pilot">
   <meta property="og:description" content="Lovable Generated Project">
   <meta name="twitter:description" content="Lovable Generated Project">
+  <!-- OAuth callbacks (/api/v1/auth/*/redirect, /api/v1/social-accounts/oauth/*/callback) must hit Nest, not this SPA.
+       If a legacy service worker serves this page for /api/*, unregister and reload once. -->
+  <script>
+    (function () {
+      var path = location.pathname;
+      if (!/^\/(api|uploads|documentation|admin)(\/|$)/.test(path)) return;
+      var key = "mako-oauth-api-reload";
+      if (sessionStorage.getItem(key) === location.href) {
+        sessionStorage.removeItem(key);
+        return;
+      }
+      sessionStorage.setItem(key, location.href);
+      function reload() {
+        location.replace(location.href);
+      }
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister(); }));
+        }).finally(reload);
+      } else {
+        reload();
+      }
+    })();
+  </script>
 </head>
 
   <body>

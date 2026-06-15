@@ -10,7 +10,7 @@ import { setupSwagger } from './setup-swagger';
 import { resolveApiPublicUrl } from './common/env-urls.util';
 import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
 import { isClientDistAvailable, isServeClientEnabled, resolveClientDistPath } from './common/client-dist.util';
-import { configureSpaFallback } from './common/spa-fallback';
+import { configureClientAssets } from './common/configure-client-assets';
 import { warnProductionOAuthEnv } from './common/oauth-env.util';
 import type { RequestHandler } from 'express';
 import type { SessionOptions } from 'express-session';
@@ -147,6 +147,13 @@ async function bootstrap() {
 
   await configureExpressSession(app, isProduction);
 
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+    }
+    next();
+  });
+
   app.useStaticAssets(join(process.cwd(), 'public'));
 
   if (!process.env.SUPABASE_URL?.trim() || !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
@@ -160,6 +167,10 @@ async function bootstrap() {
     app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
   }
 
+  if (serveClient) {
+    configureClientAssets(app, resolveClientDistPath());
+  }
+
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -168,12 +179,6 @@ async function bootstrap() {
   );
 
   setupSwagger(app);
-
-  await app.init();
-
-  if (serveClient) {
-    configureSpaFallback(app, resolveClientDistPath());
-  }
 
   const port = Number(process.env.PORT) || 4000;
   await app.listen(port, '0.0.0.0');
