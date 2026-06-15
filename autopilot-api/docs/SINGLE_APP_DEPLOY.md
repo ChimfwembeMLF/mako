@@ -56,7 +56,7 @@ yarn build
 
 This runs:
 
-1. `yarn build:client` — Vite build with empty `VITE_API_BASE_URL` → `client/dist`
+1. `npm run build:prod` in `resources/client` — Vite build → `client/dist`
 2. `yarn build` — compiles Nest
 
 ---
@@ -107,12 +107,13 @@ No separate `/api` context. Nest handles routing.
 
 ## 4. Deploy on VPS
 
-**Node.js:** use **20 LTS** (or 22/24). Node 25 is not supported by some build tools. On the server:
+**Node.js:** use **20 LTS** (or 22/24). Node 25 is not supported by some build tools.
+
+**Client uses npm** on the server (API uses yarn). From `autopilot-api/`:
 
 ```bash
-nvm install 20
-nvm use 20
-node -v   # should print v20.x
+yarn install          # API
+npm ci --ignore-scripts --prefix resources/client || npm install --ignore-scripts --prefix resources/client
 ```
 
 ```bash
