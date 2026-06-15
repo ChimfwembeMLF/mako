@@ -1,10 +1,8 @@
 import React from 'react'
 
-function Logo({ className }: { className?: string }) {
+function Logo({ className = 'h-10' }: { className?: string }) {
     return (
-        <div className="">
-            <img src="/mako-logo.png" alt="Mako" className={`h-24 w-auto ${className}`} />
-        </div>
+        <img src="/mako-logo.png" alt="Mako" className={`w-auto ${className}`} />
     )
 }
 

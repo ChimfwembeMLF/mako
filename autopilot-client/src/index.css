@@ -118,6 +118,39 @@
   .shadow-card {
     box-shadow: 0 4px 24px -4px hsl(270 100% 13% / 0.08);
   }
+
+  .landing-screenshot-shadow {
+    filter: drop-shadow(0 28px 48px hsl(270 100% 13% / 0.14))
+      drop-shadow(0 8px 16px hsl(270 100% 13% / 0.08));
+  }
+
+  .landing-glow {
+    background: radial-gradient(
+      ellipse 70% 55% at 50% 45%,
+      hsl(40 79% 52% / 0.14),
+      transparent 70%
+    );
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+.landing-float {
+  animation: landing-float 7s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-float {
+    animation: none;
+  }
 }
 
 /* Tiptap editor styles */

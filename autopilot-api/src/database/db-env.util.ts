@@ -43,3 +43,15 @@ export function resolveMigrationSsl(env: NodeJS.ProcessEnv): false | { ca: Buffe
   if (!existsSync(fullPath)) return false;
   return { ca: readFileSync(fullPath) };
 }
+
+/** pg pool options for TypeORM `extra` — keeps small VPS Postgres under max_connections. */
+export function resolveDbPoolExtra(
+  env: NodeJS.ProcessEnv = process.env,
+): { max: number; idleTimeoutMillis: number; connectionTimeoutMillis: number } {
+  const max = parseInt(env.DB_POOL_MAX || '5', 10);
+  return {
+    max: Number.isFinite(max) && max > 0 ? max : 5,
+    idleTimeoutMillis: 30_000,
+    connectionTimeoutMillis: 10_000,
+  };
+}

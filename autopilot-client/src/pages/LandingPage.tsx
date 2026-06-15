@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { plansApi, type PublicPlan } from '@/lib/api';
 import { formatPriceZmw, planFeatureBullets } from '@/lib/plans';
 import {
-  Rocket, Brain, Pen, CalendarClock, BarChart3, Zap, CheckCircle2, ArrowRight,
-  Star, Menu, X, ChevronDown, MessageSquareReply, Shield, Sparkles, Link2,
+  Brain, Pen, CalendarClock, BarChart3, CheckCircle2, ArrowRight,
+  Menu, X, MessageSquareReply, Shield, Link2,
   TrendingUp, Users, Globe, Loader2,
 } from 'lucide-react';
 import {
@@ -26,26 +25,73 @@ function useInView(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   useEffect(() => {
-    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true); }, { threshold });
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) setVisible(true);
+      },
+      { threshold },
+    );
     if (ref.current) obs.observe(ref.current);
     return () => obs.disconnect();
   }, [threshold]);
   return { ref, visible };
 }
 
-function FadeIn({ children, delay = 0, className = '' }: { children: React.ReactNode; delay?: number; className?: string }) {
-  const { ref, visible } = useInView();
+type RevealVariant = 'up' | 'left' | 'right' | 'scale';
+
+const REVEAL_HIDDEN: Record<RevealVariant, string> = {
+  up: 'translateY(36px)',
+  left: 'translateX(-44px)',
+  right: 'translateX(44px)',
+  scale: 'translateY(20px) scale(0.94)',
+};
+
+function Reveal({
+  children,
+  delay = 0,
+  className = '',
+  variant = 'up',
+}: {
+  children: React.ReactNode;
+  delay?: number;
+  className?: string;
+  variant?: RevealVariant;
+}) {
+  const { ref, visible } = useInView(0.14);
   return (
     <div
       ref={ref}
-      className={className}
+      className={cn(
+        'motion-reduce:opacity-100 motion-reduce:transform-none',
+        className,
+      )}
       style={{
         opacity: visible ? 1 : 0,
-        transform: visible ? 'translateY(0)' : 'translateY(32px)',
-        transition: `opacity 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms, transform 0.7s cubic-bezier(0.22,1,0.36,1) ${delay}ms`,
+        transform: visible ? 'none' : REVEAL_HIDDEN[variant],
+        transition: `opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
       }}
     >
       {children}
+    </div>
+  );
+}
+
+function SectionHeader({
+  label,
+  title,
+  desc,
+  className = '',
+}: {
+  label: string;
+  title: string;
+  desc?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn('text-center max-w-2xl mx-auto', className)}>
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-3">{label}</p>
+      <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">{title}</h2>
+      {desc && <p className="text-muted-foreground mt-3 leading-relaxed">{desc}</p>}
     </div>
   );
 }
@@ -58,76 +104,69 @@ const SHOWCASE: Array<{
   img: string;
   mock: React.ReactNode;
   icon: typeof Brain;
-  color: string;
   device: ScreenshotDevice;
   reverse?: boolean;
 }> = [
   {
     id: 'brand-brain',
     badge: 'Brand Brain',
-    title: 'Teach the AI your voice once',
-    desc: 'Company profile, tone, banned words, USPs, and audience — every post stays on-brand automatically.',
+    title: 'Define how your brand sounds',
+    desc: 'Set your profile, tone, audience, and key messages once. Every post follows the same guidelines.',
     img: '/screenshots/mako-brand-brain-tablet.webp',
     mock: <MockBrandBrain />,
     icon: Brain,
-    color: 'from-purple-500 to-indigo-600',
     device: 'tablet',
   },
   {
     id: 'content',
     badge: 'Content Engine',
-    title: 'Generate platform-native copy in seconds',
-    desc: 'One theme → Facebook, Instagram, LinkedIn, email, and ad copy — each adapted to channel trends and limits.',
+    title: 'Draft posts for every channel',
+    desc: 'Turn one idea into copy sized for Facebook, Instagram, LinkedIn, email, and ads — without rewriting from scratch.',
     img: '/screenshots/mako-content-engine-desktop.webp',
     mock: <MockContentEngine />,
     icon: Pen,
-    color: 'from-blue-500 to-cyan-500',
     device: 'desktop',
   },
   {
     id: 'publish',
-    badge: 'Multi-Platform Publish',
-    title: 'Preview, attach media, publish everywhere',
-    desc: 'Per-platform carousel previews, AI-adapted copy, and attachments sent to each social API.',
+    badge: 'Publishing',
+    title: 'Review once, post everywhere',
+    desc: 'Preview how posts look on each platform, attach media, and publish through your connected accounts.',
     img: '/screenshots/mako-publishing-desktop.webp',
     mock: <MockPublish />,
     icon: Globe,
-    color: 'from-teal-500 to-emerald-500',
     device: 'desktop',
     reverse: true,
   },
   {
     id: 'scheduler',
     badge: 'Scheduler',
-    title: 'Plan a month of content in minutes',
-    desc: 'Drag posts onto your calendar, set optimal times, and let auto-publish handle the rest.',
+    title: 'Keep your calendar full',
+    desc: 'Queue posts on a visual calendar and publish on the dates and times you choose.',
     img: '/screenshots/mako-scheduler.webp',
     mock: <MockScheduler />,
     icon: CalendarClock,
-    color: 'from-green-500 to-lime-500',
     device: 'desktop',
   },
   {
     id: 'analytics',
     badge: 'Analytics',
-    title: 'See what works, double down',
-    desc: 'Track reach, engagement, and leads across campaigns — optimize with data, not guesswork.',
+    title: 'See what is working',
+    desc: 'Track reach, engagement, and leads in one place so you can focus on what drives results.',
     img: '/screenshots/mako-analytics-desktop.webp',
     mock: <MockAnalytics />,
     icon: BarChart3,
-    color: 'from-pink-500 to-rose-500',
     device: 'desktop',
     reverse: true,
   },
   {
     id: 'replies',
-    badge: 'AI Replies',
-    title: 'Never miss a comment again',
-    desc: 'Pull comments from published posts, auto-draft replies with AI, and send from one queue.',
+    badge: 'Inbox',
+    title: 'Reply from one queue',
+    desc: 'Comments from your posts land in a single inbox. Review, edit, and send replies without switching apps.',
     img: '/screenshots/mako-replies-tablet.webp',
     mock: <MockReplies />,
     icon: MessageSquareReply,
-    color: 'from-orange-500 to-amber-500',
     device: 'tablet',
   },
 ];
@@ -144,8 +183,8 @@ function Nav() {
   return (
     <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${scrolled ? 'bg-background/85 backdrop-blur-xl border-b shadow-sm' : ''}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 group">
-         <Logo />
+        <Link to="/" className="flex items-center">
+          <Logo className="h-9" />
         </Link>
         <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
@@ -154,8 +193,8 @@ function Nav() {
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign in</Link></Button>
-          <Button size="sm" asChild className="gradient-primary border-0 text-white shadow-glow">
-            <Link to="/auth?mode=signup">Start free <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
+          <Button size="sm" asChild className="gradient-primary border-0 text-white rounded-lg shadow-card">
+            <Link to="/auth?mode=signup">Get started <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
           </Button>
         </div>
         <button type="button" className="md:hidden p-2" onClick={() => setOpen((o) => !o)} aria-label="Menu">
@@ -167,8 +206,8 @@ function Nav() {
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
             <a key={href} href={href} className="block py-2 text-sm" onClick={() => setOpen(false)}>{label}</a>
           ))}
-          <Button className="w-full gradient-primary border-0 text-white mt-2" asChild>
-            <Link to="/auth?mode=signup">Start free</Link>
+          <Button className="w-full gradient-primary border-0 text-white mt-2 rounded-lg" asChild>
+            <Link to="/auth?mode=signup">Get started</Link>
           </Button>
         </div>
       )}
@@ -177,144 +216,192 @@ function Nav() {
 }
 
 function Hero() {
-  const words = ['Facebook', 'Instagram', 'LinkedIn', 'Email', 'WhatsApp'];
-  const [idx, setIdx] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setIdx((i) => (i + 1) % words.length), 2400);
-    return () => clearInterval(t);
-  }, [words.length]);
+  const platforms = ['Facebook', 'Instagram', 'LinkedIn', 'WhatsApp', 'Email'];
 
   return (
-    <section className="relative min-h-[100svh] flex items-center pt-20 pb-16 overflow-hidden">
+    <section className="relative min-h-[92svh] flex items-center pt-20 pb-20 overflow-hidden border-b border-border/50">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/4 -left-32 w-[500px] h-[500px] rounded-full bg-primary/15 blur-[100px] animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full bg-violet-500/10 blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-            backgroundSize: '40px 40px',
-          }}
-        />
+        <div className="absolute -top-32 right-[-10%] w-[min(50vw,480px)] h-[min(50vw,480px)] rounded-full bg-primary/[0.07] blur-3xl" />
+        <div className="absolute bottom-[-20%] left-[-5%] w-[min(42vw,400px)] h-[min(42vw,400px)] rounded-full bg-secondary/[0.05] blur-3xl" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
-        <div className="space-y-8 text-center lg:text-left">
-          <FadeIn>
-            <Badge variant="outline" className="gap-1.5 px-3 py-1 border-primary/30 bg-primary/5">
-              <Sparkles className="h-3 w-3 text-primary" />
-              Grow Smarter, Sell Stronger · Powered by Mistral AI
-            </Badge>
-          </FadeIn>
-          <FadeIn delay={80}>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold font-display leading-[1.08] tracking-tight">
-              Your marketing on{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-violet-500 to-purple-600">
-                autopilot
-              </span>
-              <br />
-              for{' '}
-              <span key={idx} className="inline-block text-primary animate-in fade-in slide-in-from-bottom-2 duration-500">
-                {words[idx]}
-              </span>
-            </h1>
-          </FadeIn>
-          <FadeIn delay={160}>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              Mako Co-pilot learns your brand, generates channel-perfect content, schedules posts, captures leads, and replies to comments — from one dashboard built for African businesses.
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="space-y-7 text-center lg:text-left">
+          <Reveal>
+            <p className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              <span className="h-px w-8 bg-primary/60 hidden sm:block" />
+              Marketing workspace
+              <span className="h-px w-8 bg-primary/60 hidden sm:block" />
             </p>
-          </FadeIn>
-          <FadeIn delay={240}>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
-              <Button size="lg" asChild className="gradient-primary border-0 text-white h-12 px-8 shadow-glow hover:opacity-95">
-                <Link to="/auth?mode=signup">Start free — no card <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="h-12 px-8">
-                <a href="#product">See the product <ChevronDown className="ml-1 h-4 w-4" /></a>
-              </Button>
-            </div>
-          </FadeIn>
-          <FadeIn delay={320}>
-            <div className="flex flex-wrap gap-6 justify-center lg:justify-start text-sm">
-              {[['500+', 'Brands'], ['2M+', 'Posts'], ['30s', 'Avg. generate']].map(([n, l]) => (
-                <div key={l}><span className="font-bold text-lg">{n}</span> <span className="text-muted-foreground">{l}</span></div>
+          </Reveal>
+
+          <Reveal delay={80} variant="up">
+            <h1 className="text-[2.35rem] sm:text-5xl lg:text-[3.2rem] font-bold font-display leading-[1.06] tracking-[-0.025em]">
+              Your brand voice.
+              <br />
+              <span className="text-primary">Every channel.</span>
+              <br />
+              One dashboard.
+            </h1>
+          </Reveal>
+
+          <Reveal delay={140} variant="up">
+            <p className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+              Plan content, publish to social, reply to comments, and follow up on leads — without switching between a dozen tabs.
+            </p>
+          </Reveal>
+
+          <Reveal delay={200} variant="up">
+            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+              {platforms.map((platform, i) => (
+                <span
+                  key={platform}
+                  className="rounded-full border border-border/80 bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground motion-reduce:opacity-100 motion-reduce:translate-y-0 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both"
+                  style={{ animationDelay: `${240 + i * 60}ms` }}
+                >
+                  {platform}
+                </span>
               ))}
             </div>
-          </FadeIn>
+          </Reveal>
+
+          <Reveal delay={280} variant="up">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1">
+              <Button
+                size="lg"
+                asChild
+                className="gradient-primary border-0 text-white h-12 px-8 rounded-xl shadow-card hover:opacity-95"
+              >
+                <Link to="/auth?mode=signup">
+                  Get started free
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-xl bg-background/80">
+                <a href="#product">See how it works</a>
+              </Button>
+            </div>
+          </Reveal>
+
+          <Reveal delay={360} variant="up">
+            <ul className="flex flex-col sm:flex-row flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                No credit card required
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                Mobile money billing
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                Built in Zambia
+              </li>
+            </ul>
+          </Reveal>
         </div>
 
-        <FadeIn delay={200} className="relative">
+        <Reveal delay={180} variant="scale" className="relative lg:pl-4">
           <ScreenshotFrame
             src="/screenshots/mako-dashboard-desktop.webp"
-            alt="Mako Co-pilot dashboard"
+            alt="Mako dashboard — content, scheduling, and analytics"
             device="desktop"
-            bare
-            mock={<div className="min-h-[320px] rounded-2xl bg-muted/30 animate-pulse" />}
-            className="relative animate-[float_6s_ease-in-out_infinite]"
+            float
+            mock={<div className="min-h-[300px] rounded-2xl border border-dashed border-border/60 animate-pulse" />}
           />
-        </FadeIn>
+        </Reveal>
       </div>
-      <style>{`@keyframes float { 0%,100%{transform:perspective(1200px) rotateX(2deg) translateY(0)} 50%{transform:perspective(1200px) rotateX(2deg) translateY(-8px)} }`}</style>
     </section>
   );
 }
 
 function ProductShowcase() {
   return (
-    <section id="product" className="py-24 space-y-32">
-      {SHOWCASE.map((s, i) => (
-        <div key={s.id} className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${s.reverse ? 'lg:[direction:rtl]' : ''}`}>
-            <FadeIn delay={i * 40} className={`space-y-5 ${s.reverse ? 'lg:[direction:ltr]' : ''}`}>
-              <Badge variant="secondary" className="gap-1"><s.icon className="h-3 w-3" />{s.badge}</Badge>
-              <h2 className="text-3xl sm:text-4xl font-bold font-display leading-tight">{s.title}</h2>
-              <p className="text-muted-foreground text-lg leading-relaxed">{s.desc}</p>
-              <Button variant="outline" asChild className="rounded-full">
-                <Link to="/auth?mode=signup">Try {s.badge} <ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-            </FadeIn>
-            <FadeIn
-              delay={i * 40 + 100}
-              className={cn(
-                s.reverse ? 'lg:[direction:ltr]' : '',
-                s.device !== 'desktop' && 'flex justify-center lg:justify-center',
-              )}
-            >
-              <ScreenshotFrame src={s.img} alt={s.title} mock={s.mock} device={s.device} bare />
-            </FadeIn>
+    <section id="product" className="py-24 border-t border-border/50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-20">
+        <Reveal>
+          <SectionHeader
+            label="Product"
+            title="From brief to published post"
+            desc="Six tools that share the same brand context — so you are not copying and pasting between apps."
+          />
+        </Reveal>
+      </div>
+      <div className="space-y-24">
+        {SHOWCASE.map((s, i) => (
+          <div key={s.id} className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${s.reverse ? 'lg:[direction:rtl]' : ''}`}>
+              <Reveal
+                delay={i * 50}
+                variant={s.reverse ? 'right' : 'left'}
+                className={`space-y-5 ${s.reverse ? 'lg:[direction:ltr]' : ''}`}
+              >
+                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
+                  <s.icon className="h-3.5 w-3.5" />
+                  {s.badge}
+                </p>
+                <h3 className="text-2xl sm:text-3xl font-bold font-display leading-tight tracking-tight">{s.title}</h3>
+                <p className="text-muted-foreground text-base leading-relaxed max-w-md">{s.desc}</p>
+                <Button variant="outline" asChild className="rounded-lg transition-transform duration-300 hover:translate-x-0.5">
+                  <Link to="/auth?mode=signup">
+                    Open {s.badge}
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Link>
+                </Button>
+              </Reveal>
+              <Reveal
+                delay={i * 50 + 120}
+                variant={s.reverse ? 'left' : 'right'}
+                className={cn(
+                  s.reverse ? 'lg:[direction:ltr]' : '',
+                  s.device !== 'desktop' && 'flex justify-center lg:justify-center',
+                )}
+              >
+                <ScreenshotFrame
+                  src={s.img}
+                  alt={s.title}
+                  mock={s.mock}
+                  device={s.device}
+                />
+              </Reveal>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </section>
   );
 }
 
 const FEATURES = [
-  { icon: Shield, title: 'RBAC & Approvals', desc: 'Roles, maker-checker workflows, audit logs.' },
-  { icon: TrendingUp, title: 'Lead Agent', desc: 'Capture, score, and follow up on leads automatically.' },
-  { icon: Link2, title: 'Publisher Connect', desc: 'OAuth to Facebook, Instagram, LinkedIn, X.' },
-  { icon: Users, title: 'Multi-tenant Teams', desc: 'Workspaces, seats, and permissions per brand.' },
+  { icon: Shield, title: 'Roles & approvals', desc: 'Control who can publish with role-based access and sign-off workflows.' },
+  { icon: TrendingUp, title: 'Lead Agent', desc: 'Capture leads from forms and WhatsApp, then track follow-ups in one place.' },
+  { icon: Link2, title: 'Publisher Connect', desc: 'Link Facebook, Instagram, LinkedIn, and WhatsApp with secure OAuth.' },
+  { icon: Users, title: 'Workspaces & teams', desc: 'Separate brands or clients with workspaces, seats, and permissions.' },
 ];
 
 function FeaturesGrid() {
   return (
-    <section id="features" className="py-24 bg-muted/30">
+    <section id="features" className="py-24 bg-muted/25 border-t border-border/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
-        <FadeIn>
-          <div className="text-center mb-14">
-            <h2 className="text-3xl sm:text-4xl font-bold font-display">Built for teams that ship</h2>
-            <p className="text-muted-foreground mt-3 max-w-lg mx-auto">Enterprise-grade controls without enterprise complexity.</p>
-          </div>
-        </FadeIn>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Reveal>
+          <SectionHeader
+            label="Platform"
+            title="Built for teams, not solo hacks"
+            desc="Permissions, workspaces, and audit trails — without the enterprise software price tag."
+            className="mb-14"
+          />
+        </Reveal>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {FEATURES.map((f, i) => (
-            <FadeIn key={f.title} delay={i * 60}>
-              <div className="rounded-2xl border bg-card p-6 h-full hover:shadow-lg hover:border-primary/30 transition-all duration-300">
-                <f.icon className="h-8 w-8 text-primary mb-4" />
-                <h3 className="font-semibold mb-2">{f.title}</h3>
-                <p className="text-sm text-muted-foreground">{f.desc}</p>
+            <Reveal key={f.title} delay={i * 70} variant="up">
+              <div className="rounded-xl border border-border/80 bg-card p-6 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/20">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mb-4">
+                  <f.icon className="h-5 w-5 text-primary" />
+                </div>
+                <h3 className="font-semibold mb-2 text-foreground">{f.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
               </div>
-            </FadeIn>
+            </Reveal>
           ))}
         </div>
       </div>
@@ -335,11 +422,16 @@ function Pricing() {
   }, []);
 
   return (
-    <section id="pricing" className="py-24">
+    <section id="pricing" className="py-24 border-t border-border/50">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <FadeIn>
-          <h2 className="text-3xl sm:text-4xl font-bold font-display text-center mb-12">Simple pricing</h2>
-        </FadeIn>
+        <Reveal>
+          <SectionHeader
+            label="Pricing"
+            title="Plans that scale with you"
+            desc="Pay monthly in ZMW. Mobile money supported today."
+            className="mb-12"
+          />
+        </Reveal>
         {loading ? (
           <div className="flex justify-center py-12 text-muted-foreground gap-2">
             <Loader2 className="h-5 w-5 animate-spin" /> Loading plans…
@@ -347,20 +439,29 @@ function Pricing() {
         ) : (
           <div className="grid md:grid-cols-3 gap-6">
             {plans.map((p, i) => (
-              <FadeIn key={p.key} delay={i * 80}>
-                <div className={`rounded-2xl border p-6 h-full flex flex-col ${p.highlight ? 'border-primary ring-2 ring-primary/20 bg-primary/5 scale-[1.02]' : 'bg-card'}`}>
+              <Reveal key={p.key} delay={i * 90} variant="scale">
+                <div className={cn(
+                  'rounded-xl border p-6 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-card',
+                  p.highlight ? 'border-primary bg-primary/[0.04] ring-1 ring-primary/20' : 'border-border/80 bg-card',
+                )}>
+                  {p.highlight && (
+                    <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Most popular</p>
+                  )}
                   <h3 className="font-bold text-xl">{p.label}</h3>
-                  <p className="text-3xl font-bold mt-2">{formatPriceZmw(p.priceZmw)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-                  <ul className="space-y-2 mt-6 flex-1">
+                  <p className="text-3xl font-bold mt-2 tracking-tight">{formatPriceZmw(p.priceZmw)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
+                  <ul className="space-y-2.5 mt-6 flex-1">
                     {planFeatureBullets(p).map((f) => (
-                      <li key={f} className="flex gap-2 text-sm text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0" />{f}</li>
+                      <li key={f} className="flex gap-2 text-sm text-muted-foreground leading-snug">
+                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                        {f}
+                      </li>
                     ))}
                   </ul>
-                  <Button className={`mt-6 w-full ${p.highlight ? 'gradient-primary border-0 text-white' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
+                  <Button className={`mt-6 w-full rounded-lg ${p.highlight ? 'gradient-primary border-0 text-white' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
                     <Link to="/auth?mode=signup">Get started</Link>
                   </Button>
                 </div>
-              </FadeIn>
+              </Reveal>
             ))}
           </div>
         )}
@@ -374,29 +475,39 @@ function Pricing() {
 
 function FinalCTA() {
   return (
-    <section className="py-24 px-4">
-      <FadeIn>
-        <div className="max-w-4xl mx-auto rounded-3xl gradient-primary p-12 text-center text-white shadow-2xl relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3d3LnczLm9yZy8yMDAwL3N2ZyI+PGcgZmlsbD0ibm9uZSIgZmlsbC1vcGFjaXR5PSIwLjA4Ij48cGF0aCBkPSJNMzYgMzRoLTJWMGg2djM0aC00ek0zNiAzNGgtMlYwaC02djM0aDQuNXoiLz48L2c+PC9zdmc+')] opacity-40" />
-          <Zap className="h-12 w-12 mx-auto mb-4 opacity-90 relative" />
-          <h2 className="text-3xl sm:text-4xl font-bold font-display relative">Ready to put Mako Co-pilot to work?</h2>
-          <p className="text-white/85 mt-4 text-lg max-w-xl mx-auto relative">Join brands across Africa generating consistent, on-brand content every day.</p>
-          <Button size="lg" className="mt-8 bg-white text-primary hover:bg-white/90 relative" asChild>
-            <Link to="/auth?mode=signup">Start free today <ArrowRight className="ml-2 h-4 w-4" /></Link>
-          </Button>
+    <section className="py-24 px-4 border-t border-border/50">
+      <Reveal variant="scale">
+        <div className="max-w-3xl mx-auto rounded-2xl border border-border/80 bg-card p-10 sm:p-12 text-center shadow-card transition-shadow duration-500 hover:shadow-glow">
+          <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">Start with a free account</h2>
+          <p className="text-muted-foreground mt-4 text-lg max-w-lg mx-auto leading-relaxed">
+            Set up your brand, connect a channel, and publish your first post. Most teams are up and running the same day.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
+            <Button size="lg" asChild className="gradient-primary border-0 text-white h-12 px-8 rounded-xl shadow-card">
+              <Link to="/auth?mode=signup">
+                Create free account
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+            <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-xl">
+              <Link to="/auth">Sign in</Link>
+            </Button>
+          </div>
         </div>
-      </FadeIn>
+      </Reveal>
     </section>
   );
 }
 
 function Footer() {
   return (
-    <footer className="border-t py-12 bg-background">
+    <footer className="border-t border-border/50 py-12 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between gap-8">
         <div>
-          <Logo />
-          <p className="text-sm text-muted-foreground mt-2 max-w-xs">AI marketing autopilot by Tekrem Innvation Solutions. Built in Zambia.</p>
+          <Logo className="h-14" />
+          <p className="text-sm text-muted-foreground mt-3 max-w-xs leading-relaxed">
+            Marketing workspace by Tekrem Innovation Solutions. Built in Zambia for teams across Africa.
+          </p>
         </div>
         <div className="flex gap-8 text-sm text-muted-foreground">
           <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
@@ -405,7 +516,7 @@ function Footer() {
           <Link to="/auth" className="hover:text-foreground">Sign in</Link>
         </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground mt-8">© {new Date().getFullYear()} Mako Co-pilot · Tekrem Innvation Solutions</p>
+      <p className="text-center text-xs text-muted-foreground mt-8">© {new Date().getFullYear()} Mako · Tekrem Innovation Solutions</p>
     </footer>
   );
 }

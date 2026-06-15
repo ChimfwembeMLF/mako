@@ -31,7 +31,8 @@
         "SERVE_CLIENT": "true",
         "CORS_DISABLED": "true",
         "FRONTEND_URL": "https://mako.tekreminnovations.com",
-        "API_PUBLIC_URL": "https://mako.tekreminnovations.com"
+        "API_PUBLIC_URL": "https://mako.tekreminnovations.com",
+        "DB_POOL_MAX": "5"
       }
     }
   ]
