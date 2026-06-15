@@ -87,6 +87,8 @@ export default defineConfig(({ mode }) => ({
     alias: { "@": path.resolve(__dirname, "./src") },
   },
   build: {
+    outDir: path.resolve(__dirname, "../../client/dist"),
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks(id) {

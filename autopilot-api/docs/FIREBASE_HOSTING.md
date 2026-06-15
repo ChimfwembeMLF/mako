@@ -21,7 +21,7 @@ No LiteSpeed `/api` proxy is required on `mako.tekreminnovations.com` for the ma
 3. Install CLI (already in `devDependencies` — no global install needed):
 
 ```bash
-cd autopilot-client
+cd autopilot-api/resources/client
 yarn install
 yarn firebase login
 yarn firebase use --add    # pick your project; writes .firebaserc
@@ -35,7 +35,7 @@ Optional: add a **custom domain** in Firebase Hosting → Custom domains (e.g. `
 
 ## 2. Client build & deploy
 
-`autopilot-client/.env.production`:
+`autopilot-api/resources/client/.env.production`:
 
 ```env
 VITE_API_BASE_URL=https://makoapi.tekreminnovations.com
@@ -43,7 +43,7 @@ VITE_WIDGET_API_KEY=pk_live_...
 ```
 
 ```bash
-cd autopilot-client
+cd autopilot-api/resources/client
 yarn install
 yarn deploy:firebase
 # or: yarn build:firebase && firebase deploy --only hosting

@@ -1,6 +1,26 @@
-# Single app deploy — Nest serves React + API (Laravel-style)
+# Single app deploy — Nest serves React + API (Laravel / Jetstream-style)
 
 One Node process serves the React SPA and the API. The browser only talks to **one domain**; no LiteSpeed `/api` proxy rules required.
+
+## Layout
+
+```
+autopilot-api/
+├── src/                    # NestJS API
+├── resources/client/       # React source (Vite)
+├── client/dist/            # Vite build output (Nest serves this)
+├── database/
+├── .env
+└── ecosystem.config.json
+```
+
+From the **repo root** (`autopilot/`):
+
+```bash
+yarn install
+yarn dev           # Nest :4000 + Vite :3000 (proxies /api)
+yarn deploy:prod   # build + migrate + PM2 restart
+```
 
 ## Architecture
 
@@ -20,25 +40,24 @@ Browser → https://yourdomain.com
          └── /*            React SPA (client/dist)
 ```
 
-No CORS. No separate `makoapi` subdomain for the app.
+No CORS. No separate API subdomain for the app.
 
 ---
 
 ## 1. Build (local or CI)
 
-From the repo root:
+From repo root or `autopilot-api/`:
 
 ```bash
-cd autopilot-api
-yarn install
 yarn build:all
+# or from repo root:
+yarn build
 ```
 
 This runs:
 
-1. `yarn build:client` — Vite build with empty `VITE_API_BASE_URL` (same-origin `/api/v1/...`)
-2. `yarn copy:client` — copies `autopilot-client/dist` → `autopilot-api/client/dist`
-3. `yarn build` — compiles Nest
+1. `yarn build:client` — Vite build with empty `VITE_API_BASE_URL` → `client/dist`
+2. `yarn build` — compiles Nest
 
 ---
 
@@ -54,9 +73,6 @@ FRONTEND_URL=https://yourdomain.com
 API_PUBLIC_URL=https://yourdomain.com
 
 GOOGLE_CALLBACK_URL=https://yourdomain.com/api/v1/auth/google/redirect
-FACEBOOK_CALLBACK_URL=https://yourdomain.com/api/v1/auth/facebook/redirect
-LINKEDIN_CALLBACK_URL=https://yourdomain.com/api/v1/auth/linkedin/redirect
-INSTAGRAM_CALLBACK_URL=https://yourdomain.com/api/v1/auth/instagram/redirect
 # ... social OAuth callbacks on the same domain
 ```
 
@@ -92,11 +108,14 @@ No separate `/api` context. Nest handles routing.
 ## 4. Deploy on VPS
 
 ```bash
-cd /path/to/autopilot-api
+cd autopilot-api
+cp docs/env.mako.production.server.template .env   # edit secrets
 yarn deploy:prod    # install + build client & API + migrate + PM2 restart
 # or without migrations:
 yarn deploy:pm2
 ```
+
+First-time DB: `yarn db:sync && yarn migrations:run:prod && yarn seed:prod`
 
 ---
 
@@ -119,12 +138,13 @@ Open `https://yourdomain.com` — Network tab should show `/api/v1/...` on the *
 
 ## Local development
 
-| Terminal | Command |
-|----------|---------|
-| API | `cd autopilot-api && yarn start:dev` (port 4000) |
-| Client | `cd autopilot-client && yarn dev` (port 3000, proxies `/api` → 4000) |
+| Command | What it does |
+|---------|----------------|
+| `yarn dev` (repo root) | Nest watch :4000 + Vite :3000 |
+| `yarn dev` (autopilot-api/) | Same |
+| `yarn start:dev` | API only |
 
-Keep `VITE_API_BASE_URL` empty in `autopilot-client/.env`.
+Vite proxies `/api` → `localhost:4000`. Keep `VITE_API_BASE_URL` empty in `resources/client/.env`.
 
 ---
 

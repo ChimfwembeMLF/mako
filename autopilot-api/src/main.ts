@@ -15,6 +15,7 @@ import { warnProductionOAuthEnv } from './common/oauth-env.util';
 import type { RequestHandler } from 'express';
 import type { SessionOptions } from 'express-session';
 import * as passport from 'passport';
+import helmet from 'helmet';
 
 // Load .env before CORS/session read process.env (ConfigModule loads later).
 function loadEnvFiles(): void {
@@ -130,6 +131,13 @@ async function bootstrap() {
 
   if (isProduction) {
     app.set('trust proxy', 1);
+
+    app.use(
+      helmet({
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+      }),
+    );
 
     const sessionSecret = process.env.SESSION_SECRET?.trim();
     if (!sessionSecret || sessionSecret === 'dev_session_secret') {

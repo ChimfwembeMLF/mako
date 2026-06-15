@@ -153,7 +153,7 @@ async function bootstrap() {
       if (widgetResult.secret) {
         console.log(`\nWidget embed key (${widgetResult.action}):`);
         console.log(`  ${widgetResult.secret}`);
-        console.log('  Set VITE_WIDGET_API_KEY in autopilot-client/.env to this value.');
+        console.log('  Set VITE_WIDGET_API_KEY in resources/client/.env to this value.');
       } else {
         console.log(`\nWidget embed: ${widgetResult.action} (existing key in database).`);
       }

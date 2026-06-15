@@ -34,17 +34,17 @@ Copy `docs/env.mako.production.template` (or `docs/env.production.template`) to 
 Build & start with PM2 (production):
 ```bash
 cd autopilot-api
-cp docs/env.mako.production.template .env   # then edit secrets
-npm ci
-npm run build
-npm run db:sync
-npm run migrations:run
+cp docs/env.mako.production.server.template .env   # then edit secrets
+yarn install:all
+yarn build:all
+yarn db:sync
+yarn migrations:run:prod
 # After first owner signs up (or if tenant already exists):
-npm run seed:prod
-npm run pm2:start
+yarn seed:prod
+yarn pm2:start
 
-# Same-origin alternative: LiteSpeed `/api` proxy — see docs/SAME_ORIGIN_PROXY.md
-# Recommended: Firebase client + makoapi — see docs/FIREBASE_HOSTING.md
+# Or from repo root:
+yarn install:all && yarn deploy:prod
 ```
 
 ```bash
@@ -110,13 +110,13 @@ Secrets live in `.env` on the server — NestJS loads them at boot; PM2 does not
 See **`docs/FIREBASE_HOSTING.md`** for the full guide.
 
 ```env
-# autopilot-client/.env.production
+# resources/client/.env.production
 VITE_API_BASE_URL=https://makoapi.tekreminnovations.com
 VITE_WIDGET_API_KEY=pk_live_...
 ```
 
 ```bash
-cd autopilot-client
+cd autopilot-api/resources/client
 yarn install
 yarn firebase login
 yarn firebase use --add

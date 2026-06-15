@@ -16,7 +16,7 @@ import { UserEntity } from '../src/modules/user/user.entity';
  * Does NOT create demo users.
  *
  * Env (in .env on server):
- *   MAKO_WIDGET_API_KEY — must match VITE_WIDGET_API_KEY in autopilot-client
+ *   MAKO_WIDGET_API_KEY — must match VITE_WIDGET_API_KEY in resources/client
  *   SEED_MAKO_OWNER_EMAIL — production owner account (or exactly one tenant in DB)
  *
  * Run: npm run seed:prod
@@ -137,7 +137,7 @@ async function bootstrap() {
     console.log(`Widget embed key ${widgetResult.action}.`);
     if (widgetResult.secret) {
       console.log(`  ${widgetResult.secret}`);
-      console.log('  Must match VITE_WIDGET_API_KEY in autopilot-client build env.');
+      console.log('  Must match VITE_WIDGET_API_KEY in resources/client build env.');
     }
   } else {
     console.warn(
@@ -148,7 +148,7 @@ async function bootstrap() {
     console.log(`Widget embed: ${widgetResult.action}`);
     if (widgetResult.secret) {
       console.log(`  Generated key: ${widgetResult.secret}`);
-      console.log('  Set this as VITE_WIDGET_API_KEY in autopilot-client and MAKO_WIDGET_API_KEY in .env');
+      console.log('  Set this as VITE_WIDGET_API_KEY in resources/client and MAKO_WIDGET_API_KEY in .env');
     }
   }
 

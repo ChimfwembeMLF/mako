@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Full production deploy: install API + client, build both, restart PM2.
-# Run from autopilot-api/ on the server:
-#   bash scripts/deploy-production.sh
+# Full production deploy: install deps, build client + API, restart PM2.
+# Run from autopilot-api/ or repo root (yarn deploy:prod):
 #   bash scripts/deploy-production.sh --with-migrations
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CLIENT="$(cd "$ROOT/../autopilot-client" 2>/dev/null && pwd || true)"
+CLIENT="$ROOT/resources/client"
 WITH_MIGRATIONS=false
 
 for arg in "$@"; do
@@ -23,13 +22,13 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "==> Installing API dependencies"
-yarn install --frozen-lockfile 2>/dev/null || yarn install
+yarn install --immutable 2>/dev/null || yarn install
 
-if [[ -n "$CLIENT" && -f "$CLIENT/package.json" ]]; then
+if [[ -f "$CLIENT/package.json" ]]; then
   echo "==> Installing client dependencies ($CLIENT)"
-  (cd "$CLIENT" && yarn install --frozen-lockfile 2>/dev/null || yarn install)
+  (cd "$CLIENT" && yarn install --immutable 2>/dev/null || yarn install --mode skip-build 2>/dev/null || yarn install)
 else
-  echo "WARN: ../autopilot-client not found — build:client will fail unless client/dist already exists"
+  echo "WARN: resources/client not found — build:client will fail unless client/dist already exists"
 fi
 
 echo "==> Building client + API (yarn build:all)"

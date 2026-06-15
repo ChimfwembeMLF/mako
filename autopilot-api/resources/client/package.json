@@ -1,11 +1,12 @@
 {
-  "name": "vite_react_shadcn_ts",
+  "name": "@mako/client",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:prod": "DISABLE_PWA=true VITE_API_BASE_URL= vite build && node ../../scripts/strip-client-dist-pwa.js",
     "build:skip-pwa": "DISABLE_PWA=true vite build",
     "build:firebase": "vite build --mode production",
     "deploy:firebase": "yarn build:firebase && yarn firebase deploy --only hosting",

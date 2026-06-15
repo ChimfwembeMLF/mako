@@ -15,17 +15,9 @@ export function shouldBypassSpa(pathname: string): boolean {
   );
 }
 
-/** Paths checked for the Vite production build (newest first). */
+/** Paths checked for the Vite production build. */
 export function resolveClientDistPath(): string {
-  const cwd = process.cwd();
-  const candidates = [
-    join(cwd, 'client', 'dist'),
-    join(cwd, '..', 'autopilot-client', 'dist'),
-  ];
-  for (const dir of candidates) {
-    if (existsSync(join(dir, 'index.html'))) return dir;
-  }
-  return candidates[0];
+  return join(process.cwd(), 'client', 'dist');
 }
 
 export function isClientDistAvailable(): boolean {

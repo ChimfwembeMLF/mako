@@ -1,4 +1,4 @@
-/** Permission keys — must stay in sync with autopilot-client/src/lib/permissions.ts */
+/** Permission keys — must stay in sync with resources/client/src/lib/permissions.ts */
 export const PERMISSION_DEFINITIONS: { key: string; label: string; module: string; description?: string }[] = [
   { key: 'content.view', label: 'View content', module: 'content' },
   { key: 'content.create', label: 'Create content', module: 'content' },

@@ -23,5 +23,8 @@ export function typeOrmConfigFactory(
     subscribers: [UserSubscriber],
     ssl: resolveDbSsl(configService),
     extra: resolveDbPoolExtra(),
+    // Fewer retries = fewer connection attempts during Postgres outages (default is 9)
+    retryAttempts: parseInt(process.env.DB_RETRY_ATTEMPTS || '3', 10) || 3,
+    retryDelay: 3000,
   };
 }

@@ -16,7 +16,7 @@ export class ClientStaticModule {
       console.log('[client] Build found at', resolveClientDistPath(), '(served from main.ts)');
     } else if (wantsClient && !hasBuild) {
       console.warn(
-        '[client] SERVE_CLIENT enabled but no build found — run: yarn build:all (or yarn build:client && yarn copy:client)',
+        '[client] SERVE_CLIENT enabled but no build found — run: yarn build:all (from autopilot-api/)',
       );
     }
 

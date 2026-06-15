@@ -96,14 +96,14 @@ Update the same redirect URIs in **Google Cloud Console**, **Meta Developer**, a
 ## 3. Client build
 
 ```env
-# autopilot-client/.env.production.local
+# resources/client/.env.production.local
 # Empty = same origin (recommended)
 VITE_API_BASE_URL=
 VITE_WIDGET_API_KEY=pk_live_...
 ```
 
 ```bash
-cd autopilot-client
+cd autopilot-api/resources/client
 yarn build
 # Deploy dist/ to mako.tekreminnovations.com public_html
 ```
