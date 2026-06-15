@@ -2,7 +2,7 @@ import { SnakeNamingStrategy } from '../snake-naming.strategy';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { UserSubscriber } from 'src/entity-subscribers';
 import { ConfigService } from '@nestjs/config';
-import { resolveDatabaseName, resolveDbSsl, resolveDbPoolExtra } from './db-env.util';
+import { resolveDatabaseName, resolveDbSsl } from './db-env.util';
 
 export function typeOrmConfigFactory(
   configService: ConfigService,
@@ -22,7 +22,6 @@ export function typeOrmConfigFactory(
     namingStrategy: new SnakeNamingStrategy(),
     subscribers: [UserSubscriber],
     ssl: resolveDbSsl(configService),
-    extra: resolveDbPoolExtra(),
     // Fewer retries = fewer connection attempts during Postgres outages (default is 9)
     retryAttempts: parseInt(process.env.DB_RETRY_ATTEMPTS || '3', 10) || 3,
     retryDelay: 3000,

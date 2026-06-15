@@ -4,7 +4,6 @@ import { SnakeNamingStrategy } from '../src/snake-naming.strategy';
 import {
   resolveDatabaseNameFromEnv,
   resolveMigrationSsl,
-  resolveDbPoolExtra,
 } from '../src/database/db-env.util';
 import {
   loadMigrationEnv,
@@ -30,5 +29,4 @@ export default new DataSource({
   migrations: [path.join(__dirname, './migrations/*.{ts,js}')],
   namingStrategy: new SnakeNamingStrategy(),
   ssl: resolveMigrationSsl(process.env),
-  extra: resolveDbPoolExtra(),
 });
