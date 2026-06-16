@@ -10,6 +10,7 @@ import { UserService } from '../user/user.service';
 import { Profiles } from '../profiles/entities/profiles.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
 import { MailService } from '../mail/mail.service';
+import { resolveFrontendUrl } from '../../common/env-urls.util';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -205,10 +206,7 @@ export class TenantMembersService {
     }
 
     const tenant = await this.tenantsRepo.findOne({ where: { id: params.tenantId } });
-    const frontendUrl = (this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5173').replace(
-      /\/$/,
-      '',
-    );
+    const frontendUrl = resolveFrontendUrl(this.config);
     const signupLink = `${frontendUrl}/auth?email=${encodeURIComponent(email)}`;
 
     await this.mailService.sendWorkspaceInviteEmail(

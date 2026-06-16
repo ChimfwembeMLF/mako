@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
+import { createOAuthCookieStateStore } from '../../../common/oauth-cookie-state.store';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -14,6 +15,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       accessType: 'offline',
       prompt: 'consent',
       state: true,
+      store: createOAuthCookieStateStore(config.get<string>('SESSION_SECRET')),
     };
     super(options);
   }

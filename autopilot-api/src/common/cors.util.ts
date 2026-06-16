@@ -24,8 +24,26 @@ export function resolveCorsOrigins(): string[] {
     ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
     : [];
   const frontend = process.env.FRONTEND_URL?.trim();
-  const defaults = ['http://localhost:3000', 'http://localhost:5173'];
+  const port = process.env.PORT || '4000';
+  const defaults = [
+    `http://localhost:${port}`,
+    `http://127.0.0.1:${port}`,
+    'http://localhost:5173',
+  ];
   return [...new Set([...fromEnv, ...(frontend ? [frontend] : []), ...defaults])];
+}
+
+/** Treat 0.0.0.0 as localhost — browsers may send either when binding on 0.0.0.0. */
+export function equivalentLocalOrigins(origin: string): string[] {
+  const match = origin.match(/^https?:\/\/(0\.0\.0\.0|127\.0\.0\.1|localhost)(:\d+)?$/i);
+  if (!match) return [origin];
+  const port = match[2] ?? '';
+  return [
+    origin,
+    `http://localhost${port}`,
+    `http://127.0.0.1${port}`,
+    `http://0.0.0.0${port}`,
+  ];
 }
 
 /** NestJS enableCors() — reads CORS_ORIGIN, CORS_CREDENTIALS, CORS_ALLOW_ALL from .env */
@@ -64,7 +82,8 @@ export function buildNestCorsOptions(): CorsOptions | false {
     ) => {
       const normalized = normalizeRequestOrigin(origin);
       if (!normalized) return callback(null, true);
-      if (origins.includes(normalized)) return callback(null, normalized);
+      const allowed = origins.some((o) => equivalentLocalOrigins(normalized).includes(o));
+      if (allowed) return callback(null, normalized);
       console.warn('[cors] blocked origin:', origin);
       return callback(null, false);
     },

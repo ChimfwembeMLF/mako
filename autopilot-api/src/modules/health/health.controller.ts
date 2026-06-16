@@ -6,7 +6,7 @@ import {
   resolveCorsOrigins,
   describeCorsMode,
 } from '../../common/cors.util';
-import { isClientDistAvailable, isServeClientEnabled } from '../../common/client-dist.util';
+import { isClientServedByNest } from '../../common/client-dist.util';
 import { summarizeOAuthEnv } from '../../common/oauth-env.util';
 
 @ApiTags('Health')
@@ -14,7 +14,7 @@ import { summarizeOAuthEnv } from '../../common/oauth-env.util';
 export class HealthController {
   @Get()
   check() {
-    const serveClient = isServeClientEnabled() && isClientDistAvailable();
+    const serveClient = isClientServedByNest();
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),

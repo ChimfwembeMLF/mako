@@ -1,8 +1,15 @@
 import type { Config } from "tailwindcss";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const dir = path.dirname(fileURLToPath(import.meta.url));
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    path.join(dir, "index.html"),
+    path.join(dir, "src/**/*.{ts,tsx}"),
+  ],
   prefix: "",
   theme: {
     container: {

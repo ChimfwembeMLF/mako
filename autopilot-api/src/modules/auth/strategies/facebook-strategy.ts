@@ -1,7 +1,13 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
-import { Profile, Strategy, StrategyOption } from 'passport-facebook';
+import { Profile, Strategy } from 'passport-facebook';
+import { createOAuthCookieStateStore } from '../../../common/oauth-cookie-state.store';
+
+function resolveFacebookGraphVersion(raw: string | undefined): string {
+  const version = raw?.trim() || 'v18.0';
+  return version.startsWith('v') ? version : `v${version}`;
+}
 
 @Injectable()
 export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
@@ -10,8 +16,10 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       clientID: config.getOrThrow<string>('FACEBOOK_APP_ID'),
       clientSecret: config.getOrThrow<string>('FACEBOOK_APP_SECRET'),
       callbackURL: config.getOrThrow<string>('FACEBOOK_CALLBACK_URL'),
+      graphAPIVersion: resolveFacebookGraphVersion(config.get<string>('FACEBOOK_GRAPH_VERSION')),
       profileFields: ['emails', 'name'],
       state: true,
+      store: createOAuthCookieStateStore(config.get<string>('SESSION_SECRET')),
     };
 
     super(options as any);

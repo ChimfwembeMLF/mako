@@ -25,7 +25,12 @@ export function isClientDistAvailable(): boolean {
 }
 
 export function isServeClientEnabled(): boolean {
-  if (process.env.SERVE_CLIENT === 'false') return false;
-  if (process.env.SERVE_CLIENT === 'true') return true;
-  return process.env.NODE_ENV === 'production';
+  return process.env.SERVE_CLIENT !== 'false';
+}
+
+/** True when Nest is serving the React app (Vite dev middleware or client/dist). */
+export function isClientServedByNest(): boolean {
+  if (!isServeClientEnabled()) return false;
+  if (process.env.NODE_ENV !== 'production') return true;
+  return isClientDistAvailable();
 }

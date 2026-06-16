@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
-# Full production deploy: install deps, build client + API, restart PM2.
-# API: yarn | Client: npm (prod VPS)
-# Run from autopilot-api/ or repo root (yarn deploy:prod):
-#   bash scripts/deploy-production.sh --with-migrations
+# Production deploy: install deps, build client + API, restart PM2.
+# Nest serves React from client/dist — one command, no manual copy steps.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -22,18 +20,13 @@ if [[ ! -f .env ]]; then
   exit 1
 fi
 
-echo "==> Installing API dependencies (yarn)"
+echo "==> Installing dependencies"
 yarn install --ignore-engines --frozen-lockfile 2>/dev/null || yarn install --ignore-engines
-
 if [[ -f "$CLIENT/package.json" ]]; then
-  echo "==> Installing client dependencies (npm)"
-  bash scripts/install-client.sh
-else
-  echo "WARN: resources/client not found — build:client will fail unless client/dist already exists"
+  (cd "$CLIENT" && npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)
 fi
 
-echo "==> Building client (npm) + API (yarn)"
-bash scripts/build-client.sh
+echo "==> Building client + API (output: client/dist + dist/)"
 yarn build
 
 if [[ "$WITH_MIGRATIONS" == true ]]; then
@@ -44,16 +37,24 @@ fi
 mkdir -p logs
 mkdir -p /var/log/pm2 2>/dev/null || sudo mkdir -p /var/log/pm2 2>/dev/null || true
 
-echo "==> Stopping PM2 before restart"
+echo "==> OAuth / URL check"
+NODE_ENV=production node scripts/check-oauth-env.js
+
+echo "==> Restarting PM2"
 npx pm2 stop "Mako API Production" 2>/dev/null || true
 sleep 2
-
-echo "==> Restarting PM2 (Mako API Production)"
 npx pm2 startOrRestart ecosystem.config.json --env production --update-env
 
 echo ""
 echo "==> Health check"
 sleep 2
-curl -sf "http://127.0.0.1:${PORT:-4005}/api/v1/health" | head -c 500 || echo "(curl failed — check pm2 logs)"
+PORT="${PORT:-4005}"
+curl -sf "http://127.0.0.1:${PORT}/api/v1/health" | head -c 500 || echo "(health curl failed — check pm2 logs)"
+echo ""
+if curl -sf "http://127.0.0.1:${PORT}/" | head -1 | grep -qi doctype; then
+  echo "SPA: OK (index.html served at /)"
+else
+  echo "WARN: / did not return HTML — check SERVE_CLIENT=true and client/dist"
+fi
 echo ""
 echo "Done. pm2 logs: yarn pm2:logs"

@@ -4,9 +4,11 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { resolveFrontendUrl } from '../common/env-urls.util';
+import { tryServeSpaShell } from '../common/spa-fallback.util';
 
 const OAUTH_REDIRECT_PATH =
   /^\/api\/v1\/(?:auth\/[^/]+\/redirect|social-accounts\/oauth\/[^/]+\/callback)(?:\/|\?|$)/;
@@ -49,6 +51,11 @@ export class AllExceptionsFilter implements ExceptionFilter {
     }
 
     const path = httpAdapter.getRequestUrl(request);
+
+    if (exception instanceof NotFoundException && tryServeSpaShell(request, response)) {
+      return;
+    }
+
     if (
       request.method === 'GET' &&
       OAUTH_REDIRECT_PATH.test(path.split('?')[0] ?? path)

@@ -18,7 +18,7 @@ From the **repo root** (`autopilot/`):
 
 ```bash
 yarn install
-yarn dev           # Nest :4000 + Vite :3000 (proxies /api)
+yarn dev           # Nest :4000 — Vite HMR + API (one process)
 yarn deploy:prod   # build + migrate + PM2 restart
 ```
 
@@ -49,15 +49,15 @@ No CORS. No separate API subdomain for the app.
 From repo root or `autopilot-api/`:
 
 ```bash
-yarn build:all
-# or from repo root:
 yarn build
 ```
 
 This runs:
 
-1. `npm run build:prod` in `resources/client` — Vite build → `client/dist`
-2. `yarn build` — compiles Nest
+1. `npm run build:prod` in `resources/client` — Vite writes directly to `client/dist`
+2. `nest build` — compiles API to `dist/`
+
+No copy step. Nest serves `client/dist` when `SERVE_CLIENT=true`.
 
 ---
 
@@ -107,21 +107,11 @@ No separate `/api` context. Nest handles routing.
 
 ## 4. Deploy on VPS
 
-**Node.js:** use **20 LTS** (or 22/24). Node 25 is not supported by some build tools.
-
-**Client uses npm** on the server (API uses yarn). From `autopilot-api/`:
+From repo root or `autopilot-api/`:
 
 ```bash
-yarn install          # API
-npm ci --ignore-scripts --prefix resources/client || npm install --ignore-scripts --prefix resources/client
-```
-
-```bash
-cd autopilot-api
-cp docs/env.mako.production.server.template .env   # edit secrets
+cp docs/env.mako.production.server.template .env   # edit secrets (first time only)
 yarn deploy:prod    # install + build client & API + migrate + PM2 restart
-# or without migrations:
-yarn deploy:pm2
 ```
 
 First-time DB: `yarn db:sync && yarn migrations:run:prod && yarn seed:prod`
@@ -147,13 +137,13 @@ Open `https://yourdomain.com` — Network tab should show `/api/v1/...` on the *
 
 ## Local development
 
-| Command | What it does |
-|---------|----------------|
-| `yarn dev` (repo root) | Nest watch :4000 + Vite :3000 |
-| `yarn dev` (autopilot-api/) | Same |
-| `yarn start:dev` | API only |
+```bash
+yarn dev    # Nest :4000 serves Vite (HMR) + API — one process
+```
 
-Vite proxies `/api` → `localhost:4000`. Keep `VITE_API_BASE_URL` empty in `resources/client/.env`.
+Open **http://localhost:4000**. Same-origin `/api/v1/...` — no separate Vite port, no CORS.
+
+Keep `VITE_API_BASE_URL` empty in `resources/client/.env`.
 
 ---
 
@@ -163,4 +153,4 @@ Vite proxies `/api` → `localhost:4000`. Keep `VITE_API_BASE_URL` empty in `res
 SERVE_CLIENT=false
 ```
 
-Use when running Firebase or a separate frontend with cross-origin CORS.
+Only if you host the React app elsewhere and call the API cross-origin.

@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
+import { resolveFrontendUrl } from '../../common/env-urls.util';
 import { LoginPayloadDto } from './dtos/login-payload.dto';
 import { UserDto } from '../user/dtos/user.dto';
 import { AuthProfileDto } from './dtos/auth-profile.dto';
@@ -131,7 +132,7 @@ export class AuthService {
     }
 
     const resetToken = this.jwtService.sign({ sub: user.id, type: 'reset' }, { expiresIn: '1h' });
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl = resolveFrontendUrl(this.config);
     const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     await this.mailService.sendPasswordResetEmail(user.email!, resetLink);

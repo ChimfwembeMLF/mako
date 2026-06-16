@@ -18,7 +18,8 @@ export function configureClientAssets(
   });
   app.useStaticAssets(clientDist, {
     prefix: '/',
-    index: false,
+    index: 'index.html',
+    fallthrough: true,
   });
-  console.log('[client] Static assets from', clientDist, '(no SPA catch-all — 404 filter serves index.html)');
+  console.log('[client] Static assets from', clientDist, '(index.html at /; SPA routes via 404 filter)');
 }

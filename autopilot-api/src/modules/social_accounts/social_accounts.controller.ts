@@ -18,6 +18,7 @@ import axios from 'axios';
 import { Request, Response } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { resolveFrontendUrl } from '../../common/env-urls.util';
 import { SocialAccountsService } from './social_accounts.service';
 import {
   SocialAccountsOAuthService,
@@ -159,7 +160,7 @@ export class SocialAccountsController {
     @Query('error') error?: string,
     @Query('error_description') errorDescription?: string,
   ) {
-    const frontendUrl = this.config.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+    const frontendUrl = resolveFrontendUrl(this.config);
     const fallbackReturn = `${frontendUrl}/publisher`;
 
     if (error) {

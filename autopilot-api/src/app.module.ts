@@ -119,11 +119,11 @@ import { ClientStaticModule } from './client-static.module';
   providers: [
     {
       provide: APP_FILTER,
-      useClass: SpaNotFoundFilter,
+      useClass: AllExceptionsFilter,
     },
     {
       provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
+      useClass: SpaNotFoundFilter,
     },
   ],
 })

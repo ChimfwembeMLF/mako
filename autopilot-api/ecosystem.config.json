@@ -23,7 +23,7 @@
       "env": {
         "NODE_ENV": "development",
         "PORT": 4000,
-        "SERVE_CLIENT": "false"
+        "SERVE_CLIENT": "true"
       },
       "env_production": {
         "NODE_ENV": "production",

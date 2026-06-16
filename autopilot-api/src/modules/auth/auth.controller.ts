@@ -47,8 +47,6 @@ type SocialOAuthUser = {
 @Controller('api/v1/auth')
 @ApiTags('Auth')
 export class AuthController {
-  private frontendUrl: string;
-
   constructor(
     private readonly authService: AuthService,
     private readonly googleAuthService: GoogleAuthService,
@@ -56,8 +54,10 @@ export class AuthController {
     private readonly linkedInAuthService: LinkedInAuthService,
     private readonly instagramAuthService: InstagramAuthService,
     private readonly config: ConfigService,
-  ) {
-    this.frontendUrl = resolveFrontendUrl(this.config);
+  ) {}
+
+  private get frontendUrl(): string {
+    return resolveFrontendUrl(this.config);
   }
 
   @Post('register')

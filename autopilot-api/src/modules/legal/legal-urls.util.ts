@@ -1,4 +1,5 @@
 import { ConfigService } from '@nestjs/config';
+import { resolveApiPublicUrl, resolveFrontendUrl } from '../../common/env-urls.util';
 
 export type LegalUrls = {
   privacyPolicyUrl: string;
@@ -8,11 +9,8 @@ export type LegalUrls = {
 
 /** Absolute URLs for developer portals (TikTok, Meta, LinkedIn app settings). */
 export function resolveLegalUrls(config: ConfigService): LegalUrls {
-  const frontend = (config.get<string>('FRONTEND_URL') ?? 'http://localhost:3000').replace(
-    /\/$/,
-    '',
-  );
-  const api = (config.get<string>('API_BASE_URL') ?? 'http://localhost:4000').replace(/\/$/, '');
+  const frontend = resolveFrontendUrl(config);
+  const api = resolveApiPublicUrl(config) || `http://localhost:${process.env.PORT || 4000}`;
 
   const privacyPolicyUrl =
     config.get<string>('PRIVACY_POLICY_URL')?.trim() || `${api}/privacy`;

@@ -9,17 +9,7 @@ const WORKBOX_MAX_PRECACHE_BYTES = 4 * 1024 * 1024 * 1024;
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  server: {
-    host: "::",
-    port: 3000,
-    hmr: { overlay: false },
-    proxy: {
-      "/api": { target: "http://localhost:4000", changeOrigin: true },
-      "/uploads": { target: "http://localhost:4000", changeOrigin: true },
-      "/documentation": { target: "http://localhost:4000", changeOrigin: true },
-      "/admin": { target: "http://localhost:4000", changeOrigin: true },
-    },
-  },
+  // Standalone `npm run dev` in resources/client is optional — default dev is `yarn dev` on Nest (:4000).
   plugins: [
     react(),
     mode === "development" && componentTagger(),

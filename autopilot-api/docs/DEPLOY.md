@@ -36,42 +36,44 @@ Build & start with PM2 (production):
 cd autopilot-api
 cp docs/env.mako.production.server.template .env   # then edit secrets
 yarn install:all
-yarn build:all
+yarn build
 yarn db:sync
 yarn migrations:run:prod
-# After first owner signs up (or if tenant already exists):
 yarn seed:prod
 yarn pm2:start
 
-# Or from repo root:
-yarn install:all && yarn deploy:prod
+# Or from repo root (recommended for updates):
+yarn deploy:prod
 ```
 
 ```bash
 # After code updates
-npm run deploy:prod
+yarn deploy:prod
 
-npm run pm2:status
-npm run pm2:logs
-npm run pm2:save
-npm run pm2:startup   # run the sudo command it prints
+yarn pm2:status
+yarn pm2:logs
+yarn pm2:save
+yarn pm2:startup   # run the sudo command it prints
 ```
 
-| Variable | Production value (Firebase + makoapi) |
-|----------|-------------------------------------|
+| Variable | Production value (single app) |
+|----------|-------------------------------|
 | `PORT` | `4005` (see `ecosystem.config.json`) |
 | `NODE_ENV` | `production` |
+| `SERVE_CLIENT` | `true` |
+| `CORS_DISABLED` | `true` |
 | `DB_SYNCHRONIZE` | `false` |
 | `JWT_SECRET` | Strong random string |
 | `SESSION_SECRET` | Strong random string (required — app exits if missing) |
-| `API_PUBLIC_URL` | `https://makoapi.tekreminnovations.com` |
-| `FRONTEND_URL` | `https://YOUR_PROJECT.web.app` (Firebase Hosting URL) |
-| `CORS_ORIGIN` | Same as `FRONTEND_URL` (comma-separate custom domains) |
+| `API_PUBLIC_URL` | `https://mako.tekreminnovations.com` |
+| `FRONTEND_URL` | `https://mako.tekreminnovations.com` |
 | `MISTRAL_API_KEY` | Your Mistral key |
 | `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` | Public media bucket (recommended) |
 | `PAYMENTS_DEV_AUTO_COMPLETE` | `false` |
 | `META_WEBHOOK_VERIFY_TOKEN` | Random string for Meta webhook verify |
 | `COMMENT_SYNC_CRON_ENABLED` | `true` |
+
+See **`docs/SINGLE_APP_DEPLOY.md`** for the full single-app guide.
 
 ---
 
@@ -81,8 +83,7 @@ npm run pm2:startup   # run the sudo command it prints
 |--------|---------|
 | `npm run pm2:start` | First production start |
 | `npm run seed:prod` | Permissions, plans, theme, Mako widget key (no demo users) |
-| `npm run deploy:prod` | Build + migrations + restart |
-| `npm run deploy:pm2` | Build + restart (no migrate) |
+| `yarn deploy:prod` | Install + build client & API + migrations + PM2 restart |
 | `npm run pm2:restart` | Restart running process |
 | `npm run pm2:logs` | Tail logs |
 | `npm run pm2:status` | Process status |
@@ -105,30 +106,16 @@ Secrets live in `.env` on the server — NestJS loads them at boot; PM2 does not
 
 ---
 
-## 3. Client — Firebase Hosting
+## 3. Client (built into `client/dist`)
 
-See **`docs/FIREBASE_HOSTING.md`** for the full guide.
-
-```env
-# resources/client/.env.production
-VITE_API_BASE_URL=https://makoapi.tekreminnovations.com
-VITE_WIDGET_API_KEY=pk_live_...
-```
+Vite builds directly to `autopilot-api/client/dist/`. Nest serves it when `SERVE_CLIENT=true`. No copy step.
 
 ```bash
-cd autopilot-api/resources/client
-yarn install
-yarn firebase login
-yarn firebase use --add
-yarn deploy:firebase
+yarn build          # client + API
+yarn deploy:prod    # install + build + migrate + PM2 restart
 ```
 
-| Host | Role |
-|------|------|
-| `YOUR_PROJECT.web.app` | Frontend (Firebase Hosting static SPA) |
-| `makoapi.tekreminnovations.com` | API (NestJS on VPS) |
-
-Local dev: leave `VITE_API_BASE_URL` empty in `.env` — Vite proxies `/api` to `localhost:4000`.
+Local dev: `yarn dev` — Nest on `:4000` serves Vite (HMR) + API. Leave `VITE_API_BASE_URL` empty.
 
 ---
 
@@ -236,7 +223,7 @@ Queues: `content-publish`, `comments`, `webhooks`, `ai`, `email`. Job status: `G
 - [ ] Meta Data Deletion Callback registered
 - [ ] OAuth callback URLs updated to production domains
 - [ ] `PAYMENTS_DEV_AUTO_COMPLETE=false`
-- [ ] `CORS_ORIGIN` matches Firebase Hosting URL (see `docs/FIREBASE_HOSTING.md`)
+- [ ] `SERVE_CLIENT=true` and `curl /` returns React HTML
 - [ ] Publish test post → verify `content_publications` row + comment sync
 
 ---

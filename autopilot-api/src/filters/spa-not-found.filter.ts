@@ -5,13 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { join } from 'path';
-import {
-  isClientDistAvailable,
-  isServeClientEnabled,
-  resolveClientDistPath,
-  shouldBypassSpa,
-} from '../common/client-dist.util';
+import { tryServeSpaShell } from '../common/spa-fallback.util';
 
 /**
  * Serves React index.html only when Nest has no route (client-side routes).
@@ -25,11 +19,7 @@ export class SpaNotFoundFilter implements ExceptionFilter {
     const res = ctx.getResponse<Response>();
     const path = req.path ?? req.url?.split('?')[0] ?? '';
 
-    const serveClient = isServeClientEnabled() && isClientDistAvailable();
-    const isGetOrHead = req.method === 'GET' || req.method === 'HEAD';
-
-    if (serveClient && isGetOrHead && !shouldBypassSpa(path)) {
-      res.sendFile(join(resolveClientDistPath(), 'index.html'));
+    if (tryServeSpaShell(req, res)) {
       return;
     }
 

@@ -10,13 +10,9 @@
   },
   "scripts": {
     "prebuild": "rimraf dist tsconfig.build.tsbuildinfo",
-    "build": "nest build",
-    "build:client": "cd resources/client && npm run build:prod",
-    "build:all": "yarn build:client && yarn build",
-    "install:client": "cd resources/client && npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts",
-    "install:all": "yarn install --ignore-engines && yarn install:client",
-    "dev:client": "cd resources/client && npm run dev",
-    "dev": "concurrently -n api,web -c blue,magenta \"yarn start:dev\" \"yarn dev:client\"",
+    "build": "cd resources/client && npm run build:prod && cd ../.. && nest build",
+    "install:all": "yarn install --ignore-engines && cd resources/client && (npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)",
+    "dev": "bash scripts/free-port.sh 4000 && NODE_ENV=development yarn start:dev",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "gen:modules": "ts-node scripts/generate-modules.ts",
@@ -33,7 +29,6 @@
     "pm2:save": "npx pm2 save",
     "pm2:startup": "npx pm2 startup",
     "deploy:prod": "bash scripts/deploy-production.sh --with-migrations",
-    "deploy:pm2": "bash scripts/deploy-production.sh",
     "db:sync": "ts-node -r ./scripts/polyfill-crypto.ts scripts/sync-schema.ts",
     "env:check": "node scripts/show-loaded-env.js",
     "db:test": "NODE_ENV=production node scripts/test-db-connection.js",
@@ -138,7 +133,6 @@
     "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
-    "concurrently": "^9.1.2",
     "eslint": "^8.0.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
@@ -150,7 +144,8 @@
     "ts-jest": "^29",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vite": "^5.4.19"
   },
   "jest": {
     "moduleFileExtensions": [

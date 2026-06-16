@@ -3,13 +3,9 @@
   "private": true,
   "scripts": {
     "dev": "cd autopilot-api && yarn dev",
-    "build": "cd autopilot-api && yarn build:all",
+    "build": "cd autopilot-api && yarn build",
     "deploy:prod": "cd autopilot-api && yarn deploy:prod",
-    "deploy:pm2": "cd autopilot-api && yarn deploy:pm2",
-    "install:all": "cd autopilot-api && yarn install:all",
-    "seed:prod": "cd autopilot-api && yarn seed:prod",
-    "pm2:start": "cd autopilot-api && yarn pm2:start",
-    "pm2:logs": "cd autopilot-api && yarn pm2:logs"
+    "install:all": "cd autopilot-api && yarn install:all"
   },
   "engines": {
     "node": ">=20"

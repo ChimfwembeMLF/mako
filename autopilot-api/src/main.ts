@@ -7,9 +7,9 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
-import { resolveApiPublicUrl } from './common/env-urls.util';
+import { resolveApiPublicUrl, assertProductionUrls, normalizeProductionUrls } from './common/env-urls.util';
 import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
-import { isClientDistAvailable, isServeClientEnabled, resolveClientDistPath } from './common/client-dist.util';
+import { isClientDistAvailable, isClientServedByNest, isServeClientEnabled, resolveClientDistPath } from './common/client-dist.util';
 import { configureClientAssets } from './common/configure-client-assets';
 import { warnProductionOAuthEnv } from './common/oauth-env.util';
 import type { RequestHandler } from 'express';
@@ -31,6 +31,7 @@ function loadEnvFiles(): void {
 }
 
 loadEnvFiles();
+normalizeLegacyEnv();
 
 // Same CJS pattern as passport — avoids broken default import at runtime under PM2
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -43,6 +44,34 @@ function normalizeLegacyEnv(): void {
   if (process.env.API_URL && !process.env.API_PUBLIC_URL) {
     process.env.API_PUBLIC_URL = process.env.API_URL;
   }
+
+  normalizeProductionUrls();
+
+  if (process.env.NODE_ENV !== 'production') {
+    const port = process.env.PORT || '4000';
+    const devOrigin = `http://localhost:${port}`;
+    if (!process.env.FRONTEND_URL?.trim()) {
+      process.env.FRONTEND_URL = devOrigin;
+    }
+    if (!process.env.API_PUBLIC_URL?.trim()) {
+      process.env.API_PUBLIC_URL = devOrigin;
+    }
+    if (!process.env.CLIENT_URL?.trim()) {
+      process.env.CLIENT_URL = devOrigin;
+    }
+    for (const key of ['FRONTEND_URL', 'CLIENT_URL', 'API_PUBLIC_URL', 'APP_URL'] as const) {
+      if (process.env[key]?.includes('localhost:3000')) {
+        process.env[key] = devOrigin;
+      }
+    }
+  }
+}
+
+function resolveSessionCookieSecure(isProduction: boolean): boolean {
+  const raw = process.env.SESSION_SECURE?.trim().toLowerCase();
+  if (raw === 'true') return true;
+  if (raw === 'false') return false;
+  return isProduction;
 }
 
 async function configureExpressSession(
@@ -61,7 +90,7 @@ async function configureExpressSession(
       maxAge: maxAgeMs,
       httpOnly: true,
       sameSite: 'lax',
-      secure: isProduction,
+      secure: resolveSessionCookieSecure(isProduction),
     },
   };
 
@@ -113,23 +142,44 @@ async function configureExpressSession(
 async function bootstrap() {
   normalizeLegacyEnv();
   warnProductionOAuthEnv();
-  const serveClient = isServeClientEnabled() && isClientDistAvailable();
-  console.log('[boot] Mako API starting', serveClient ? '(SPA + API same server)' : '(cross-origin mode)');
-  console.log('[cors]', describeCorsMode());
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const serveClient = isServeClientEnabled();
+  const serveViteDev = serveClient && !isProduction;
+  const serveStaticClient = serveClient && isProduction && isClientDistAvailable();
+
+  if (serveViteDev) {
+    console.log('[boot] Mako starting (Vite dev + API same server)');
+  } else if (serveStaticClient) {
+    console.log('[boot] Mako starting (SPA + API same server)');
+  } else if (serveClient && isProduction) {
+    console.warn('[boot] SERVE_CLIENT enabled but client/dist missing — run: yarn build');
+  } else {
+    console.log('[boot] Mako API starting (API-only mode)');
+  }
+  const sameOriginApp = serveViteDev || serveStaticClient;
+  console.log(
+    '[cors]',
+    sameOriginApp ? 'disabled (SPA + API same server)' : describeCorsMode(),
+  );
 
   const logLevels = (process.env.LOG_LEVEL?.split(',') ?? ['error', 'warn', 'log']) as LogLevel[];
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
   });
 
-  const corsOptions = buildNestCorsOptions();
+  if (serveViteDev) {
+    const { configureViteDev } = await import('./common/configure-vite-dev');
+    await configureViteDev(app);
+  }
+
+  const corsOptions = sameOriginApp ? false : buildNestCorsOptions();
   if (corsOptions) {
     app.enableCors(corsOptions);
   }
 
-  const isProduction = process.env.NODE_ENV === 'production';
-
   if (isProduction) {
+    assertProductionUrls();
     app.set('trust proxy', 1);
 
     app.use(
@@ -175,7 +225,7 @@ async function bootstrap() {
     app.useStaticAssets(uploadsDir, { prefix: '/uploads' });
   }
 
-  if (serveClient) {
+  if (serveStaticClient) {
     configureClientAssets(app, resolveClientDistPath());
   }
 
@@ -191,6 +241,9 @@ async function bootstrap() {
   const port = Number(process.env.PORT) || 4000;
   await app.listen(port, '0.0.0.0');
   console.log(`Application listening on http://0.0.0.0:${port}`);
+  if (serveViteDev || serveStaticClient) {
+    console.log(`App UI at http://localhost:${port}`);
+  }
   console.log(`Documentation on http://localhost:${port}/documentation`);
   console.log(`Bull Board on http://localhost:${port}/admin/queues`);
 }
