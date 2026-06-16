@@ -44,7 +44,7 @@ fi
 mkdir -p logs
 mkdir -p /var/log/pm2 2>/dev/null || sudo mkdir -p /var/log/pm2 2>/dev/null || true
 
-echo "==> Stopping PM2 before restart (avoids connection pile-up during deploy)"
+echo "==> Stopping PM2 before restart"
 npx pm2 stop "Mako API Production" 2>/dev/null || true
 sleep 2
 

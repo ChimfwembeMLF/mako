@@ -22,8 +22,5 @@ export function typeOrmConfigFactory(
     namingStrategy: new SnakeNamingStrategy(),
     subscribers: [UserSubscriber],
     ssl: resolveDbSsl(configService),
-    // Fewer retries = fewer connection attempts during Postgres outages (default is 9)
-    retryAttempts: parseInt(process.env.DB_RETRY_ATTEMPTS || '3', 10) || 3,
-    retryDelay: 3000,
   };
 }
