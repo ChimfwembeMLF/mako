@@ -12,7 +12,7 @@
   "scripts": {
     "prebuild": "rimraf dist tsconfig.build.tsbuildinfo",
     "build": "cd resources/client && npm run build:prod && cd ../.. && nest build",
-    "install:all": "yarn install --ignore-engines && cd resources/client && (npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)",
+    "install:all": "yarn install && cd resources/client && (npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)",
     "dev": "bash scripts/free-port.sh 4000 && NODE_ENV=development yarn start:dev",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",

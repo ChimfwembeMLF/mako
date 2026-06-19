@@ -21,7 +21,7 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "==> Installing dependencies"
-yarn install --ignore-engines --frozen-lockfile 2>/dev/null || yarn install --ignore-engines
+yarn install --frozen-lockfile 2>/dev/null || yarn install
 if [[ -f "$CLIENT/package.json" ]]; then
   (cd "$CLIENT" && npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)
 fi
