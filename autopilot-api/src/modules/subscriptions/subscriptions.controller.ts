@@ -22,7 +22,10 @@ export class SubscriptionsController {
   }
 
   @Patch('tenant/:tenantId/auto-renew')
-  async setAutoRenew(@Param('tenantId') tenantId: string, @Body() body: AutoRenewDto) {
+  async setAutoRenew(
+    @Param('tenantId') tenantId: string,
+    @Body() body: AutoRenewDto,
+  ) {
     await this.subscriptions.setAutoRenew(tenantId, body.enabled);
     return this.subscriptions.getSummary(tenantId);
   }

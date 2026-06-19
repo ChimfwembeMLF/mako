@@ -4,7 +4,9 @@ import { join } from 'path';
 import { shouldBypassSpa } from './client-dist.util';
 
 /** Vite HMR in development — registered early so API routes still hit Nest first. */
-export async function configureViteDev(app: NestExpressApplication): Promise<ViteDevServer> {
+export async function configureViteDev(
+  app: NestExpressApplication,
+): Promise<ViteDevServer> {
   const clientRoot = join(process.cwd(), 'resources', 'client');
   const { createServer } = await import('vite');
 
@@ -26,6 +28,8 @@ export async function configureViteDev(app: NestExpressApplication): Promise<Vit
   });
 
   const port = process.env.PORT || 4000;
-  console.log('[client] Vite dev middleware active — open http://localhost:' + port);
+  console.log(
+    '[client] Vite dev middleware active — open http://localhost:' + port,
+  );
   return vite;
 }

@@ -58,7 +58,11 @@ function formatMoney(value: number): string {
 }
 
 /** Grand total is VAT-inclusive; back-calculate subtotal & 16% VAT (Zambia). */
-function splitVatInclusive(grandTotal: number): { subTotal: string; vatAmount: string; grandTotal: string } {
+function splitVatInclusive(grandTotal: number): {
+  subTotal: string;
+  vatAmount: string;
+  grandTotal: string;
+} {
   const sub = grandTotal / 1.16;
   const vat = grandTotal - sub;
   return {
@@ -93,7 +97,8 @@ export function invoiceDataFromDeposit(
   const planLabel = planMeta?.label ?? deposit.plan ?? 'Subscription';
   const isPaid = (deposit.status ?? '').toUpperCase() === 'COMPLETED';
   const fallbackPrice = planMeta?.priceZmw ?? 0;
-  const grandTotalNum = parseFloat(deposit.amount ?? String(fallbackPrice)) || 0;
+  const grandTotalNum =
+    parseFloat(deposit.amount ?? String(fallbackPrice)) || 0;
   const { subTotal, vatAmount, grandTotal } = splitVatInclusive(grandTotalNum);
 
   return {
@@ -113,7 +118,8 @@ export function invoiceDataFromDeposit(
     paidAt: isPaid ? deposit.updated_at.toISOString() : undefined,
     companyName: 'Mako ',
     companyLegalName: process.env.COMPANY_LEGAL_NAME ?? 'AgriWide Mako ',
-    companyTagline: process.env.COMPANY_TAGLINE ?? 'INNOVATION · CREATIVITY · VALUE',
+    companyTagline:
+      process.env.COMPANY_TAGLINE ?? 'INNOVATION · CREATIVITY · VALUE',
     companyAddress: process.env.COMPANY_ADDRESS ?? 'Lusaka, Zambia',
     companyTpin: process.env.COMPANY_TPIN ?? '',
     companyPhones: process.env.COMPANY_PHONES ?? '',
@@ -130,21 +136,29 @@ export function invoiceDataFromDeposit(
 }
 
 export function renderInvoiceHtml(data: InvoiceData): string {
-  const dateStr = new Date(data.paidAt ?? data.issuedAt).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const dateStr = new Date(data.paidAt ?? data.issuedAt).toLocaleDateString(
+    'en-GB',
+    {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    },
+  );
 
   const description = `${data.planLabel} Plan — Mako  subscription (AI marketing autopilot, monthly)`;
   const paymentNote = data.network
-    ? `${data.paymentMethod} · ${data.network}${data.phone ? ` · ${data.phone}` : ''}`
+    ? `${data.paymentMethod} · ${data.network}${
+        data.phone ? ` · ${data.phone}` : ''
+      }`
     : data.paymentMethod;
 
-  const emptyRows = Array.from({ length: 8 }, () => `
+  const emptyRows = Array.from(
+    { length: 8 },
+    () => `
     <tr class="empty-row">
       <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
-    </tr>`).join('');
+    </tr>`,
+  ).join('');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -294,8 +308,20 @@ export function renderInvoiceHtml(data: InvoiceData): string {
       display: inline-block;
       margin-top: 6px;
       padding: 3px 10px;
-      border: 2px solid ${data.status === 'Paid' ? '#16a34a' : data.status === 'Pending' ? '#d97706' : '#dc2626'};
-      color: ${data.status === 'Paid' ? '#16a34a' : data.status === 'Pending' ? '#d97706' : '#dc2626'};
+      border: 2px solid ${
+        data.status === 'Paid'
+          ? '#16a34a'
+          : data.status === 'Pending'
+          ? '#d97706'
+          : '#dc2626'
+      };
+      color: ${
+        data.status === 'Paid'
+          ? '#16a34a'
+          : data.status === 'Pending'
+          ? '#d97706'
+          : '#dc2626'
+      };
       font-weight: 800;
       font-size: 11px;
       letter-spacing: 0.08em;
@@ -314,9 +340,15 @@ export function renderInvoiceHtml(data: InvoiceData): string {
         ${renderInvoiceLogoHtml()}
       </div>
       <div class="company-block">
-        <div class="legal">${escapeHtml(data.companyLegalName.toUpperCase())}</div>
+        <div class="legal">${escapeHtml(
+          data.companyLegalName.toUpperCase(),
+        )}</div>
         <div>${escapeHtml(data.companyAddress)}</div>
-        ${data.companyTpin ? `<div class="tpin">TPIN: ${escapeHtml(data.companyTpin)}</div>` : ''}
+        ${
+          data.companyTpin
+            ? `<div class="tpin">TPIN: ${escapeHtml(data.companyTpin)}</div>`
+            : ''
+        }
       </div>
     </div>
 
@@ -332,7 +364,13 @@ export function renderInvoiceHtml(data: InvoiceData): string {
           <span class="field-label">M/s</span>
           <span class="dots">${escapeHtml(data.tenantName)}</span>
         </div>
-        ${data.customerEmail ? `<div class="field" style="padding-left:28px"><span class="dots">${escapeHtml(data.customerEmail)}</span></div>` : ''}
+        ${
+          data.customerEmail
+            ? `<div class="field" style="padding-left:28px"><span class="dots">${escapeHtml(
+                data.customerEmail,
+              )}</span></div>`
+            : ''
+        }
       </div>
       <div class="meta-right">
         <div class="field">
@@ -363,7 +401,11 @@ export function renderInvoiceHtml(data: InvoiceData): string {
         <tbody>
           <tr class="item-row">
             <td>1</td>
-            <td>${escapeHtml(description)}<br /><span style="font-weight:400;color:#555;font-size:11px">${escapeHtml(paymentNote)} · Ref: ${escapeHtml(data.depositId)}</span></td>
+            <td>${escapeHtml(
+              description,
+            )}<br /><span style="font-weight:400;color:#555;font-size:11px">${escapeHtml(
+    paymentNote,
+  )} · Ref: ${escapeHtml(data.depositId)}</span></td>
             <td>${data.grandTotal}</td>
             <td>${data.grandTotal}</td>
           </tr>
@@ -376,7 +418,9 @@ export function renderInvoiceHtml(data: InvoiceData): string {
       <div class="signatures">
         <div class="sig-field">
           <span class="field-label">Prepared by:</span>
-          <span class="sig-line">${escapeHtml(data.companyName)} Billing System</span>
+          <span class="sig-line">${escapeHtml(
+            data.companyName,
+          )} Billing System</span>
         </div>
         <div class="sig-field">
           <span class="field-label">Signature:</span>
@@ -411,17 +455,33 @@ export function renderInvoiceHtml(data: InvoiceData): string {
     <div class="footer">
       <div class="footer-left">
         <div>${escapeHtml(data.companyAddress)}</div>
-        ${data.companyPhones ? `<div>Cell: ${escapeHtml(data.companyPhones)}</div>` : ''}
+        ${
+          data.companyPhones
+            ? `<div>Cell: ${escapeHtml(data.companyPhones)}</div>`
+            : ''
+        }
         <div>Email: ${escapeHtml(data.supportEmail)}</div>
-        <div>Website: ${escapeHtml(data.website.replace(/^https?:\/\//, ''))}</div>
+        <div>Website: ${escapeHtml(
+          data.website.replace(/^https?:\/\//, ''),
+        )}</div>
       </div>
-      ${data.bankName || data.bankAccountNumber ? `
+      ${
+        data.bankName || data.bankAccountNumber
+          ? `
       <div class="footer-right">
         ${data.bankName ? `<p>Bank Name: ${escapeHtml(data.bankName)}</p>` : ''}
-        ${data.bankBranch ? `<p>Branch: ${escapeHtml(data.bankBranch)}</p>` : ''}
+        ${
+          data.bankBranch ? `<p>Branch: ${escapeHtml(data.bankBranch)}</p>` : ''
+        }
         <p>Account Name: ${escapeHtml(data.bankAccountName)}</p>
-        ${data.bankAccountNumber ? `<p>Account Number: ${escapeHtml(data.bankAccountNumber)}</p>` : ''}
-      </div>` : ''}
+        ${
+          data.bankAccountNumber
+            ? `<p>Account Number: ${escapeHtml(data.bankAccountNumber)}</p>`
+            : ''
+        }
+      </div>`
+          : ''
+      }
     </div>
   </div>
 </body>

@@ -1,5 +1,7 @@
 # Production deployment guide — Tekrem Innovation Solutions - Mako
 
+For automated deploys via GitHub Actions, see **`docs/CI_CD.md`**.
+
 ## 1. Database
 
 **Development** (schema auto-updates):

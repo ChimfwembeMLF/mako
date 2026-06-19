@@ -27,7 +27,11 @@ export class RbacService {
     private readonly usersRepo: Repository<UserEntity>,
   ) {}
 
-  async hasRoles(userId: string, tenantId: string, requiredRoles: string[]): Promise<boolean> {
+  async hasRoles(
+    userId: string,
+    tenantId: string,
+    requiredRoles: string[],
+  ): Promise<boolean> {
     if (!requiredRoles?.length) return false;
     const member = await this.membersRepo.findOne({
       where: { userId, tenantId, isActive: true },
@@ -38,12 +42,19 @@ export class RbacService {
     return requiredRoles.includes(role.name);
   }
 
-  async hasPermission(userId: string, tenantId: string, permissionName: string): Promise<boolean> {
+  async hasPermission(
+    userId: string,
+    tenantId: string,
+    permissionName: string,
+  ): Promise<boolean> {
     const effective = await this.getEffectivePermissions(userId, tenantId);
     return effective.permissions.includes(permissionName);
   }
 
-  async getEffectivePermissions(userId: string, tenantId: string): Promise<{
+  async getEffectivePermissions(
+    userId: string,
+    tenantId: string,
+  ): Promise<{
     permissions: string[];
     isSystemAdmin: boolean;
     isSuperAdmin: boolean;
@@ -61,7 +72,13 @@ export class RbacService {
     });
 
     if (!member) {
-      return { permissions: [], isSystemAdmin, isSuperAdmin, roleId: null, roleName: null };
+      return {
+        permissions: [],
+        isSystemAdmin,
+        isSuperAdmin,
+        roleId: null,
+        roleName: null,
+      };
     }
 
     const role = await this.rolesRepo.findOne({ where: { id: member.roleId } });

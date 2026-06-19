@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { isAxiosError } from 'axios';
 import { FindOptionsWhere } from 'typeorm';
@@ -69,9 +65,13 @@ export class InstagramAuthService {
       params.state = state;
     }
 
-    this.logger.log(`Instagram login authorize (client_id=${this.clientId}, redirect_uri=${this.callbackUrl})`);
+    this.logger.log(
+      `Instagram login authorize (client_id=${this.clientId}, redirect_uri=${this.callbackUrl})`,
+    );
 
-    return `https://www.instagram.com/oauth/authorize?${new URLSearchParams(params).toString()}`;
+    return `https://www.instagram.com/oauth/authorize?${new URLSearchParams(
+      params,
+    ).toString()}`;
   }
 
   async exchangeCode(code: string): Promise<string> {
@@ -134,7 +134,10 @@ export class InstagramAuthService {
         };
       }
     } catch (err) {
-      this.logger.warn('Could not exchange for long-lived Instagram token, using short-lived', err);
+      this.logger.warn(
+        'Could not exchange for long-lived Instagram token, using short-lived',
+        err,
+      );
     }
 
     return {
@@ -147,7 +150,9 @@ export class InstagramAuthService {
   }
 
   /** Meta returns `{ data: [{ access_token, user_id }] }` or a flat object */
-  private normalizeTokenPayload(response: InstagramTokenResponse): InstagramTokenPayload {
+  private normalizeTokenPayload(
+    response: InstagramTokenResponse,
+  ): InstagramTokenPayload {
     if (Array.isArray(response.data) && response.data.length > 0) {
       return response.data[0];
     }
@@ -163,10 +168,15 @@ export class InstagramAuthService {
       }
       return err.message;
     }
-    return err instanceof Error ? err.message : 'Instagram token exchange failed';
+    return err instanceof Error
+      ? err.message
+      : 'Instagram token exchange failed';
   }
 
-  async getUserData(token: string, fallbackUserId?: string): Promise<InstagramUserData> {
+  async getUserData(
+    token: string,
+    fallbackUserId?: string,
+  ): Promise<InstagramUserData> {
     try {
       const { data } = await axios.get<
         InstagramUserData & { error?: { message: string } }
@@ -178,7 +188,9 @@ export class InstagramAuthService {
       });
 
       if (data.error) {
-        throw new BadRequestException(`Instagram profile error: ${data.error.message}`);
+        throw new BadRequestException(
+          `Instagram profile error: ${data.error.message}`,
+        );
       }
 
       const id = data.user_id || data.id || fallbackUserId;
@@ -189,7 +201,10 @@ export class InstagramAuthService {
       return { id, username: data.username };
     } catch (err) {
       if (fallbackUserId) {
-        this.logger.warn('Instagram /me failed, using user_id from token exchange', err);
+        this.logger.warn(
+          'Instagram /me failed, using user_id from token exchange',
+          err,
+        );
         return { id: fallbackUserId };
       }
       if (err instanceof BadRequestException) throw err;

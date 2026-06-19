@@ -51,9 +51,15 @@ export class AuthService {
   }
 
   async issueTokensForUser(user: UserEntity): Promise<LoginPayloadDto> {
-    const payload = { sub: String(user.id), provider: user.provider ?? 'local' };
+    const payload = {
+      sub: String(user.id),
+      provider: user.provider ?? 'local',
+    };
     const token = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign({ ...payload, type: 'refresh' }, { expiresIn: '7d' });
+    const refreshToken = this.jwtService.sign(
+      { ...payload, type: 'refresh' },
+      { expiresIn: '7d' },
+    );
 
     await this.refreshTokenService.save(
       String(user.id),
@@ -73,7 +79,10 @@ export class AuthService {
       }
 
       const userId = String(decoded.sub);
-      const valid = await this.refreshTokenService.isValid(userId, refreshToken);
+      const valid = await this.refreshTokenService.isValid(
+        userId,
+        refreshToken,
+      );
       if (!valid) {
         throw new UnauthorizedException('Refresh token revoked');
       }
@@ -90,7 +99,9 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto): Promise<LoginPayloadDto> {
-    const existing = await this.userService.findOne({ email: registerDto.email });
+    const existing = await this.userService.findOne({
+      email: registerDto.email,
+    });
     if (existing) throw new ConflictException('Email already registered');
     const user = await this.userService.createUser({
       email: registerDto.email,
@@ -108,8 +119,12 @@ export class AuthService {
     if (user.provider !== 'local' || !user.password) {
       throw new UnauthorizedException('Please login using social login');
     }
-    const isPasswordValid = await bcrypt.compare(loginDto.password, user.password);
-    if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
+    const isPasswordValid = await bcrypt.compare(
+      loginDto.password,
+      user.password,
+    );
+    if (!isPasswordValid)
+      throw new UnauthorizedException('Invalid credentials');
     return this.completeAuthentication(user);
   }
 
@@ -124,23 +139,39 @@ export class AuthService {
     return AuthProfileDto.from(user, tenant);
   }
 
-  async requestPasswordReset(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
-    const user = await this.userService.findOne({ email: forgotPasswordDto.email });
+  async requestPasswordReset(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await this.userService.findOne({
+      email: forgotPasswordDto.email,
+    });
     if (!user) throw new NotFoundException('User not found');
     if (user.provider !== 'local') {
-      throw new BadRequestException('Please use social login to access your account');
+      throw new BadRequestException(
+        'Please use social login to access your account',
+      );
     }
 
-    const resetToken = this.jwtService.sign({ sub: user.id, type: 'reset' }, { expiresIn: '1h' });
+    const resetToken = this.jwtService.sign(
+      { sub: user.id, type: 'reset' },
+      { expiresIn: '1h' },
+    );
     const frontendUrl = resolveFrontendUrl(this.config);
-    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const resetLink = `${frontendUrl}/reset-password?token=${encodeURIComponent(
+      resetToken,
+    )}`;
 
     await this.mailService.sendPasswordResetEmail(user.email!, resetLink);
 
-    return { message: 'If your email is registered, you will receive a password reset link.' };
+    return {
+      message:
+        'If your email is registered, you will receive a password reset link.',
+    };
   }
 
-  async resetPassword(resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
     let payload: any;
     try {
       payload = this.jwtService.verify(resetPasswordDto.token);
@@ -159,6 +190,9 @@ export class AuthService {
     await this.userService.updatePassword(user.id, hashedPassword);
     await this.refreshTokenService.revoke(String(user.id));
 
-    return { message: 'Password successfully reset. You can now log in with your new password.' };
+    return {
+      message:
+        'Password successfully reset. You can now log in with your new password.',
+    };
   }
 }

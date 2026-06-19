@@ -59,7 +59,11 @@ export class UnifiedInboxService {
     const conversations: UnifiedConversation[] = [];
 
     if (!channel || channel === 'all' || channel === 'post_comment') {
-      const { posts } = await this.commentInbox.getInbox(tenantId, undefined, workspaceId);
+      const { posts } = await this.commentInbox.getInbox(
+        tenantId,
+        undefined,
+        workspaceId,
+      );
       for (const post of posts) {
         const latest = this.latestCommentTime(post.comments);
         conversations.push({
@@ -67,7 +71,8 @@ export class UnifiedInboxService {
           channel: 'post_comment',
           platform: post.platform,
           title: post.postTitle,
-          preview: post.postContent.slice(0, 120) || `${post.totalComments} comments`,
+          preview:
+            post.postContent.slice(0, 120) || `${post.totalComments} comments`,
           lastAt: latest ?? post.publishedAt ?? new Date().toISOString(),
           unreadCount: post.pendingCount,
           pendingCount: post.pendingCount,
@@ -78,9 +83,15 @@ export class UnifiedInboxService {
     }
 
     if (!channel || channel === 'all' || channel === 'dm') {
-      conversations.push(...(await this.dmConversations(tenantId, 'whatsapp', workspaceId)));
-      conversations.push(...(await this.dmConversations(tenantId, 'facebook', workspaceId)));
-      conversations.push(...(await this.dmConversations(tenantId, 'instagram', workspaceId)));
+      conversations.push(
+        ...(await this.dmConversations(tenantId, 'whatsapp', workspaceId)),
+      );
+      conversations.push(
+        ...(await this.dmConversations(tenantId, 'facebook', workspaceId)),
+      );
+      conversations.push(
+        ...(await this.dmConversations(tenantId, 'instagram', workspaceId)),
+      );
     }
 
     conversations.sort(
@@ -100,7 +111,10 @@ export class UnifiedInboxService {
     if (conversationId.startsWith('wa:')) {
       const phone = this.waMessaging.normalizePhone(conversationId.slice(3));
       const rows = await this.waRepo.find({
-        where: { ...scopeWhere<WhatsappMessages>(tenantId, workspaceId), phone },
+        where: {
+          ...scopeWhere<WhatsappMessages>(tenantId, workspaceId),
+          phone,
+        },
         order: { created_at: 'ASC' },
         take: 200,
       });
@@ -121,7 +135,11 @@ export class UnifiedInboxService {
     if (!platform || !threadId) return [];
 
     const rows = await this.socialRepo.find({
-      where: { ...scopeWhere<SocialMessages>(tenantId, workspaceId), platform, threadId },
+      where: {
+        ...scopeWhere<SocialMessages>(tenantId, workspaceId),
+        platform,
+        threadId,
+      },
       order: { created_at: 'ASC' },
       take: 200,
     });
@@ -195,10 +213,7 @@ export class UnifiedInboxService {
       .addSelect('MAX(m.participantName)', 'participant_name')
       .addSelect('MAX(m.participantAvatarUrl)', 'participant_avatar_url')
       .addSelect('MAX(m.created_at)', 'last_at')
-      .addSelect(
-        `(array_agg(m.body ORDER BY m.created_at DESC))[1]`,
-        'preview',
-      )
+      .addSelect(`(array_agg(m.body ORDER BY m.created_at DESC))[1]`, 'preview')
       .addSelect(
         `SUM(CASE WHEN m.direction = 'inbound' AND m.status = 'received' THEN 1 ELSE 0 END)`,
         'unread_count',

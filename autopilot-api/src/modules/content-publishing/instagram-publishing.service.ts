@@ -1,10 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import {
+  PublishResult,
+  ContentToPublish,
+} from './interfaces/publish-result.interface';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { PublishMediaResolverService } from './publish-media-resolver.service';
 import { formatGraphApiError, formatPublishError } from './publish-error.util';
-import { formatContentForPlatform, formatPlainPostText } from '../../common/text-format.util';
+import {
+  formatContentForPlatform,
+  formatPlainPostText,
+} from '../../common/text-format.util';
 
 @Injectable()
 export class InstagramPublishingService {
@@ -15,7 +21,10 @@ export class InstagramPublishingService {
     private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
-  async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
+  async publishPost(
+    content: ContentToPublish,
+    media: any[] = [],
+  ): Promise<PublishResult> {
     try {
       const socialAccount = await this.accounts.getForPublish(
         content.tenantId,
@@ -25,20 +34,29 @@ export class InstagramPublishingService {
       );
 
       if (!socialAccount) {
-        return { published: false, message: 'Instagram account not connected for this workspace' };
+        return {
+          published: false,
+          message: 'Instagram account not connected for this workspace',
+        };
       }
 
       const igToken = this.accounts.getInstagramToken(socialAccount);
-      const igAccountId = socialAccount.externalId ?? socialAccount.metadata?.instagram_business_account_id;
+      const igAccountId =
+        socialAccount.externalId ??
+        socialAccount.metadata?.instagram_business_account_id;
 
       if (!igToken || !igAccountId) {
         return {
           published: false,
-          message: 'Instagram credentials missing — reconnect Instagram in Publisher Connect',
+          message:
+            'Instagram credentials missing — reconnect Instagram in Publisher Connect',
         };
       }
 
-      const plainText = formatContentForPlatform('instagram', formatPlainPostText(content.content));
+      const plainText = formatContentForPlatform(
+        'instagram',
+        formatPlainPostText(content.content),
+      );
 
       if (!media?.length) {
         return {
@@ -47,7 +65,10 @@ export class InstagramPublishingService {
         };
       }
 
-      const resolvedMedia = await this.mediaResolver.resolveForPublish(media, content.tenantId);
+      const resolvedMedia = await this.mediaResolver.resolveForPublish(
+        media,
+        content.tenantId,
+      );
       const containerIds: string[] = [];
 
       for (const m of resolvedMedia) {
@@ -76,18 +97,28 @@ export class InstagramPublishingService {
         );
 
         if (containerRes.data?.error) {
-          return { published: false, message: formatGraphApiError(containerRes.data, 'Instagram') };
+          return {
+            published: false,
+            message: formatGraphApiError(containerRes.data, 'Instagram'),
+          };
         }
 
         if (!containerRes.data?.id) {
-          throw new Error(`Failed to create media container: ${JSON.stringify(containerRes.data)}`);
+          throw new Error(
+            `Failed to create media container: ${JSON.stringify(
+              containerRes.data,
+            )}`,
+          );
         }
 
         containerIds.push(containerRes.data.id);
       }
 
       if (!containerIds.length) {
-        return { published: false, message: 'No valid Instagram media containers created' };
+        return {
+          published: false,
+          message: 'No valid Instagram media containers created',
+        };
       }
 
       let creationId: string;
@@ -119,7 +150,10 @@ export class InstagramPublishingService {
       );
 
       if (publishRes.data?.error) {
-        return { published: false, message: formatGraphApiError(publishRes.data, 'Instagram') };
+        return {
+          published: false,
+          message: formatGraphApiError(publishRes.data, 'Instagram'),
+        };
       }
 
       if (publishRes.data?.id) {

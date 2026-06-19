@@ -31,7 +31,9 @@ export class ContentPublishProcessor extends WorkerHost {
       case JOB_AUTO_PUBLISH_SCAN:
         return this.handleAutoPublishScan();
       case JOB_AUTO_PUBLISH_TENANT:
-        return this.handleAutoPublishTenant(job as Job<AutoPublishTenantJobData>);
+        return this.handleAutoPublishTenant(
+          job as Job<AutoPublishTenantJobData>,
+        );
       default:
         this.logger.warn(`Unknown job: ${job.name}`);
         return null;
@@ -66,7 +68,9 @@ export class ContentPublishProcessor extends WorkerHost {
   }
 
   private async handleAutoPublishScan() {
-    this.logger.log('Running auto-publish scan (legacy — fans out per content)');
+    this.logger.log(
+      'Running auto-publish scan (legacy — fans out per content)',
+    );
     return this.autoPublish.queueDueItems();
   }
 

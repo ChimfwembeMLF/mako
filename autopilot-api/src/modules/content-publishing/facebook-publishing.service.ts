@@ -1,11 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import FormData from 'form-data';
-import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import {
+  PublishResult,
+  ContentToPublish,
+} from './interfaces/publish-result.interface';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { PublishMediaResolverService } from './publish-media-resolver.service';
 import { formatPublishError } from './publish-error.util';
-import { formatContentForPlatform, formatPlainPostText } from '../../common/text-format.util';
+import {
+  formatContentForPlatform,
+  formatPlainPostText,
+} from '../../common/text-format.util';
 
 @Injectable()
 export class FacebookPublishingService {
@@ -16,7 +22,10 @@ export class FacebookPublishingService {
     private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
-  async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
+  async publishPost(
+    content: ContentToPublish,
+    media: any[] = [],
+  ): Promise<PublishResult> {
     try {
       const socialAccount = await this.accounts.getForPublish(
         content.tenantId,
@@ -26,16 +35,21 @@ export class FacebookPublishingService {
       );
 
       if (!socialAccount) {
-        return { published: false, message: 'Facebook account not connected for this workspace' };
+        return {
+          published: false,
+          message: 'Facebook account not connected for this workspace',
+        };
       }
 
       const pageToken = this.accounts.getFacebookPageToken(socialAccount);
-      const pageId = socialAccount.externalId ?? socialAccount.metadata?.page_id;
+      const pageId =
+        socialAccount.externalId ?? socialAccount.metadata?.page_id;
 
       if (!pageToken || !pageId) {
         return {
           published: false,
-          message: 'Facebook page token missing — reconnect Facebook in Publisher Connect',
+          message:
+            'Facebook page token missing — reconnect Facebook in Publisher Connect',
         };
       }
 
@@ -48,23 +62,42 @@ export class FacebookPublishingService {
         return { published: false, message: pageCheck };
       }
 
-      const plainText = formatContentForPlatform('facebook', formatPlainPostText(content.content));
-      const resolvedMedia = await this.mediaResolver.resolveForPublish(media, content.tenantId);
+      const plainText = formatContentForPlatform(
+        'facebook',
+        formatPlainPostText(content.content),
+      );
+      const resolvedMedia = await this.mediaResolver.resolveForPublish(
+        media,
+        content.tenantId,
+      );
       const attachedMedia: Array<{ media_fbid: string }> = [];
 
       for (const att of resolvedMedia) {
         try {
-          if (att.media_type !== 'image' && att.media_type !== 'video') continue;
+          if (att.media_type !== 'image' && att.media_type !== 'video')
+            continue;
 
           if (att.media_type === 'image') {
-            const photoId = await this.uploadImage(pageId, pageToken, att.media_url);
+            const photoId = await this.uploadImage(
+              pageId,
+              pageToken,
+              att.media_url,
+            );
             if (photoId) attachedMedia.push({ media_fbid: photoId });
           } else if (att.media_type === 'video') {
-            const videoId = await this.uploadVideo(pageId, pageToken, att.media_url, plainText);
+            const videoId = await this.uploadVideo(
+              pageId,
+              pageToken,
+              att.media_url,
+              plainText,
+            );
             if (videoId) attachedMedia.push({ media_fbid: videoId });
           }
         } catch (err) {
-          this.logger.error(`Facebook media upload failed for ${att.media_url}`, err);
+          this.logger.error(
+            `Facebook media upload failed for ${att.media_url}`,
+            err,
+          );
         }
       }
 
@@ -100,7 +133,9 @@ export class FacebookPublishingService {
 
       return {
         published: false,
-        message: `Facebook error: ${JSON.stringify(postRes.data?.error || postRes.data)}`,
+        message: `Facebook error: ${JSON.stringify(
+          postRes.data?.error || postRes.data,
+        )}`,
       };
     } catch (err) {
       this.logger.error(`Facebook publish error`, err);
@@ -151,7 +186,9 @@ export class FacebookPublishingService {
         !tasks.includes('MODERATE')
       ) {
         return (
-          `Facebook: your role on "${page.name ?? pageId}" does not include publishing. ` +
+          `Facebook: your role on "${
+            page.name ?? pageId
+          }" does not include publishing. ` +
           'Ask the Page owner for Admin or Editor access.'
         );
       }
@@ -163,7 +200,11 @@ export class FacebookPublishingService {
     }
   }
 
-  private async uploadImage(pageId: string, pageToken: string, mediaUrl: string): Promise<string | null> {
+  private async uploadImage(
+    pageId: string,
+    pageToken: string,
+    mediaUrl: string,
+  ): Promise<string | null> {
     const local = this.mediaResolver.readLocalUpload(mediaUrl);
     if (local) {
       const form = new FormData();
@@ -181,11 +222,14 @@ export class FacebookPublishingService {
       return res.data?.id ?? null;
     }
 
-    const res = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/photos`, {
-      url: mediaUrl,
-      published: false,
-      access_token: pageToken,
-    });
+    const res = await axios.post(
+      `https://graph.facebook.com/v19.0/${pageId}/photos`,
+      {
+        url: mediaUrl,
+        published: false,
+        access_token: pageToken,
+      },
+    );
     return res.data?.id ?? null;
   }
 
@@ -195,11 +239,14 @@ export class FacebookPublishingService {
     mediaUrl: string,
     description: string,
   ): Promise<string | null> {
-    const res = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/videos`, {
-      file_url: mediaUrl,
-      description,
-      access_token: pageToken,
-    });
+    const res = await axios.post(
+      `https://graph.facebook.com/v19.0/${pageId}/videos`,
+      {
+        file_url: mediaUrl,
+        description,
+        access_token: pageToken,
+      },
+    );
     return res.data?.id ?? null;
   }
 }

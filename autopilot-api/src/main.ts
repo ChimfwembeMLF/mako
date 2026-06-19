@@ -7,9 +7,18 @@ import { join } from 'path';
 import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
-import { resolveApiPublicUrl, assertProductionUrls, normalizeProductionUrls } from './common/env-urls.util';
+import {
+  resolveApiPublicUrl,
+  assertProductionUrls,
+  normalizeProductionUrls,
+} from './common/env-urls.util';
 import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
-import { isClientDistAvailable, isClientServedByNest, isServeClientEnabled, resolveClientDistPath } from './common/client-dist.util';
+import {
+  isClientDistAvailable,
+  isClientServedByNest,
+  isServeClientEnabled,
+  resolveClientDistPath,
+} from './common/client-dist.util';
 import { configureClientAssets } from './common/configure-client-assets';
 import { warnProductionOAuthEnv } from './common/oauth-env.util';
 import type { RequestHandler } from 'express';
@@ -35,7 +44,9 @@ normalizeLegacyEnv();
 
 // Same CJS pattern as passport — avoids broken default import at runtime under PM2
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const expressSession = require('express-session') as (options: SessionOptions) => RequestHandler;
+const expressSession = require('express-session') as (
+  options: SessionOptions,
+) => RequestHandler;
 
 function normalizeLegacyEnv(): void {
   if (process.env.APP_URL && !process.env.FRONTEND_URL) {
@@ -59,7 +70,12 @@ function normalizeLegacyEnv(): void {
     if (!process.env.CLIENT_URL?.trim()) {
       process.env.CLIENT_URL = devOrigin;
     }
-    for (const key of ['FRONTEND_URL', 'CLIENT_URL', 'API_PUBLIC_URL', 'APP_URL'] as const) {
+    for (const key of [
+      'FRONTEND_URL',
+      'CLIENT_URL',
+      'API_PUBLIC_URL',
+      'APP_URL',
+    ] as const) {
       if (process.env[key]?.includes('localhost:3000')) {
         process.env[key] = devOrigin;
       }
@@ -122,11 +138,15 @@ async function configureExpressSession(
         prefix: 'mako:sess:',
       });
       app.use(expressSession(sessionOptions));
-      console.log(`[session] Redis store active (${host}:${port}, db ${database})`);
+      console.log(
+        `[session] Redis store active (${host}:${port}, db ${database})`,
+      );
       return;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[session] Redis unavailable (${message}); using MemoryStore`);
+      console.error(
+        `[session] Redis unavailable (${message}); using MemoryStore`,
+      );
       if (isProduction) {
         console.warn(
           '[session] PM2 cluster + MemoryStore breaks OAuth — use Redis or set instances:1',
@@ -146,14 +166,17 @@ async function bootstrap() {
   const isProduction = process.env.NODE_ENV === 'production';
   const serveClient = isServeClientEnabled();
   const serveViteDev = serveClient && !isProduction;
-  const serveStaticClient = serveClient && isProduction && isClientDistAvailable();
+  const serveStaticClient =
+    serveClient && isProduction && isClientDistAvailable();
 
   if (serveViteDev) {
     console.log('[boot] Mako starting (Vite dev + API same server)');
   } else if (serveStaticClient) {
     console.log('[boot] Mako starting (SPA + API same server)');
   } else if (serveClient && isProduction) {
-    console.warn('[boot] SERVE_CLIENT enabled but client/dist missing — run: yarn build');
+    console.warn(
+      '[boot] SERVE_CLIENT enabled but client/dist missing — run: yarn build',
+    );
   } else {
     console.log('[boot] Mako API starting (API-only mode)');
   }
@@ -163,7 +186,11 @@ async function bootstrap() {
     sameOriginApp ? 'disabled (SPA + API same server)' : describeCorsMode(),
   );
 
-  const logLevels = (process.env.LOG_LEVEL?.split(',') ?? ['error', 'warn', 'log']) as LogLevel[];
+  const logLevels = (process.env.LOG_LEVEL?.split(',') ?? [
+    'error',
+    'warn',
+    'log',
+  ]) as LogLevel[];
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
   });
@@ -195,11 +222,15 @@ async function bootstrap() {
       process.exit(1);
     }
     if (process.env.DB_SYNCHRONIZE === 'true') {
-      console.warn('WARNING: DB_SYNCHRONIZE=true in production — use migrations instead (npm run migrations:run)');
+      console.warn(
+        'WARNING: DB_SYNCHRONIZE=true in production — use migrations instead (npm run migrations:run)',
+      );
     }
     const apiPublicUrl = resolveApiPublicUrl();
     if (!apiPublicUrl.startsWith('https://')) {
-      console.warn('WARNING: API_PUBLIC_URL should be a public HTTPS URL for social media publishing');
+      console.warn(
+        'WARNING: API_PUBLIC_URL should be a public HTTPS URL for social media publishing',
+      );
     }
   }
 
@@ -214,7 +245,10 @@ async function bootstrap() {
 
   app.useStaticAssets(join(process.cwd(), 'public'));
 
-  if (!process.env.SUPABASE_URL?.trim() || !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+  if (
+    !process.env.SUPABASE_URL?.trim() ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
+  ) {
     console.warn(
       'WARNING: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for media uploads and publishing',
     );
@@ -233,7 +267,11 @@ async function bootstrap() {
   app.use(passport.session());
 
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
   );
 
   setupSwagger(app);

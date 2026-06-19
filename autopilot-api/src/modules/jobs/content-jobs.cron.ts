@@ -22,14 +22,19 @@ export class CommentSyncCron {
   /** Every 10 minutes — one queue job per tenant (not one job for all tenants). */
   @Cron('0 */10 * * * *')
   async syncComments(): Promise<void> {
-    if (this.config.get<string>('COMMENT_SYNC_CRON_ENABLED') === 'false') return;
+    if (this.config.get<string>('COMMENT_SYNC_CRON_ENABLED') === 'false')
+      return;
     try {
       const tenants = await this.fanout.listTenantsForCommentSync();
       if (!tenants.length) return;
 
       if (this.queueDispatch.isEnabled()) {
         await this.queueDispatch.fanOutCommentSync(
-          tenants.map((t) => ({ tenantId: t.tenantId, userId: t.userId, runAutoReply: true })),
+          tenants.map((t) => ({
+            tenantId: t.tenantId,
+            userId: t.userId,
+            runAutoReply: true,
+          })),
         );
         return;
       }
@@ -69,14 +74,19 @@ export class AutoPublishCron {
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleAutoPublish(): Promise<void> {
-    if (this.config.get<string>('AUTO_PUBLISH_CRON_ENABLED') === 'false') return;
+    if (this.config.get<string>('AUTO_PUBLISH_CRON_ENABLED') === 'false')
+      return;
     try {
       const tenantIds = await this.fanout.listTenantsForAutoPublish();
       if (!tenantIds.length) return;
 
       if (this.queueDispatch.isEnabled()) {
-        const result = await this.queueDispatch.fanOutAutoPublishTenants(tenantIds);
-        this.logger.log(`Auto-publish enqueued for ${result.enqueued} tenant(s)`);
+        const result = await this.queueDispatch.fanOutAutoPublishTenants(
+          tenantIds,
+        );
+        this.logger.log(
+          `Auto-publish enqueued for ${result.enqueued} tenant(s)`,
+        );
         return;
       }
 
@@ -105,14 +115,17 @@ export class DailyContentWorkflowCron {
 
   @Cron('0 8 * * *')
   async handleDailyWorkflow(): Promise<void> {
-    if (this.config.get<string>('DAILY_WORKFLOW_CRON_ENABLED') === 'false') return;
+    if (this.config.get<string>('DAILY_WORKFLOW_CRON_ENABLED') === 'false')
+      return;
     try {
       const tenantIds = await this.fanout.listTenantsForDailyWorkflow();
       if (!tenantIds.length) return;
 
       if (this.queueDispatch.isEnabled()) {
         const result = await this.queueDispatch.fanOutDailyWorkflow(tenantIds);
-        this.logger.log(`Daily workflow enqueued for ${result.enqueued} tenant(s)`);
+        this.logger.log(
+          `Daily workflow enqueued for ${result.enqueued} tenant(s)`,
+        );
         return;
       }
 
@@ -120,7 +133,10 @@ export class DailyContentWorkflowCron {
       let skipped = 0;
       const errors: string[] = [];
       for (const tenantId of tenantIds) {
-        const result = await this.dailyWorkflow.run({ tenantId, userId: 'system' });
+        const result = await this.dailyWorkflow.run({
+          tenantId,
+          userId: 'system',
+        });
         generated += result.generated;
         skipped += result.skipped;
         errors.push(...result.errors);
@@ -148,7 +164,8 @@ export class PaymentsCron {
     if (
       this.config.get<string>('PAYMENTS_DEV_AUTO_COMPLETE') !== 'true' &&
       this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') !== 'true'
-    ) return;
+    )
+      return;
     const result = await this.payments.checkPendingDeposits();
     if (result.completed > 0) {
       this.logger.log(`Auto-completed ${result.completed} pending deposit(s)`);

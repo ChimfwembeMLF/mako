@@ -18,7 +18,11 @@ import {
 import { brandContextBlock } from '../prompts/brand-fields';
 
 const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
-  companyName: ['Acme Labs', 'GreenHarvest — farm-to-market delivery', 'Pulse Digital Studio'],
+  companyName: [
+    'Acme Labs',
+    'GreenHarvest — farm-to-market delivery',
+    'Pulse Digital Studio',
+  ],
   industry: ['SaaS', 'Agri-tech & logistics', 'B2B professional services'],
   description: [
     'We help SMEs grow with simple, affordable digital tools.',
@@ -83,10 +87,16 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   serviceName: ['Tekrem Solutions', 'City Clinic', 'Kangwa Digital Studio'],
   welcomeMessage: [
     'Welcome to {serviceName}! How can we help you today?',
-    'Hi there 👋 You\'re chatting with {serviceName}. Pick an option from the menu.',
+    "Hi there 👋 You're chatting with {serviceName}. Pick an option from the menu.",
     '{serviceName} here — reply menu anytime to see what we offer.',
   ],
-  menuTitle: ['Pricing', 'Book a call', 'Store hours', 'Talk to support', 'Track my order'],
+  menuTitle: [
+    'Pricing',
+    'Book a call',
+    'Store hours',
+    'Talk to support',
+    'Track my order',
+  ],
   menuDescription: [
     'See packages & rates',
     'Schedule with our team',
@@ -96,12 +106,14 @@ const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   ],
   menuResponse: [
     'Our starter plan is ZMW 99/month. Pro includes priority support at ZMW 299/month. Reply menu for more options.',
-    'Send your preferred date and time — we\'ll confirm on WhatsApp within 24 hours.',
+    "Send your preferred date and time — we'll confirm on WhatsApp within 24 hours.",
     'Mon–Fri 8am–6pm, Sat 9am–1pm. Plot 3, Lusaka. Reply menu for other options.',
   ],
 };
 
-const FALLBACK_BY_FORM: Partial<Record<FormSuggestionType, Record<string, string[]>>> = {
+const FALLBACK_BY_FORM: Partial<
+  Record<FormSuggestionType, Record<string, string[]>>
+> = {
   campaign: {
     name: [
       'Spring Launch Series',
@@ -150,8 +162,8 @@ export class FormSuggestionsService {
     fields?: string[];
   }): Promise<{ suggestions: Record<string, string[]> }> {
     const allowed = FORM_SUGGESTION_FIELDS[params.form];
-    const fields = (params.fields?.length ? params.fields : allowed).filter((f) =>
-      allowed.includes(f),
+    const fields = (params.fields?.length ? params.fields : allowed).filter(
+      (f) => allowed.includes(f),
     );
 
     if (!fields.length) {
@@ -258,8 +270,13 @@ Rules:
     return `${trimmed.slice(0, maxLen - 1).trimEnd()}…`;
   }
 
-  private fallbackOnly(form: FormSuggestionType, fields: string[]): Record<string, string[]> {
-    return Object.fromEntries(fields.map((f) => [f, this.fallbackFor(form, f)]));
+  private fallbackOnly(
+    form: FormSuggestionType,
+    fields: string[],
+  ): Record<string, string[]> {
+    return Object.fromEntries(
+      fields.map((f) => [f, this.fallbackFor(form, f)]),
+    );
   }
 
   private fallbackFor(form: FormSuggestionType, field: string): string[] {

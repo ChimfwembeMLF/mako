@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PLATFORM_CAPABILITIES, PlatformCapability } from '../../constants/platform-capabilities';
+import {
+  PLATFORM_CAPABILITIES,
+  PlatformCapability,
+} from '../../constants/platform-capabilities';
 import {
   getWhatsappPlatformCredentials,
   isWhatsappPlatformEnabled,
@@ -23,7 +26,9 @@ export class PlatformsService {
 
   getCapabilities(): PlatformCapabilitiesResponse {
     const platformConfigured = isWhatsappPlatformEnabled(this.config);
-    const connectionMode: WhatsappConnectionMode = platformConfigured ? 'platform' : 'oauth';
+    const connectionMode: WhatsappConnectionMode = platformConfigured
+      ? 'platform'
+      : 'oauth';
     const platformCreds = getWhatsappPlatformCredentials(this.config);
 
     const platforms = PLATFORM_CAPABILITIES.map((p) => {
@@ -50,8 +55,12 @@ export class PlatformsService {
       whatsapp: {
         connectionMode,
         platformConfigured,
-        displayName: this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')?.trim(),
-        displayPhone: this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_PHONE')?.trim(),
+        displayName: this.config
+          .get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')
+          ?.trim(),
+        displayPhone: this.config
+          .get<string>('WHATSAPP_PLATFORM_DISPLAY_PHONE')
+          ?.trim(),
       },
     };
   }

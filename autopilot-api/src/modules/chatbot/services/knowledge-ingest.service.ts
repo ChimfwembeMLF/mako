@@ -54,7 +54,10 @@ export class KnowledgeIngestService {
       const buffer = await this.storage.downloadBuffer(doc.storageUrl);
 
       const config = await this.chatbotConfig.getOrCreate(params.tenantId);
-      if (config.useMistralLibrary && !this.mistralLibrary.getMistralDocumentId(doc)) {
+      if (
+        config.useMistralLibrary &&
+        !this.mistralLibrary.getMistralDocumentId(doc)
+      ) {
         try {
           await this.mistralLibrary.uploadDocument({
             config,
@@ -65,7 +68,9 @@ export class KnowledgeIngestService {
           });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          this.logger.warn(`Mistral library upload failed for ${doc.id}: ${message}`);
+          this.logger.warn(
+            `Mistral library upload failed for ${doc.id}: ${message}`,
+          );
           await this.mistralLibrary.recordSyncError(doc, message);
         }
       }

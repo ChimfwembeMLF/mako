@@ -17,7 +17,10 @@ export class UserPermissionsService {
     return this.repo.save(ent as UserPermissions);
   }
 
-  async findAll(tenantId?: string, userId?: string): Promise<UserPermissions[]> {
+  async findAll(
+    tenantId?: string,
+    userId?: string,
+  ): Promise<UserPermissions[]> {
     const where: Record<string, string> = {};
     if (tenantId) where.tenantId = tenantId;
     if (userId) where.userId = userId;

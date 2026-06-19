@@ -32,7 +32,9 @@ export function normalizeMenuItems(raw: unknown): WhatsappMenuItem[] {
           .slice(0, 200) ||
         `option_${index + 1}`;
 
-      const description = row.description ? String(row.description).trim().slice(0, 72) : undefined;
+      const description = row.description
+        ? String(row.description).trim().slice(0, 72)
+        : undefined;
 
       return {
         id,

@@ -15,7 +15,11 @@ export class RefreshTokenService {
     return createHash('sha256').update(token).digest('hex');
   }
 
-  async save(userId: string, refreshToken: string, expiresAt: Date): Promise<void> {
+  async save(
+    userId: string,
+    refreshToken: string,
+    expiresAt: Date,
+  ): Promise<void> {
     await this.revoke(userId);
     await this.repo.save({
       userId,

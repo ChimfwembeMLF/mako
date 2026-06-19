@@ -87,7 +87,10 @@ export class QueueDispatchService {
   }
 
   async fanOutAutoPublishTenants(tenantIds: string[]) {
-    const jobs: Array<{ tenantId: string; jobId: string | number | undefined }> = [];
+    const jobs: Array<{
+      tenantId: string;
+      jobId: string | number | undefined;
+    }> = [];
     for (const tenantId of tenantIds) {
       const { jobId } = await this.enqueueAutoPublishTenant({ tenantId });
       jobs.push({ tenantId, jobId });
@@ -96,7 +99,10 @@ export class QueueDispatchService {
   }
 
   async fanOutCommentSync(tenants: SyncTenantCommentsJobData[]) {
-    const jobs: Array<{ tenantId: string; jobId: string | number | undefined }> = [];
+    const jobs: Array<{
+      tenantId: string;
+      jobId: string | number | undefined;
+    }> = [];
     for (const data of tenants) {
       const { jobId } = await this.enqueueSyncTenantComments(data);
       jobs.push({ tenantId: data.tenantId, jobId });
@@ -170,7 +176,8 @@ export class QueueDispatchService {
   }
 
   async enqueueAiTask(data: AiTaskJobData) {
-    const tenantId = data.tenantId ?? (data.payload.tenantId as string | undefined);
+    const tenantId =
+      data.tenantId ?? (data.payload.tenantId as string | undefined);
     const job = await this.aiQueue.add(JOB_AI_TASK, data, {
       jobId: tenantId
         ? `ai-${data.type}-${tenantId}-${Date.now()}`
@@ -184,7 +191,10 @@ export class QueueDispatchService {
   }
 
   async fanOutDailyWorkflow(tenantIds: string[]) {
-    const jobs: Array<{ tenantId: string; jobId: string | number | undefined }> = [];
+    const jobs: Array<{
+      tenantId: string;
+      jobId: string | number | undefined;
+    }> = [];
     for (const tenantId of tenantIds) {
       const { jobId } = await this.enqueueAiTask({
         type: 'daily-workflow',
@@ -242,9 +252,7 @@ export class QueueDispatchService {
     if (!queue) return [];
 
     const types =
-      state === 'all'
-        ? [...QueueDispatchService.JOB_LIST_TYPES]
-        : [state];
+      state === 'all' ? [...QueueDispatchService.JOB_LIST_TYPES] : [state];
     const jobs = await queue.getJobs(types, start, end);
     const rows = await Promise.all(
       jobs.map((job) => this.serializeJob(queueName, job)),
@@ -255,7 +263,9 @@ export class QueueDispatchService {
   async retryJob(queueName: string, jobId: string) {
     const job = await this.getJob(queueName, jobId);
     if (!job) {
-      throw new NotFoundException(`Job ${jobId} not found in queue ${queueName}`);
+      throw new NotFoundException(
+        `Job ${jobId} not found in queue ${queueName}`,
+      );
     }
     this.assertCanRetry(job);
     await job.retry();
@@ -281,7 +291,9 @@ export class QueueDispatchService {
     return { retried, skipped };
   }
 
-  private assertCanRetry(job: NonNullable<Awaited<ReturnType<Queue['getJob']>>>) {
+  private assertCanRetry(
+    job: NonNullable<Awaited<ReturnType<Queue['getJob']>>>,
+  ) {
     const maxAttempts = job.opts.attempts ?? QUEUE_JOB_MAX_ATTEMPTS;
     if (job.attemptsMade >= maxAttempts) {
       throw new BadRequestException(
@@ -296,7 +308,10 @@ export class QueueDispatchService {
     return queue.getJob(jobId);
   }
 
-  private async serializeJob(queueName: string, job: Awaited<ReturnType<Queue['getJob']>>) {
+  private async serializeJob(
+    queueName: string,
+    job: Awaited<ReturnType<Queue['getJob']>>,
+  ) {
     if (!job) return null;
     const state = await job.getState();
     return {

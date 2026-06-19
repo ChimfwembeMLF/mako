@@ -33,15 +33,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
         exception instanceof Error
           ? exception.message
           : typeof exception === 'string'
-            ? exception
-            : 'Unhandled error';
+          ? exception
+          : 'Unhandled error';
       console.error(`[${httpStatus}] ${summary}`);
     }
     const errorMessages = exception?.response?.message;
 
     let message;
     if (!errorMessages) {
-      message = exception instanceof Error ? exception.message : 'Internal Server Error';
+      message =
+        exception instanceof Error
+          ? exception.message
+          : 'Internal Server Error';
     } else if (typeof errorMessages === 'string') {
       message = errorMessages;
     } else if (Array.isArray(errorMessages)) {
@@ -52,7 +55,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     const path = httpAdapter.getRequestUrl(request);
 
-    if (exception instanceof NotFoundException && tryServeSpaShell(request, response)) {
+    if (
+      exception instanceof NotFoundException &&
+      tryServeSpaShell(request, response)
+    ) {
       return;
     }
 
@@ -69,7 +75,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
       const redirectBase = isPublisherCallback
         ? `${frontend}/publisher`
         : `${frontend}/auth/callback`;
-      const redirectUrl = `${redirectBase}?error=${encodeURIComponent(errorText)}`;
+      const redirectUrl = `${redirectBase}?error=${encodeURIComponent(
+        errorText,
+      )}`;
       if (typeof response.redirect === 'function') {
         response.redirect(HttpStatus.FOUND, redirectUrl);
       } else {

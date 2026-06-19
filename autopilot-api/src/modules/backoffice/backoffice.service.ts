@@ -30,25 +30,43 @@ import { UpdatePlansDto } from '../subscriptions/dto/update-plans.dto';
 export class BackofficeService {
   constructor(
     private readonly config: ConfigService,
-    @InjectRepository(Tenants) private readonly tenantsRepo: Repository<Tenants>,
-    @InjectRepository(UserEntity) private readonly usersRepo: Repository<UserEntity>,
-    @InjectRepository(Deposits) private readonly depositsRepo: Repository<Deposits>,
-    @InjectRepository(TenantSubscriptions) private readonly subsRepo: Repository<TenantSubscriptions>,
-    @InjectRepository(AiUsage) private readonly aiUsageRepo: Repository<AiUsage>,
-    @InjectRepository(ContentItems) private readonly contentRepo: Repository<ContentItems>,
-    @InjectRepository(ContentPublications) private readonly pubsRepo: Repository<ContentPublications>,
-    @InjectRepository(TenantMembers) private readonly membersRepo: Repository<TenantMembers>,
-    @InjectRepository(SocialAccounts) private readonly socialRepo: Repository<SocialAccounts>,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
+    @InjectRepository(UserEntity)
+    private readonly usersRepo: Repository<UserEntity>,
+    @InjectRepository(Deposits)
+    private readonly depositsRepo: Repository<Deposits>,
+    @InjectRepository(TenantSubscriptions)
+    private readonly subsRepo: Repository<TenantSubscriptions>,
+    @InjectRepository(AiUsage)
+    private readonly aiUsageRepo: Repository<AiUsage>,
+    @InjectRepository(ContentItems)
+    private readonly contentRepo: Repository<ContentItems>,
+    @InjectRepository(ContentPublications)
+    private readonly pubsRepo: Repository<ContentPublications>,
+    @InjectRepository(TenantMembers)
+    private readonly membersRepo: Repository<TenantMembers>,
+    @InjectRepository(SocialAccounts)
+    private readonly socialRepo: Repository<SocialAccounts>,
     @InjectRepository(Leads) private readonly leadsRepo: Repository<Leads>,
-    @InjectRepository(AuditLogs) private readonly auditRepo: Repository<AuditLogs>,
-    @InjectRepository(CommentReplies) private readonly commentsRepo: Repository<CommentReplies>,
-    @InjectRepository(DataDeletionRequests) private readonly deletionRepo: Repository<DataDeletionRequests>,
-    @InjectRepository(ChatbotConfig) private readonly chatbotConfigRepo: Repository<ChatbotConfig>,
-    @InjectRepository(ChatSession) private readonly chatSessionRepo: Repository<ChatSession>,
-    @InjectRepository(ChatMessage) private readonly chatMessageRepo: Repository<ChatMessage>,
-    @InjectRepository(KnowledgeDocument) private readonly knowledgeDocRepo: Repository<KnowledgeDocument>,
-    @InjectRepository(KnowledgeChunk) private readonly knowledgeChunkRepo: Repository<KnowledgeChunk>,
-    @InjectRepository(ChatbotApiKey) private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
+    @InjectRepository(AuditLogs)
+    private readonly auditRepo: Repository<AuditLogs>,
+    @InjectRepository(CommentReplies)
+    private readonly commentsRepo: Repository<CommentReplies>,
+    @InjectRepository(DataDeletionRequests)
+    private readonly deletionRepo: Repository<DataDeletionRequests>,
+    @InjectRepository(ChatbotConfig)
+    private readonly chatbotConfigRepo: Repository<ChatbotConfig>,
+    @InjectRepository(ChatSession)
+    private readonly chatSessionRepo: Repository<ChatSession>,
+    @InjectRepository(ChatMessage)
+    private readonly chatMessageRepo: Repository<ChatMessage>,
+    @InjectRepository(KnowledgeDocument)
+    private readonly knowledgeDocRepo: Repository<KnowledgeDocument>,
+    @InjectRepository(KnowledgeChunk)
+    private readonly knowledgeChunkRepo: Repository<KnowledgeChunk>,
+    @InjectRepository(ChatbotApiKey)
+    private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
     private readonly plans: PlansService,
   ) {}
 
@@ -101,7 +119,11 @@ export class BackofficeService {
       this.depositsRepo.find({ order: { created_at: 'DESC' }, take: 500 }),
       this.subsRepo.find(),
       this.aiUsageRepo.find({ order: { created_at: 'DESC' }, take: 1000 }),
-      this.auditRepo.find({ order: { created_at: 'DESC' }, take: 12, relations: ['tenant', 'user'] }),
+      this.auditRepo.find({
+        order: { created_at: 'DESC' },
+        take: 12,
+        relations: ['tenant', 'user'],
+      }),
       this.deletionRepo.find({ order: { created_at: 'DESC' }, take: 8 }),
       this.chatbotConfigRepo.count(),
       this.chatbotConfigRepo.count({ where: { widgetEnabled: true } }),
@@ -109,7 +131,9 @@ export class BackofficeService {
       this.chatbotConfigRepo.count({ where: { useMistralLibrary: true } }),
       this.chatbotConfigRepo.count({ where: { widgetTtsEnabled: true } }),
       this.chatSessionRepo.count(),
-      this.chatSessionRepo.count({ where: { created_at: MoreThanOrEqual(weekAgo) } }),
+      this.chatSessionRepo.count({
+        where: { created_at: MoreThanOrEqual(weekAgo) },
+      }),
       this.chatMessageRepo.count(),
       this.knowledgeDocRepo.count(),
       this.knowledgeDocRepo.count({ where: { status: 'ready' } }),
@@ -130,9 +154,14 @@ export class BackofficeService {
         .getRawMany<{ status: string; count: string }>(),
     ]);
 
-    const completedDeposits = deposits.filter((d) => d.status === 'completed' || d.status === 'COMPLETED');
+    const completedDeposits = deposits.filter(
+      (d) => d.status === 'completed' || d.status === 'COMPLETED',
+    );
     const mrrEstimate = subs.reduce((sum, s) => sum + this.planMrr(s.plan), 0);
-    const revenueTotal = completedDeposits.reduce((sum, d) => sum + parseFloat(d.amount ?? '0'), 0);
+    const revenueTotal = completedDeposits.reduce(
+      (sum, d) => sum + parseFloat(d.amount ?? '0'),
+      0,
+    );
 
     const planDistribution: Record<string, number> = {};
     for (const s of subs) {
@@ -144,7 +173,8 @@ export class BackofficeService {
     for (const row of aiRows) {
       const tokens = parseInt(row.tokensUsed, 10) || 0;
       aiTokensTotal += tokens;
-      aiByFunction[row.functionName] = (aiByFunction[row.functionName] ?? 0) + tokens;
+      aiByFunction[row.functionName] =
+        (aiByFunction[row.functionName] ?? 0) + tokens;
     }
 
     const recentTenants = await this.tenantsRepo.find({
@@ -218,7 +248,8 @@ export class BackofficeService {
           knowledgeByStatus.map((r) => [r.status, parseInt(r.count, 10)]),
         ),
         aiTokensChatbot:
-          (aiByFunction['chatbot-message'] ?? 0) + (aiByFunction['ingest-document'] ?? 0),
+          (aiByFunction['chatbot-message'] ?? 0) +
+          (aiByFunction['ingest-document'] ?? 0),
       },
       planDistribution,
       aiByFunction,
@@ -266,13 +297,21 @@ export class BackofficeService {
         nodeEnv: process.env.NODE_ENV ?? 'development',
         apiPublicUrl: process.env.API_PUBLIC_URL ?? '',
         clientUrl: process.env.CLIENT_URL ?? process.env.FRONTEND_URL ?? '',
-        supabaseConfigured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+        supabaseConfigured: Boolean(
+          process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
+        ),
         mistralConfigured: Boolean(process.env.MISTRAL_API_KEY),
-        metaConfigured: Boolean(process.env.META_APP_ID && process.env.META_APP_SECRET),
-        linkedInConfigured: Boolean(process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET),
+        metaConfigured: Boolean(
+          process.env.META_APP_ID && process.env.META_APP_SECRET,
+        ),
+        linkedInConfigured: Boolean(
+          process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET,
+        ),
         pawapayConfigured: Boolean(process.env.PAWAPAY_API_TOKEN),
         metaWebhookTokenSet: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN),
-        widgetBundleConfigured: Boolean(process.env.CLIENT_URL || process.env.FRONTEND_URL),
+        widgetBundleConfigured: Boolean(
+          process.env.CLIENT_URL || process.env.FRONTEND_URL,
+        ),
       },
     };
   }
@@ -301,13 +340,19 @@ export class BackofficeService {
       .groupBy('c.tenant_id')
       .getRawMany<{ tenantId: string; count: string }>();
 
-    const membersMap = new Map(memberCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]));
-    const contentMap = new Map(contentCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]));
+    const membersMap = new Map(
+      memberCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]),
+    );
+    const contentMap = new Map(
+      contentCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]),
+    );
 
     const chatbotFlags = await this.chatbotConfigRepo.find({
       select: ['tenantId', 'widgetEnabled', 'ragEnabled'],
     });
-    const widgetMap = new Map(chatbotFlags.map((c) => [c.tenantId, c.widgetEnabled]));
+    const widgetMap = new Map(
+      chatbotFlags.map((c) => [c.tenantId, c.widgetEnabled]),
+    );
     const ragMap = new Map(chatbotFlags.map((c) => [c.tenantId, c.ragEnabled]));
 
     const sessionCounts = await this.chatSessionRepo
@@ -316,7 +361,9 @@ export class BackofficeService {
       .addSelect('COUNT(*)', 'count')
       .groupBy('s.tenant_id')
       .getRawMany<{ tenantId: string; count: string }>();
-    const sessionsMap = new Map(sessionCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]));
+    const sessionsMap = new Map(
+      sessionCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]),
+    );
 
     return tenants.map((t) => ({
       id: t.id,
@@ -374,9 +421,14 @@ export class BackofficeService {
         .select('SUM(CAST(a.tokens_used AS INTEGER))', 'total')
         .where('a.tenant_id = :tenantId', { tenantId })
         .getRawOne<{ total: string | null }>(),
-      this.chatbotConfigRepo.findOne({ where: { tenantId }, order: { created_at: 'ASC' } }),
+      this.chatbotConfigRepo.findOne({
+        where: { tenantId },
+        order: { created_at: 'ASC' },
+      }),
       this.chatSessionRepo.count({ where: { tenantId } }),
-      this.chatSessionRepo.count({ where: { tenantId, created_at: MoreThanOrEqual(weekAgo) } }),
+      this.chatSessionRepo.count({
+        where: { tenantId, created_at: MoreThanOrEqual(weekAgo) },
+      }),
       this.chatMessageRepo.count({ where: { tenantId } }),
       this.knowledgeDocRepo.count({ where: { tenantId } }),
       this.knowledgeDocRepo.count({ where: { tenantId, status: 'ready' } }),
@@ -407,7 +459,11 @@ export class BackofficeService {
       ownerEmail: tenant.owner?.email,
       createdAt: tenant.created_at,
       subscription: sub
-        ? { plan: sub.plan, status: sub.status, billingPeriodEnd: sub.billingPeriodEnd }
+        ? {
+            plan: sub.plan,
+            status: sub.status,
+            billingPeriodEnd: sub.billingPeriodEnd,
+          }
         : { plan: 'free', status: 'active', billingPeriodEnd: null },
       stats: {
         members,

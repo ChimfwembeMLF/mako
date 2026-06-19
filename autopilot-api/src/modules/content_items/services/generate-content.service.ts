@@ -40,11 +40,15 @@ export class GenerateContentService {
     templateId?: string;
     save?: boolean;
   }) {
-    const tenantId = await this.resolveTenantId(params.tenantId, params.workspaceId);
+    const tenantId = await this.resolveTenantId(
+      params.tenantId,
+      params.workspaceId,
+    );
     await this.usage.assertWithinLimit(tenantId, params.userId);
 
     const theme = params.theme?.trim() || params.draft?.trim();
-    if (!theme) throw new BadRequestException('theme or draft content is required');
+    if (!theme)
+      throw new BadRequestException('theme or draft content is required');
 
     const brand = await this.brandProfiles.resolveForContext({
       tenantId,
@@ -62,7 +66,11 @@ export class GenerateContentService {
     const isReply = params.contentType === 'reply';
     const systemPrompt = isReply
       ? this.prompts.commentReplySystem(brandCtx, params.platform ?? 'social')
-      : this.prompts.contentGenerationSystem(brandCtx, params.platform, template);
+      : this.prompts.contentGenerationSystem(
+          brandCtx,
+          params.platform,
+          template,
+        );
 
     const topPosts = isReply
       ? []
@@ -93,7 +101,9 @@ export class GenerateContentService {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      { model: isReply ? this.mistral.defaultModel : this.mistral.premiumModel },
+      {
+        model: isReply ? this.mistral.defaultModel : this.mistral.premiumModel,
+      },
     );
 
     await this.usage.record({
@@ -103,13 +113,21 @@ export class GenerateContentService {
       tokensUsed,
     });
 
-    const title = data.title?.trim() || (params.theme || 'Untitled').slice(0, 120);
-    const content = data.content?.trim() || `<p>${this.escapeHtml(params.theme || '')}</p>`;
+    const title =
+      data.title?.trim() || (params.theme || 'Untitled').slice(0, 120);
+    const content =
+      data.content?.trim() || `<p>${this.escapeHtml(params.theme || '')}</p>`;
 
     let contentItemId: string | undefined;
-    if (params.save !== false && params.workspaceId && params.contentType !== 'reply') {
+    if (
+      params.save !== false &&
+      params.workspaceId &&
+      params.contentType !== 'reply'
+    ) {
       if (!brand?.id) {
-        throw new BadRequestException('Set up Brand Brain before generating saved content');
+        throw new BadRequestException(
+          'Set up Brand Brain before generating saved content',
+        );
       }
       const item = await this.contentRepo.save(
         this.contentRepo.create({
@@ -138,10 +156,15 @@ export class GenerateContentService {
     };
   }
 
-  private async resolveTenantId(tenantId?: string, workspaceId?: string): Promise<string> {
+  private async resolveTenantId(
+    tenantId?: string,
+    workspaceId?: string,
+  ): Promise<string> {
     if (tenantId) return tenantId;
     if (workspaceId) {
-      const ws = await this.workspaceRepo.findOne({ where: { id: workspaceId } });
+      const ws = await this.workspaceRepo.findOne({
+        where: { id: workspaceId },
+      });
       if (ws?.tenantId) return ws.tenantId;
     }
     throw new BadRequestException('tenantId or workspaceId is required');

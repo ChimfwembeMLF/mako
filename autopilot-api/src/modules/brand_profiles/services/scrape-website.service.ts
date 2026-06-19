@@ -1,8 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
@@ -31,8 +27,14 @@ export class ScrapeWebsiteService {
     await this.usage.assertWithinLimit(params.tenantId, params.userId);
 
     const normalized = this.normalizeUrl(params.url);
-    const timeout = parseInt(this.config.get<string>('SCRAPE_TIMEOUT_MS') || '15000', 10);
-    const maxPages = parseInt(this.config.get<string>('SCRAPE_MAX_PAGES') || '3', 10);
+    const timeout = parseInt(
+      this.config.get<string>('SCRAPE_TIMEOUT_MS') || '15000',
+      10,
+    );
+    const maxPages = parseInt(
+      this.config.get<string>('SCRAPE_MAX_PAGES') || '3',
+      10,
+    );
 
     const pages = await this.fetchPages(normalized, maxPages, timeout);
     const combined = pages.join('\n\n---\n\n').slice(0, 24000);
@@ -41,7 +43,9 @@ export class ScrapeWebsiteService {
       throw new BadRequestException('Could not extract text from the website');
     }
 
-    const { data, tokensUsed } = await this.mistral.completeJson<Record<string, unknown>>(
+    const { data, tokensUsed } = await this.mistral.completeJson<
+      Record<string, unknown>
+    >(
       [
         { role: 'system', content: brandExtractionSystemPrompt() },
         {
@@ -69,15 +73,26 @@ export class ScrapeWebsiteService {
     return trimmed;
   }
 
-  private async fetchPages(baseUrl: string, maxPages: number, timeout: number): Promise<string[]> {
+  private async fetchPages(
+    baseUrl: string,
+    maxPages: number,
+    timeout: number,
+  ): Promise<string[]> {
     const texts: string[] = [];
     const visited = new Set<string>();
     const origin = new URL(baseUrl).origin;
     const queue: string[] = [
       baseUrl,
-      ...['/about', '/about-us', '/company', '/services', '/products', '/solutions', '/faq', '/contact'].map(
-        (path) => `${origin}${path}`,
-      ),
+      ...[
+        '/about',
+        '/about-us',
+        '/company',
+        '/services',
+        '/products',
+        '/solutions',
+        '/faq',
+        '/contact',
+      ].map((path) => `${origin}${path}`),
     ];
 
     while (queue.length && texts.length < maxPages) {
@@ -127,7 +142,8 @@ export class ScrapeWebsiteService {
         }
       } catch (err) {
         this.logger.warn(`Scrape failed for ${url}`, err);
-        if (!texts.length) throw new BadRequestException(`Could not fetch ${url}`);
+        if (!texts.length)
+          throw new BadRequestException(`Could not fetch ${url}`);
       }
     }
 

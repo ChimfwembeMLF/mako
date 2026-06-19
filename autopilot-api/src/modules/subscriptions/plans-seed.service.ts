@@ -13,7 +13,9 @@ export class PlansSeedService {
   ) {}
 
   /** Seed billing plans into system_settings when missing. Pass force=true to reset defaults. */
-  async ensureSeeded(opts?: { force?: boolean }): Promise<'created' | 'skipped' | 'reset'> {
+  async ensureSeeded(opts?: {
+    force?: boolean;
+  }): Promise<'created' | 'skipped' | 'reset'> {
     const force = opts?.force ?? false;
 
     if (!force) {

@@ -68,7 +68,9 @@ export class GenerateCampaignService {
       workspaceId: params.workspaceId,
     });
     if (!brand?.id) {
-      throw new BadRequestException('Set up Brand Brain before generating a campaign');
+      throw new BadRequestException(
+        'Set up Brand Brain before generating a campaign',
+      );
     }
 
     const brandCtx = this.prompts.brandFromEntity(brand);
@@ -88,7 +90,9 @@ export class GenerateCampaignService {
             params.goal ? `Campaign goal: ${params.goal}` : '',
             params.name ? `Suggested name: ${params.name}` : '',
             `Target platforms: ${platforms.join(', ')}`,
-            `Create exactly ${postCount} posts spread across ${postCount} days (dayOffset 0 to ${postCount - 1}).`,
+            `Create exactly ${postCount} posts spread across ${postCount} days (dayOffset 0 to ${
+              postCount - 1
+            }).`,
             'Vary platforms across posts. Build narrative arc: tease → educate → social proof → offer → CTA.',
           ]
             .filter(Boolean)
@@ -107,7 +111,9 @@ export class GenerateCampaignService {
 
     const posts = this.normalizePosts(data.posts, postCount, platforms, theme);
     if (!posts.length) {
-      throw new BadRequestException('AI did not return campaign posts — try again');
+      throw new BadRequestException(
+        'AI did not return campaign posts — try again',
+      );
     }
 
     const campaign = await this.campaignRepo.save(
@@ -158,7 +164,10 @@ export class GenerateCampaignService {
     };
   }
 
-  async findByTenant(tenantId: string, workspaceId?: string): Promise<ContentCampaigns[]> {
+  async findByTenant(
+    tenantId: string,
+    workspaceId?: string,
+  ): Promise<ContentCampaigns[]> {
     const where: { tenantId: string; workspaceId?: string } = { tenantId };
     if (workspaceId) where.workspaceId = workspaceId;
     return this.campaignRepo.find({
@@ -168,7 +177,9 @@ export class GenerateCampaignService {
   }
 
   async findOne(id: string, tenantId: string) {
-    const campaign = await this.campaignRepo.findOne({ where: { id, tenantId } });
+    const campaign = await this.campaignRepo.findOne({
+      where: { id, tenantId },
+    });
     if (!campaign) throw new NotFoundException('Campaign not found');
     const posts = await this.contentRepo.find({
       where: { campaignId: id, tenantId },
@@ -178,9 +189,14 @@ export class GenerateCampaignService {
   }
 
   async remove(id: string, tenantId: string) {
-    const campaign = await this.campaignRepo.findOne({ where: { id, tenantId } });
+    const campaign = await this.campaignRepo.findOne({
+      where: { id, tenantId },
+    });
     if (!campaign) throw new NotFoundException('Campaign not found');
-    await this.contentRepo.update({ campaignId: id, tenantId }, { status: 'draft' });
+    await this.contentRepo.update(
+      { campaignId: id, tenantId },
+      { status: 'draft' },
+    );
     await this.campaignRepo.delete(id);
     return { deleted: true };
   }
@@ -219,16 +235,16 @@ Rules:
   ): PlannedPost[] {
     if (!Array.isArray(raw)) return [];
 
-    return raw
-      .slice(0, expected)
-      .map((p, i) => ({
-        dayOffset: typeof p.dayOffset === 'number' ? p.dayOffset : i,
-        scheduledTime: p.scheduledTime || '09:00',
-        platform: platforms.includes(p.platform ?? '') ? p.platform! : platforms[i % platforms.length],
-        title: String(p.title ?? `Post ${i + 1}`).slice(0, 200),
-        content: String(p.content ?? `<p>${fallbackTheme}</p>`),
-        theme: String(p.theme ?? fallbackTheme),
-      }));
+    return raw.slice(0, expected).map((p, i) => ({
+      dayOffset: typeof p.dayOffset === 'number' ? p.dayOffset : i,
+      scheduledTime: p.scheduledTime || '09:00',
+      platform: platforms.includes(p.platform ?? '')
+        ? p.platform!
+        : platforms[i % platforms.length],
+      title: String(p.title ?? `Post ${i + 1}`).slice(0, 200),
+      content: String(p.content ?? `<p>${fallbackTheme}</p>`),
+      theme: String(p.theme ?? fallbackTheme),
+    }));
   }
 
   private parseStartDate(value?: string): Date {

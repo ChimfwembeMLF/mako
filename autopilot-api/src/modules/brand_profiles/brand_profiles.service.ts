@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
 import { BrandProfiles } from './entities/brand_profiles.entity';
@@ -32,7 +36,9 @@ export class BrandProfilesService {
         where: { id: dto.workspaceId, tenantId: dto.tenantId },
       });
       if (!workspace) {
-        throw new BadRequestException('workspaceId does not belong to this tenant');
+        throw new BadRequestException(
+          'workspaceId does not belong to this tenant',
+        );
       }
     }
 
@@ -42,7 +48,9 @@ export class BrandProfilesService {
 
     if (existing) {
       if (dto.workspaceId && existing.workspaceId !== dto.workspaceId) {
-        throw new BadRequestException('Brand profile belongs to a different workspace');
+        throw new BadRequestException(
+          'Brand profile belongs to a different workspace',
+        );
       }
       const { userId: _uid, tenantId: _tid, workspaceId: _ws, ...patch } = dto;
       await this.repo.update(existing.id, patch as BrandProfilesUpdateDto);
@@ -62,13 +70,19 @@ export class BrandProfilesService {
     return this.repo.find({ where: { tenantId } });
   }
 
-  async findForTenantUser(tenantId: string, userId: string): Promise<BrandProfiles | null> {
+  async findForTenantUser(
+    tenantId: string,
+    userId: string,
+  ): Promise<BrandProfiles | null> {
     return this.repo.findOne({
       where: { tenantId, userId, workspaceId: IsNull() },
     });
   }
 
-  async findForWorkspace(workspaceId: string, tenantId?: string): Promise<BrandProfiles | null> {
+  async findForWorkspace(
+    workspaceId: string,
+    tenantId?: string,
+  ): Promise<BrandProfiles | null> {
     return this.repo.findOne({
       where: tenantId ? { workspaceId, tenantId } : { workspaceId },
     });

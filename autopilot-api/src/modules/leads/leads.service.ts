@@ -69,11 +69,14 @@ export class LeadsService {
     message: string;
   }): Promise<Leads> {
     const email = this.whatsappEmail(params.phone);
-    const existing = await this.repo.findOne({ where: { tenantId: params.tenantId, email } });
+    const existing = await this.repo.findOne({
+      where: { tenantId: params.tenantId, email },
+    });
 
     if (existing) {
       existing.message = params.message;
-      existing.status = existing.status === 'closed' ? 'open' : (existing.status ?? 'new');
+      existing.status =
+        existing.status === 'closed' ? 'open' : existing.status ?? 'new';
       if (params.name?.trim() && existing.name.startsWith('WhatsApp ')) {
         existing.name = params.name.trim();
       }

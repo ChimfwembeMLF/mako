@@ -19,12 +19,12 @@ export class MailService {
     const placeholders = ['MAIL_DETAILS', 'MAIL_DETAILS_HERE', 'PASSWORD', ''];
     return Boolean(
       host &&
-      user &&
-      pass &&
-      from &&
-      !placeholders.includes(user) &&
-      !placeholders.includes(pass) &&
-      !placeholders.includes(from),
+        user &&
+        pass &&
+        from &&
+        !placeholders.includes(user) &&
+        !placeholders.includes(pass) &&
+        !placeholders.includes(from),
     );
   }
 
@@ -39,7 +39,9 @@ export class MailService {
     ].join('\n');
 
     if (!this.isConfigured()) {
-      this.logger.warn(`Mail not configured — password reset link for ${to}: ${resetLink}`);
+      this.logger.warn(
+        `Mail not configured — password reset link for ${to}: ${resetLink}`,
+      );
       return;
     }
 
@@ -76,7 +78,9 @@ export class MailService {
     ].join('\n');
 
     if (!this.isConfigured()) {
-      this.logger.warn(`Mail not configured — workspace invite for ${to}: ${signupLink}`);
+      this.logger.warn(
+        `Mail not configured — workspace invite for ${to}: ${signupLink}`,
+      );
       return;
     }
 
@@ -97,13 +101,23 @@ export class MailService {
     this.logger.log(`Workspace invite email sent to ${to}`);
   }
 
-  async sendGenericEmail(to: string, subject: string, text: string): Promise<void> {
+  async sendGenericEmail(
+    to: string,
+    subject: string,
+    text: string,
+  ): Promise<void> {
     if (!this.isConfigured()) {
       this.logger.warn(`Mail not configured — would send to ${to}: ${subject}`);
       return;
     }
     const from = this.config.get<string>('MAIL_FROM');
-    await this.mailer.sendMail({ to, from, subject, text, html: `<pre>${text}</pre>` });
+    await this.mailer.sendMail({
+      to,
+      from,
+      subject,
+      text,
+      html: `<pre>${text}</pre>`,
+    });
     this.logger.log(`Email sent to ${to}: ${subject}`);
   }
 }

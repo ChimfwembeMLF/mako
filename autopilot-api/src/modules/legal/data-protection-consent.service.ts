@@ -45,7 +45,10 @@ export class DataProtectionConsentService {
     return this.toClient(row);
   }
 
-  async hasConsent(visitorId: string, consentVersion = DATA_PROTECTION_CONSENT_VERSION) {
+  async hasConsent(
+    visitorId: string,
+    consentVersion = DATA_PROTECTION_CONSENT_VERSION,
+  ) {
     const row = await this.repo.findOne({
       where: { visitorId, consentVersion, accepted: true },
       order: { created_at: 'DESC' },

@@ -42,7 +42,9 @@ export class DataDeletionService {
         userAgent: meta?.userAgent,
       }),
     );
-    void this.processDeletion(code).catch((err) => this.logger.error('Deletion failed', err));
+    void this.processDeletion(code).catch((err) =>
+      this.logger.error('Deletion failed', err),
+    );
     return {
       id: row.id,
       confirmationCode: code,
@@ -51,7 +53,9 @@ export class DataDeletionService {
     };
   }
 
-  async handleMetaSignedRequest(signedRequest: string): Promise<{ url: string; confirmation_code: string }> {
+  async handleMetaSignedRequest(
+    signedRequest: string,
+  ): Promise<{ url: string; confirmation_code: string }> {
     const secret = this.config.get<string>('FACEBOOK_APP_SECRET') ?? '';
     const payload = this.parseSignedRequest(signedRequest, secret);
     const externalUserId = String(payload.user_id ?? '');
@@ -69,7 +73,10 @@ export class DataDeletionService {
       this.logger.error('Meta deletion failed', err),
     );
 
-    const frontend = (this.config.get<string>('FRONTEND_URL') ?? '').replace(/\/$/, '');
+    const frontend = (this.config.get<string>('FRONTEND_URL') ?? '').replace(
+      /\/$/,
+      '',
+    );
     return {
       url: `${frontend}/data-deletion?code=${code}`,
       confirmation_code: code,
@@ -95,7 +102,10 @@ export class DataDeletionService {
       where: { platform: 'facebook' },
     });
     for (const account of accounts) {
-      if (account.metadata?.facebook_user_id === facebookUserId || account.externalId === facebookUserId) {
+      if (
+        account.metadata?.facebook_user_id === facebookUserId ||
+        account.externalId === facebookUserId
+      ) {
         await this.socialRepo.update(account.id, {
           connected: false,
           accessToken: '',
@@ -104,7 +114,10 @@ export class DataDeletionService {
         await this.refreshTokens.revoke(String(account.userId));
       }
     }
-    await this.repo.update({ confirmationCode: code }, { status: 'completed', completedAt: new Date() });
+    await this.repo.update(
+      { confirmationCode: code },
+      { status: 'completed', completedAt: new Date() },
+    );
   }
 
   private async processDeletion(code: string) {
@@ -113,29 +126,44 @@ export class DataDeletionService {
 
     const user = await this.users.findOne({ email: row.email });
     if (!user) {
-      await this.repo.update({ confirmationCode: code }, { status: 'completed', completedAt: new Date() });
+      await this.repo.update(
+        { confirmationCode: code },
+        { status: 'completed', completedAt: new Date() },
+      );
       return;
     }
 
     await this.socialRepo.delete({ userId: String(user.id) });
     await this.refreshTokens.revoke(String(user.id));
     await this.users.anonymizeUser(String(user.id));
-    await this.repo.update({ confirmationCode: code }, { status: 'completed', completedAt: new Date() });
+    await this.repo.update(
+      { confirmationCode: code },
+      { status: 'completed', completedAt: new Date() },
+    );
   }
 
-  private parseSignedRequest(signedRequest: string, secret: string): Record<string, unknown> {
+  private parseSignedRequest(
+    signedRequest: string,
+    secret: string,
+  ): Record<string, unknown> {
     if (!signedRequest || !secret) throw new Error('Invalid signed request');
     const [encodedSig, payload] = signedRequest.split('.');
     if (!encodedSig || !payload) throw new Error('Malformed signed request');
 
-    const sig = Buffer.from(encodedSig.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    const sig = Buffer.from(
+      encodedSig.replace(/-/g, '+').replace(/_/g, '/'),
+      'base64',
+    );
     const expected = createHmac('sha256', secret).update(payload).digest();
     if (sig.length !== expected.length || !timingSafeEqual(sig, expected)) {
       throw new Error('Invalid signature');
     }
 
     return JSON.parse(
-      Buffer.from(payload.replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'),
+      Buffer.from(
+        payload.replace(/-/g, '+').replace(/_/g, '/'),
+        'base64',
+      ).toString('utf8'),
     ) as Record<string, unknown>;
   }
 }

@@ -5,7 +5,10 @@ import { ContentItems } from './entities/content_items.entity';
 import { MediaAssets } from './entities/media_assets.entity';
 import { ContentItemsCreateDto } from './dto/create-content_items.dto';
 import { ContentItemsUpdateDto } from './dto/update-content_items.dto';
-import { ListContentItemsQueryDto, PaginatedContentItems } from './dto/list-content-items.dto';
+import {
+  ListContentItemsQueryDto,
+  PaginatedContentItems,
+} from './dto/list-content-items.dto';
 import { ContentPublicationsService } from '../content_publications/content-publications.service';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
 
@@ -27,9 +30,15 @@ export class ContentItemsService {
 
   async create(dto: ContentItemsCreateDto): Promise<ContentItems> {
     const patch: ContentItemsCreateDto = { ...dto };
-    if (patch.platformPayloads != null && typeof patch.platformPayloads === 'string') {
+    if (
+      patch.platformPayloads != null &&
+      typeof patch.platformPayloads === 'string'
+    ) {
       try {
-        patch.platformPayloads = JSON.parse(patch.platformPayloads) as Record<string, unknown>;
+        patch.platformPayloads = JSON.parse(patch.platformPayloads) as Record<
+          string,
+          unknown
+        >;
       } catch {
         patch.platformPayloads = undefined;
       }
@@ -39,7 +48,10 @@ export class ContentItemsService {
     return this.normalizePlatformPayloads(saved);
   }
 
-  async findAll(tenantId?: string, workspaceId?: string): Promise<ContentItems[]> {
+  async findAll(
+    tenantId?: string,
+    workspaceId?: string,
+  ): Promise<ContentItems[]> {
     const where: { tenantId?: string; workspaceId?: string } = {};
     if (tenantId) where.tenantId = tenantId;
     if (workspaceId) where.workspaceId = workspaceId;
@@ -68,13 +80,19 @@ export class ContentItemsService {
       qb.andWhere('item.userId = :userId', { userId: params.userId });
     }
     if (params.workspaceId) {
-      qb.andWhere('item.workspaceId = :workspaceId', { workspaceId: params.workspaceId });
+      qb.andWhere('item.workspaceId = :workspaceId', {
+        workspaceId: params.workspaceId,
+      });
     }
     if (params.search?.trim()) {
-      qb.andWhere('item.title ILIKE :search', { search: `%${params.search.trim()}%` });
+      qb.andWhere('item.title ILIKE :search', {
+        search: `%${params.search.trim()}%`,
+      });
     }
     if (params.platform?.trim()) {
-      qb.andWhere(':platform = ANY(item.platforms)', { platform: params.platform.trim() });
+      qb.andWhere(':platform = ANY(item.platforms)', {
+        platform: params.platform.trim(),
+      });
     }
 
     qb.orderBy('item.created_at', 'DESC').skip(skip).take(limit);
@@ -122,9 +140,15 @@ export class ContentItemsService {
 
   async update(id: string, dto: ContentItemsUpdateDto): Promise<ContentItems> {
     const patch: ContentItemsUpdateDto = { ...dto };
-    if (patch.platformPayloads != null && typeof patch.platformPayloads === 'string') {
+    if (
+      patch.platformPayloads != null &&
+      typeof patch.platformPayloads === 'string'
+    ) {
       try {
-        patch.platformPayloads = JSON.parse(patch.platformPayloads) as Record<string, unknown>;
+        patch.platformPayloads = JSON.parse(patch.platformPayloads) as Record<
+          string,
+          unknown
+        >;
       } catch {
         patch.platformPayloads = undefined;
       }

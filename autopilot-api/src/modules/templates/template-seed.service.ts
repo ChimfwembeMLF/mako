@@ -13,7 +13,10 @@ export class TemplateSeedService {
     private readonly repo: Repository<ContentTemplates>,
   ) {}
 
-  async ensureSeededForTenant(tenantId: string, userId: string): Promise<number> {
+  async ensureSeededForTenant(
+    tenantId: string,
+    userId: string,
+  ): Promise<number> {
     let created = 0;
 
     for (const seed of DEFAULT_CONTENT_TEMPLATE_SEEDS) {
@@ -38,9 +41,10 @@ export class TemplateSeedService {
     }
 
     if (created > 0) {
-      this.logger.log(`Seeded ${created} content templates for tenant ${tenantId}`);
+      this.logger.log(
+        `Seeded ${created} content templates for tenant ${tenantId}`,
+      );
     }
     return created;
   }
-
 }

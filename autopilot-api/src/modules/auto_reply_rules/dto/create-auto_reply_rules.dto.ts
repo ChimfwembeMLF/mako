@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsUUID, IsBoolean, IsDate, IsArray, IsNumber, IsInt } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsBoolean,
+  IsDate,
+  IsArray,
+  IsNumber,
+  IsInt,
+} from 'class-validator';
 
 export class AutoReplyRulesCreateDto {
   @IsUUID()

@@ -11,11 +11,20 @@ import { Mistral } from '@mistralai/mistralai';
 function isMistralNetworkError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const msg = err.message.toLowerCase();
-  if (msg.includes('fetch failed') || msg.includes('eai_again') || msg.includes('enotfound') || msg.includes('network')) {
+  if (
+    msg.includes('fetch failed') ||
+    msg.includes('eai_again') ||
+    msg.includes('enotfound') ||
+    msg.includes('network')
+  ) {
     return true;
   }
   const cause = (err as Error & { cause?: { code?: string } }).cause;
-  return cause?.code === 'EAI_AGAIN' || cause?.code === 'ENOTFOUND' || cause?.code === 'ECONNREFUSED';
+  return (
+    cause?.code === 'EAI_AGAIN' ||
+    cause?.code === 'ENOTFOUND' ||
+    cause?.code === 'ECONNREFUSED'
+  );
 }
 
 export interface ChatMessage {
@@ -50,11 +59,15 @@ export class MistralChatService {
   }
 
   get defaultModel(): string {
-    return this.config.get<string>('MISTRAL_TEXT_MODEL') || 'mistral-small-latest';
+    return (
+      this.config.get<string>('MISTRAL_TEXT_MODEL') || 'mistral-small-latest'
+    );
   }
 
   get premiumModel(): string {
-    return this.config.get<string>('MISTRAL_PREMIUM_MODEL') || 'mistral-large-latest';
+    return (
+      this.config.get<string>('MISTRAL_PREMIUM_MODEL') || 'mistral-large-latest'
+    );
   }
 
   async complete(
@@ -68,7 +81,9 @@ export class MistralChatService {
         model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         maxTokens: options?.maxTokens ?? 4096,
-        ...(options?.jsonMode ? { responseFormat: { type: 'json_object' } } : {}),
+        ...(options?.jsonMode
+          ? { responseFormat: { type: 'json_object' } }
+          : {}),
       });
 
       const choice = response.choices?.[0];
@@ -77,8 +92,12 @@ export class MistralChatService {
         typeof raw === 'string'
           ? raw
           : Array.isArray(raw)
-            ? raw.map((c) => (typeof c === 'string' ? c : (c as { text?: string }).text ?? '')).join('')
-            : '';
+          ? raw
+              .map((c) =>
+                typeof c === 'string' ? c : (c as { text?: string }).text ?? '',
+              )
+              .join('')
+          : '';
 
       if (!content.trim()) {
         throw new BadRequestException('Mistral returned an empty response');
@@ -86,7 +105,8 @@ export class MistralChatService {
 
       const tokensUsed =
         (response.usage?.totalTokens ?? 0) ||
-        (response.usage?.promptTokens ?? 0) + (response.usage?.completionTokens ?? 0);
+        (response.usage?.promptTokens ?? 0) +
+          (response.usage?.completionTokens ?? 0);
 
       return { content: content.trim(), tokensUsed, model };
     } catch (err) {
@@ -108,12 +128,23 @@ export class MistralChatService {
     messages: ChatMessage[],
     options?: { model?: string },
   ): Promise<{ data: T; tokensUsed: number; model: string }> {
-    const result = await this.complete(messages, { ...options, jsonMode: true });
+    const result = await this.complete(messages, {
+      ...options,
+      jsonMode: true,
+    });
     try {
-      const cleaned = result.content.replace(/^```json\s*/i, '').replace(/```\s*$/i, '');
-      return { data: JSON.parse(cleaned) as T, tokensUsed: result.tokensUsed, model: result.model };
+      const cleaned = result.content
+        .replace(/^```json\s*/i, '')
+        .replace(/```\s*$/i, '');
+      return {
+        data: JSON.parse(cleaned) as T,
+        tokensUsed: result.tokensUsed,
+        model: result.model,
+      };
     } catch {
-      this.logger.warn(`Mistral JSON parse failed. Raw: ${result.content.slice(0, 300)}`);
+      this.logger.warn(
+        `Mistral JSON parse failed. Raw: ${result.content.slice(0, 300)}`,
+      );
       throw new BadRequestException(
         'AI returned an invalid response. Try again in a moment.',
       );
@@ -125,11 +156,16 @@ export class MistralChatService {
       [{ role: 'user', content: 'Reply with exactly: ok' }],
       { maxTokens: 16 },
     );
-    return { ok: result.content.toLowerCase().includes('ok'), model: result.model };
+    return {
+      ok: result.content.toLowerCase().includes('ok'),
+      model: result.model,
+    };
   }
 
   get ttsModel(): string {
-    return this.config.get<string>('MISTRAL_TTS_MODEL') || 'voxtral-mini-tts-latest';
+    return (
+      this.config.get<string>('MISTRAL_TTS_MODEL') || 'voxtral-mini-tts-latest'
+    );
   }
 
   /** Mistral preset voice (Paul — neutral). Override via MISTRAL_TTS_VOICE_ID or per-tenant mistralVoiceId. */
@@ -162,8 +198,14 @@ export class MistralChatService {
         stream: false,
       });
 
-      if (!response || typeof response !== 'object' || !('audioData' in response)) {
-        throw new BadRequestException('Mistral TTS returned an unexpected response');
+      if (
+        !response ||
+        typeof response !== 'object' ||
+        !('audioData' in response)
+      ) {
+        throw new BadRequestException(
+          'Mistral TTS returned an unexpected response',
+        );
       }
 
       const audioData = (response as { audioData?: string }).audioData;
@@ -208,7 +250,8 @@ export class MistralChatService {
           'Cannot reach Mistral AI for embeddings. Check your connection.',
         );
       }
-      const msg = err instanceof Error ? err.message : 'Embedding request failed';
+      const msg =
+        err instanceof Error ? err.message : 'Embedding request failed';
       throw new BadRequestException(msg);
     }
   }

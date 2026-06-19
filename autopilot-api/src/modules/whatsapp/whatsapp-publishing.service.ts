@@ -29,18 +29,27 @@ export class WhatsappPublishingService {
   async publishPost(
     content: ContentToPublish,
     _media: unknown[] = [],
-    options?: { templateName?: string; templateLanguage?: string; useTemplate?: boolean },
+    options?: {
+      templateName?: string;
+      templateLanguage?: string;
+      useTemplate?: boolean;
+    },
   ): Promise<PublishResult> {
     const account = await this.resolveAccount(content.tenantId, content.userId);
     if (!account) {
-      return { published: false, message: 'WhatsApp Business not connected — add credentials in Publisher Connect' };
+      return {
+        published: false,
+        message:
+          'WhatsApp Business not connected — add credentials in Publisher Connect',
+      };
     }
 
     const creds = this.messaging.credentialsFromAccount(account);
     if (!creds) {
       return {
         published: false,
-        message: 'WhatsApp phone_number_id or access_token missing — reconnect WhatsApp',
+        message:
+          'WhatsApp phone_number_id or access_token missing — reconnect WhatsApp',
       };
     }
 
@@ -50,7 +59,8 @@ export class WhatsappPublishingService {
     if (!contacts.length) {
       return {
         published: false,
-        message: 'No opted-in WhatsApp contacts — add contacts in Lead Agent and mark them opted in',
+        message:
+          'No opted-in WhatsApp contacts — add contacts in Lead Agent and mark them opted in',
       };
     }
 
@@ -83,31 +93,49 @@ export class WhatsappPublishingService {
         : await this.messaging.sendSessionText(creds, contact.phone, plainText);
 
       if (!result.success && useTemplate) {
-        const retry = await this.messaging.sendSessionText(creds, contact.phone, plainText);
+        const retry = await this.messaging.sendSessionText(
+          creds,
+          contact.phone,
+          plainText,
+        );
         if (retry.success) {
-          await this.persistOutbound(content.tenantId, contact, plainText, retry.waMessageId);
+          await this.persistOutbound(
+            content.tenantId,
+            contact,
+            plainText,
+            retry.waMessageId,
+          );
           sent++;
           continue;
         }
       }
 
       if (result.success) {
-        await this.persistOutbound(content.tenantId, contact, plainText, result.waMessageId);
+        await this.persistOutbound(
+          content.tenantId,
+          contact,
+          plainText,
+          result.waMessageId,
+        );
         sent++;
       } else {
         failed++;
-        if (result.error && errors.length < 3) errors.push(`${contact.phone}: ${result.error}`);
+        if (result.error && errors.length < 3)
+          errors.push(`${contact.phone}: ${result.error}`);
       }
     }
 
     if (sent === 0) {
       return {
         published: false,
-        message: `WhatsApp broadcast failed for all ${contacts.length} contacts. ${errors.join('; ')}`,
+        message: `WhatsApp broadcast failed for all ${
+          contacts.length
+        } contacts. ${errors.join('; ')}`,
       };
     }
 
-    const summary = `WhatsApp: sent to ${sent}/${contacts.length} opted-in contact(s)` +
+    const summary =
+      `WhatsApp: sent to ${sent}/${contacts.length} opted-in contact(s)` +
       (failed ? ` (${failed} failed)` : '');
 
     this.logger.log(summary);

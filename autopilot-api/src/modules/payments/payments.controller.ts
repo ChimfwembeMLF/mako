@@ -24,7 +24,12 @@ export class PaymentsController {
   @ApiBearerAuth()
   initiate(
     @Body()
-    body: { tenantId: string; plan: string; phone?: string; correspondent?: string },
+    body: {
+      tenantId: string;
+      plan: string;
+      phone?: string;
+      correspondent?: string;
+    },
   ) {
     return this.payments.initiateDeposit(body);
   }

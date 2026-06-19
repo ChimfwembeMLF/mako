@@ -30,22 +30,58 @@ export interface SearchResult {
 
 const APP_PAGES = [
   { title: 'Dashboard', url: '/dashboard', keywords: 'home overview' },
-  { title: 'Brand Brain', url: '/brand-brain', keywords: 'brand voice identity audience' },
-  { title: 'Content Engine', url: '/content', keywords: 'create posts generate content' },
-  { title: 'Scheduler', url: '/scheduler', keywords: 'schedule publish calendar' },
-  { title: 'Publisher', url: '/publisher', keywords: 'connect social accounts oauth' },
+  {
+    title: 'Brand Brain',
+    url: '/brand-brain',
+    keywords: 'brand voice identity audience',
+  },
+  {
+    title: 'Content Engine',
+    url: '/content',
+    keywords: 'create posts generate content',
+  },
+  {
+    title: 'Scheduler',
+    url: '/scheduler',
+    keywords: 'schedule publish calendar',
+  },
+  {
+    title: 'Publisher',
+    url: '/publisher',
+    keywords: 'connect social accounts oauth',
+  },
   { title: 'Lead Agent', url: '/leads', keywords: 'leads inbox qualify' },
   { title: 'Replies', url: '/replies', keywords: 'auto reply comments' },
   { title: 'Chatbot', url: '/chatbot', keywords: 'widget assistant rag' },
-  { title: 'Conversation Log', url: '/chatbot/sessions', keywords: 'chat transcripts sessions' },
-  { title: 'Analytics', url: '/analytics', keywords: 'metrics performance stats' },
+  {
+    title: 'Conversation Log',
+    url: '/chatbot/sessions',
+    keywords: 'chat transcripts sessions',
+  },
+  {
+    title: 'Analytics',
+    url: '/analytics',
+    keywords: 'metrics performance stats',
+  },
   { title: 'Reports', url: '/reports', keywords: 'insights export report' },
   { title: 'Media Library', url: '/media', keywords: 'images assets upload' },
-  { title: 'Templates', url: '/templates', keywords: 'reusable content templates' },
+  {
+    title: 'Templates',
+    url: '/templates',
+    keywords: 'reusable content templates',
+  },
   { title: 'Workspaces', url: '/workspaces', keywords: 'brands organizations' },
-  { title: 'Approvals', url: '/approvals', keywords: 'approve content workflow' },
+  {
+    title: 'Approvals',
+    url: '/approvals',
+    keywords: 'approve content workflow',
+  },
   { title: 'Team', url: '/team', keywords: 'members invite roles' },
-  { title: 'Audit Logs', url: '/audit', keywords: 'activity history governance' },
+  {
+    title: 'Audit Logs',
+    url: '/audit',
+    keywords: 'activity history governance',
+  },
   { title: 'Billing', url: '/billing', keywords: 'subscription plan payment' },
   { title: 'Settings', url: '/settings', keywords: 'preferences account' },
   { title: 'Export Data', url: '/export', keywords: 'download csv export' },
@@ -76,34 +112,42 @@ export class SearchService {
     const pattern = `%${term}%`;
     const perType = Math.min(8, Math.max(3, limit));
 
-    const [contentPage, auditPage, leads, templates, knowledge] = await Promise.all([
-      this.contentItems.findPaginated({ tenantId, search: term, limit: perType }),
-      this.auditLogs.findFiltered({ tenantId, search: term, take: perType }),
-      this.leadsRepo
-        .createQueryBuilder('lead')
-        .where('lead.tenantId = :tenantId', { tenantId })
-        .andWhere(
-          '(lead.name ILIKE :pattern OR lead.email ILIKE :pattern OR lead.message ILIKE :pattern)',
-          { pattern },
-        )
-        .orderBy('lead.created_at', 'DESC')
-        .take(perType)
-        .getMany(),
-      this.templatesRepo
-        .createQueryBuilder('tpl')
-        .where('tpl.tenantId = :tenantId', { tenantId })
-        .andWhere('(tpl.name ILIKE :pattern OR tpl.description ILIKE :pattern)', { pattern })
-        .orderBy('tpl.created_at', 'DESC')
-        .take(perType)
-        .getMany(),
-      this.knowledgeRepo
-        .createQueryBuilder('doc')
-        .where('doc.tenantId = :tenantId', { tenantId })
-        .andWhere('doc.title ILIKE :pattern', { pattern })
-        .orderBy('doc.created_at', 'DESC')
-        .take(perType)
-        .getMany(),
-    ]);
+    const [contentPage, auditPage, leads, templates, knowledge] =
+      await Promise.all([
+        this.contentItems.findPaginated({
+          tenantId,
+          search: term,
+          limit: perType,
+        }),
+        this.auditLogs.findFiltered({ tenantId, search: term, take: perType }),
+        this.leadsRepo
+          .createQueryBuilder('lead')
+          .where('lead.tenantId = :tenantId', { tenantId })
+          .andWhere(
+            '(lead.name ILIKE :pattern OR lead.email ILIKE :pattern OR lead.message ILIKE :pattern)',
+            { pattern },
+          )
+          .orderBy('lead.created_at', 'DESC')
+          .take(perType)
+          .getMany(),
+        this.templatesRepo
+          .createQueryBuilder('tpl')
+          .where('tpl.tenantId = :tenantId', { tenantId })
+          .andWhere(
+            '(tpl.name ILIKE :pattern OR tpl.description ILIKE :pattern)',
+            { pattern },
+          )
+          .orderBy('tpl.created_at', 'DESC')
+          .take(perType)
+          .getMany(),
+        this.knowledgeRepo
+          .createQueryBuilder('doc')
+          .where('doc.tenantId = :tenantId', { tenantId })
+          .andWhere('doc.title ILIKE :pattern', { pattern })
+          .orderBy('doc.created_at', 'DESC')
+          .take(perType)
+          .getMany(),
+      ]);
 
     const results: SearchResult[] = [];
 
@@ -189,14 +233,23 @@ export class SearchService {
     const contextBlock = [
       `Brand profile:\n${brandBlock}`,
       pageHints.length
-        ? `Relevant app pages:\n${pageHints.map((p) => `- ${p.title}: ${p.url}`).join('\n')}`
+        ? `Relevant app pages:\n${pageHints
+            .map((p) => `- ${p.title}: ${p.url}`)
+            .join('\n')}`
         : '',
       searchResults.length
         ? `Matching workspace records:\n${searchResults
-            .map((r) => `- [${r.type}] ${r.title}${r.subtitle ? ` (${r.subtitle})` : ''} → ${r.url}`)
+            .map(
+              (r) =>
+                `- [${r.type}] ${r.title}${
+                  r.subtitle ? ` (${r.subtitle})` : ''
+                } → ${r.url}`,
+            )
             .join('\n')}`
         : 'No matching records in this workspace for this query.',
-      `App pages catalog:\n${APP_PAGES.map((p) => `- ${p.title}: ${p.url}`).join('\n')}`,
+      `App pages catalog:\n${APP_PAGES.map(
+        (p) => `- ${p.title}: ${p.url}`,
+      ).join('\n')}`,
     ]
       .filter(Boolean)
       .join('\n\n');
@@ -236,7 +289,9 @@ Use relative paths starting with /. Include 0–4 links when helpful.`,
       : [];
 
     return {
-      answer: String(data.answer ?? '').trim() || 'I could not find an answer. Try rephrasing or use search to browse records.',
+      answer:
+        String(data.answer ?? '').trim() ||
+        'I could not find an answer. Try rephrasing or use search to browse records.',
       links,
     };
   }

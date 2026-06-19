@@ -18,7 +18,10 @@ export class WhatsappFlowSessionService {
     private readonly configs: Repository<WhatsappFlowConfig>,
   ) {}
 
-  async getConfig(tenantId: string, workspaceId?: string): Promise<WhatsappFlowConfig> {
+  async getConfig(
+    tenantId: string,
+    workspaceId?: string,
+  ): Promise<WhatsappFlowConfig> {
     if (workspaceId) {
       let config = await this.configs.findOne({ where: { workspaceId } });
       if (!config) {
@@ -61,7 +64,8 @@ export class WhatsappFlowSessionService {
     const config = await this.getConfig(tenantId, workspaceId);
 
     if (patch.enabled !== undefined) config.enabled = patch.enabled;
-    if (patch.serviceName !== undefined) config.serviceName = patch.serviceName.trim() || 'MyService';
+    if (patch.serviceName !== undefined)
+      config.serviceName = patch.serviceName.trim() || 'MyService';
     if (patch.welcomeMessage !== undefined) {
       config.welcomeMessage = patch.welcomeMessage.trim() || undefined;
     }
@@ -81,7 +85,10 @@ export class WhatsappFlowSessionService {
     return this.configs.save(config);
   }
 
-  async getSession(tenantId: string, phone: string): Promise<WhatsappFlowSession | null> {
+  async getSession(
+    tenantId: string,
+    phone: string,
+  ): Promise<WhatsappFlowSession | null> {
     const session = await this.sessions.findOne({ where: { tenantId, phone } });
     if (!session) return null;
     if (session.expiresAt && session.expiresAt.getTime() < Date.now()) {
@@ -97,7 +104,9 @@ export class WhatsappFlowSessionService {
     state: string,
     context: Record<string, unknown>,
   ): Promise<WhatsappFlowSession> {
-    const existing = await this.sessions.findOne({ where: { tenantId, phone } });
+    const existing = await this.sessions.findOne({
+      where: { tenantId, phone },
+    });
     const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
 
     if (existing) {

@@ -45,9 +45,16 @@ export class WhatsappInboundService {
       entry?: Array<{
         changes?: Array<{
           value?: {
-            metadata?: { phone_number_id?: string; display_phone_number?: string };
+            metadata?: {
+              phone_number_id?: string;
+              display_phone_number?: string;
+            };
             messages?: InboundWaMessage[];
-            statuses?: Array<{ id?: string; status?: string; recipient_id?: string }>;
+            statuses?: Array<{
+              id?: string;
+              status?: string;
+              recipient_id?: string;
+            }>;
           };
         }>;
       }>;
@@ -96,12 +103,15 @@ export class WhatsappInboundService {
     return { received: true };
   }
 
-  private parseInboundMessage(
-    msg: InboundWaMessage,
-  ): {
+  private parseInboundMessage(msg: InboundWaMessage): {
     text: string;
     interactiveId?: string;
-    mediaAttachment?: { mediaId: string; type: string; mimeType?: string; name?: string };
+    mediaAttachment?: {
+      mediaId: string;
+      type: string;
+      mimeType?: string;
+      name?: string;
+    };
   } | null {
     if (msg.type === 'text' && msg.text?.body) {
       return { text: msg.text.body };
@@ -121,18 +131,39 @@ export class WhatsappInboundService {
       }
     }
 
-    if (msg.type === 'button' && (msg as { button?: { text?: string; payload?: string } }).button) {
-      const button = (msg as { button?: { text?: string; payload?: string } }).button;
+    if (
+      msg.type === 'button' &&
+      (msg as { button?: { text?: string; payload?: string } }).button
+    ) {
+      const button = (msg as { button?: { text?: string; payload?: string } })
+        .button;
       return { text: button?.text ?? '', interactiveId: button?.payload };
     }
 
-    const mediaTypes = ['image', 'video', 'audio', 'document', 'sticker'] as const;
+    const mediaTypes = [
+      'image',
+      'video',
+      'audio',
+      'document',
+      'sticker',
+    ] as const;
     for (const t of mediaTypes) {
-      const media = (msg as Record<string, { id?: string; mime_type?: string; filename?: string }>)[t];
+      const media = (
+        msg as Record<
+          string,
+          { id?: string; mime_type?: string; filename?: string }
+        >
+      )[t];
       if (msg.type === t && media?.id) {
         return {
-          text: t === 'document' ? `📎 ${media.filename ?? 'Document'}` : `📷 ${t}`,
-          mediaAttachment: { mediaId: media.id, type: t, mimeType: media.mime_type, name: media.filename },
+          text:
+            t === 'document' ? `📎 ${media.filename ?? 'Document'}` : `📷 ${t}`,
+          mediaAttachment: {
+            mediaId: media.id,
+            type: t,
+            mimeType: media.mime_type,
+            name: media.filename,
+          },
         };
       }
     }
@@ -148,7 +179,9 @@ export class WhatsappInboundService {
   }) {
     if (!status.id) return;
 
-    const row = await this.messagesRepo.findOne({ where: { waMessageId: status.id } });
+    const row = await this.messagesRepo.findOne({
+      where: { waMessageId: status.id },
+    });
     if (!row) return;
 
     const deliveryStatus = status.status?.toLowerCase();
@@ -159,7 +192,9 @@ export class WhatsappInboundService {
     if (deliveryStatus === 'failed') {
       const err = status.errors?.[0];
       row.errorMessage =
-        err?.message ?? err?.title ?? `WhatsApp delivery failed (code ${err?.code ?? '?'})`;
+        err?.message ??
+        err?.title ??
+        `WhatsApp delivery failed (code ${err?.code ?? '?'})`;
       this.logger.warn(
         `WhatsApp delivery failed → ${row.phone}: ${row.errorMessage} (wamid ${status.id})`,
       );
@@ -177,7 +212,12 @@ export class WhatsappInboundService {
     interactiveId?: string;
     waMessageId?: string;
     account?: SocialAccounts | null;
-    attachments?: Array<{ mediaId: string; type: string; mimeType?: string; name?: string }>;
+    attachments?: Array<{
+      mediaId: string;
+      type: string;
+      mimeType?: string;
+      name?: string;
+    }>;
   }) {
     if (params.waMessageId) {
       const existing = await this.messagesRepo.findOne({
@@ -228,7 +268,9 @@ export class WhatsappInboundService {
       messageRowId: savedMessage.id,
     });
 
-    this.logger.log(`WhatsApp inbound from ${phone} (tenant ${params.tenantId})`);
+    this.logger.log(
+      `WhatsApp inbound from ${phone} (tenant ${params.tenantId})`,
+    );
 
     const creds = params.account
       ? this.messaging.credentialsFromAccount(params.account)
@@ -279,7 +321,9 @@ export class WhatsappInboundService {
     return { tenantId: account?.tenantId, account };
   }
 
-  private async resolvePlatformTenantForInbound(fromPhone: string): Promise<string | undefined> {
+  private async resolvePlatformTenantForInbound(
+    fromPhone: string,
+  ): Promise<string | undefined> {
     const phone = this.messaging.normalizePhone(fromPhone);
 
     const contacts = await this.contactsRepo.find({ where: { phone } });
@@ -301,7 +345,9 @@ export class WhatsappInboundService {
     const platformAccounts = await this.accountsRepo.find({
       where: { platform: 'whatsapp', connected: true },
     });
-    const enabled = platformAccounts.filter((a) => a.metadata?.platform_managed === true);
+    const enabled = platformAccounts.filter(
+      (a) => a.metadata?.platform_managed === true,
+    );
     if (enabled.length === 1) return enabled[0].tenantId;
 
     return undefined;
@@ -313,6 +359,9 @@ export class WhatsappInboundService {
     const accounts = await this.accountsRepo.find({
       where: { platform: 'whatsapp', connected: true },
     });
-    return accounts.find((a) => a.metadata?.phone_number_id === phoneNumberId) ?? null;
+    return (
+      accounts.find((a) => a.metadata?.phone_number_id === phoneNumberId) ??
+      null
+    );
   }
 }

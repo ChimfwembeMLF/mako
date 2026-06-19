@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
-import { SocialMessages, InboxAttachment } from './entities/social_messages.entity';
+import {
+  SocialMessages,
+  InboxAttachment,
+} from './entities/social_messages.entity';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 
 @Injectable()
@@ -68,11 +71,25 @@ export class SocialMessagingInboundService {
             .getOne()
         : null;
       if (!byPage) return;
-      await this.saveInbound(byPage, platform, event, message, senderId, recipient?.id);
+      await this.saveInbound(
+        byPage,
+        platform,
+        event,
+        message,
+        senderId,
+        recipient?.id,
+      );
       return;
     }
 
-    await this.saveInbound(account, platform, event, message, senderId, recipient?.id);
+    await this.saveInbound(
+      account,
+      platform,
+      event,
+      message,
+      senderId,
+      recipient?.id,
+    );
   }
 
   private async saveInbound(
@@ -134,17 +151,19 @@ export class SocialMessagingInboundService {
 
   private parseMessageAttachments(raw: unknown): InboxAttachment[] {
     if (!Array.isArray(raw)) return [];
-    return raw.map((item) => {
-      const a = item as {
-        type?: string;
-        payload?: { url?: string };
-      };
-      return {
-        url: a.payload?.url,
-        type: a.type ?? 'file',
-        mimeType: a.type,
-      };
-    }).filter((a) => a.url || a.type);
+    return raw
+      .map((item) => {
+        const a = item as {
+          type?: string;
+          payload?: { url?: string };
+        };
+        return {
+          url: a.payload?.url,
+          type: a.type ?? 'file',
+          mimeType: a.type,
+        };
+      })
+      .filter((a) => a.url || a.type);
   }
 
   private attachmentLabel(a: InboxAttachment): string {

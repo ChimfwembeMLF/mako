@@ -39,7 +39,11 @@ export class WhatsappController {
     private readonly flowSessions: WhatsappFlowSessionService,
   ) {}
 
-  private async findWhatsappAccount(tenantId: string, userId: string, workspaceId?: string) {
+  private async findWhatsappAccount(
+    tenantId: string,
+    userId: string,
+    workspaceId?: string,
+  ) {
     return (
       (await this.socialRepo.findOne({
         where: {
@@ -60,7 +64,9 @@ export class WhatsappController {
   }
 
   @Get('flows/config')
-  @ApiOperation({ summary: 'Get WhatsApp USSD-style menu flow config for a workspace' })
+  @ApiOperation({
+    summary: 'Get WhatsApp USSD-style menu flow config for a workspace',
+  })
   getFlowConfig(
     @Query('tenantId') tenantId: string,
     @Query('workspaceId') workspaceId?: string,
@@ -69,7 +75,9 @@ export class WhatsappController {
   }
 
   @Patch('flows/config')
-  @ApiOperation({ summary: 'Enable/configure WhatsApp menu flow (USSD-style bot)' })
+  @ApiOperation({
+    summary: 'Enable/configure WhatsApp menu flow (USSD-style bot)',
+  })
   updateFlowConfig(
     @Query('tenantId') tenantId: string,
     @Body() dto: UpdateWhatsappFlowConfigDto,
@@ -97,7 +105,9 @@ export class WhatsappController {
     }
 
     if (phone?.trim()) {
-      qb.andWhere('m.phone = :phone', { phone: this.messaging.normalizePhone(phone) });
+      qb.andWhere('m.phone = :phone', {
+        phone: this.messaging.normalizePhone(phone),
+      });
     }
 
     const rows = await qb.getMany();
@@ -123,7 +133,10 @@ export class WhatsappController {
     @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,
   ) {
-    const account = await this.findWhatsappAccount(tenantId, String(req.user.sub));
+    const account = await this.findWhatsappAccount(
+      tenantId,
+      String(req.user.sub),
+    );
     if (!account) {
       return { connected: false, message: 'WhatsApp not connected' };
     }
@@ -182,16 +195,25 @@ export class WhatsappController {
     },
   ) {
     const userId = String(req.user.sub);
-    const account = await this.findWhatsappAccount(body.tenantId, userId, body.workspaceId);
+    const account = await this.findWhatsappAccount(
+      body.tenantId,
+      userId,
+      body.workspaceId,
+    );
     if (!account) {
       return { sent: false, message: 'WhatsApp not connected' };
     }
 
-    const result = await this.waAuth.sendReply(account, body.phone, body.message, {
-      useTemplate: body.useTemplate,
-      templateName: body.templateName,
-      templateLanguage: body.templateLanguage,
-    });
+    const result = await this.waAuth.sendReply(
+      account,
+      body.phone,
+      body.message,
+      {
+        useTemplate: body.useTemplate,
+        templateName: body.templateName,
+        templateLanguage: body.templateLanguage,
+      },
+    );
     if (!result.success) {
       return {
         sent: false,
@@ -233,7 +255,9 @@ export class WhatsappController {
       (await this.socialRepo.findOne({
         where: { tenantId, platform: 'whatsapp', connected: true },
       }));
-    const creds = account ? this.messaging.credentialsFromAccount(account) : null;
+    const creds = account
+      ? this.messaging.credentialsFromAccount(account)
+      : null;
     if (!creds) return { templates: [], message: 'WhatsApp not connected' };
 
     const templates = await this.messaging.listMessageTemplates(creds);

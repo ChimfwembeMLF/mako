@@ -10,7 +10,9 @@ export function toOptionalDate(value: unknown): Date | undefined {
   // Calendar date from scheduler UI: YYYY-MM-DD
   const dateOnly = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (dateOnly) {
-    const d = new Date(`${dateOnly[1]}-${dateOnly[2]}-${dateOnly[3]}T00:00:00.000Z`);
+    const d = new Date(
+      `${dateOnly[1]}-${dateOnly[2]}-${dateOnly[3]}T00:00:00.000Z`,
+    );
     return Number.isNaN(d.getTime()) ? undefined : d;
   }
 

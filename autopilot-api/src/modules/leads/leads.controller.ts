@@ -29,7 +29,7 @@ interface JwtUser {
   sub: string;
 }
 
-@ApiTags("Leads")
+@ApiTags('Leads')
 @Controller('api/v1/leads')
 export class LeadsController {
   constructor(
@@ -56,7 +56,9 @@ export class LeadsController {
     if (!body.sourceId || !secret) {
       throw new UnauthorizedException('sourceId and X-Webhook-Secret required');
     }
-    const source = await this.sourcesRepo.findOne({ where: { id: body.sourceId } });
+    const source = await this.sourcesRepo.findOne({
+      where: { id: body.sourceId },
+    });
     if (!source?.webhookSecret || source.webhookSecret !== secret) {
       throw new UnauthorizedException('Invalid webhook secret');
     }

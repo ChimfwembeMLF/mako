@@ -22,8 +22,8 @@ export function isRecoverableMetaTokenError(err: unknown): boolean {
     err instanceof Error
       ? err.message
       : typeof err === 'object' && err !== null
-        ? JSON.stringify(err)
-        : String(err);
+      ? JSON.stringify(err)
+      : String(err);
   return (
     /code 100|code 101|code 190|Error validating application|nonexisting field \(accounts\)/i.test(
       summary,

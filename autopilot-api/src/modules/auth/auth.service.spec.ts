@@ -15,13 +15,28 @@ describe('AuthService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
-        { provide: JwtService, useValue: { sign: jest.fn(), verify: jest.fn() } },
+        {
+          provide: JwtService,
+          useValue: { sign: jest.fn(), verify: jest.fn() },
+        },
         { provide: UserService, useValue: {} },
-        { provide: RefreshTokenService, useValue: { save: jest.fn(), isValid: jest.fn(), revoke: jest.fn() } },
-        { provide: MailService, useValue: { sendPasswordResetEmail: jest.fn() } },
+        {
+          provide: RefreshTokenService,
+          useValue: { save: jest.fn(), isValid: jest.fn(), revoke: jest.fn() },
+        },
+        {
+          provide: MailService,
+          useValue: { sendPasswordResetEmail: jest.fn() },
+        },
         { provide: ConfigService, useValue: { get: jest.fn() } },
-        { provide: TenantBootstrapService, useValue: { bootstrapForUser: jest.fn() } },
-        { provide: TenantMembersService, useValue: { acceptPendingInvitations: jest.fn() } },
+        {
+          provide: TenantBootstrapService,
+          useValue: { bootstrapForUser: jest.fn() },
+        },
+        {
+          provide: TenantMembersService,
+          useValue: { acceptPendingInvitations: jest.fn() },
+        },
       ],
     }).compile();
 

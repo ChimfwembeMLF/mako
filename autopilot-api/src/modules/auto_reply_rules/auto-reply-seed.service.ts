@@ -38,7 +38,9 @@ export class AutoReplySeedService {
     }
 
     if (created > 0) {
-      this.logger.log(`Seeded ${created} auto-reply rules for tenant ${tenantId}`);
+      this.logger.log(
+        `Seeded ${created} auto-reply rules for tenant ${tenantId}`,
+      );
     }
     return created;
   }

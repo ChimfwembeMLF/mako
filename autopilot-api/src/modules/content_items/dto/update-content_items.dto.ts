@@ -7,7 +7,10 @@ import {
   IsObject,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { toOptionalDate, toOptionalTimeString } from '../../../common/dto/date-transform.util';
+import {
+  toOptionalDate,
+  toOptionalTimeString,
+} from '../../../common/dto/date-transform.util';
 
 export class ContentItemsUpdateDto {
   @IsOptional()

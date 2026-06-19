@@ -1,5 +1,8 @@
 /** Supabase public URLs are used as-is everywhere. */
-export function resolvePublicMediaUrl(url: string, _apiPublicBase?: string): string {
+export function resolvePublicMediaUrl(
+  url: string,
+  _apiPublicBase?: string,
+): string {
   if (!url?.trim()) return url;
   if (/^https?:\/\//i.test(url)) return url;
   return url;

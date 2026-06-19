@@ -32,7 +32,9 @@ export class GenerateImageService {
 
     let workspaceId: string | undefined;
     if (params.contentId) {
-      const item = await this.contentRepo.findOne({ where: { id: params.contentId } });
+      const item = await this.contentRepo.findOne({
+        where: { id: params.contentId },
+      });
       workspaceId = item?.workspaceId;
     }
 
@@ -73,7 +75,11 @@ export class GenerateImageService {
       tokensUsed: 100,
     });
 
-    return { media_url: publicUrl, media_type: 'image', mediaAssetId: asset.id };
+    return {
+      media_url: publicUrl,
+      media_type: 'image',
+      mediaAssetId: asset.id,
+    };
   }
 
   async generateSlideshow(params: {

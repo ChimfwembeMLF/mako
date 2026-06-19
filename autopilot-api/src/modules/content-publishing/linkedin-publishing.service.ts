@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import {
+  PublishResult,
+  ContentToPublish,
+} from './interfaces/publish-result.interface';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { PublishMediaResolverService } from './publish-media-resolver.service';
 import {
@@ -21,7 +24,10 @@ export class LinkedInPublishingService {
     private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
-  async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
+  async publishPost(
+    content: ContentToPublish,
+    media: any[] = [],
+  ): Promise<PublishResult> {
     const socialAccount = await this.accounts.getForPublish(
       content.tenantId,
       content.userId,
@@ -30,7 +36,10 @@ export class LinkedInPublishingService {
     );
 
     if (!socialAccount) {
-      return { published: false, message: 'LinkedIn account not connected for this workspace' };
+      return {
+        published: false,
+        message: 'LinkedIn account not connected for this workspace',
+      };
     }
 
     return this.publishWithAccount(socialAccount, content, media, false);
@@ -49,7 +58,8 @@ export class LinkedInPublishingService {
       if (!liToken || !liPersonId) {
         return {
           published: false,
-          message: 'LinkedIn credentials missing — reconnect LinkedIn in Publisher Connect',
+          message:
+            'LinkedIn credentials missing — reconnect LinkedIn in Publisher Connect',
         };
       }
 
@@ -109,7 +119,11 @@ export class LinkedInPublishingService {
             const local = this.mediaResolver.readLocalUpload(att.media_url);
             const mediaBlob = local
               ? local.buffer
-              : (await axios.get(att.media_url, { responseType: 'arraybuffer' })).data;
+              : (
+                  await axios.get(att.media_url, {
+                    responseType: 'arraybuffer',
+                  })
+                ).data;
 
             await axios.put(uploadUrl, mediaBlob, {
               headers: { 'Content-Type': 'application/octet-stream' },
@@ -127,7 +141,9 @@ export class LinkedInPublishingService {
           if (isTokenAuthError(err)) {
             throw err;
           }
-          this.logger.warn(`LinkedIn media upload skipped: ${summarizeAxiosError(err)}`);
+          this.logger.warn(
+            `LinkedIn media upload skipped: ${summarizeAxiosError(err)}`,
+          );
         }
       }
 
@@ -151,15 +167,20 @@ export class LinkedInPublishingService {
         ].media = mediaArray;
       }
 
-      const res = await axios.post('https://api.linkedin.com/v2/ugcPosts', postBody, {
-        headers: {
-          Authorization: `Bearer ${liToken}`,
-          'Content-Type': 'application/json',
-          'X-Restli-Protocol-Version': '2.0.0',
+      const res = await axios.post(
+        'https://api.linkedin.com/v2/ugcPosts',
+        postBody,
+        {
+          headers: {
+            Authorization: `Bearer ${liToken}`,
+            'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
         },
-      });
+      );
 
-      const externalPostId = res.headers['x-restli-id'] ?? res.data?.id ?? undefined;
+      const externalPostId =
+        res.headers['x-restli-id'] ?? res.data?.id ?? undefined;
 
       if (res.status === 201 || externalPostId) {
         this.logger.log(`Published to LinkedIn: ${externalPostId}`);
@@ -176,8 +197,13 @@ export class LinkedInPublishingService {
       };
     } catch (err) {
       if (!retried && isTokenAuthError(err) && socialAccount.refreshToken) {
-        const refreshed = await this.socialAccounts.forceRefreshToken(socialAccount);
-        if (refreshed.accessToken && refreshed.accessToken !== socialAccount.accessToken) {
+        const refreshed = await this.socialAccounts.forceRefreshToken(
+          socialAccount,
+        );
+        if (
+          refreshed.accessToken &&
+          refreshed.accessToken !== socialAccount.accessToken
+        ) {
           return this.publishWithAccount(refreshed, content, media, true);
         }
       }

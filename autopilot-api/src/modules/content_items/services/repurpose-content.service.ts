@@ -7,7 +7,12 @@ import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.servic
 import { ContentItems } from '../entities/content_items.entity';
 import { BrandProfilesService } from '../../brand_profiles/brand_profiles.service';
 
-const REPURPOSE_PLATFORMS = ['linkedin', 'instagram', 'facebook', 'twitter'] as const;
+const REPURPOSE_PLATFORMS = [
+  'linkedin',
+  'instagram',
+  'facebook',
+  'twitter',
+] as const;
 
 @Injectable()
 export class RepurposeContentService {
@@ -20,8 +25,14 @@ export class RepurposeContentService {
     private readonly brandProfiles: BrandProfilesService,
   ) {}
 
-  async repurpose(params: { contentId: string; userId: string; targetPlatform?: string }) {
-    const source = await this.contentRepo.findOne({ where: { id: params.contentId } });
+  async repurpose(params: {
+    contentId: string;
+    userId: string;
+    targetPlatform?: string;
+  }) {
+    const source = await this.contentRepo.findOne({
+      where: { id: params.contentId },
+    });
     if (!source) throw new NotFoundException('Content item not found');
 
     await this.usage.assertWithinLimit(source.tenantId, params.userId);
@@ -44,15 +55,16 @@ export class RepurposeContentService {
       const { data, tokensUsed } = await this.mistral.completeJson<{
         title?: string;
         content?: string;
-      }>(
-        [
-          { role: 'system', content: this.prompts.repurposeSystem(brandCtx, platform) },
-          {
-            role: 'user',
-            content: `Original title: ${source.title}\nOriginal content:\n${source.content}\n\nAdapt for ${platform}.`,
-          },
-        ],
-      );
+      }>([
+        {
+          role: 'system',
+          content: this.prompts.repurposeSystem(brandCtx, platform),
+        },
+        {
+          role: 'user',
+          content: `Original title: ${source.title}\nOriginal content:\n${source.content}\n\nAdapt for ${platform}.`,
+        },
+      ]);
 
       totalTokens += tokensUsed;
       await this.contentRepo.save(

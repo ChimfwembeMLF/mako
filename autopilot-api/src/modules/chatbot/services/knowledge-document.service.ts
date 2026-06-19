@@ -36,14 +36,21 @@ export class KnowledgeDocumentService {
     private readonly mistralLibrary: MistralChatbotLibraryService,
   ) {}
 
-  async list(tenantId: string, workspaceId?: string): Promise<KnowledgeDocument[]> {
+  async list(
+    tenantId: string,
+    workspaceId?: string,
+  ): Promise<KnowledgeDocument[]> {
     return this.docRepo.find({
       where: scopeWhere<KnowledgeDocument>(tenantId, workspaceId),
       order: { created_at: 'DESC' },
     });
   }
 
-  async get(tenantId: string, id: string, workspaceId?: string): Promise<KnowledgeDocument> {
+  async get(
+    tenantId: string,
+    id: string,
+    workspaceId?: string,
+  ): Promise<KnowledgeDocument> {
     const doc = await this.docRepo.findOne({
       where: { id, ...scopeWhere<KnowledgeDocument>(tenantId, workspaceId) },
     });
@@ -74,7 +81,9 @@ export class KnowledgeDocumentService {
       lower.endsWith('.md');
 
     if (!allowed) {
-      throw new BadRequestException('Unsupported file type. Use PDF, DOCX, TXT, or MD.');
+      throw new BadRequestException(
+        'Unsupported file type. Use PDF, DOCX, TXT, or MD.',
+      );
     }
 
     this.storage.assertConfigured();
@@ -134,9 +143,16 @@ export class KnowledgeDocumentService {
     return saved;
   }
 
-  async delete(tenantId: string, id: string, workspaceId?: string): Promise<void> {
+  async delete(
+    tenantId: string,
+    id: string,
+    workspaceId?: string,
+  ): Promise<void> {
     const doc = await this.get(tenantId, id, workspaceId);
-    const config = await this.chatbotConfig.getOrCreateForContext(tenantId, workspaceId);
+    const config = await this.chatbotConfig.getOrCreateForContext(
+      tenantId,
+      workspaceId,
+    );
     await this.mistralLibrary.deleteDocument(config, doc);
     if (doc.storageUrl) {
       try {
@@ -167,13 +183,19 @@ export class KnowledgeDocumentService {
   async syncMistral(tenantId: string): Promise<{ success: true }> {
     const config = await this.chatbotConfig.getOrCreate(tenantId);
     if (!config.useMistralLibrary) {
-      throw new BadRequestException('Enable Mistral Document Library in chatbot settings first');
+      throw new BadRequestException(
+        'Enable Mistral Document Library in chatbot settings first',
+      );
     }
     await this.mistralLibrary.syncUnsyncedDocuments(tenantId, config);
     return { success: true };
   }
 
-  async reindex(tenantId: string, id: string, userId: string): Promise<KnowledgeDocument> {
+  async reindex(
+    tenantId: string,
+    id: string,
+    userId: string,
+  ): Promise<KnowledgeDocument> {
     const doc = await this.get(tenantId, id);
     doc.status = 'pending';
     doc.errorMessage = undefined;

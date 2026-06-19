@@ -42,7 +42,11 @@ export class WhatsappFlowConfig {
   @Column({ type: 'boolean', default: true })
   aiFallbackEnabled: boolean;
 
-  @Column({ type: 'text', array: true, default: () => "ARRAY['hi','hello','menu','start','0']" })
+  @Column({
+    type: 'text',
+    array: true,
+    default: () => "ARRAY['hi','hello','menu','start','0']",
+  })
   welcomeTriggers: string[];
 
   @CreateDateColumn({ type: 'timestamptz' })

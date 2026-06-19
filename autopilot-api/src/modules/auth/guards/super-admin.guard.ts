@@ -30,7 +30,8 @@ export class SuperAdminGuard implements CanActivate {
     const isSuperAdmin =
       user?.role === RoleType.SUPER_ADMIN || profile?.isSystemAdmin === true;
 
-    if (!isSuperAdmin) throw new ForbiddenException('Super Admin access required');
+    if (!isSuperAdmin)
+      throw new ForbiddenException('Super Admin access required');
     return true;
   }
 }

@@ -73,7 +73,9 @@ export class ChatbotTtsVoiceService {
   }
 
   async deleteCustomVoice(tenantId: string, voiceRowId: string) {
-    const row = await this.repo.findOne({ where: { id: voiceRowId, tenantId } });
+    const row = await this.repo.findOne({
+      where: { id: voiceRowId, tenantId },
+    });
     if (!row) throw new NotFoundException('Voice not found');
 
     await this.mistralTts.deleteCustomVoice(row.mistralVoiceId);

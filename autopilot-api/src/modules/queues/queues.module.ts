@@ -30,7 +30,12 @@ import { TenantQueueFanoutService } from './tenant-queue-fanout.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, Profiles, ContentPublications, ContentItems]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      Profiles,
+      ContentPublications,
+      ContentItems,
+    ]),
     SubscriptionsModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
@@ -55,9 +60,7 @@ import { TenantQueueFanoutService } from './tenant-queue-fanout.service';
         ),
       }),
     }),
-    BullModule.registerQueue(
-      ...ALL_QUEUES.map((name) => ({ name })),
-    ),
+    BullModule.registerQueue(...ALL_QUEUES.map((name) => ({ name }))),
     BullBoardModule.forFeature(
       ...ALL_QUEUES.map((name) => ({
         name,

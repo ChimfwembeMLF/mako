@@ -1,4 +1,8 @@
-export type FormSuggestionType = 'brand-brain' | 'content' | 'campaign' | 'whatsapp-menu';
+export type FormSuggestionType =
+  | 'brand-brain'
+  | 'content'
+  | 'campaign'
+  | 'whatsapp-menu';
 
 export const FORM_SUGGESTION_FIELDS: Record<FormSuggestionType, string[]> = {
   'brand-brain': [
@@ -87,25 +91,23 @@ export const FORM_SUGGESTION_FORMAT_HINTS: Record<string, string> = {
     'Mix: adjective list, “We sound like…” note, do/don’t style comment',
   brandPersonality:
     'Mix: metaphor (“If we were a person…”), trait bullets, short character sketch',
-  currentOffers:
-    'Mix: offer headline, bullet promos, urgency note with dates',
-  uniqueSellingPoints:
-    'Mix: 3 bullet USPs, comparison note, proof-point list',
-  faqs:
-    'Mix: Q&A pairs (Q: … A: …), bullet common questions, FAQ snippet with 2 Q&As',
+  currentOffers: 'Mix: offer headline, bullet promos, urgency note with dates',
+  uniqueSellingPoints: 'Mix: 3 bullet USPs, comparison note, proof-point list',
+  faqs: 'Mix: Q&A pairs (Q: … A: …), bullet common questions, FAQ snippet with 2 Q&As',
   caseStudies:
     'Mix: client + result one-liner, mini story paragraph, bullet wins',
   competitors:
     'Mix: comma names, bullet list with one-line positioning each, comparison note',
-  keywords:
-    'Mix: comma phrases, hashtag-style list, grouped keyword bullets',
-  title:
-    'Mix: punchy headline, question title, listicle-style (“3 ways to…”)',
-  serviceName: 'Mix: short brand name, name + tagline, descriptive business name',
+  keywords: 'Mix: comma phrases, hashtag-style list, grouped keyword bullets',
+  title: 'Mix: punchy headline, question title, listicle-style (“3 ways to…”)',
+  serviceName:
+    'Mix: short brand name, name + tagline, descriptive business name',
   welcomeMessage:
     'Mix: friendly one-liner with {serviceName}, question hook, brief “how can we help”',
-  menuTitle: 'Mix: action labels — Pricing, Book demo, Track order, Talk to support',
-  menuDescription: 'Mix: short subtitle under menu label, benefit hint, 3–6 words',
+  menuTitle:
+    'Mix: action labels — Pricing, Book demo, Track order, Talk to support',
+  menuDescription:
+    'Mix: short subtitle under menu label, benefit hint, 3–6 words',
   menuResponse:
     'Mix: factual reply paragraph, bullet facts, hours + contact + next step',
 };
@@ -121,12 +123,10 @@ export const FORM_SUGGESTION_FORMAT_HINTS_BY_FORM: Partial<
       'Mix: punchy headline, question title, listicle-style (“3 ways to…”)',
   },
   campaign: {
-    name:
-      'CAMPAIGN series title only. Mix: short codename, seasonal launch name, descriptive multi-post series title — not a post headline',
+    name: 'CAMPAIGN series title only. Mix: short codename, seasonal launch name, descriptive multi-post series title — not a post headline',
     theme:
       'CAMPAIGN PLANNING only: overarching narrative for a multi-post series. Mix: 1–2 sentence brief, bullet story arc (tease → educate → proof → CTA), strategic positioning — NOT post hooks, captions, or individual post ideas',
-    goal:
-      'Business/marketing objectives for the whole campaign. Mix: KPI + metric one-liner, bullet objectives, funnel outcome note',
+    goal: 'Business/marketing objectives for the whole campaign. Mix: KPI + metric one-liner, bullet objectives, funnel outcome note',
   },
 };
 
@@ -142,12 +142,25 @@ export const FORM_SUGGESTION_FORM_BRIEFS: Record<FormSuggestionType, string> = {
     'WhatsApp flow menu — suggest business name, welcome text, and menu option labels/replies.',
 };
 
-export function formFieldLabel(form: FormSuggestionType, field: string): string {
-  return FORM_SUGGESTION_LABELS_BY_FORM[form]?.[field] ?? FORM_SUGGESTION_LABELS[field] ?? field;
+export function formFieldLabel(
+  form: FormSuggestionType,
+  field: string,
+): string {
+  return (
+    FORM_SUGGESTION_LABELS_BY_FORM[form]?.[field] ??
+    FORM_SUGGESTION_LABELS[field] ??
+    field
+  );
 }
 
-export function formFieldHint(form: FormSuggestionType, field: string): string | undefined {
-  return FORM_SUGGESTION_FORMAT_HINTS_BY_FORM[form]?.[field] ?? FORM_SUGGESTION_FORMAT_HINTS[field];
+export function formFieldHint(
+  form: FormSuggestionType,
+  field: string,
+): string | undefined {
+  return (
+    FORM_SUGGESTION_FORMAT_HINTS_BY_FORM[form]?.[field] ??
+    FORM_SUGGESTION_FORMAT_HINTS[field]
+  );
 }
 
 export const SUGGESTIONS_PER_FIELD = 4;

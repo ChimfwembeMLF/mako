@@ -34,7 +34,11 @@ export class SocialInboxController {
     @Query('channel') channel?: 'post_comment' | 'dm' | 'all',
     @Query('workspaceId') workspaceId?: string,
   ) {
-    return this.inbox.listConversations(tenantId, channel ?? 'all', workspaceId);
+    return this.inbox.listConversations(
+      tenantId,
+      channel ?? 'all',
+      workspaceId,
+    );
   }
 
   @Get('messages')
@@ -51,7 +55,11 @@ export class SocialInboxController {
     @Req() req: { user: JwtUser },
     @Body() body: { tenantId: string; workspaceId?: string },
   ) {
-    return this.sync.syncForTenant(body.tenantId, String(req.user.sub), body.workspaceId);
+    return this.sync.syncForTenant(
+      body.tenantId,
+      String(req.user.sub),
+      body.workspaceId,
+    );
   }
 
   @Post('messages/reply')

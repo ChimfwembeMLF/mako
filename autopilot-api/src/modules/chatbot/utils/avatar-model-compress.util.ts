@@ -23,7 +23,9 @@ async function getIo(): Promise<NodeIO> {
 }
 
 function isGlbBuffer(buffer: Buffer): boolean {
-  return buffer.length >= 4 && buffer.subarray(0, 4).toString('ascii') === 'glTF';
+  return (
+    buffer.length >= 4 && buffer.subarray(0, 4).toString('ascii') === 'glTF'
+  );
 }
 
 export type AvatarCompressResult = {
@@ -42,12 +44,13 @@ export async function compressAvatarModel(
   const originalBytes = input.length;
   try {
     const io = await getIo();
-    const document = isGlbBuffer(input) || ext === '.glb'
-      ? await io.readBinary(new Uint8Array(input))
-      : await io.readJSON({
-          json: JSON.parse(input.toString('utf8')) as GLTF.IGLTF,
-          resources: {},
-        });
+    const document =
+      isGlbBuffer(input) || ext === '.glb'
+        ? await io.readBinary(new Uint8Array(input))
+        : await io.readJSON({
+            json: JSON.parse(input.toString('utf8')) as GLTF.IGLTF,
+            resources: {},
+          });
 
     await document.transform(
       prune(),
@@ -76,12 +79,13 @@ export async function compressAvatarModel(
     };
   } catch (err) {
     log.warn(
-      `Avatar compression failed, storing original: ${err instanceof Error ? err.message : err}`,
+      `Avatar compression failed, storing original: ${
+        err instanceof Error ? err.message : err
+      }`,
     );
     return {
       buffer: input,
-      contentType:
-        ext === '.gltf' ? 'model/gltf+json' : 'model/gltf-binary',
+      contentType: ext === '.gltf' ? 'model/gltf+json' : 'model/gltf-binary',
       originalBytes,
       compressedBytes: originalBytes,
       compressed: false,

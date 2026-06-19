@@ -32,7 +32,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 
 type SocialOAuthUser = {
   accessToken?: string;
-  refreshToken?: string;  // Add this line
+  refreshToken?: string; // Add this line
   provider?: string;
   providerId?: string;
   email?: string;
@@ -124,13 +124,20 @@ export class AuthController {
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
     try {
       const profile = req.user as SocialOAuthUser & { refreshToken?: string };
-      const user = await this.googleAuthService.authenticate(profile.accessToken!);
+      const user = await this.googleAuthService.authenticate(
+        profile.accessToken!,
+      );
       const tokens = await this.authService.completeAuthentication(user);
-      return res.redirect(`${this.frontendUrl}/auth/callback?token=${tokens.token}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Google authentication failed';
       return res.redirect(
-        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`,
+        `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Google authentication failed';
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(
+          message,
+        )}`,
       );
     }
   }
@@ -154,9 +161,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Facebook OAuth callback' })
   async facebookLoginRedirect(@Req() req: Request, @Res() res: Response) {
     const payload = req.user as SocialOAuthUser;
-    const user = await this.facebookAuthService.authenticate(payload.accessToken!);
+    const user = await this.facebookAuthService.authenticate(
+      payload.accessToken!,
+    );
     const tokens = await this.authService.completeAuthentication(user);
-    return res.redirect(`${this.frontendUrl}/auth/callback?token=${tokens.token}`);
+    return res.redirect(
+      `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+    );
   }
 
   @Post('facebook-auth')
@@ -183,15 +194,25 @@ export class AuthController {
   ) {
     if (error) {
       const message = errorDescription || error;
-      return res.redirect(`${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`);
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(
+          message,
+        )}`,
+      );
     }
     if (!code) throw new BadRequestException('Missing authorization code');
 
-    const tokenResult = await this.linkedInAuthService.exchangeCodeForTokens(code);
+    const tokenResult = await this.linkedInAuthService.exchangeCodeForTokens(
+      code,
+    );
 
-    const user = await this.linkedInAuthService.authenticate(tokenResult.accessToken);
+    const user = await this.linkedInAuthService.authenticate(
+      tokenResult.accessToken,
+    );
     const tokens = await this.authService.completeAuthentication(user);
-    return res.redirect(`${this.frontendUrl}/auth/callback?token=${tokens.token}`);
+    return res.redirect(
+      `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+    );
   }
 
   @Post('linkedin-auth')
@@ -218,29 +239,39 @@ export class AuthController {
   ) {
     if (error) {
       const message = errorDescription || error;
-      return res.redirect(`${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`);
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(
+          message,
+        )}`,
+      );
     }
     if (!code) throw new BadRequestException('Missing authorization code');
 
     const cleanCode = code.replace(/#_$/, '').trim();
 
     try {
-      const tokenResult = await this.instagramAuthService.exchangeCodeForTokens(cleanCode);
+      const tokenResult = await this.instagramAuthService.exchangeCodeForTokens(
+        cleanCode,
+      );
       const user = await this.instagramAuthService.authenticate(
         tokenResult.accessToken,
         tokenResult.instagramUserId,
       );
       const tokens = await this.authService.completeAuthentication(user);
-      return res.redirect(`${this.frontendUrl}/auth/callback?token=${tokens.token}`);
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+      );
     } catch (err) {
       const message =
         err instanceof BadRequestException
           ? err.message
           : err instanceof Error
-            ? err.message
-            : 'Instagram authentication failed';
+          ? err.message
+          : 'Instagram authentication failed';
       return res.redirect(
-        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`,
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(
+          message,
+        )}`,
       );
     }
   }

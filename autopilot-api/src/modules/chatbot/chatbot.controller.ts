@@ -27,7 +27,11 @@ import { ChatSessionService } from './services/chat-session.service';
 import { ChatApiKeyService } from './services/chat-api-key.service';
 import { ChatbotAccessService } from './services/chatbot-access.service';
 import { UpdateChatbotConfigDto } from './dto/update-chatbot-config.dto';
-import { CreateApiKeyDto, CreateSessionDto, SendMessageDto } from './dto/send-message.dto';
+import {
+  CreateApiKeyDto,
+  CreateSessionDto,
+  SendMessageDto,
+} from './dto/send-message.dto';
 import { EscalateSessionDto } from './dto/escalate-session.dto';
 
 interface JwtUser {
@@ -56,8 +60,15 @@ export class ChatbotController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.view');
-    const config = await this.configService.getOrCreateForContext(tenantId, workspaceId);
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.view',
+    );
+    const config = await this.configService.getOrCreateForContext(
+      tenantId,
+      workspaceId,
+    );
     const keys = await this.apiKeys.listKeys(tenantId);
     return {
       config,
@@ -82,7 +93,11 @@ export class ChatbotController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.configService.uploadAvatar(tenantId, file, workspaceId);
   }
 
@@ -96,7 +111,11 @@ export class ChatbotController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.configService.uploadAvatarModel(tenantId, file, workspaceId);
   }
 
@@ -106,18 +125,23 @@ export class ChatbotController {
     @Body() dto: UpdateChatbotConfigDto,
   ) {
     if (!dto.tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), dto.tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      dto.tenantId,
+      'chatbot.manage',
+    );
     const { tenantId, workspaceId, ...patch } = dto;
     return this.configService.update(tenantId, patch, workspaceId);
   }
 
   @Post('config/keys')
-  async createKey(
-    @Req() req: { user: JwtUser },
-    @Body() dto: CreateApiKeyDto,
-  ) {
+  async createKey(@Req() req: { user: JwtUser }, @Body() dto: CreateApiKeyDto) {
     if (!dto.tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), dto.tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      dto.tenantId,
+      'chatbot.manage',
+    );
     const config = await this.configService.getOrCreate(dto.tenantId);
     return this.apiKeys.createKey({
       tenantId: dto.tenantId,
@@ -133,7 +157,11 @@ export class ChatbotController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     await this.apiKeys.revokeKey(tenantId, id);
     return { success: true };
   }
@@ -146,7 +174,11 @@ export class ChatbotController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.view');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.view',
+    );
     return this.sessions.listSessions(tenantId, channel, workspaceId);
   }
 
@@ -156,7 +188,11 @@ export class ChatbotController {
     @Body() dto: CreateSessionDto,
   ) {
     if (!dto.tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), dto.tenantId, 'chatbot.use');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      dto.tenantId,
+      'chatbot.use',
+    );
     const config = await this.configService.getOrCreateForContext(
       dto.tenantId,
       dto.workspaceId,
@@ -178,7 +214,11 @@ export class ChatbotController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.view');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.view',
+    );
     return this.sessions.getMessages(tenantId, id);
   }
 
@@ -190,7 +230,11 @@ export class ChatbotController {
     @Body() dto: EscalateSessionDto,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.sessions.escalateSession({
       tenantId,
       sessionId: id,
@@ -207,7 +251,11 @@ export class ChatbotController {
     @Body() dto: SendMessageDto,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.use');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.use',
+    );
     const { userMessage, assistantMessage } = await this.sessions.sendMessage({
       tenantId,
       sessionId: id,
@@ -229,7 +277,11 @@ export class ChatbotController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.view');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.view',
+    );
     return this.ttsVoices.listForTenant(tenantId);
   }
 
@@ -243,8 +295,13 @@ export class ChatbotController {
     @Body('name') name: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
-    if (!file?.buffer?.length) throw new BadRequestException('file is required');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
+    if (!file?.buffer?.length)
+      throw new BadRequestException('file is required');
     if (!name?.trim()) throw new BadRequestException('name is required');
     return this.ttsVoices.cloneVoice(tenantId, String(req.user.sub), {
       name: name.trim(),
@@ -260,7 +317,11 @@ export class ChatbotController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.ttsVoices.deleteCustomVoice(tenantId, id);
   }
 
@@ -272,12 +333,20 @@ export class ChatbotController {
     @Res() res: Response,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    if (!body?.voiceId?.trim()) throw new BadRequestException('voiceId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.view');
+    if (!body?.voiceId?.trim())
+      throw new BadRequestException('voiceId is required');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.view',
+    );
     const text =
       body.text?.trim() ||
       'Hello! This is a preview of how your chatbot agent will sound.';
-    const { audioData } = await this.mistralTts.speak(text, body.voiceId.trim());
+    const { audioData } = await this.mistralTts.speak(
+      text,
+      body.voiceId.trim(),
+    );
     const buffer = Buffer.from(audioData, 'base64');
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'no-store');
@@ -293,13 +362,23 @@ export class ChatbotController {
     @Res() res: Response,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.use');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.use',
+    );
     const config = await this.configService.getOrCreate(tenantId);
     if (!config.widgetTtsEnabled) {
-      throw new BadRequestException('Text-to-speech is not enabled for this chatbot');
+      throw new BadRequestException(
+        'Text-to-speech is not enabled for this chatbot',
+      );
     }
 
-    const message = await this.sessions.getAssistantMessage(tenantId, sessionId, messageId);
+    const message = await this.sessions.getAssistantMessage(
+      tenantId,
+      sessionId,
+      messageId,
+    );
     const plainText = stripMarkdownForSpeech(message.content);
     const { audioData } = await this.mistral.speak(plainText, {
       voiceId: config.mistralVoiceId,
@@ -318,7 +397,11 @@ export class ChatbotController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     await this.sessions.deleteSession(tenantId, id);
     return { success: true };
   }

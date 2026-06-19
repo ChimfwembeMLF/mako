@@ -44,7 +44,10 @@ export class PublicationEngagementService {
     workspaceId?: string,
   ): Promise<number> {
     const publications = await this.publicationsRepo.find({
-      where: { ...scopeWhere<ContentPublications>(tenantId, workspaceId), status: 'published' },
+      where: {
+        ...scopeWhere<ContentPublications>(tenantId, workspaceId),
+        status: 'published',
+      },
     });
 
     let updated = 0;
@@ -59,7 +62,11 @@ export class PublicationEngagementService {
           continue;
         }
 
-        const metrics = await this.fetchMetrics(pub.platform, pub.externalPostId, account);
+        const metrics = await this.fetchMetrics(
+          pub.platform,
+          pub.externalPostId,
+          account,
+        );
         if (!metrics) continue;
 
         await this.publicationsRepo.update(pub.id, {
@@ -73,7 +80,9 @@ export class PublicationEngagementService {
         updated++;
       } catch (err) {
         this.logger.warn(
-          `Engagement sync failed for ${pub.platform} ${pub.externalPostId}: ${summarizeAxiosError(err)}`,
+          `Engagement sync failed for ${pub.platform} ${
+            pub.externalPostId
+          }: ${summarizeAxiosError(err)}`,
         );
       }
     }
@@ -88,7 +97,9 @@ export class PublicationEngagementService {
     let account: SocialAccounts | null = null;
 
     if (pub.socialAccountId) {
-      account = await this.socialRepo.findOne({ where: { id: pub.socialAccountId } });
+      account = await this.socialRepo.findOne({
+        where: { id: pub.socialAccountId },
+      });
     }
 
     if (!account) {
@@ -205,7 +216,9 @@ export class PublicationEngagementService {
 
     try {
       const { data } = await axios.get(
-        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(postUrn)}`,
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+          postUrn,
+        )}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -214,8 +227,15 @@ export class PublicationEngagementService {
         },
       );
       const likes = Number(data.likesSummary?.totalLikes ?? 0);
-      const comments = Number(data.commentsSummary?.totalFirstLevelComments ?? 0);
-      return { likeCount: likes, commentCount: comments, shareCount: 0, viewCount: 0 };
+      const comments = Number(
+        data.commentsSummary?.totalFirstLevelComments ?? 0,
+      );
+      return {
+        likeCount: likes,
+        commentCount: comments,
+        shareCount: 0,
+        viewCount: 0,
+      };
     } catch {
       return null;
     }

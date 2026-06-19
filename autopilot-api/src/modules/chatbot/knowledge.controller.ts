@@ -41,7 +41,11 @@ export class KnowledgeController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.view');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.view',
+    );
     return this.documents.list(tenantId, workspaceId);
   }
 
@@ -55,7 +59,11 @@ export class KnowledgeController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.documents.upload({
       tenantId,
       userId: String(req.user.sub),
@@ -71,7 +79,11 @@ export class KnowledgeController {
     @Body() dto: UpdateKnowledgeDocumentDto,
   ) {
     if (!dto.tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), dto.tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      dto.tenantId,
+      'chatbot.manage',
+    );
     return this.documents.rename(dto.tenantId, id, dto.title, dto.workspaceId);
   }
 
@@ -83,7 +95,11 @@ export class KnowledgeController {
     @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     await this.documents.delete(tenantId, id, workspaceId);
     return { success: true };
   }
@@ -94,7 +110,11 @@ export class KnowledgeController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.documents.syncMistral(tenantId);
   }
 
@@ -105,7 +125,11 @@ export class KnowledgeController {
     @Query('tenantId') tenantId: string,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    await this.access.assertPermission(String(req.user.sub), tenantId, 'chatbot.manage');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
     return this.documents.reindex(tenantId, id, String(req.user.sub));
   }
 }

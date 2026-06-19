@@ -1,8 +1,19 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsObject, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsObject,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 
 export class SendMessageDto {
-  @ApiProperty({ example: 'What are your business hours?', minLength: 1, maxLength: 8000 })
+  @ApiProperty({
+    example: 'What are your business hours?',
+    minLength: 1,
+    maxLength: 8000,
+  })
   @IsString()
   @MinLength(1)
   @MaxLength(8000)

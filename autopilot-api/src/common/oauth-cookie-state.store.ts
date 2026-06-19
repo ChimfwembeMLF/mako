@@ -48,7 +48,10 @@ function signState(state: string, secret: string): string {
 export class OAuthCookieStateStore {
   constructor(private readonly secret: string) {}
 
-  store(req: Request, callback: (err: Error | null, state?: string) => void): void {
+  store(
+    req: Request,
+    callback: (err: Error | null, state?: string) => void,
+  ): void {
     const res = req.res;
     if (!res) {
       callback(new Error('Missing response for OAuth state cookie'));
@@ -64,20 +67,28 @@ export class OAuthCookieStateStore {
   verify(
     req: Request,
     providedState: string,
-    callback: (err: Error | null, ok: boolean, info?: { message?: string }) => void,
+    callback: (
+      err: Error | null,
+      ok: boolean,
+      info?: { message?: string },
+    ) => void,
   ): void {
     const res = req.res;
     if (res) appendCookie(res, '', 0);
 
     const raw = parseCookies(req)[COOKIE_NAME];
     if (!raw || !providedState) {
-      callback(null, false, { message: 'Unable to verify authorization request state.' });
+      callback(null, false, {
+        message: 'Unable to verify authorization request state.',
+      });
       return;
     }
 
     const dot = raw.lastIndexOf('.');
     if (dot < 0) {
-      callback(null, false, { message: 'Unable to verify authorization request state.' });
+      callback(null, false, {
+        message: 'Unable to verify authorization request state.',
+      });
       return;
     }
 
@@ -89,12 +100,16 @@ export class OAuthCookieStateStore {
       signature.length !== expected.length ||
       !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
     ) {
-      callback(null, false, { message: 'Invalid authorization request state.' });
+      callback(null, false, {
+        message: 'Invalid authorization request state.',
+      });
       return;
     }
 
     if (state !== providedState) {
-      callback(null, false, { message: 'Invalid authorization request state.' });
+      callback(null, false, {
+        message: 'Invalid authorization request state.',
+      });
       return;
     }
 
@@ -102,7 +117,12 @@ export class OAuthCookieStateStore {
   }
 }
 
-export function createOAuthCookieStateStore(secret?: string): OAuthCookieStateStore {
-  const resolved = secret?.trim() || process.env.SESSION_SECRET?.trim() || 'dev_session_secret';
+export function createOAuthCookieStateStore(
+  secret?: string,
+): OAuthCookieStateStore {
+  const resolved =
+    secret?.trim() ||
+    process.env.SESSION_SECRET?.trim() ||
+    'dev_session_secret';
   return new OAuthCookieStateStore(resolved);
 }

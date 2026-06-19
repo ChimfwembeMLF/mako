@@ -10,7 +10,10 @@ import {
   isTokenAuthError,
   summarizeAxiosError,
 } from './publish-error.util';
-import { isRecoverableMetaTokenError, logOnce } from '../../common/throttled-log.util';
+import {
+  isRecoverableMetaTokenError,
+  logOnce,
+} from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
 
 @Injectable()
@@ -31,7 +34,7 @@ export class SocialPublishAccountService {
     workspaceId?: string,
   ): Promise<SocialAccounts | null> {
     const baseWhere = scopeWhere<SocialAccounts>(tenantId, workspaceId);
-    let account =
+    const account =
       (await this.repo.findOne({
         where: { ...baseWhere, userId, platform, connected: true },
       })) ??
@@ -49,7 +52,9 @@ export class SocialPublishAccountService {
     if (!account.connected) return account;
     if (this.hasRecentAuthFailure(account)) return account;
 
-    let prepared = await this.socialAccounts.refreshAccessTokenIfNeeded(account);
+    let prepared = await this.socialAccounts.refreshAccessTokenIfNeeded(
+      account,
+    );
 
     if (prepared.platform === 'linkedin' && prepared.refreshToken) {
       prepared = await this.socialAccounts.forceRefreshToken(prepared);
@@ -78,7 +83,9 @@ export class SocialPublishAccountService {
   }
 
   /** Re-fetch long-lived page tokens from Meta (required for publish). */
-  private async refreshMetaPageTokens(account: SocialAccounts): Promise<SocialAccounts> {
+  private async refreshMetaPageTokens(
+    account: SocialAccounts,
+  ): Promise<SocialAccounts> {
     if (account.metadata?.page_token?.trim()) {
       return account;
     }
@@ -106,7 +113,9 @@ export class SocialPublishAccountService {
 
       const targetPageId =
         account.metadata?.page_id ??
-        (account.platform === 'facebook' ? account.externalId : account.metadata?.page_id);
+        (account.platform === 'facebook'
+          ? account.externalId
+          : account.metadata?.page_id);
       const page = pages.find((p) => p.id === targetPageId) ?? pages[0];
       if (!page?.access_token) return account;
 
@@ -128,7 +137,9 @@ export class SocialPublishAccountService {
           this.logger,
           'debug',
           `meta-page-token:${account.id}`,
-          `Meta page token unavailable for ${account.platform} (${account.id}): ${summarizeAxiosError(err)}`,
+          `Meta page token unavailable for ${account.platform} (${
+            account.id
+          }): ${summarizeAxiosError(err)}`,
         );
         return this.markDisconnectedOnAuthError(account, err);
       }
@@ -136,7 +147,9 @@ export class SocialPublishAccountService {
         this.logger,
         'debug',
         `meta-page-token-other:${account.id}`,
-        `Could not refresh Meta page token for ${account.platform}: ${summarizeAxiosError(err)}`,
+        `Could not refresh Meta page token for ${
+          account.platform
+        }: ${summarizeAxiosError(err)}`,
       );
       return account;
     }

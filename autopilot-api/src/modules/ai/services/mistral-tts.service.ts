@@ -68,7 +68,10 @@ export class MistralTtsService {
     }
     try {
       const client = this.getClient();
-      const res = await client.audio.voices.list({ type: 'preset', limit: 100 });
+      const res = await client.audio.voices.list({
+        type: 'preset',
+        limit: 100,
+      });
       const voices: TtsVoiceOption[] = (res.items ?? []).map((v) => ({
         id: v.id,
         name: v.name,
@@ -84,7 +87,9 @@ export class MistralTtsService {
       this.logger.error('Failed to list Mistral preset voices', err);
       if (err instanceof HttpException) throw err;
       if (isMistralNetworkError(err)) {
-        throw new ServiceUnavailableException('Cannot reach Mistral AI for voice list.');
+        throw new ServiceUnavailableException(
+          'Cannot reach Mistral AI for voice list.',
+        );
       }
       throw new BadRequestException(
         err instanceof Error ? err.message : 'Failed to list voices',
@@ -124,7 +129,9 @@ export class MistralTtsService {
       this.logger.error('Mistral voice clone failed', err);
       if (err instanceof HttpException) throw err;
       if (isMistralNetworkError(err)) {
-        throw new ServiceUnavailableException('Cannot reach Mistral AI to clone voice.');
+        throw new ServiceUnavailableException(
+          'Cannot reach Mistral AI to clone voice.',
+        );
       }
       const msg = err instanceof Error ? err.message : 'Voice cloning failed';
       throw new BadRequestException(msg);
@@ -136,7 +143,10 @@ export class MistralTtsService {
       const client = this.getClient();
       await client.audio.voices.delete({ voiceId: mistralVoiceId });
     } catch (err) {
-      this.logger.error(`Failed to delete Mistral voice ${mistralVoiceId}`, err);
+      this.logger.error(
+        `Failed to delete Mistral voice ${mistralVoiceId}`,
+        err,
+      );
       if (err instanceof HttpException) throw err;
       const msg = err instanceof Error ? err.message : 'Failed to delete voice';
       throw new BadRequestException(msg);

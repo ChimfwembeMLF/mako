@@ -11,8 +11,12 @@ export function isWhatsappPlatformEnabled(config: ConfigService): boolean {
   if (config.get<string>('WHATSAPP_PLATFORM_ENABLED') === 'false') {
     return false;
   }
-  const phoneNumberId = config.get<string>('WHATSAPP_PLATFORM_PHONE_NUMBER_ID')?.trim();
-  const accessToken = config.get<string>('WHATSAPP_PLATFORM_ACCESS_TOKEN')?.trim();
+  const phoneNumberId = config
+    .get<string>('WHATSAPP_PLATFORM_PHONE_NUMBER_ID')
+    ?.trim();
+  const accessToken = config
+    .get<string>('WHATSAPP_PLATFORM_ACCESS_TOKEN')
+    ?.trim();
   if (phoneNumberId && accessToken) {
     return true;
   }
@@ -24,13 +28,19 @@ export function getWhatsappPlatformCredentials(
 ): WhatsappCredentials | null {
   if (!isWhatsappPlatformEnabled(config)) return null;
 
-  const phoneNumberId = config.get<string>('WHATSAPP_PLATFORM_PHONE_NUMBER_ID')?.trim();
-  const accessToken = config.get<string>('WHATSAPP_PLATFORM_ACCESS_TOKEN')?.trim();
+  const phoneNumberId = config
+    .get<string>('WHATSAPP_PLATFORM_PHONE_NUMBER_ID')
+    ?.trim();
+  const accessToken = config
+    .get<string>('WHATSAPP_PLATFORM_ACCESS_TOKEN')
+    ?.trim();
   if (!phoneNumberId || !accessToken) return null;
 
   return { phoneNumberId, accessToken };
 }
 
-export function isPlatformManagedWhatsappAccount(metadata?: Record<string, unknown>): boolean {
+export function isPlatformManagedWhatsappAccount(
+  metadata?: Record<string, unknown>,
+): boolean {
   return metadata?.platform_managed === true;
 }

@@ -27,7 +27,9 @@ export class WhatsappFlowAiService {
     customerPhone: string;
   }): Promise<string> {
     const brandCtx = await this.loadBrand(params.tenantId);
-    const guidance = params.item.response?.trim() || `Explain "${params.item.title}" briefly and helpfully.`;
+    const guidance =
+      params.item.response?.trim() ||
+      `Explain "${params.item.title}" briefly and helpfully.`;
 
     const { data } = await this.mistral.completeJson<{ content?: string }>(
       [
@@ -61,7 +63,9 @@ export class WhatsappFlowAiService {
   }): Promise<string> {
     const brandCtx = await this.loadBrand(params.tenantId);
     const menuHint = params.menuTitles?.length
-      ? `\nAvailable menu options: ${params.menuTitles.join(', ')}. Mention they can reply "menu" to see options.`
+      ? `\nAvailable menu options: ${params.menuTitles.join(
+          ', ',
+        )}. Mention they can reply "menu" to see options.`
       : '\nThey can reply "menu" to see options.';
 
     const { data } = await this.mistral.completeJson<{ content?: string }>(
@@ -89,7 +93,9 @@ export class WhatsappFlowAiService {
   private async loadBrand(tenantId: string) {
     const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } });
     const brand = tenant
-      ? await this.brandRepo.findOne({ where: { tenantId, userId: tenant.ownerId } })
+      ? await this.brandRepo.findOne({
+          where: { tenantId, userId: tenant.ownerId },
+        })
       : null;
     return this.prompts.brandFromEntity(brand);
   }

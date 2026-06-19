@@ -2,7 +2,8 @@ export const REPORT_CATALOG = [
   {
     id: 'content-performance',
     name: 'Content Performance',
-    description: 'Top posts by engagement, likes, comments, and shares across platforms.',
+    description:
+      'Top posts by engagement, likes, comments, and shares across platforms.',
     category: 'content',
   },
   {
@@ -26,7 +27,8 @@ export const REPORT_CATALOG = [
   {
     id: 'ai-usage',
     name: 'AI Usage',
-    description: 'AI calls by function and remaining quota for the billing period.',
+    description:
+      'AI calls by function and remaining quota for the billing period.',
     category: 'billing',
   },
   {
@@ -44,19 +46,22 @@ export const REPORT_CATALOG = [
   {
     id: 'chatbot-conversations',
     name: 'Chatbot Conversations',
-    description: 'Sessions and messages by channel — playground, widget embed, and API.',
+    description:
+      'Sessions and messages by channel — playground, widget embed, and API.',
     category: 'chatbot',
   },
   {
     id: 'chatbot-knowledge',
     name: 'Knowledge Library',
-    description: 'Uploaded documents, indexing status, chunk counts, and failures.',
+    description:
+      'Uploaded documents, indexing status, chunk counts, and failures.',
     category: 'chatbot',
   },
   {
     id: 'chatbot-ai-usage',
     name: 'Chatbot AI Usage',
-    description: 'Token usage for chat replies and knowledge document ingestion.',
+    description:
+      'Token usage for chat replies and knowledge document ingestion.',
     category: 'chatbot',
   },
 ] as const;

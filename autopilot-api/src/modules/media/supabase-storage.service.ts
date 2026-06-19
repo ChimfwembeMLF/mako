@@ -39,12 +39,17 @@ export class SupabaseStorageService {
   }
 
   get bucket(): string {
-    return this.config.get<string>('SUPABASE_STORAGE_BUCKET')?.trim() || 'media';
+    return (
+      this.config.get<string>('SUPABASE_STORAGE_BUCKET')?.trim() || 'media'
+    );
   }
 
   isSupabaseUrl(url: string): boolean {
     if (!url) return false;
-    const base = this.config.get<string>('SUPABASE_URL')?.trim().replace(/\/$/, '');
+    const base = this.config
+      .get<string>('SUPABASE_URL')
+      ?.trim()
+      .replace(/\/$/, '');
     if (base && url.startsWith(base)) return true;
     return /supabase\.co\/storage\/v1\/object\//.test(url);
   }
@@ -90,11 +95,13 @@ export class SupabaseStorageService {
     });
 
     const client = this.getClient();
-    const { error } = await client.storage.from(this.bucket).upload(storagePath, params.buffer, {
-      contentType: params.contentType,
-      upsert: false,
-      cacheControl: '3600',
-    });
+    const { error } = await client.storage
+      .from(this.bucket)
+      .upload(storagePath, params.buffer, {
+        contentType: params.contentType,
+        upsert: false,
+        cacheControl: '3600',
+      });
 
     if (error) {
       this.logger.error(`Supabase upload failed: ${error.message}`);
@@ -108,25 +115,36 @@ export class SupabaseStorageService {
   /**
    * Returns a Supabase public URL. Migrates legacy `/uploads/` or localhost paths on the fly.
    */
-  async ensureSupabaseUrl(url: string, tenantId: string, prefix = 'uploads'): Promise<string> {
+  async ensureSupabaseUrl(
+    url: string,
+    tenantId: string,
+    prefix = 'uploads',
+  ): Promise<string> {
     if (!url?.trim()) return url;
     if (this.isSupabaseUrl(url)) return url;
 
     const localPath = this.localFilePath(url);
     if (!localPath || !existsSync(localPath)) {
       throw new BadRequestException(
-        `Media URL is not in Supabase storage: ${basename(url)}. Re-upload the file from the Media Library.`,
+        `Media URL is not in Supabase storage: ${basename(
+          url,
+        )}. Re-upload the file from the Media Library.`,
       );
     }
 
     const ext = extname(localPath).toLowerCase();
     const contentType =
-      ext === '.png' ? 'image/png'
-      : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
-      : ext === '.gif' ? 'image/gif'
-      : ext === '.webp' ? 'image/webp'
-      : ext === '.mp4' ? 'video/mp4'
-      : 'application/octet-stream';
+      ext === '.png'
+        ? 'image/png'
+        : ext === '.jpg' || ext === '.jpeg'
+        ? 'image/jpeg'
+        : ext === '.gif'
+        ? 'image/gif'
+        : ext === '.webp'
+        ? 'image/webp'
+        : ext === '.mp4'
+        ? 'video/mp4'
+        : 'application/octet-stream';
 
     const uploaded = await this.uploadBuffer({
       tenantId,
@@ -141,15 +159,20 @@ export class SupabaseStorageService {
   }
 
   /** Read legacy local upload bytes (for publish fallbacks during migration). */
-  readLocalUpload(url: string): { buffer: Buffer; contentType: string; filename: string } | null {
+  readLocalUpload(
+    url: string,
+  ): { buffer: Buffer; contentType: string; filename: string } | null {
     const localPath = this.localFilePath(url);
     if (!localPath || !existsSync(localPath)) return null;
     const ext = extname(localPath).toLowerCase();
     const contentType =
-      ext === '.png' ? 'image/png'
-      : ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg'
-      : ext === '.mp4' ? 'video/mp4'
-      : 'application/octet-stream';
+      ext === '.png'
+        ? 'image/png'
+        : ext === '.jpg' || ext === '.jpeg'
+        ? 'image/jpeg'
+        : ext === '.mp4'
+        ? 'video/mp4'
+        : 'application/octet-stream';
     return {
       buffer: readFileSync(localPath),
       contentType,
@@ -187,17 +210,25 @@ export class SupabaseStorageService {
 
   async deleteByPath(storagePath: string): Promise<void> {
     const client = this.getClient();
-    const { error } = await client.storage.from(this.bucket).remove([storagePath]);
+    const { error } = await client.storage
+      .from(this.bucket)
+      .remove([storagePath]);
     if (error) {
-      this.logger.warn(`Supabase delete failed for ${storagePath}: ${error.message}`);
+      this.logger.warn(
+        `Supabase delete failed for ${storagePath}: ${error.message}`,
+      );
     }
   }
 
   async downloadBuffer(storagePath: string): Promise<Buffer> {
     const client = this.getClient();
-    const { data, error } = await client.storage.from(this.bucket).download(storagePath);
+    const { data, error } = await client.storage
+      .from(this.bucket)
+      .download(storagePath);
     if (error || !data) {
-      throw new BadRequestException(`Storage download failed: ${error?.message ?? 'empty response'}`);
+      throw new BadRequestException(
+        `Storage download failed: ${error?.message ?? 'empty response'}`,
+      );
     }
     const arrayBuffer = await data.arrayBuffer();
     return Buffer.from(arrayBuffer);

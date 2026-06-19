@@ -37,12 +37,15 @@ export class MediaService {
     this.storage.assertConfigured();
 
     if (!params.tenantId) throw new BadRequestException('tenantId is required');
-    if (!params.file?.buffer?.length) throw new BadRequestException('file is required');
+    if (!params.file?.buffer?.length)
+      throw new BadRequestException('file is required');
     if (params.file.size > MAX_UPLOAD_BYTES) {
       throw new BadRequestException('File exceeds 50 MB limit');
     }
 
-    const mediaType = params.file.mimetype.startsWith('video/') ? 'video' : 'image';
+    const mediaType = params.file.mimetype.startsWith('video/')
+      ? 'video'
+      : 'image';
 
     const uploaded = await this.storage.uploadBuffer({
       tenantId: params.tenantId,
@@ -130,11 +133,15 @@ export class MediaService {
     assetId?: string,
   ): Promise<MediaAssets | null> {
     if (assetId) {
-      const byId = await this.mediaRepo.findOne({ where: { id: assetId, tenantId } });
+      const byId = await this.mediaRepo.findOne({
+        where: { id: assetId, tenantId },
+      });
       if (byId) return byId;
     }
 
-    const direct = await this.mediaRepo.findOne({ where: { tenantId, mediaUrl: url } });
+    const direct = await this.mediaRepo.findOne({
+      where: { tenantId, mediaUrl: url },
+    });
     if (direct) return direct;
 
     const storagePath = this.storage.isSupabaseUrl(url)

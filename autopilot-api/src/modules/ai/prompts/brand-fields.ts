@@ -136,7 +136,9 @@ export function normalizeBrandExtraction(
 
 export function brandExtractionSystemPrompt(): string {
   return `You extract structured brand profile fields from website or document text.
-Return ONLY valid JSON with these keys (camelCase exactly): ${BRAND_FIELD_KEYS.join(', ')}.
+Return ONLY valid JSON with these keys (camelCase exactly): ${BRAND_FIELD_KEYS.join(
+    ', ',
+  )}.
 
 Rules:
 - Include ALL keys in your JSON response.

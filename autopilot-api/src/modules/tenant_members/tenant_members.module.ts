@@ -11,7 +11,12 @@ import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([TenantMembers, TenantMemberInvitation, Profiles, Tenants]),
+    TypeOrmModule.forFeature([
+      TenantMembers,
+      TenantMemberInvitation,
+      Profiles,
+      Tenants,
+    ]),
     UserModule,
     MailModule,
   ],

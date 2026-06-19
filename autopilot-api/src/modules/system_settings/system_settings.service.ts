@@ -36,19 +36,27 @@ export class SystemSettingsService {
     return { ...DEFAULT_THEME, ...(ent?.value ?? {}) };
   }
 
-  async upsert(key: string, dto: SystemSettingsUpsertDto): Promise<SystemSettings> {
+  async upsert(
+    key: string,
+    dto: SystemSettingsUpsertDto,
+  ): Promise<SystemSettings> {
     let ent = await this.repo.findOne({ where: { key } });
     if (ent) {
       ent.value = dto.value;
       if (dto.description !== undefined) ent.description = dto.description;
     } else {
-      ent = this.repo.create({ key, value: dto.value, description: dto.description });
+      ent = this.repo.create({
+        key,
+        value: dto.value,
+        description: dto.description,
+      });
     }
     return this.repo.save(ent);
   }
 
   async remove(key: string): Promise<void> {
     const res = await this.repo.delete(key);
-    if (res.affected === 0) throw new NotFoundException(`Setting "${key}" not found`);
+    if (res.affected === 0)
+      throw new NotFoundException(`Setting "${key}" not found`);
   }
 }

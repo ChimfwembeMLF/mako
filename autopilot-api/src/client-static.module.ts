@@ -14,13 +14,19 @@ export class ClientStaticModule {
     const isProduction = process.env.NODE_ENV === 'production';
 
     if (wantsClient && hasBuild && isProduction) {
-      console.log('[client] Build found at', resolveClientDistPath(), '(served from main.ts)');
+      console.log(
+        '[client] Build found at',
+        resolveClientDistPath(),
+        '(served from main.ts)',
+      );
     } else if (wantsClient && !hasBuild && isProduction) {
       console.warn(
         '[client] SERVE_CLIENT enabled but no build found — run: yarn build (from autopilot-api/)',
       );
     } else if (wantsClient && !isProduction) {
-      console.log('[client] Dev mode — Vite middleware serves React from resources/client/');
+      console.log(
+        '[client] Dev mode — Vite middleware serves React from resources/client/',
+      );
     }
 
     return { module: ClientStaticModule, imports: [] };

@@ -27,7 +27,10 @@ export function stripMarkdown(text: string): string {
 }
 
 /** HTML → plain text optimized for a social platform API (links, spacing). */
-export function htmlToPublishPlainText(html: string, platform?: string): string {
+export function htmlToPublishPlainText(
+  html: string,
+  platform?: string,
+): string {
   let text = (html ?? '')
     .replace(/<br\s*\/?>/gi, '\n')
     .replace(/<\/p>/gi, '\n\n')
@@ -73,10 +76,16 @@ export function formatPlainPostText(text: string): string {
 }
 
 function splitSentences(text: string): string[] {
-  return text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
 }
 
-export function formatContentForPlatform(platform: string, raw: string): string {
+export function formatContentForPlatform(
+  platform: string,
+  raw: string,
+): string {
   const plain = formatPlainPostText(raw);
   if (!plain) return '';
 

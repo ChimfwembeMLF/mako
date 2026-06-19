@@ -77,7 +77,10 @@ export class SocialCommentAutoReplyService {
     return { sent, skipped };
   }
 
-  private async tryAutoReply(comment: CommentReplies, userId: string): Promise<boolean> {
+  private async tryAutoReply(
+    comment: CommentReplies,
+    userId: string,
+  ): Promise<boolean> {
     // Never auto-reply to our own comments (including threaded brand replies)
     if (comment.isFromBrand) return false;
     if (comment.status !== 'pending') return false;
@@ -98,7 +101,11 @@ export class SocialCommentAutoReplyService {
     }
 
     try {
-      const replyText = await this.replyAi.buildReplyText(comment, rule, userId);
+      const replyText = await this.replyAi.buildReplyText(
+        comment,
+        rule,
+        userId,
+      );
       if (!replyText.trim()) return false;
 
       await this.sendReply.sendReply({
@@ -115,12 +122,16 @@ export class SocialCommentAutoReplyService {
       return true;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Auto-reply failed for ${comment.platform} comment ${comment.id}: ${msg}`);
+      this.logger.warn(
+        `Auto-reply failed for ${comment.platform} comment ${comment.id}: ${msg}`,
+      );
       return false;
     }
   }
 
-  private async resolveWorkspaceId(comment: CommentReplies): Promise<string | undefined> {
+  private async resolveWorkspaceId(
+    comment: CommentReplies,
+  ): Promise<string | undefined> {
     const content = await this.contentRepo.findOne({
       where: { id: comment.contentId },
       select: ['id', 'workspaceId'],

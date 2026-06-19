@@ -76,7 +76,9 @@ export class SocialDmAutoReplyService {
       }),
     );
 
-    this.logger.log(`DM auto-reply sent on ${params.platform} (rule: ${rule.name})`);
+    this.logger.log(
+      `DM auto-reply sent on ${params.platform} (rule: ${rule.name})`,
+    );
     return true;
   }
 
@@ -88,7 +90,9 @@ export class SocialDmAutoReplyService {
   ): Promise<boolean> {
     const token = account.metadata?.page_token ?? account.accessToken;
     if (!token?.trim()) {
-      this.logger.warn(`DM auto-reply skipped: missing page token for ${platform}`);
+      this.logger.warn(
+        `DM auto-reply skipped: missing page token for ${platform}`,
+      );
       return false;
     }
     const pageId = account.metadata?.page_id;
@@ -119,12 +123,18 @@ export class SocialDmAutoReplyService {
     workspaceId?: string,
   ): Promise<string> {
     if (rule.aiGenerate) {
-      const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } });
+      const tenant = await this.tenantsRepo.findOne({
+        where: { id: tenantId },
+      });
       const brand = tenant
         ? workspaceId
           ? await this.brandRepo.findOne({ where: { tenantId, workspaceId } })
           : await this.brandRepo.findOne({
-              where: { tenantId, userId: tenant.ownerId, workspaceId: IsNull() },
+              where: {
+                tenantId,
+                userId: tenant.ownerId,
+                workspaceId: IsNull(),
+              },
             })
         : null;
       const brandCtx = this.prompts.brandFromEntity(brand);

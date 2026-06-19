@@ -23,7 +23,9 @@ export class MistralAgentsService {
   private getClient(): Mistral {
     const apiKey = this.config.get<string>('MISTRAL_API_KEY');
     if (!apiKey?.trim()) {
-      throw new ServiceUnavailableException('MISTRAL_API_KEY is not configured');
+      throw new ServiceUnavailableException(
+        'MISTRAL_API_KEY is not configured',
+      );
     }
     if (!this.client) {
       this.client = new Mistral({ apiKey: apiKey.trim() });
@@ -32,7 +34,10 @@ export class MistralAgentsService {
   }
 
   private get imageModel(): string {
-    return this.config.get<string>('MISTRAL_IMAGE_AGENT_MODEL') || 'mistral-medium-latest';
+    return (
+      this.config.get<string>('MISTRAL_IMAGE_AGENT_MODEL') ||
+      'mistral-medium-latest'
+    );
   }
 
   private async getOrCreateImageAgent(): Promise<string> {
@@ -50,7 +55,8 @@ export class MistralAgentsService {
       tools: [{ type: 'image_generation' }],
     });
 
-    if (!agent.id) throw new BadRequestException('Failed to create Mistral image agent');
+    if (!agent.id)
+      throw new BadRequestException('Failed to create Mistral image agent');
     this.cachedAgentId = agent.id;
     return agent.id;
   }
@@ -107,6 +113,10 @@ export class MistralAgentsService {
       prefix: 'ai',
     });
     this.logger.log(`Saved generated image → ${uploaded.publicUrl}`);
-    return { filePath: uploaded.storagePath, publicUrl: uploaded.publicUrl, fileId };
+    return {
+      filePath: uploaded.storagePath,
+      publicUrl: uploaded.publicUrl,
+      fileId,
+    };
   }
 }

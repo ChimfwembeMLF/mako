@@ -16,14 +16,22 @@ import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([DataDeletionRequests, DataProtectionConsents, SocialAccounts]),
+    TypeOrmModule.forFeature([
+      DataDeletionRequests,
+      DataProtectionConsents,
+      SocialAccounts,
+    ]),
     AuthModule,
     UserModule,
     WhatsappModule,
     SocialInboxModule,
     forwardRef(() => QueuesModule),
   ],
-  providers: [DataDeletionService, DataProtectionConsentService, OptionalJwtAuthGuard],
+  providers: [
+    DataDeletionService,
+    DataProtectionConsentService,
+    OptionalJwtAuthGuard,
+  ],
   controllers: [LegalController],
   exports: [DataDeletionService, DataProtectionConsentService],
 })

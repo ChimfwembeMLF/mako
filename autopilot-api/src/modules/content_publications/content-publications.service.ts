@@ -51,7 +51,10 @@ export class ContentPublicationsService {
     workspaceId?: string,
   ): Promise<ContentPublications[]> {
     return this.repo.find({
-      where: { ...scopeWhere<ContentPublications>(tenantId, workspaceId), status: 'published' },
+      where: {
+        ...scopeWhere<ContentPublications>(tenantId, workspaceId),
+        status: 'published',
+      },
       order: { publishedAt: 'DESC' },
     });
   }
@@ -64,7 +67,9 @@ export class ContentPublicationsService {
   }
 
   /** Latest successful publication per platform for a content item */
-  async findLatestPublishedByContent(contentId: string): Promise<ContentPublications[]> {
+  async findLatestPublishedByContent(
+    contentId: string,
+  ): Promise<ContentPublications[]> {
     const rows = await this.repo.find({
       where: { contentId, status: 'published' },
       order: { publishedAt: 'DESC' },

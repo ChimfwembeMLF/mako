@@ -12,7 +12,12 @@ import { QueuesModule } from '../queues/queues.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CommentReplies, ContentItems, ContentPublications, SocialAccounts]),
+    TypeOrmModule.forFeature([
+      CommentReplies,
+      ContentItems,
+      ContentPublications,
+      SocialAccounts,
+    ]),
     ContentPublishingModule,
     forwardRef(() => QueuesModule),
   ],

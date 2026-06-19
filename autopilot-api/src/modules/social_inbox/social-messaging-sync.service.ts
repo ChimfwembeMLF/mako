@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
-import { SocialMessages, InboxAttachment, InboxReaction } from './entities/social_messages.entity';
+import {
+  SocialMessages,
+  InboxAttachment,
+  InboxReaction,
+} from './entities/social_messages.entity';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 import { scopeWhere } from '../../common/workspace-scope.util';
 
@@ -40,28 +44,37 @@ export class SocialMessagingSyncService {
     return { synced };
   }
 
-  private async syncAccount(account: SocialAccounts, userId: string): Promise<number> {
+  private async syncAccount(
+    account: SocialAccounts,
+    userId: string,
+  ): Promise<number> {
     const token = account.metadata?.page_token ?? account.accessToken;
     const pageId = account.metadata?.page_id ?? account.externalId;
     if (!token || !pageId) return 0;
 
-    const res = await axios.get(`https://graph.facebook.com/v19.0/${pageId}/conversations`, {
-      params: {
-        access_token: token,
-        fields:
-          'id,participants,updated_time,messages.limit(25){id,message,from,created_time,attachments,reactions}',
-        limit: 25,
+    const res = await axios.get(
+      `https://graph.facebook.com/v19.0/${pageId}/conversations`,
+      {
+        params: {
+          access_token: token,
+          fields:
+            'id,participants,updated_time,messages.limit(25){id,message,from,created_time,attachments,reactions}',
+          limit: 25,
+        },
       },
-    });
+    );
 
     let synced = 0;
     for (const conv of res.data?.data ?? []) {
       const threadId = String(conv.id);
-      const participants = (conv.participants as { data?: Array<{ id?: string; name?: string }> })
-        ?.data ?? [];
-      const customer = participants.find((p) => p.id !== pageId) ?? participants[0];
+      const participants =
+        (conv.participants as { data?: Array<{ id?: string; name?: string }> })
+          ?.data ?? [];
+      const customer =
+        participants.find((p) => p.id !== pageId) ?? participants[0];
 
-      for (const msg of (conv.messages as { data?: Record<string, unknown>[] })?.data ?? []) {
+      for (const msg of (conv.messages as { data?: Record<string, unknown>[] })
+        ?.data ?? []) {
         const externalId = String(msg.id ?? '');
         if (!externalId) continue;
 
@@ -78,7 +91,8 @@ export class SocialMessagingSyncService {
         const isOutbound = from?.id === pageId;
         const attachments = this.parseAttachments(msg.attachments);
         const reactions = this.parseReactions(msg.reactions);
-        const body = String(msg.message ?? '') || this.attachmentPreview(attachments);
+        const body =
+          String(msg.message ?? '') || this.attachmentPreview(attachments);
 
         const saved = await this.messagesRepo.save(
           this.messagesRepo.create({

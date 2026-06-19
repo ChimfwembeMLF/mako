@@ -192,18 +192,23 @@ export class WhatsappMessagingService {
     }
   }
 
-  async listMessageTemplates(creds: WhatsappCredentials): Promise<
+  async listMessageTemplates(
+    creds: WhatsappCredentials,
+  ): Promise<
     Array<{ name: string; language: string; status: string; category?: string }>
   > {
     try {
       const { data: phoneData } = await axios.get<{
         whatsapp_business_account?: { id?: string };
-      }>(`https://graph.facebook.com/${this.graphVersion}/${creds.phoneNumberId}`, {
-        params: {
-          fields: 'whatsapp_business_account',
-          access_token: creds.accessToken,
+      }>(
+        `https://graph.facebook.com/${this.graphVersion}/${creds.phoneNumberId}`,
+        {
+          params: {
+            fields: 'whatsapp_business_account',
+            access_token: creds.accessToken,
+          },
         },
-      });
+      );
 
       const wabaId = phoneData.whatsapp_business_account?.id;
       if (!wabaId) return [];
@@ -215,13 +220,16 @@ export class WhatsappMessagingService {
           status?: string;
           category?: string;
         }>;
-      }>(`https://graph.facebook.com/${this.graphVersion}/${wabaId}/message_templates`, {
-        params: {
-          access_token: creds.accessToken,
-          limit: 100,
-          fields: 'name,language,status,category',
+      }>(
+        `https://graph.facebook.com/${this.graphVersion}/${wabaId}/message_templates`,
+        {
+          params: {
+            access_token: creds.accessToken,
+            limit: 100,
+            fields: 'name,language,status,category',
+          },
         },
-      });
+      );
 
       return (data.data ?? [])
         .filter((t) => t.name && t.status === 'APPROVED')
@@ -233,7 +241,9 @@ export class WhatsappMessagingService {
         }));
     } catch (err) {
       this.logger.warn(
-        `Failed to list WhatsApp templates: ${err instanceof Error ? err.message : err}`,
+        `Failed to list WhatsApp templates: ${
+          err instanceof Error ? err.message : err
+        }`,
       );
       return [];
     }
@@ -267,12 +277,15 @@ export class WhatsappMessagingService {
       const { data } = await axios.get<{
         id?: string;
         display_phone_number?: string;
-      }>(`https://graph.facebook.com/${this.graphVersion}/${creds.phoneNumberId}`, {
-        params: {
-          fields: 'id,display_phone_number',
-          access_token: creds.accessToken,
+      }>(
+        `https://graph.facebook.com/${this.graphVersion}/${creds.phoneNumberId}`,
+        {
+          params: {
+            fields: 'id,display_phone_number',
+            access_token: creds.accessToken,
+          },
         },
-      });
+      );
       return { valid: true, displayPhoneNumber: data.display_phone_number };
     } catch (err: unknown) {
       return { valid: false, error: this.formatGraphError(err) };
@@ -282,7 +295,9 @@ export class WhatsappMessagingService {
   platformTokenErrorMessage(graphError?: string): string {
     const expired =
       graphError &&
-      /#190\b|session has expired|error validating access token/i.test(graphError);
+      /#190\b|session has expired|error validating access token/i.test(
+        graphError,
+      );
     if (expired) {
       return (
         'Platform WhatsApp access token expired. Update WHATSAPP_PLATFORM_ACCESS_TOKEN in the ' +
@@ -313,9 +328,7 @@ export class WhatsappMessagingService {
       return 'WhatsApp could not deliver to this number — confirm it is registered on WhatsApp and uses the correct country code.';
     }
     if (/131047|24.?hour|session/i.test(message)) {
-      return (
-        'Outside the 24-hour messaging window. The customer must message you first, or send an approved template message.'
-      );
+      return 'Outside the 24-hour messaging window. The customer must message you first, or send an approved template message.';
     }
     if (this.isAuthError(message)) {
       return this.oauthTokenErrorMessage();
@@ -331,7 +344,9 @@ export class WhatsappMessagingService {
 
   private formatGraphError(err: unknown): string {
     if (axios.isAxiosError(err)) {
-      const data = err.response?.data as { error?: { message?: string; code?: number } };
+      const data = err.response?.data as {
+        error?: { message?: string; code?: number };
+      };
       if (data?.error?.message) {
         return `#${data.error.code ?? '?'} ${data.error.message}`;
       }

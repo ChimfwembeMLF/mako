@@ -33,7 +33,9 @@ export function normalizeProductionUrls(): void {
   }
   if (!process.env.CLIENT_URL?.trim()) {
     process.env.CLIENT_URL =
-      process.env.FRONTEND_URL?.trim() || process.env.API_PUBLIC_URL?.trim() || publicUrl;
+      process.env.FRONTEND_URL?.trim() ||
+      process.env.API_PUBLIC_URL?.trim() ||
+      publicUrl;
   }
 }
 
@@ -95,7 +97,9 @@ export function assertProductionUrls(): void {
   }
 
   if (frontend !== api.replace(/\/$/, '') && api) {
-    console.log('[urls] FRONTEND_URL and API_PUBLIC_URL differ — cross-origin mode');
+    console.log(
+      '[urls] FRONTEND_URL and API_PUBLIC_URL differ — cross-origin mode',
+    );
   } else {
     console.log('[urls] Production same-origin:', frontend);
   }

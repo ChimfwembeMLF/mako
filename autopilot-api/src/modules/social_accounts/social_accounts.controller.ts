@@ -54,7 +54,8 @@ export class SocialAccountsController {
 
   private getUserId(req: Request): string {
     const userId = req.user?.['sub'] || req.user?.['id'];
-    if (!userId) throw new UnauthorizedException('Unable to resolve authenticated user');
+    if (!userId)
+      throw new UnauthorizedException('Unable to resolve authenticated user');
     return userId;
   }
 
@@ -68,12 +69,16 @@ export class SocialAccountsController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Connect a social account manually (tokens/credentials)' })
+  @ApiOperation({
+    summary: 'Connect a social account manually (tokens/credentials)',
+  })
   @Post('connect')
   connect(@Req() req: Request, @Body() dto: SocialAccountsCreateDto) {
     const userId = this.getUserId(req);
     if (dto.userId && dto.userId !== userId) {
-      throw new UnauthorizedException('Cannot connect social account for another user');
+      throw new UnauthorizedException(
+        'Cannot connect social account for another user',
+      );
     }
     return this.service.connectAccount({
       ...dto,
@@ -91,12 +96,18 @@ export class SocialAccountsController {
     @Param('tenantId') tenantId: string,
     @Query('workspaceId') workspaceId?: string,
   ) {
-    return this.service.findByTenant(tenantId, this.getUserId(req), workspaceId);
+    return this.service.findByTenant(
+      tenantId,
+      this.getUserId(req),
+      workspaceId,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get connected social accounts for the current user' })
+  @ApiOperation({
+    summary: 'Get connected social accounts for the current user',
+  })
   @Get('me')
   getMyAccounts(@Req() req: Request) {
     return this.service.findByUser(this.getUserId(req));
@@ -104,7 +115,9 @@ export class SocialAccountsController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Start OAuth flow to connect a platform for a tenant' })
+  @ApiOperation({
+    summary: 'Start OAuth flow to connect a platform for a tenant',
+  })
   @Get('oauth/:platform/authorize')
   startOAuth(
     @Req() req: Request,
@@ -144,12 +157,16 @@ export class SocialAccountsController {
       connectState.codeVerifier,
     );
 
-    this.logger.log(`OAuth authorize ${platform} → redirect_uri=${redirectUri}`);
+    this.logger.log(
+      `OAuth authorize ${platform} → redirect_uri=${redirectUri}`,
+    );
 
     return { redirectUrl, redirectUri };
   }
 
-  @ApiOperation({ summary: 'OAuth callback — connects account and redirects to returnUrl' })
+  @ApiOperation({
+    summary: 'OAuth callback — connects account and redirects to returnUrl',
+  })
   @Get('oauth/:platform/callback')
   async oauthCallback(
     @Req() req: Request,
@@ -169,7 +186,9 @@ export class SocialAccountsController {
         message =
           'LinkedIn rejected a requested permission. Reconnect after removing restricted scopes, or enable Share on LinkedIn (w_member_social) in your LinkedIn app Products tab.';
       }
-      return res.redirect(`${fallbackReturn}?error=${encodeURIComponent(message)}`);
+      return res.redirect(
+        `${fallbackReturn}?error=${encodeURIComponent(message)}`,
+      );
     }
 
     if (!code || !state) {
@@ -182,7 +201,9 @@ export class SocialAccountsController {
 
     const decoded = this.oauth.decodeState(state);
     if (!decoded || decoded.provider !== platform) {
-      const message = encodeURIComponent('Invalid OAuth state — please start connect again from Publisher');
+      const message = encodeURIComponent(
+        'Invalid OAuth state — please start connect again from Publisher',
+      );
       return res.redirect(`${fallbackReturn}?error=${message}`);
     }
 
@@ -191,7 +212,10 @@ export class SocialAccountsController {
 
     try {
       if (platform === 'whatsapp') {
-        const prepared = await this.oauth.prepareWhatsAppConnect(code, decoded.redirectUri);
+        const prepared = await this.oauth.prepareWhatsAppConnect(
+          code,
+          decoded.redirectUri,
+        );
         const setupToken = this.oauth.createWhatsAppSetupToken({
           userId: decoded.userId,
           tenantId: decoded.tenantId,
@@ -200,11 +224,18 @@ export class SocialAccountsController {
           expiresAt: prepared.expiresAt?.toISOString(),
           phones: prepared.phones,
         });
-        return res.redirect(`${returnUrl}${separator}whatsapp_setup=${encodeURIComponent(setupToken)}`);
+        return res.redirect(
+          `${returnUrl}${separator}whatsapp_setup=${encodeURIComponent(
+            setupToken,
+          )}`,
+        );
       }
 
       if (platform === 'facebook') {
-        const prepared = await this.oauth.prepareFacebookConnect(code, decoded.redirectUri);
+        const prepared = await this.oauth.prepareFacebookConnect(
+          code,
+          decoded.redirectUri,
+        );
         const setupToken = this.oauth.createFacebookSetupToken({
           userId: decoded.userId,
           tenantId: decoded.tenantId,
@@ -214,11 +245,18 @@ export class SocialAccountsController {
           profile: prepared.profile,
           pages: prepared.pages,
         });
-        return res.redirect(`${returnUrl}${separator}facebook_setup=${encodeURIComponent(setupToken)}`);
+        return res.redirect(
+          `${returnUrl}${separator}facebook_setup=${encodeURIComponent(
+            setupToken,
+          )}`,
+        );
       }
 
       if (platform === 'youtube') {
-        const prepared = await this.oauth.prepareYoutubeConnect(code, decoded.redirectUri);
+        const prepared = await this.oauth.prepareYoutubeConnect(
+          code,
+          decoded.redirectUri,
+        );
         const setupToken = this.oauth.createYoutubeSetupToken({
           userId: decoded.userId,
           tenantId: decoded.tenantId,
@@ -229,7 +267,11 @@ export class SocialAccountsController {
           profile: prepared.profile,
           channels: prepared.channels,
         });
-        return res.redirect(`${returnUrl}${separator}youtube_setup=${encodeURIComponent(setupToken)}`);
+        return res.redirect(
+          `${returnUrl}${separator}youtube_setup=${encodeURIComponent(
+            setupToken,
+          )}`,
+        );
       }
 
       const result = await this.oauth.handleCallback(
@@ -257,8 +299,13 @@ export class SocialAccountsController {
       return res.redirect(`${returnUrl}${separator}connected=${platform}`);
     } catch (err) {
       const message = this.formatOAuthError(err);
-      this.logger.error(`OAuth callback failed for ${platform}: ${message}`, err);
-      return res.redirect(`${returnUrl}${separator}error=${encodeURIComponent(message)}`);
+      this.logger.error(
+        `OAuth callback failed for ${platform}: ${message}`,
+        err,
+      );
+      return res.redirect(
+        `${returnUrl}${separator}error=${encodeURIComponent(message)}`,
+      );
     }
   }
 
@@ -273,7 +320,9 @@ export class SocialAccountsController {
       return err.message;
     }
     if (axios.isAxiosError(err)) {
-      const fb = err.response?.data as { error?: { message?: string } } | undefined;
+      const fb = err.response?.data as
+        | { error?: { message?: string } }
+        | undefined;
       return fb?.error?.message || err.message;
     }
     return err instanceof Error ? err.message : 'Connection failed';
@@ -294,15 +343,23 @@ export class SocialAccountsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Finalize Facebook connect after selecting a Page' })
   @Post('facebook/finalize')
-  async finalizeFacebook(@Req() req: Request, @Body() dto: FacebookFinalizeDto) {
+  async finalizeFacebook(
+    @Req() req: Request,
+    @Body() dto: FacebookFinalizeDto,
+  ) {
     const userId = this.getUserId(req);
     const payload = this.oauth.verifyFacebookSetupToken(dto.setupToken);
 
     if (payload.userId !== userId) {
-      throw new UnauthorizedException('Facebook setup token does not belong to this user');
+      throw new UnauthorizedException(
+        'Facebook setup token does not belong to this user',
+      );
     }
 
-    const result = await this.oauth.buildFacebookConnectResult(payload, dto.pageId);
+    const result = await this.oauth.buildFacebookConnectResult(
+      payload,
+      dto.pageId,
+    );
 
     return this.service.connectAccount({
       tenantId: payload.tenantId,
@@ -333,14 +390,18 @@ export class SocialAccountsController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Finalize YouTube connect after selecting a channel' })
+  @ApiOperation({
+    summary: 'Finalize YouTube connect after selecting a channel',
+  })
   @Post('youtube/finalize')
   async finalizeYoutube(@Req() req: Request, @Body() dto: YoutubeFinalizeDto) {
     const userId = this.getUserId(req);
     const payload = this.oauth.verifyYoutubeSetupToken(dto.setupToken);
 
     if (payload.userId !== userId) {
-      throw new UnauthorizedException('YouTube setup token does not belong to this user');
+      throw new UnauthorizedException(
+        'YouTube setup token does not belong to this user',
+      );
     }
 
     const result = this.oauth.buildYoutubeConnectResult(payload, dto.channelId);
@@ -363,9 +424,15 @@ export class SocialAccountsController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Enable platform-managed WhatsApp for a workspace (no client Meta setup)' })
+  @ApiOperation({
+    summary:
+      'Enable platform-managed WhatsApp for a workspace (no client Meta setup)',
+  })
   @Post('whatsapp/enable-platform')
-  enablePlatformWhatsapp(@Req() req: Request, @Query('tenantId') tenantId?: string) {
+  enablePlatformWhatsapp(
+    @Req() req: Request,
+    @Query('tenantId') tenantId?: string,
+  ) {
     if (!tenantId) {
       throw new BadRequestException('tenantId query parameter is required');
     }
@@ -375,19 +442,28 @@ export class SocialAccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Try WhatsApp setup using an existing Facebook connection (skips Meta login when scopes allow)',
+    summary:
+      'Try WhatsApp setup using an existing Facebook connection (skips Meta login when scopes allow)',
   })
   @Post('whatsapp/setup-from-meta')
-  setupWhatsappFromMeta(@Req() req: Request, @Query('tenantId') tenantId?: string) {
+  setupWhatsappFromMeta(
+    @Req() req: Request,
+    @Query('tenantId') tenantId?: string,
+  ) {
     if (!tenantId) {
       throw new BadRequestException('tenantId query parameter is required');
     }
-    return this.service.prepareWhatsappFromExistingMeta(tenantId, this.getUserId(req));
+    return this.service.prepareWhatsappFromExistingMeta(
+      tenantId,
+      this.getUserId(req),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Preview WhatsApp phone numbers from OAuth setup token' })
+  @ApiOperation({
+    summary: 'Preview WhatsApp phone numbers from OAuth setup token',
+  })
   @Get('whatsapp/setup')
   getWhatsAppSetup(@Query('token') token?: string) {
     if (!token?.trim()) {
@@ -398,19 +474,28 @@ export class SocialAccountsController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Finalize WhatsApp connect after selecting a phone number' })
+  @ApiOperation({
+    summary: 'Finalize WhatsApp connect after selecting a phone number',
+  })
   @Post('whatsapp/finalize')
-  async finalizeWhatsApp(@Req() req: Request, @Body() dto: WhatsappFinalizeDto) {
+  async finalizeWhatsApp(
+    @Req() req: Request,
+    @Body() dto: WhatsappFinalizeDto,
+  ) {
     const userId = this.getUserId(req);
     const payload = this.oauth.verifyWhatsAppSetupToken(dto.setupToken);
 
     if (payload.userId !== userId) {
-      throw new UnauthorizedException('WhatsApp setup token does not belong to this user');
+      throw new UnauthorizedException(
+        'WhatsApp setup token does not belong to this user',
+      );
     }
 
     const phone = payload.phones.find((p) => p.id === dto.phoneNumberId);
     if (!phone) {
-      throw new BadRequestException('Selected phone number is not available for this setup session');
+      throw new BadRequestException(
+        'Selected phone number is not available for this setup session',
+      );
     }
 
     const accountName =

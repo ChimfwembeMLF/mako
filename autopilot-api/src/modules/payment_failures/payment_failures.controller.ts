@@ -13,7 +13,7 @@ import { PaymentFailuresCreateDto } from './dto/create-payment_failures.dto';
 import { PaymentFailuresUpdateDto } from './dto/update-payment_failures.dto';
 import { ApiTags } from '@nestjs/swagger';
 
-@ApiTags("Payment Failures")
+@ApiTags('Payment Failures')
 @Controller('payment-failures')
 export class PaymentFailuresController {
   constructor(private readonly service: PaymentFailuresService) {}

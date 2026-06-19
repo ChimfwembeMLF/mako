@@ -15,7 +15,11 @@ import { tryServeSpaShell } from '../common/spa-fallback.util';
 export class SpaNotFoundFilter implements ExceptionFilter {
   catch(_exception: NotFoundException, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
-    const req = ctx.getRequest<{ method?: string; path?: string; url?: string }>();
+    const req = ctx.getRequest<{
+      method?: string;
+      path?: string;
+      url?: string;
+    }>();
     const res = ctx.getResponse<Response>();
     const path = req.path ?? req.url?.split('?')[0] ?? '';
 

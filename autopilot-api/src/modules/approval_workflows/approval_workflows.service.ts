@@ -19,7 +19,10 @@ export class ApprovalWorkflowsService {
 
   async findAll(tenantId?: string): Promise<ApprovalWorkflows[]> {
     if (tenantId) {
-      return this.repo.find({ where: { tenantId }, order: { actionKey: 'ASC' } });
+      return this.repo.find({
+        where: { tenantId },
+        order: { actionKey: 'ASC' },
+      });
     }
     return this.repo.find({ order: { actionKey: 'ASC' } });
   }
@@ -30,13 +33,17 @@ export class ApprovalWorkflowsService {
     return ent;
   }
 
-  async update(id: string, dto: ApprovalWorkflowsUpdateDto): Promise<ApprovalWorkflows> {
+  async update(
+    id: string,
+    dto: ApprovalWorkflowsUpdateDto,
+  ): Promise<ApprovalWorkflows> {
     await this.repo.update(id, dto as any);
     return this.findOne(id);
   }
 
   async remove(id: string): Promise<void> {
     const res = await this.repo.delete(id);
-    if (res.affected === 0) throw new NotFoundException('ApprovalWorkflows not found');
+    if (res.affected === 0)
+      throw new NotFoundException('ApprovalWorkflows not found');
   }
 }

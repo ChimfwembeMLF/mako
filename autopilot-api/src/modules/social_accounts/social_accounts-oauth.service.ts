@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import axios from 'axios';
@@ -149,7 +145,9 @@ export class SocialAccountsOAuthService {
       const b64 = raw.replace(/-/g, '+').replace(/_/g, '/');
       const pad = b64.length % 4;
       const padded = pad ? b64 + '='.repeat(4 - pad) : b64;
-      return JSON.parse(Buffer.from(padded, 'base64').toString('utf8')) as OAuthConnectState;
+      return JSON.parse(
+        Buffer.from(padded, 'base64').toString('utf8'),
+      ) as OAuthConnectState;
     } catch (err) {
       this.logger.warn('Failed to decode OAuth state', err);
       return null;
@@ -164,8 +162,7 @@ export class SocialAccountsOAuthService {
     }
 
     const base = (
-      this.config.get<string>('API_BASE_URL') ||
-      apiBaseUrl
+      this.config.get<string>('API_BASE_URL') || apiBaseUrl
     ).replace(/\/$/, '');
 
     return `${base}/api/v1/social-accounts/oauth/${platform}/callback`;
@@ -197,7 +194,9 @@ export class SocialAccountsOAuthService {
         return this.whatsappAuthorizeUrl(state, redirectUri);
       case 'tiktok':
         if (!codeVerifier) {
-          throw new BadRequestException('TikTok OAuth requires PKCE code_verifier');
+          throw new BadRequestException(
+            'TikTok OAuth requires PKCE code_verifier',
+          );
         }
         return this.tiktokAuthorizeUrl(state, redirectUri, codeVerifier);
       default:
@@ -213,7 +212,9 @@ export class SocialAccountsOAuthService {
   ): Promise<OAuthConnectResult> {
     switch (platform) {
       case 'facebook':
-        throw new BadRequestException('Facebook uses a separate finalize flow after Page selection');
+        throw new BadRequestException(
+          'Facebook uses a separate finalize flow after Page selection',
+        );
       case 'linkedin':
         return this.handleLinkedInCallback(code, redirectUri);
       case 'instagram':
@@ -221,11 +222,19 @@ export class SocialAccountsOAuthService {
       case 'google':
         return this.handleGoogleCallback(code, redirectUri);
       case 'youtube':
-        throw new BadRequestException('YouTube uses a separate finalize flow after channel selection');
+        throw new BadRequestException(
+          'YouTube uses a separate finalize flow after channel selection',
+        );
       case 'whatsapp':
-        throw new BadRequestException('WhatsApp uses a separate finalize flow after phone selection');
+        throw new BadRequestException(
+          'WhatsApp uses a separate finalize flow after phone selection',
+        );
       case 'tiktok':
-        return this.handleTikTokCallback(code, redirectUri, options?.codeVerifier);
+        return this.handleTikTokCallback(
+          code,
+          redirectUri,
+          options?.codeVerifier,
+        );
       default:
         throw new BadRequestException(`Unsupported platform: ${platform}`);
     }
@@ -281,7 +290,9 @@ export class SocialAccountsOAuthService {
     };
   }
 
-  createFacebookSetupToken(payload: Omit<FacebookSetupPayload, 'type'>): string {
+  createFacebookSetupToken(
+    payload: Omit<FacebookSetupPayload, 'type'>,
+  ): string {
     return this.jwtService.sign(
       { type: 'facebook_setup', ...payload },
       { expiresIn: '15m' },
@@ -294,20 +305,34 @@ export class SocialAccountsOAuthService {
       if (decoded.type !== 'facebook_setup') {
         throw new BadRequestException('Invalid Facebook setup token');
       }
-      if (!decoded.pages?.length || !decoded.accessToken || !decoded.userId || !decoded.tenantId) {
+      if (
+        !decoded.pages?.length ||
+        !decoded.accessToken ||
+        !decoded.userId ||
+        !decoded.tenantId
+      ) {
         throw new BadRequestException('Invalid Facebook setup token');
       }
       return decoded;
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
-      throw new BadRequestException('Facebook setup expired — please connect again from Publisher');
+      throw new BadRequestException(
+        'Facebook setup expired — please connect again from Publisher',
+      );
     }
   }
 
-  getFacebookSetupPreview(token: string): { pages: FacebookPageOption[]; profileName?: string } {
+  getFacebookSetupPreview(token: string): {
+    pages: FacebookPageOption[];
+    profileName?: string;
+  } {
     const payload = this.verifyFacebookSetupToken(token);
     return {
-      pages: payload.pages.map((p) => ({ id: p.id, name: p.name, category: p.category })),
+      pages: payload.pages.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+      })),
       profileName: payload.profile?.name,
     };
   }
@@ -354,13 +379,20 @@ export class SocialAccountsOAuthService {
       if (decoded.type !== 'youtube_setup') {
         throw new BadRequestException('Invalid YouTube setup token');
       }
-      if (!decoded.channels?.length || !decoded.accessToken || !decoded.userId || !decoded.tenantId) {
+      if (
+        !decoded.channels?.length ||
+        !decoded.accessToken ||
+        !decoded.userId ||
+        !decoded.tenantId
+      ) {
         throw new BadRequestException('Invalid YouTube setup token');
       }
       return decoded;
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
-      throw new BadRequestException('YouTube setup expired — please connect again from Publisher');
+      throw new BadRequestException(
+        'YouTube setup expired — please connect again from Publisher',
+      );
     }
   }
 
@@ -381,7 +413,9 @@ export class SocialAccountsOAuthService {
   ): OAuthConnectResult {
     const channel = payload.channels.find((c) => c.id === channelId);
     if (!channel) {
-      throw new BadRequestException('Selected channel is not available for this setup session');
+      throw new BadRequestException(
+        'Selected channel is not available for this setup session',
+      );
     }
 
     return {
@@ -408,7 +442,9 @@ export class SocialAccountsOAuthService {
   ): Promise<OAuthConnectResult> {
     const listed = payload.pages.find((p) => p.id === pageId);
     if (!listed) {
-      throw new BadRequestException('Selected Page is not available for this setup session');
+      throw new BadRequestException(
+        'Selected Page is not available for this setup session',
+      );
     }
 
     const pages = await this.getFacebookPages(payload.accessToken);
@@ -421,7 +457,8 @@ export class SocialAccountsOAuthService {
 
     return {
       platform: 'facebook',
-      accountName: page.name || listed.name || payload.profile.name || 'Facebook Page',
+      accountName:
+        page.name || listed.name || payload.profile.name || 'Facebook Page',
       externalId: page.id,
       username: payload.profile.name ?? undefined,
       accessToken: payload.accessToken,
@@ -432,12 +469,18 @@ export class SocialAccountsOAuthService {
         page_id: page.id,
         page_name: page.name,
         page_token: page.access_token,
-        pages: pages.map((p) => ({ id: p.id, name: p.name, category: p.category })),
+        pages: pages.map((p) => ({
+          id: p.id,
+          name: p.name,
+          category: p.category,
+        })),
       },
     };
   }
 
-  createWhatsAppSetupToken(payload: Omit<WhatsAppSetupPayload, 'type'>): string {
+  createWhatsAppSetupToken(
+    payload: Omit<WhatsAppSetupPayload, 'type'>,
+  ): string {
     return this.jwtService.sign(
       { type: 'whatsapp_setup', ...payload },
       { expiresIn: '15m' },
@@ -450,13 +493,20 @@ export class SocialAccountsOAuthService {
       if (decoded.type !== 'whatsapp_setup') {
         throw new BadRequestException('Invalid WhatsApp setup token');
       }
-      if (!decoded.phones?.length || !decoded.accessToken || !decoded.userId || !decoded.tenantId) {
+      if (
+        !decoded.phones?.length ||
+        !decoded.accessToken ||
+        !decoded.userId ||
+        !decoded.tenantId
+      ) {
         throw new BadRequestException('Invalid WhatsApp setup token');
       }
       return decoded;
     } catch (err) {
       if (err instanceof BadRequestException) throw err;
-      throw new BadRequestException('WhatsApp setup expired — please connect again from Publisher');
+      throw new BadRequestException(
+        'WhatsApp setup expired — please connect again from Publisher',
+      );
     }
   }
 
@@ -474,7 +524,9 @@ export class SocialAccountsOAuthService {
   }
 
   /** List WABAs / phone numbers reachable with a Meta user or page token. */
-  async discoverWhatsAppPhones(accessToken: string): Promise<WhatsAppPhoneOption[]> {
+  async discoverWhatsAppPhones(
+    accessToken: string,
+  ): Promise<WhatsAppPhoneOption[]> {
     return this.listWhatsAppPhoneNumbers(accessToken);
   }
 
@@ -490,15 +542,14 @@ export class SocialAccountsOAuthService {
     if (!appId || !appSecret) return [];
 
     try {
-      const { data } = await axios.get<{ data?: { scopes?: string[]; is_valid?: boolean } }>(
-        'https://graph.facebook.com/v19.0/debug_token',
-        {
-          params: {
-            input_token: accessToken,
-            access_token: `${appId}|${appSecret}`,
-          },
+      const { data } = await axios.get<{
+        data?: { scopes?: string[]; is_valid?: boolean };
+      }>('https://graph.facebook.com/v19.0/debug_token', {
+        params: {
+          input_token: accessToken,
+          access_token: `${appId}|${appSecret}`,
         },
-      );
+      });
       if (!data.data?.is_valid) return [];
       return data.data.scopes ?? [];
     } catch (err) {
@@ -518,7 +569,9 @@ export class SocialAccountsOAuthService {
     return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
   }
 
-  private async listWhatsAppPhoneNumbers(accessToken: string): Promise<WhatsAppPhoneOption[]> {
+  private async listWhatsAppPhoneNumbers(
+    accessToken: string,
+  ): Promise<WhatsAppPhoneOption[]> {
     const phones: WhatsAppPhoneOption[] = [];
     const seen = new Set<string>();
 
@@ -529,20 +582,27 @@ export class SocialAccountsOAuthService {
     };
 
     try {
-      const { data: bizData } = await axios.get<{ data?: Array<{ id: string; name?: string }> }>(
-        'https://graph.facebook.com/v19.0/me/businesses',
-        { params: { fields: 'id,name', access_token: accessToken } },
-      );
+      const { data: bizData } = await axios.get<{
+        data?: Array<{ id: string; name?: string }>;
+      }>('https://graph.facebook.com/v19.0/me/businesses', {
+        params: { fields: 'id,name', access_token: accessToken },
+      });
 
       for (const biz of bizData.data ?? []) {
         try {
-          const { data: wabaData } = await axios.get<{ data?: Array<{ id: string; name?: string }> }>(
+          const { data: wabaData } = await axios.get<{
+            data?: Array<{ id: string; name?: string }>;
+          }>(
             `https://graph.facebook.com/v19.0/${biz.id}/owned_whatsapp_business_accounts`,
             { params: { fields: 'id,name', access_token: accessToken } },
           );
 
           for (const waba of wabaData.data ?? []) {
-            const wabaPhones = await this.getWabaPhoneNumbers(accessToken, waba.id, waba.name);
+            const wabaPhones = await this.getWabaPhoneNumbers(
+              accessToken,
+              waba.id,
+              waba.name,
+            );
             wabaPhones.forEach(addPhone);
           }
         } catch (err) {
@@ -567,7 +627,11 @@ export class SocialAccountsOAuthService {
     wabaName?: string,
   ): Promise<WhatsAppPhoneOption[]> {
     const { data } = await axios.get<{
-      data?: Array<{ id: string; display_phone_number?: string; verified_name?: string }>;
+      data?: Array<{
+        id: string;
+        display_phone_number?: string;
+        verified_name?: string;
+      }>;
     }>(`https://graph.facebook.com/v19.0/${wabaId}/phone_numbers`, {
       params: {
         fields: 'id,display_phone_number,verified_name',
@@ -599,7 +663,11 @@ export class SocialAccountsOAuthService {
               id: string;
               name?: string;
               phone_numbers?: {
-                data?: Array<{ id: string; display_phone_number?: string; verified_name?: string }>;
+                data?: Array<{
+                  id: string;
+                  display_phone_number?: string;
+                  verified_name?: string;
+                }>;
               };
             };
           }>(`https://graph.facebook.com/v19.0/${page.id}`, {
@@ -627,7 +695,10 @@ export class SocialAccountsOAuthService {
         }
       }
     } catch (err) {
-      this.logger.warn('Could not list Facebook pages for WhatsApp fallback', err);
+      this.logger.warn(
+        'Could not list Facebook pages for WhatsApp fallback',
+        err,
+      );
     }
 
     return phones;
@@ -692,7 +763,10 @@ export class SocialAccountsOAuthService {
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  private async handleLinkedInCallback(code: string, redirectUri: string): Promise<OAuthConnectResult> {
+  private async handleLinkedInCallback(
+    code: string,
+    redirectUri: string,
+  ): Promise<OAuthConnectResult> {
     const params = new URLSearchParams({
       grant_type: 'authorization_code',
       code,
@@ -725,17 +799,24 @@ export class SocialAccountsOAuthService {
     const p = profile.data;
     return {
       platform: 'linkedin',
-      accountName: `${p.given_name ?? ''} ${p.family_name ?? ''}`.trim() || 'LinkedIn Account',
+      accountName:
+        `${p.given_name ?? ''} ${p.family_name ?? ''}`.trim() ||
+        'LinkedIn Account',
       externalId: p.sub,
       username: p.email,
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
-      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      expiresAt: data.expires_in
+        ? new Date(Date.now() + data.expires_in * 1000)
+        : undefined,
       metadata: { profile: p, person_id: p.sub },
     };
   }
 
-  private async handleInstagramCallback(code: string, redirectUri: string): Promise<OAuthConnectResult> {
+  private async handleInstagramCallback(
+    code: string,
+    redirectUri: string,
+  ): Promise<OAuthConnectResult> {
     const shortToken = await this.exchangeFacebookCode(code, redirectUri);
     const longLived = await this.exchangeFacebookLongLived(shortToken);
     const pages = await this.getFacebookPages(longLived.accessToken);
@@ -748,13 +829,17 @@ export class SocialAccountsOAuthService {
 
     for (const page of pages) {
       const pageToken = page.access_token || longLived.accessToken;
-      const ig = await this.getInstagramBusinessAccountForPage(page.id, pageToken);
+      const ig = await this.getInstagramBusinessAccountForPage(
+        page.id,
+        pageToken,
+      );
       if (!ig) continue;
 
       const profile = await this.getInstagramBusinessProfile(ig.id, pageToken);
       return {
         platform: 'instagram',
-        accountName: profile.username || profile.name || page.name || 'Instagram Account',
+        accountName:
+          profile.username || profile.name || page.name || 'Instagram Account',
         externalId: profile.id || ig.id,
         username: profile.username,
         accessToken: pageToken,
@@ -794,12 +879,18 @@ export class SocialAccountsOAuthService {
       }
       return data.instagram_business_account ?? null;
     } catch (err) {
-      this.logger.warn(`Could not load Instagram business account for page ${pageId}`, err);
+      this.logger.warn(
+        `Could not load Instagram business account for page ${pageId}`,
+        err,
+      );
       return null;
     }
   }
 
-  private async getInstagramBusinessProfile(igBusinessId: string, accessToken: string) {
+  private async getInstagramBusinessProfile(
+    igBusinessId: string,
+    accessToken: string,
+  ) {
     const { data } = await axios.get<{
       id?: string;
       username?: string;
@@ -817,7 +908,10 @@ export class SocialAccountsOAuthService {
     return data;
   }
 
-  private async handleGoogleCallback(code: string, redirectUri: string): Promise<OAuthConnectResult> {
+  private async handleGoogleCallback(
+    code: string,
+    redirectUri: string,
+  ): Promise<OAuthConnectResult> {
     const client = this.createGoogleOAuthClient(redirectUri);
 
     const { tokens } = await client.getToken(code);
@@ -848,7 +942,9 @@ export class SocialAccountsOAuthService {
     );
   }
 
-  private async fetchGoogleProfile(client: InstanceType<typeof google.auth.OAuth2>) {
+  private async fetchGoogleProfile(
+    client: InstanceType<typeof google.auth.OAuth2>,
+  ) {
     const oauth2 = google.oauth2({ version: 'v2', auth: client });
     const { data: profile } = await oauth2.userinfo.get();
     return {
@@ -878,7 +974,10 @@ export class SocialAccountsOAuthService {
       }));
   }
 
-  private async exchangeFacebookCode(code: string, redirectUri: string): Promise<string> {
+  private async exchangeFacebookCode(
+    code: string,
+    redirectUri: string,
+  ): Promise<string> {
     const params = new URLSearchParams({
       client_id: this.config.getOrThrow<string>('FACEBOOK_APP_ID'),
       client_secret: this.config.getOrThrow<string>('FACEBOOK_APP_SECRET'),
@@ -886,12 +985,17 @@ export class SocialAccountsOAuthService {
       code,
     });
 
-    const { data } = await axios.get<{ access_token?: string; error?: { message: string } }>(
+    const { data } = await axios.get<{
+      access_token?: string;
+      error?: { message: string };
+    }>(
       `https://graph.facebook.com/v19.0/oauth/access_token?${params.toString()}`,
     );
 
     if (data.error || !data.access_token) {
-      throw new BadRequestException(data.error?.message || 'Facebook code exchange failed');
+      throw new BadRequestException(
+        data.error?.message || 'Facebook code exchange failed',
+      );
     }
     return data.access_token;
   }
@@ -904,17 +1008,24 @@ export class SocialAccountsOAuthService {
       fb_exchange_token: accessToken,
     });
 
-    const { data } = await axios.get<{ access_token?: string; expires_in?: number }>(
+    const { data } = await axios.get<{
+      access_token?: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v19.0/oauth/access_token?${params.toString()}`,
     );
 
     if (!data.access_token) {
-      throw new BadRequestException('Facebook long-lived token exchange failed');
+      throw new BadRequestException(
+        'Facebook long-lived token exchange failed',
+      );
     }
 
     return {
       accessToken: data.access_token,
-      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      expiresAt: data.expires_in
+        ? new Date(Date.now() + data.expires_in * 1000)
+        : undefined,
     };
   }
 
@@ -928,15 +1039,26 @@ export class SocialAccountsOAuthService {
 
   private async getFacebookPages(token: string) {
     const { data } = await axios.get<{
-      data?: Array<{ id: string; name: string; category?: string; access_token?: string }>;
+      data?: Array<{
+        id: string;
+        name: string;
+        category?: string;
+        access_token?: string;
+      }>;
     }>('https://graph.facebook.com/v19.0/me/accounts', {
       params: { fields: 'id,name,category,access_token', access_token: token },
     });
     return data.data ?? [];
   }
 
-  private tiktokAuthorizeUrl(state: string, redirectUri: string, codeVerifier: string): string {
-    const codeChallenge = createHash('sha256').update(codeVerifier).digest('base64url');
+  private tiktokAuthorizeUrl(
+    state: string,
+    redirectUri: string,
+    codeVerifier: string,
+  ): string {
+    const codeChallenge = createHash('sha256')
+      .update(codeVerifier)
+      .digest('base64url');
     const params = new URLSearchParams({
       client_key: this.config.getOrThrow<string>('TIKTOK_CLIENT_KEY'),
       redirect_uri: redirectUri,
@@ -954,7 +1076,11 @@ export class SocialAccountsOAuthService {
     redirectUri: string,
     codeVerifier?: string,
   ): Promise<OAuthConnectResult> {
-    const tokens = await this.exchangeTikTokAuthorizationCode(code, redirectUri, codeVerifier);
+    const tokens = await this.exchangeTikTokAuthorizationCode(
+      code,
+      redirectUri,
+      codeVerifier,
+    );
     const profile = await this.fetchTikTokUserProfile(tokens.accessToken);
 
     const displayName =
@@ -1076,7 +1202,9 @@ export class SocialAccountsOAuthService {
     });
 
     if (data.error?.code && data.error.code !== 'ok') {
-      this.logger.warn(`TikTok user info failed: ${data.error.message ?? data.error.code}`);
+      this.logger.warn(
+        `TikTok user info failed: ${data.error.message ?? data.error.code}`,
+      );
       return {};
     }
 

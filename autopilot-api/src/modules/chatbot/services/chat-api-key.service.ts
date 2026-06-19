@@ -65,7 +65,12 @@ export class ChatApiKeyService {
     tenantId: string;
     configId: string;
     label?: string;
-  }): Promise<{ id: string; keyPrefix: string; secret: string; label?: string }> {
+  }): Promise<{
+    id: string;
+    keyPrefix: string;
+    secret: string;
+    label?: string;
+  }> {
     // pk_live_ (8) + 8 hex = 16 chars — fits key_prefix column
     const prefix = `pk_live_${randomBytes(4).toString('hex')}`;
     const secretSuffix = randomBytes(18).toString('hex');

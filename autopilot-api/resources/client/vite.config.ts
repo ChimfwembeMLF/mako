@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "prompt",
       // Don't fail production builds when a chunk exceeds Workbox precache limit
       showMaximumFileSizeToCacheInBytesWarning: true,
-      includeAssets: ["favicon.ico", "favicon.svg", "mako-logo.png", "icons/*.png"],
+      includeAssets: ["favicon.ico", "favicon.svg", "mako-logo.png"],
       workbox: {
         // Precache large production bundles (default Workbox limit is 2 MiB)
         maximumFileSizeToCacheInBytes: WORKBOX_MAX_PRECACHE_BYTES,
@@ -50,7 +50,7 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "Mako Market Co-pilot",
+        name: "Mako",
         short_name: "Mako",
         description: "AI-powered social media content generation, publishing, and lead management.",
         theme_color: "#E5A024",
@@ -61,8 +61,8 @@ export default defineConfig(({ mode }) => ({
         scope: "/",
         categories: ["business", "productivity"],
         icons: [
-          { src: "icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any maskable" },
-          { src: "icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+          { src: "mako-logo.png", sizes: "192x192", type: "image/png", purpose: "any" },
+          { src: "mako-logo.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
         screenshots: [],
         shortcuts: [

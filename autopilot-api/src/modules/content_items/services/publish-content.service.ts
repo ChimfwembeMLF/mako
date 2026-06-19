@@ -11,13 +11,23 @@ import { TwitterPublishingService } from '../../content-publishing/twitter-publi
 import { WhatsappPublishingService } from '../../whatsapp/whatsapp-publishing.service';
 import { YoutubePublishingService } from '../../content-publishing/youtube-publishing.service';
 import { TiktokPublishingService } from '../../content-publishing/tiktok-publishing.service';
-import { ContentToPublish, MediaAttachment } from '../../content-publishing/interfaces/publish-result.interface';
+import {
+  ContentToPublish,
+  MediaAttachment,
+} from '../../content-publishing/interfaces/publish-result.interface';
 import { SupabaseStorageService } from '../../media/supabase-storage.service';
 import { ContentPublicationsService } from '../../content_publications/content-publications.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { QUEUE_JOB_MAX_ATTEMPTS } from '../../queues/queue.constants';
-import { instagramRequiresMedia, hasPublishableMedia } from '../utils/instagram-publish.util';
-import { formatContentForPlatform, formatPlainPostText, htmlToPublishPlainText } from '../../../common/text-format.util';
+import {
+  instagramRequiresMedia,
+  hasPublishableMedia,
+} from '../utils/instagram-publish.util';
+import {
+  formatContentForPlatform,
+  formatPlainPostText,
+  htmlToPublishPlainText,
+} from '../../../common/text-format.util';
 
 export const MAX_CONTENT_PUBLISH_ATTEMPTS = QUEUE_JOB_MAX_ATTEMPTS;
 
@@ -57,14 +67,16 @@ export class PublishContentService {
     platforms?: string[];
     platformPayloads?: Record<string, PlatformPayloadStored>;
   }) {
-    const item = await this.contentRepo.findOne({ where: { id: params.contentId } });
+    const item = await this.contentRepo.findOne({
+      where: { id: params.contentId },
+    });
     if (!item) throw new NotFoundException('Content item not found');
 
     const platforms = params.platforms?.length
       ? params.platforms
       : item.platforms?.length
-        ? item.platforms
-        : ['facebook'];
+      ? item.platforms
+      : ['facebook'];
 
     const platformPayloads =
       params.platformPayloads && Object.keys(params.platformPayloads).length
@@ -89,7 +101,10 @@ export class PublishContentService {
       alt_text: m.altText,
     }));
 
-    const results: Record<string, { published: boolean; message: string; externalPostId?: string }> = {};
+    const results: Record<
+      string,
+      { published: boolean; message: string; externalPostId?: string }
+    > = {};
     let anyPublished = false;
 
     for (const platform of platforms) {
@@ -110,7 +125,9 @@ export class PublishContentService {
       };
 
       let media: MediaAttachment[];
-      let publishedMedia: Array<{ url: string; type?: string; name?: string }> | undefined;
+      let publishedMedia:
+        | Array<{ url: string; type?: string; name?: string }>
+        | undefined;
       if (pp && Array.isArray(pp.media)) {
         if (pp.media.length === 0) {
           media = [];
@@ -118,26 +135,42 @@ export class PublishContentService {
         } else {
           media = await Promise.all(
             pp.media.map(async (m, i) => {
-              const canonical = assetUrlByKey.get(this.mediaUrlKey(m.url)) ?? m.url;
-              const media_url = await this.resolveMediaUrl(canonical, item.tenantId);
+              const canonical =
+                assetUrlByKey.get(this.mediaUrlKey(m.url)) ?? m.url;
+              const media_url = await this.resolveMediaUrl(
+                canonical,
+                item.tenantId,
+              );
               return {
                 id: `payload-${platform}-${i}`,
                 media_url,
-                media_type: (m.type === 'video' ? 'video' : 'image') as MediaAttachment['media_type'],
+                media_type: (m.type === 'video'
+                  ? 'video'
+                  : 'image') as MediaAttachment['media_type'],
                 alt_text: m.name,
               };
             }),
           );
-          publishedMedia = media.map((m) => ({ url: m.media_url, type: m.media_type }));
+          publishedMedia = media.map((m) => ({
+            url: m.media_url,
+            type: m.media_type,
+          }));
         }
       } else {
         media = await Promise.all(
           defaultMedia.map(async (m) => ({
             ...m,
-            media_url: await this.resolveMediaUrl(m.media_url, item.tenantId, m.id),
+            media_url: await this.resolveMediaUrl(
+              m.media_url,
+              item.tenantId,
+              m.id,
+            ),
           })),
         );
-        publishedMedia = media.map((m) => ({ url: m.media_url, type: m.media_type }));
+        publishedMedia = media.map((m) => ({
+          url: m.media_url,
+          type: m.media_type,
+        }));
       }
 
       if (instagramRequiresMedia(platform) && !hasPublishableMedia(media)) {
@@ -159,22 +192,24 @@ export class PublishContentService {
         continue;
       }
 
-      const socialAccount = await this.socialRepo.findOne({
-        where: {
-          tenantId: item.tenantId,
-          workspaceId: item.workspaceId,
-          userId: params.userId,
-          platform,
-          connected: true,
-        },
-      }) ?? await this.socialRepo.findOne({
-        where: {
-          tenantId: item.tenantId,
-          workspaceId: item.workspaceId,
-          platform,
-          connected: true,
-        },
-      });
+      const socialAccount =
+        (await this.socialRepo.findOne({
+          where: {
+            tenantId: item.tenantId,
+            workspaceId: item.workspaceId,
+            userId: params.userId,
+            platform,
+            connected: true,
+          },
+        })) ??
+        (await this.socialRepo.findOne({
+          where: {
+            tenantId: item.tenantId,
+            workspaceId: item.workspaceId,
+            platform,
+            connected: true,
+          },
+        }));
 
       const result = await this.dispatch(platform, payload, media, pp);
       results[platform] = {
@@ -201,7 +236,9 @@ export class PublishContentService {
       if (result.published) anyPublished = true;
     }
 
-    const primaryExternalId = Object.values(results).find((r) => r.published && r.externalPostId)?.externalPostId;
+    const primaryExternalId = Object.values(results).find(
+      (r) => r.published && r.externalPostId,
+    )?.externalPostId;
 
     if (anyPublished) {
       await this.contentRepo.update(item.id, {
@@ -224,15 +261,15 @@ export class PublishContentService {
       });
     } else {
       const failed = Object.entries(results).filter(([, r]) => !r.published);
-      const reasons = failed
-        .map(([p, r]) => `${p}: ${r.message}`)
-        .join('; ');
+      const reasons = failed.map(([p, r]) => `${p}: ${r.message}`).join('; ');
       const notifyReason =
         failed.length === 0
           ? 'Publish failed'
           : failed.length === 1
-            ? this.shortenText(failed[0][1].message, 120)
-            : `${failed.length} platforms failed (${failed.map(([p]) => p).join(', ')})`;
+          ? this.shortenText(failed[0][1].message, 120)
+          : `${failed.length} platforms failed (${failed
+              .map(([p]) => p)
+              .join(', ')})`;
       const nextAttempts = (item.publishAttempts ?? 0) + 1;
       const exhausted = nextAttempts >= MAX_CONTENT_PUBLISH_ATTEMPTS;
       await this.contentRepo.update(item.id, {
@@ -283,7 +320,9 @@ export class PublishContentService {
     }
   }
 
-  private parsePlatformPayloads(raw: unknown): Record<string, PlatformPayloadStored> {
+  private parsePlatformPayloads(
+    raw: unknown,
+  ): Record<string, PlatformPayloadStored> {
     if (!raw) return {};
     if (typeof raw === 'string') {
       try {
@@ -325,7 +364,10 @@ export class PublishContentService {
       case 'tiktok':
         return this.tiktok.publishPost(content, media);
       default:
-        return { published: false, message: `Unsupported platform: ${platform}` };
+        return {
+          published: false,
+          message: `Unsupported platform: ${platform}`,
+        };
     }
   }
 }

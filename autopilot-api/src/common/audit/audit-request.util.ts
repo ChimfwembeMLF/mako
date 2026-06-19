@@ -64,6 +64,9 @@ export function buildRequestAction(method: string, path: string): string {
 }
 
 export function resourceTypeFromPath(path: string): string {
-  const segment = path.split('?')[0].replace(/^\/api\/v1\//, '').split('/')[0];
+  const segment = path
+    .split('?')[0]
+    .replace(/^\/api\/v1\//, '')
+    .split('/')[0];
   return segment || 'http';
 }

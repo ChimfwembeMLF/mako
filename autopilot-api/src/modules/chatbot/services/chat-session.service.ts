@@ -55,7 +55,10 @@ export class ChatSessionService {
     return session;
   }
 
-  async getMessages(tenantId: string, sessionId: string): Promise<ChatMessage[]> {
+  async getMessages(
+    tenantId: string,
+    sessionId: string,
+  ): Promise<ChatMessage[]> {
     await this.getSession(tenantId, sessionId);
     return this.messageRepo.find({
       where: { sessionId, tenantId },
@@ -130,7 +133,8 @@ export class ChatSessionService {
     config?: ChatbotConfig;
   }): Promise<{ userMessage: ChatMessage; assistantMessage: ChatMessage }> {
     const session = await this.getSession(params.tenantId, params.sessionId);
-    const config = params.config ?? (await this.configService.getOrCreate(params.tenantId));
+    const config =
+      params.config ?? (await this.configService.getOrCreate(params.tenantId));
 
     const userMessage = await this.messageRepo.save(
       this.messageRepo.create({

@@ -36,7 +36,9 @@ export class SocialDmReplyService {
     if (!text) throw new NotFoundException('Message required');
 
     if (params.conversationId.startsWith('wa:')) {
-      const phone = this.waMessaging.normalizePhone(params.conversationId.slice(3));
+      const phone = this.waMessaging.normalizePhone(
+        params.conversationId.slice(3),
+      );
       const account =
         (await this.socialRepo.findOne({
           where: {
@@ -96,7 +98,12 @@ export class SocialDmReplyService {
     if (!account) return { sent: false, message: `${platform} not connected` };
 
     const lastInbound = await this.socialMessagesRepo.findOne({
-      where: { tenantId: params.tenantId, platform, threadId, direction: 'inbound' },
+      where: {
+        tenantId: params.tenantId,
+        platform,
+        threadId,
+        direction: 'inbound',
+      },
       order: { created_at: 'DESC' },
     });
     const recipientId = lastInbound?.participantId;

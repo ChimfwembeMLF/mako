@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
-import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import {
+  PublishResult,
+  ContentToPublish,
+} from './interfaces/publish-result.interface';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -15,7 +18,10 @@ export class TwitterPublishingService {
     private readonly socialAccountsRepo: Repository<SocialAccounts>,
   ) {}
 
-  async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
+  async publishPost(
+    content: ContentToPublish,
+    media: any[] = [],
+  ): Promise<PublishResult> {
     try {
       const socialAccount = await this.socialAccountsRepo.findOne({
         where: {
@@ -152,7 +158,9 @@ export class TwitterPublishingService {
       this.logger.error(`Twitter publish error`, err);
       return {
         published: false,
-        message: `Twitter publish error: ${err instanceof Error ? err.message : String(err)}`,
+        message: `Twitter publish error: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
         error: String(err),
       };
     }

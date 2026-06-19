@@ -7,7 +7,10 @@ import { ContentPublicationsController } from './content-publications.controller
 import { ContentPublishingModule } from '../content-publishing/content-publishing.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([ContentPublications]), ContentPublishingModule],
+  imports: [
+    TypeOrmModule.forFeature([ContentPublications]),
+    ContentPublishingModule,
+  ],
   providers: [ContentPublicationsService, EngagementInsightsService],
   controllers: [ContentPublicationsController],
   exports: [ContentPublicationsService, EngagementInsightsService],

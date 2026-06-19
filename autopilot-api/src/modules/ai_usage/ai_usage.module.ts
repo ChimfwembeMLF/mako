@@ -7,7 +7,11 @@ import { AiUsageController } from './ai_usage.controller';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forFeature([AiUsage]), SubscriptionsModule],
+  imports: [
+    ConfigModule,
+    TypeOrmModule.forFeature([AiUsage]),
+    SubscriptionsModule,
+  ],
   providers: [AiUsageService],
   controllers: [AiUsageController],
   exports: [AiUsageService],

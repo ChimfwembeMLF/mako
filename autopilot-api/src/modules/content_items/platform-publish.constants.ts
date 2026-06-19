@@ -5,27 +5,34 @@ export const PLATFORM_PUBLISH_GUIDE: Record<
 > = {
   facebook: {
     maxChars: 63206,
-    trends: 'Conversational, community-focused. Short paragraphs. Optional 1-2 emojis. Ask a question to drive comments.',
-    format: 'Plain text with blank lines between paragraphs. No markdown, no asterisks for emphasis. Never append "See more" or "See less".',
+    trends:
+      'Conversational, community-focused. Short paragraphs. Optional 1-2 emojis. Ask a question to drive comments.',
+    format:
+      'Plain text with blank lines between paragraphs. No markdown, no asterisks for emphasis. Never append "See more" or "See less".',
   },
   instagram: {
     maxChars: 2200,
-    trends: 'Visual-first caption. Hook in first line. 3-8 relevant hashtags at end. Emojis sparingly. CTA in last line.',
-    format: 'Plain text: hook line, blank line, body, blank line, hashtags on final line. No markdown.',
+    trends:
+      'Visual-first caption. Hook in first line. 3-8 relevant hashtags at end. Emojis sparingly. CTA in last line.',
+    format:
+      'Plain text: hook line, blank line, body, blank line, hashtags on final line. No markdown.',
   },
   linkedin: {
     maxChars: 3000,
-    trends: 'Professional thought-leadership. Short lines with white space. Hook + insight + CTA. Minimal hashtags (0-3).',
+    trends:
+      'Professional thought-leadership. Short lines with white space. Hook + insight + CTA. Minimal hashtags (0-3).',
     format: 'Plain text, one idea per line. No HTML.',
   },
   twitter: {
     maxChars: 280,
-    trends: 'Punchy, timely. One clear idea. 0-2 hashtags max. No thread unless essential.',
+    trends:
+      'Punchy, timely. One clear idea. 0-2 hashtags max. No thread unless essential.',
     format: 'Single plain-text post under 280 characters.',
   },
   tiktok: {
     maxChars: 4000,
-    trends: 'Casual, trend-aware caption. Reference the video hook. Gen-Z friendly tone if on-brand.',
+    trends:
+      'Casual, trend-aware caption. Reference the video hook. Gen-Z friendly tone if on-brand.',
     format: 'Short caption + 3-5 trending hashtags.',
   },
   email: {

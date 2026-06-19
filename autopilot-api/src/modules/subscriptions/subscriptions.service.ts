@@ -4,10 +4,7 @@ import { Repository, Between } from 'typeorm';
 import { TenantSubscriptions } from './entities/tenant_subscriptions.entity';
 import { AiUsage } from '../ai_usage/entities/ai_usage.entity';
 import { Deposits } from '../deposits/entities/deposits.entity';
-import {
-  PlanKey,
-  normalizePlanKey,
-} from './plan.constants';
+import { PlanKey, normalizePlanKey } from './plan.constants';
 import { PlansService } from './plans.service';
 
 export interface SubscriptionSummary {
@@ -58,7 +55,10 @@ export class SubscriptionsService {
     return { start, end };
   }
 
-  async ensureForTenant(tenantId: string, plan: PlanKey = 'free'): Promise<TenantSubscriptions> {
+  async ensureForTenant(
+    tenantId: string,
+    plan: PlanKey = 'free',
+  ): Promise<TenantSubscriptions> {
     let sub = await this.subRepo.findOne({ where: { tenantId } });
     if (sub) return sub;
 
@@ -83,7 +83,11 @@ export class SubscriptionsService {
     sub = (await this.syncRenewalFromLatestPayment(sub)) ?? sub;
     const plan = normalizePlanKey(sub.plan);
     const cfg = this.plans.getPlan(plan);
-    const used = await this.countAiCalls(tenantId, sub.billingPeriodStart, sub.billingPeriodEnd);
+    const used = await this.countAiCalls(
+      tenantId,
+      sub.billingPeriodStart,
+      sub.billingPeriodEnd,
+    );
     const limit = cfg.aiCallsLimit;
     return {
       tenantId,
@@ -112,24 +116,42 @@ export class SubscriptionsService {
     });
   }
 
-  async canUseAi(tenantId: string): Promise<{ allowed: boolean; reason?: string }> {
+  async canUseAi(
+    tenantId: string,
+  ): Promise<{ allowed: boolean; reason?: string }> {
     const sub = await this.ensureForTenant(tenantId);
     if (sub.status === 'cancelled') {
-      return { allowed: false, reason: 'Subscription cancelled. Renew on the Billing page.' };
+      return {
+        allowed: false,
+        reason: 'Subscription cancelled. Renew on the Billing page.',
+      };
     }
     if (sub.status === 'past_due') {
-      return { allowed: false, reason: 'Subscription payment is past due. Renew on the Billing page.' };
+      return {
+        allowed: false,
+        reason: 'Subscription payment is past due. Renew on the Billing page.',
+      };
     }
     if (sub.status !== 'active') {
-      return { allowed: false, reason: 'Subscription is not active. Please renew your plan.' };
+      return {
+        allowed: false,
+        reason: 'Subscription is not active. Please renew your plan.',
+      };
     }
     const plan = normalizePlanKey(sub.plan);
     if (plan !== 'free' && sub.billingPeriodEnd < new Date()) {
-      return { allowed: false, reason: 'Your billing period has ended. Renew on the Billing page.' };
+      return {
+        allowed: false,
+        reason: 'Your billing period has ended. Renew on the Billing page.',
+      };
     }
     const limit = this.plans.getPlan(plan).aiCallsLimit;
     if (limit === null) return { allowed: true };
-    const used = await this.countAiCalls(tenantId, sub.billingPeriodStart, sub.billingPeriodEnd);
+    const used = await this.countAiCalls(
+      tenantId,
+      sub.billingPeriodStart,
+      sub.billingPeriodEnd,
+    );
     if (used >= limit) {
       return {
         allowed: false,
@@ -146,7 +168,9 @@ export class SubscriptionsService {
     }
   }
 
-  async canRunDailyWorkflow(tenantId: string): Promise<{ allowed: boolean; reason?: string }> {
+  async canRunDailyWorkflow(
+    tenantId: string,
+  ): Promise<{ allowed: boolean; reason?: string }> {
     const sub = await this.ensureForTenant(tenantId);
     if (sub.status !== 'active') {
       return { allowed: false, reason: 'Subscription is not active' };
@@ -154,7 +178,8 @@ export class SubscriptionsService {
     if (!sub.dailyWorkflowEnabled) {
       return {
         allowed: false,
-        reason: 'Daily auto-generate requires Starter or Pro. Upgrade on the Billing page.',
+        reason:
+          'Daily auto-generate requires Starter or Pro. Upgrade on the Billing page.',
       };
     }
     return this.canUseAi(tenantId);
@@ -163,11 +188,17 @@ export class SubscriptionsService {
   async assertCanRunDailyWorkflow(tenantId: string): Promise<void> {
     const check = await this.canRunDailyWorkflow(tenantId);
     if (!check.allowed) {
-      throw new ForbiddenException(check.reason ?? 'Daily workflow not allowed');
+      throw new ForbiddenException(
+        check.reason ?? 'Daily workflow not allowed',
+      );
     }
   }
 
-  async activatePlan(tenantId: string, planKey: PlanKey, paidAt = new Date()): Promise<TenantSubscriptions> {
+  async activatePlan(
+    tenantId: string,
+    planKey: PlanKey,
+    paidAt = new Date(),
+  ): Promise<TenantSubscriptions> {
     const plan = normalizePlanKey(planKey);
     if (plan === 'free') {
       throw new ForbiddenException('Cannot activate free plan via payment');
@@ -186,7 +217,11 @@ export class SubscriptionsService {
 
   async onPaymentCompleted(
     tenantId: string,
-    params: { phone?: string; correspondent?: string; enableAutoRenew?: boolean },
+    params: {
+      phone?: string;
+      correspondent?: string;
+      enableAutoRenew?: boolean;
+    },
   ): Promise<void> {
     const sub = await this.ensureForTenant(tenantId);
     if (params.phone) sub.renewalPhone = params.phone.trim();
@@ -199,14 +234,19 @@ export class SubscriptionsService {
     await this.subRepo.save(sub);
   }
 
-  async setAutoRenew(tenantId: string, enabled: boolean): Promise<TenantSubscriptions> {
+  async setAutoRenew(
+    tenantId: string,
+    enabled: boolean,
+  ): Promise<TenantSubscriptions> {
     const sub = await this.ensureForTenant(tenantId);
     const plan = normalizePlanKey(sub.plan);
     if (enabled && plan === 'free') {
       throw new ForbiddenException('Auto-renew requires a paid plan');
     }
     if (enabled && !sub.renewalPhone) {
-      throw new ForbiddenException('Pay once with mobile money to save your number for auto-renew');
+      throw new ForbiddenException(
+        'Pay once with mobile money to save your number for auto-renew',
+      );
     }
     sub.autoRenewEnabled = enabled;
     return this.subRepo.save(sub);

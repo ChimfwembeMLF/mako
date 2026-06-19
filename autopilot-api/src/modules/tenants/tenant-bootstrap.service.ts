@@ -26,14 +26,21 @@ export class TenantBootstrapService {
   private readonly logger = new Logger(TenantBootstrapService.name);
 
   constructor(
-    @InjectRepository(Tenants) private readonly tenantsRepo: Repository<Tenants>,
-    @InjectRepository(Profiles) private readonly profilesRepo: Repository<Profiles>,
-    @InjectRepository(TenantMembers) private readonly membersRepo: Repository<TenantMembers>,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
+    @InjectRepository(Profiles)
+    private readonly profilesRepo: Repository<Profiles>,
+    @InjectRepository(TenantMembers)
+    private readonly membersRepo: Repository<TenantMembers>,
     @InjectRepository(Roles) private readonly rolesRepo: Repository<Roles>,
-    @InjectRepository(Permissions) private readonly permissionsRepo: Repository<Permissions>,
-    @InjectRepository(RolePermissions) private readonly rolePermissionsRepo: Repository<RolePermissions>,
-    @InjectRepository(Workspaces) private readonly workspacesRepo: Repository<Workspaces>,
-    @InjectRepository(ApprovalWorkflows) private readonly workflowsRepo: Repository<ApprovalWorkflows>,
+    @InjectRepository(Permissions)
+    private readonly permissionsRepo: Repository<Permissions>,
+    @InjectRepository(RolePermissions)
+    private readonly rolePermissionsRepo: Repository<RolePermissions>,
+    @InjectRepository(Workspaces)
+    private readonly workspacesRepo: Repository<Workspaces>,
+    @InjectRepository(ApprovalWorkflows)
+    private readonly workflowsRepo: Repository<ApprovalWorkflows>,
     private readonly subscriptions: SubscriptionsService,
     private readonly templateSeeds: TemplateSeedService,
     private readonly autoReplySeeds: AutoReplySeedService,
@@ -65,7 +72,10 @@ export class TenantBootstrapService {
           });
           if (!exists) {
             await this.rolePermissionsRepo.save(
-              this.rolePermissionsRepo.create({ roleId: role.id, permissionKey }),
+              this.rolePermissionsRepo.create({
+                roleId: role.id,
+                permissionKey,
+              }),
             );
           }
         }
@@ -76,7 +86,9 @@ export class TenantBootstrapService {
   async bootstrapForUser(user: UserEntity): Promise<Tenants> {
     await this.ensurePermissionsSeeded();
 
-    const existingMember = await this.membersRepo.findOne({ where: { userId: user.id } });
+    const existingMember = await this.membersRepo.findOne({
+      where: { userId: user.id },
+    });
     if (existingMember) {
       const tenant = await this.tenantsRepo.findOneOrFail({
         where: { id: existingMember.tenantId },
@@ -87,16 +99,18 @@ export class TenantBootstrapService {
 
     await this.ensureProfile(user);
 
-    const slugBase = (user.email?.split('@')[0] ?? user.firstName ?? `user-${user.id.slice(0, 8)}`)
+    const slugBase = (
+      user.email?.split('@')[0] ??
+      user.firstName ??
+      `user-${user.id.slice(0, 8)}`
+    )
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '');
     const slug = `${slugBase}-${Date.now().toString(36)}`;
 
     const workspaceLabel =
-      user.firstName?.trim() ||
-      user.email?.split('@')[0] ||
-      'My';
+      user.firstName?.trim() || user.email?.split('@')[0] || 'My';
 
     const tenant = await this.tenantsRepo.save(
       this.tenantsRepo.create({
@@ -184,7 +198,9 @@ export class TenantBootstrapService {
   }
 
   private async ensureProfile(user: UserEntity): Promise<void> {
-    const existing = await this.profilesRepo.findOne({ where: { userId: user.id } });
+    const existing = await this.profilesRepo.findOne({
+      where: { userId: user.id },
+    });
     const displayName =
       [user.firstName, user.lastName].filter(Boolean).join(' ') ||
       user.firstName ||
@@ -195,7 +211,8 @@ export class TenantBootstrapService {
       if (!existing.displayName && displayName) {
         existing.displayName = displayName;
         existing.fullName = displayName;
-        if (user.avatar && !existing.avatarUrl) existing.avatarUrl = user.avatar;
+        if (user.avatar && !existing.avatarUrl)
+          existing.avatarUrl = user.avatar;
         await this.profilesRepo.save(existing);
       }
       return;

@@ -12,7 +12,12 @@ import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity'
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Leads, ContentTemplates, KnowledgeDocument, BrandProfiles]),
+    TypeOrmModule.forFeature([
+      Leads,
+      ContentTemplates,
+      KnowledgeDocument,
+      BrandProfiles,
+    ]),
     ContentItemsModule,
     AuditLogsModule,
     AiModule,

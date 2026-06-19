@@ -52,7 +52,9 @@ export class AiProcessor extends WorkerHost {
         return this.generateContent.generate({
           userId,
           tenantId: payload.tenantId as string | undefined,
-          workspaceId: (payload.workspaceId ?? payload.workspace_id) as string | undefined,
+          workspaceId: (payload.workspaceId ?? payload.workspace_id) as
+            | string
+            | undefined,
           theme: payload.theme as string | undefined,
           draft: payload.draft as string | undefined,
           contentType: payload.contentType as string | undefined,

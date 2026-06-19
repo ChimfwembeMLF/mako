@@ -35,7 +35,8 @@ export class WhatsappMenuItemDto {
   response?: string;
 
   @ApiPropertyOptional({
-    description: 'When true, AI writes the reply using title + response as guidance',
+    description:
+      'When true, AI writes the reply using title + response as guidance',
   })
   @IsOptional()
   @IsBoolean()
@@ -59,7 +60,8 @@ export class UpdateWhatsappFlowConfigDto {
 
   @ApiPropertyOptional({
     example: 'Welcome to {serviceName}! How can we help?',
-    description: 'Optional custom welcome text. Use {serviceName} as a placeholder.',
+    description:
+      'Optional custom welcome text. Use {serviceName} as a placeholder.',
   })
   @IsOptional()
   @IsString()

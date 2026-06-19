@@ -69,14 +69,22 @@ export class CommentReplyAiService {
       .replace(/\{customer_message\}/gi, ctx.commentText)
       .replace(/\{customer_name\}/gi, ctx.commenterName)
       .replace(/\{post_title\}/gi, ctx.postTitle ?? '')
-      .replace(/\{post_content\}/gi, ctx.postContent.replace(/<[^>]*>/g, '').trim());
+      .replace(
+        /\{post_content\}/gi,
+        ctx.postContent.replace(/<[^>]*>/g, '').trim(),
+      );
   }
 
-  private async generateAiReply(comment: CommentReplies, userId: string): Promise<string> {
+  private async generateAiReply(
+    comment: CommentReplies,
+    userId: string,
+  ): Promise<string> {
     const ctx = await this.loadContext(comment);
     const brandCtx = await this.loadBrand(comment);
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{ content?: string }>(
+    const { data, tokensUsed } = await this.mistral.completeJson<{
+      content?: string;
+    }>(
       [
         {
           role: 'system',
@@ -100,8 +108,12 @@ export class CommentReplyAiService {
     return data.content?.trim() ?? '';
   }
 
-  private async loadContext(comment: CommentReplies): Promise<CommentReplyContext> {
-    const item = await this.contentRepo.findOne({ where: { id: comment.contentId } });
+  private async loadContext(
+    comment: CommentReplies,
+  ): Promise<CommentReplyContext> {
+    const item = await this.contentRepo.findOne({
+      where: { id: comment.contentId },
+    });
     const publication = await this.publicationsRepo.findOne({
       where: {
         contentId: comment.contentId,
@@ -111,10 +123,7 @@ export class CommentReplyAiService {
       order: { publishedAt: 'DESC' },
     });
 
-    const postContent =
-      publication?.publishedContent ??
-      item?.content ??
-      '';
+    const postContent = publication?.publishedContent ?? item?.content ?? '';
     const postTitle = publication?.publishedTitle ?? item?.title;
 
     return {
@@ -127,8 +136,12 @@ export class CommentReplyAiService {
   }
 
   private async loadBrand(comment: CommentReplies) {
-    const item = await this.contentRepo.findOne({ where: { id: comment.contentId } });
-    const tenant = await this.tenantsRepo.findOne({ where: { id: comment.tenantId } });
+    const item = await this.contentRepo.findOne({
+      where: { id: comment.contentId },
+    });
+    const tenant = await this.tenantsRepo.findOne({
+      where: { id: comment.tenantId },
+    });
     if (!tenant) return this.prompts.brandFromEntity(null);
 
     const brand = item?.workspaceId
@@ -136,7 +149,11 @@ export class CommentReplyAiService {
           where: { tenantId: comment.tenantId, workspaceId: item.workspaceId },
         })
       : await this.brandRepo.findOne({
-          where: { tenantId: comment.tenantId, userId: tenant.ownerId, workspaceId: IsNull() },
+          where: {
+            tenantId: comment.tenantId,
+            userId: tenant.ownerId,
+            workspaceId: IsNull(),
+          },
         });
     return this.prompts.brandFromEntity(brand);
   }

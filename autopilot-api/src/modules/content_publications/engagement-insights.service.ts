@@ -31,13 +31,18 @@ export class EngagementInsightsService {
     workspaceId?: string,
   ): Promise<TopPerformingPost[]> {
     const rows = await this.repo.find({
-      where: { ...scopeWhere<ContentPublications>(tenantId, workspaceId), status: 'published' },
+      where: {
+        ...scopeWhere<ContentPublications>(tenantId, workspaceId),
+        status: 'published',
+      },
       order: { engagementScore: 'DESC', publishedAt: 'DESC' },
       take: Math.min(limit, 20),
     });
 
     return rows
-      .filter((r) => r.engagementScore > 0 || r.likeCount > 0 || r.commentCount > 0)
+      .filter(
+        (r) => r.engagementScore > 0 || r.likeCount > 0 || r.commentCount > 0,
+      )
       .map((r) => ({
         id: r.id,
         contentId: r.contentId,
@@ -71,10 +76,15 @@ export class EngagementInsightsService {
       return `${i + 1}. [${p.platform}] "${title}" (${metrics})\n   ${excerpt}`;
     });
 
-    return `Top performing published content (replicate hooks, tone, and structure that drove engagement):\n${lines.join('\n')}`;
+    return `Top performing published content (replicate hooks, tone, and structure that drove engagement):\n${lines.join(
+      '\n',
+    )}`;
   }
 }
 
 function stripHtml(html: string): string {
-  return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }

@@ -1,4 +1,10 @@
-import { Injectable, Logger, ForbiddenException, NotFoundException, Optional } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  ForbiddenException,
+  NotFoundException,
+  Optional,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
@@ -9,7 +15,12 @@ import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
 import { normalizePlanKey, PlanKey } from '../subscriptions/plan.constants';
 import { PlansService } from '../subscriptions/plans.service';
-import { buildInvoiceNumber, invoiceDataFromDeposit, renderInvoiceHtml, InvoiceData } from './invoice.template';
+import {
+  buildInvoiceNumber,
+  invoiceDataFromDeposit,
+  renderInvoiceHtml,
+  InvoiceData,
+} from './invoice.template';
 import { getInvoicePdfFilename, renderInvoicePdf } from './invoice.pdf';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -49,7 +60,8 @@ export class PaymentsService {
     const explicit = this.config.get<string>('PAYMENTS_DEV_AUTO_COMPLETE');
     if (explicit === 'true') return true;
     if (explicit === 'false') return false;
-    if (this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') === 'true') return true;
+    if (this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') === 'true')
+      return true;
     return this.config.get<string>('NODE_ENV') === 'development';
   }
 
@@ -102,8 +114,8 @@ export class PaymentsService {
           ? 'Subscription renewed successfully'
           : 'Payment completed — your plan is now active'
         : isRenewal
-          ? 'Renewal payment sent — approve the prompt on your phone'
-          : 'Payment request sent — approve the prompt on your phone',
+        ? 'Renewal payment sent — approve the prompt on your phone'
+        : 'Payment request sent — approve the prompt on your phone',
     };
   }
 
@@ -129,7 +141,11 @@ export class PaymentsService {
     const deposit = await this.depositsRepo.findOne({ where: { depositId } });
     if (!deposit) throw new Error('Deposit not found');
     if (deposit.status === 'COMPLETED') {
-      return { alreadyCompleted: true, tenantId: deposit.tenantId, plan: deposit.plan };
+      return {
+        alreadyCompleted: true,
+        tenantId: deposit.tenantId,
+        plan: deposit.plan,
+      };
     }
 
     await this.depositsRepo.update(deposit.id, { status: 'COMPLETED' });
@@ -141,7 +157,9 @@ export class PaymentsService {
       correspondent: deposit.correspondent,
     });
     this.logger.log(
-      `${deposit.isRenewal ? 'Renewed' : 'Activated'} ${plan} for tenant ${deposit.tenantId} via deposit ${depositId}`,
+      `${deposit.isRenewal ? 'Renewed' : 'Activated'} ${plan} for tenant ${
+        deposit.tenantId
+      } via deposit ${depositId}`,
     );
     if (deposit.isRenewal) {
       void this.notifications?.notifyRenewalSuccess({
@@ -173,7 +191,10 @@ export class PaymentsService {
     return { completed };
   }
 
-  async findByTenant(tenantId: string, userId?: string): Promise<ClientPaymentRecord[]> {
+  async findByTenant(
+    tenantId: string,
+    userId?: string,
+  ): Promise<ClientPaymentRecord[]> {
     if (userId) await this.assertTenantAccess(userId, tenantId);
     const rows = await this.depositsRepo.find({
       where: { tenantId },
@@ -182,12 +203,20 @@ export class PaymentsService {
     return rows.map((d) => this.toClientRecord(d));
   }
 
-  async generateInvoiceHtml(depositId: string, tenantId: string, userId: string): Promise<string> {
+  async generateInvoiceHtml(
+    depositId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<string> {
     const data = await this.getInvoiceData(depositId, tenantId, userId);
     return renderInvoiceHtml(data);
   }
 
-  async generateInvoicePdf(depositId: string, tenantId: string, userId: string): Promise<Buffer> {
+  async generateInvoicePdf(
+    depositId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<Buffer> {
     const data = await this.getInvoiceData(depositId, tenantId, userId);
     return renderInvoicePdf(data);
   }
@@ -196,9 +225,15 @@ export class PaymentsService {
     return getInvoicePdfFilename(depositId);
   }
 
-  private async getInvoiceData(depositId: string, tenantId: string, userId: string): Promise<InvoiceData> {
+  private async getInvoiceData(
+    depositId: string,
+    tenantId: string,
+    userId: string,
+  ): Promise<InvoiceData> {
     await this.assertTenantAccess(userId, tenantId);
-    const deposit = await this.depositsRepo.findOne({ where: { depositId, tenantId } });
+    const deposit = await this.depositsRepo.findOne({
+      where: { depositId, tenantId },
+    });
     if (!deposit) throw new NotFoundException('Payment record not found');
 
     const tenant = await this.tenantsRepo.findOne({
@@ -215,8 +250,11 @@ export class PaymentsService {
 
   private async assertTenantAccess(userId: string, tenantId: string) {
     const memberships = await this.tenantMembers.findForUser(userId);
-    const allowed = memberships.some((m) => m.tenantId === tenantId && m.isActive);
-    if (!allowed) throw new ForbiddenException('You are not a member of this workspace');
+    const allowed = memberships.some(
+      (m) => m.tenantId === tenantId && m.isActive,
+    );
+    if (!allowed)
+      throw new ForbiddenException('You are not a member of this workspace');
   }
 
   toClientRecord(d: Deposits): ClientPaymentRecord {

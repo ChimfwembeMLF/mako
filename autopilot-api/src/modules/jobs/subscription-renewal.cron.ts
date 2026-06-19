@@ -15,7 +15,10 @@ export class SubscriptionRenewalCron {
   /** Check for due renewals twice daily (7am and 7pm). */
   @Cron('0 7,19 * * *')
   async processRenewals(): Promise<void> {
-    if (this.config.get<string>('SUBSCRIPTION_RENEWAL_CRON_ENABLED') === 'false') return;
+    if (
+      this.config.get<string>('SUBSCRIPTION_RENEWAL_CRON_ENABLED') === 'false'
+    )
+      return;
     try {
       const result = await this.renewals.processDueRenewals();
       if (result.initiated || result.pastDue || result.expired) {

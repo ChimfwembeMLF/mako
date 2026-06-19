@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository, MoreThan } from 'typeorm';
@@ -41,7 +45,10 @@ export class TenantMembersService {
 
   async findAll(tenantId?: string): Promise<TenantMembers[]> {
     if (tenantId) {
-      return this.repo.find({ where: { tenantId }, order: { joinedAt: 'ASC' } });
+      return this.repo.find({
+        where: { tenantId },
+        order: { joinedAt: 'ASC' },
+      });
     }
     return this.repo.find();
   }
@@ -59,7 +66,9 @@ export class TenantMembersService {
   async findOneWithDetails(id: string, tenantId: string) {
     const member = await this.repo.findOne({ where: { id, tenantId } });
     if (!member) throw new NotFoundException('TenantMembers not found');
-    const profile = await this.profilesRepo.findOne({ where: { userId: member.userId } });
+    const profile = await this.profilesRepo.findOne({
+      where: { userId: member.userId },
+    });
     const user = await this.userService.findOne({ id: member.userId });
     return {
       ...member,
@@ -70,7 +79,12 @@ export class TenantMembersService {
             email: user?.email ?? null,
             avatarUrl: profile.avatarUrl,
           }
-        : { fullName: null, displayName: null, email: user?.email ?? null, avatarUrl: null },
+        : {
+            fullName: null,
+            displayName: null,
+            email: user?.email ?? null,
+            avatarUrl: null,
+          },
     };
   }
 
@@ -97,7 +111,9 @@ export class TenantMembersService {
     });
     const memberRows = await Promise.all(
       members.map(async (member) => {
-        const profile = await this.profilesRepo.findOne({ where: { userId: member.userId } });
+        const profile = await this.profilesRepo.findOne({
+          where: { userId: member.userId },
+        });
         const user = await this.userService.findOne({ id: member.userId });
         return {
           id: member.id,
@@ -114,7 +130,12 @@ export class TenantMembersService {
                 email: user?.email ?? null,
                 avatarUrl: profile.avatarUrl,
               }
-            : { fullName: null, displayName: null, email: user?.email ?? null, avatarUrl: null },
+            : {
+                fullName: null,
+                displayName: null,
+                email: user?.email ?? null,
+                avatarUrl: null,
+              },
         };
       }),
     );
@@ -144,7 +165,12 @@ export class TenantMembersService {
     tenantId: string;
     roleId: string;
     invitedBy: string;
-  }): Promise<{ message: string; member?: TenantMembers; invitation?: TenantMemberInvitation; pending?: boolean }> {
+  }): Promise<{
+    message: string;
+    member?: TenantMembers;
+    invitation?: TenantMemberInvitation;
+    pending?: boolean;
+  }> {
     const email = this.normalizeEmail(params.email);
     const user = await this.userService.findOne({ email });
 
@@ -155,7 +181,9 @@ export class TenantMembersService {
 
       if (existing) {
         if (existing.isActive) {
-          throw new BadRequestException('User is already a member of this workspace');
+          throw new BadRequestException(
+            'User is already a member of this workspace',
+          );
         }
         existing.isActive = true;
         existing.roleId = params.roleId;
@@ -205,7 +233,9 @@ export class TenantMembersService {
       );
     }
 
-    const tenant = await this.tenantsRepo.findOne({ where: { id: params.tenantId } });
+    const tenant = await this.tenantsRepo.findOne({
+      where: { id: params.tenantId },
+    });
     const frontendUrl = resolveFrontendUrl(this.config);
     const signupLink = `${frontendUrl}/auth?email=${encodeURIComponent(email)}`;
 
@@ -216,20 +246,26 @@ export class TenantMembersService {
     );
 
     return {
-      message: 'Invitation sent — they can register or sign in with this email to join.',
+      message:
+        'Invitation sent — they can register or sign in with this email to join.',
       invitation,
       pending: true,
     };
   }
 
   async revokeInvitation(id: string, tenantId: string): Promise<void> {
-    const inv = await this.invitationsRepo.findOne({ where: { id, tenantId, status: 'pending' } });
+    const inv = await this.invitationsRepo.findOne({
+      where: { id, tenantId, status: 'pending' },
+    });
     if (!inv) throw new NotFoundException('Invitation not found');
     inv.status = 'revoked';
     await this.invitationsRepo.save(inv);
   }
 
-  async acceptPendingInvitations(userId: string, email: string): Promise<number> {
+  async acceptPendingInvitations(
+    userId: string,
+    email: string,
+  ): Promise<number> {
     const normalized = this.normalizeEmail(email);
     const now = new Date();
     const pending = await this.invitationsRepo.find({
@@ -272,7 +308,10 @@ export class TenantMembersService {
     return accepted;
   }
 
-  private async revokePendingInvitations(email: string, tenantId: string): Promise<void> {
+  private async revokePendingInvitations(
+    email: string,
+    tenantId: string,
+  ): Promise<void> {
     const pending = await this.invitationsRepo.find({
       where: { tenantId, email, status: 'pending' },
     });
@@ -282,13 +321,17 @@ export class TenantMembersService {
     }
   }
 
-  async update(id: string, dto: TenantMembersUpdateDto): Promise<TenantMembers> {
+  async update(
+    id: string,
+    dto: TenantMembersUpdateDto,
+  ): Promise<TenantMembers> {
     await this.repo.update(id, dto as any);
     return this.findOne(id);
   }
 
   async remove(id: string): Promise<void> {
     const res = await this.repo.delete(id);
-    if (res.affected === 0) throw new NotFoundException('TenantMembers not found');
+    if (res.affected === 0)
+      throw new NotFoundException('TenantMembers not found');
   }
 }

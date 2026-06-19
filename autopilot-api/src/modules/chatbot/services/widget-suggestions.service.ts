@@ -26,7 +26,9 @@ export class WidgetSuggestionsService {
     const fromTheme = theme.starterPrompts;
     if (Array.isArray(fromTheme)) {
       const custom = fromTheme
-        .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+        .filter(
+          (s): s is string => typeof s === 'string' && s.trim().length > 0,
+        )
         .map((s) => s.trim())
         .slice(0, 3);
       if (custom.length) return custom;
@@ -48,7 +50,9 @@ export class WidgetSuggestionsService {
     const brandBlock = brandContextBlock(brand);
 
     try {
-      const { data, tokensUsed } = await this.mistral.completeJson<{ suggestions?: string[] }>(
+      const { data, tokensUsed } = await this.mistral.completeJson<{
+        suggestions?: string[];
+      }>(
         [
           {
             role: 'system',
@@ -82,7 +86,9 @@ Each suggestion: under 55 characters, phrased as a natural question or request, 
 
       const items = Array.isArray(data.suggestions)
         ? data.suggestions
-            .filter((s): s is string => typeof s === 'string' && s.trim().length > 0)
+            .filter(
+              (s): s is string => typeof s === 'string' && s.trim().length > 0,
+            )
             .map((s) => s.trim().slice(0, 55))
             .slice(0, 3)
         : [];

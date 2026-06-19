@@ -9,7 +9,10 @@ import {
   isPlatformManagedWhatsappAccount,
   WhatsappCredentials,
 } from './whatsapp-platform.util';
-import { WhatsappMessagingService, SendMessageResult } from './whatsapp-messaging.service';
+import {
+  WhatsappMessagingService,
+  SendMessageResult,
+} from './whatsapp-messaging.service';
 
 @Injectable()
 export class WhatsappAccountAuthService {
@@ -41,10 +44,17 @@ export class WhatsappAccountAuthService {
   ): Promise<SendMessageResult & { account: SocialAccounts }> {
     let { creds, account: active } = await this.credentialsForAccount(account);
     if (!creds) {
-      return { success: false, error: 'WhatsApp not connected', account: active };
+      return {
+        success: false,
+        error: 'WhatsApp not connected',
+        account: active,
+      };
     }
 
-    const sessionError = await this.assertSessionWindow(active.tenantId, toPhone);
+    const sessionError = await this.assertSessionWindow(
+      active.tenantId,
+      toPhone,
+    );
     if (sessionError) {
       return { success: false, error: sessionError, account: active };
     }
@@ -88,10 +98,19 @@ export class WhatsappAccountAuthService {
     body: string,
     templateName?: string,
     templateLanguage?: string,
-  ): Promise<SendMessageResult & { account: SocialAccounts; usedTemplate: true }> {
-    const { creds, account: active } = await this.credentialsForAccount(account);
+  ): Promise<
+    SendMessageResult & { account: SocialAccounts; usedTemplate: true }
+  > {
+    const { creds, account: active } = await this.credentialsForAccount(
+      account,
+    );
     if (!creds) {
-      return { success: false, error: 'WhatsApp not connected', account: active, usedTemplate: true };
+      return {
+        success: false,
+        error: 'WhatsApp not connected',
+        account: active,
+        usedTemplate: true,
+      };
     }
 
     const name =
@@ -100,7 +119,13 @@ export class WhatsappAccountAuthService {
       'hello_world';
     const language = templateLanguage?.trim() || 'en';
 
-    let result = await this.messaging.sendTemplateText(creds, toPhone, body, name, language);
+    let result = await this.messaging.sendTemplateText(
+      creds,
+      toPhone,
+      body,
+      name,
+      language,
+    );
 
     if (!result.success && this.isAuthError(result.error)) {
       if (!isPlatformManagedWhatsappAccount(active.metadata)) {
@@ -130,7 +155,9 @@ export class WhatsappAccountAuthService {
       templateName?: string;
       templateLanguage?: string;
     },
-  ): Promise<SendMessageResult & { account: SocialAccounts; usedTemplate?: boolean }> {
+  ): Promise<
+    SendMessageResult & { account: SocialAccounts; usedTemplate?: boolean }
+  > {
     if (options?.useTemplate) {
       return this.sendTemplateText(
         account,
@@ -151,7 +178,10 @@ export class WhatsappAccountAuthService {
   }
 
   /** WhatsApp session messages only work within 24h of the customer's last inbound message. */
-  private async assertSessionWindow(tenantId: string, toPhone: string): Promise<string | null> {
+  private async assertSessionWindow(
+    tenantId: string,
+    toPhone: string,
+  ): Promise<string | null> {
     const phone = this.messaging.normalizePhone(toPhone);
     const lastInbound = await this.messagesRepo.findOne({
       where: { tenantId, phone, direction: 'inbound' },

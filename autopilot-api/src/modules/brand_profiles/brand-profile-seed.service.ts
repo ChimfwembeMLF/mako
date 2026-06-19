@@ -17,7 +17,10 @@ export class BrandProfileSeedService {
   ) {}
 
   /** Minimal brand profile shell on the default workspace (not tenant-level legacy). */
-  async ensureStarterForUser(tenantId: string, user: UserEntity): Promise<boolean> {
+  async ensureStarterForUser(
+    tenantId: string,
+    user: UserEntity,
+  ): Promise<boolean> {
     const defaultWorkspace = await this.workspaceRepo.findOne({
       where: { tenantId },
       order: { created_at: 'ASC' },
@@ -35,7 +38,9 @@ export class BrandProfileSeedService {
       if (legacy) {
         legacy.workspaceId = defaultWorkspace.id;
         await this.repo.save(legacy);
-        this.logger.log(`Moved legacy brand profile to workspace ${defaultWorkspace.id}`);
+        this.logger.log(
+          `Moved legacy brand profile to workspace ${defaultWorkspace.id}`,
+        );
         return true;
       }
     }

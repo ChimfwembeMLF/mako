@@ -16,7 +16,9 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
       clientID: config.getOrThrow<string>('FACEBOOK_APP_ID'),
       clientSecret: config.getOrThrow<string>('FACEBOOK_APP_SECRET'),
       callbackURL: config.getOrThrow<string>('FACEBOOK_CALLBACK_URL'),
-      graphAPIVersion: resolveFacebookGraphVersion(config.get<string>('FACEBOOK_GRAPH_VERSION')),
+      graphAPIVersion: resolveFacebookGraphVersion(
+        config.get<string>('FACEBOOK_GRAPH_VERSION'),
+      ),
       profileFields: ['emails', 'name'],
       state: true,
       store: createOAuthCookieStateStore(config.get<string>('SESSION_SECRET')),
@@ -26,7 +28,7 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
   }
 
   private readonly logger = new Logger(FacebookStrategy.name);
-  
+
   async validate(
     accessToken: string,
     refreshToken: string,
@@ -36,31 +38,31 @@ export class FacebookStrategy extends PassportStrategy(Strategy, 'facebook') {
     this.logger.log('Facebook validate started', {
       facebookId: profile.id,
     });
-  
+
     try {
       const payload = {
         provider: 'facebook',
         providerId: profile.id,
-  
+
         email: profile.emails?.[0]?.value ?? null,
         firstName: profile.name?.givenName ?? null,
         lastName: profile.name?.familyName ?? null,
-  
+
         accessToken,
       };
-  
+
       this.logger.log('Facebook validate success', {
         providerId: profile.id,
         hasEmail: !!payload.email,
       });
-  
+
       done(null, payload);
     } catch (err) {
       this.logger.error('Facebook validate failed', {
         facebookId: profile.id,
         error: err,
       });
-  
+
       done(err);
     }
   }

@@ -37,10 +37,10 @@ export class AuditInterceptor implements NestInterceptor {
     const res = http.getResponse<Response>();
     const started = Date.now();
 
-    const skipDecorator = this.reflector.getAllAndOverride<boolean>(SKIP_AUDIT_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
+    const skipDecorator = this.reflector.getAllAndOverride<boolean>(
+      SKIP_AUDIT_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
     const path = req.originalUrl || req.url || '';
     if (skipDecorator || shouldSkipAudit(path, req.method)) {
@@ -58,8 +58,8 @@ export class AuditInterceptor implements NestInterceptor {
           typeof err?.status === 'number'
             ? err.status
             : typeof err?.getStatus === 'function'
-              ? err.getStatus()
-              : 500;
+            ? err.getStatus()
+            : 500;
         log(status, err?.message || String(err));
         return throwError(() => err);
       }),
@@ -101,7 +101,9 @@ export class AuditInterceptor implements NestInterceptor {
       });
     } catch (err) {
       this.logger.warn(
-        `Failed to write audit log: ${err instanceof Error ? err.message : String(err)}`,
+        `Failed to write audit log: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
       );
     }
   }
@@ -109,7 +111,10 @@ export class AuditInterceptor implements NestInterceptor {
   private sanitizeQuery(query: Request['query']): Record<string, unknown> {
     const out: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(query ?? {})) {
-      if (key.toLowerCase().includes('password') || key.toLowerCase().includes('token')) {
+      if (
+        key.toLowerCase().includes('password') ||
+        key.toLowerCase().includes('token')
+      ) {
         out[key] = '[redacted]';
       } else {
         out[key] = value;

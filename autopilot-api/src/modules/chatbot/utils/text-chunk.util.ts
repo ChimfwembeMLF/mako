@@ -15,7 +15,10 @@ export function chunkText(
   chunkSize = DEFAULT_CHUNK_SIZE,
   overlap = DEFAULT_OVERLAP,
 ): string[] {
-  const normalized = text.replace(/\r\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  const normalized = text
+    .replace(/\r\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   if (!normalized) return [];
 
   const chunks: string[] = [];

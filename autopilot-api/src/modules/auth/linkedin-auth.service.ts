@@ -36,7 +36,9 @@ export class LinkedInAuthService {
       params.state = state;
     }
 
-    return `https://www.linkedin.com/oauth/v2/authorization?${new URLSearchParams(params).toString()}`;
+    return `https://www.linkedin.com/oauth/v2/authorization?${new URLSearchParams(
+      params,
+    ).toString()}`;
   }
 
   async exchangeCode(code: string): Promise<string> {
@@ -72,7 +74,9 @@ export class LinkedInAuthService {
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
-      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+      expiresAt: data.expires_in
+        ? new Date(Date.now() + data.expires_in * 1000)
+        : undefined,
     };
   }
 

@@ -49,7 +49,8 @@ export class WidgetController {
   @ApiBearerAuth('widget-api-key')
   @ApiOperation({
     summary: 'Get widget configuration',
-    description: 'Returns bot name, welcome message, theme, and TTS settings for the embed.',
+    description:
+      'Returns bot name, welcome message, theme, and TTS settings for the embed.',
   })
   @ApiResponse({ status: 200, type: WidgetConfigResponseDto })
   getConfig(@Req() req: { widgetAuth: ApiKeyValidation }) {
@@ -90,7 +91,8 @@ export class WidgetController {
       .then((session) => ({
         sessionId: session.id,
         visitorId,
-        welcomeMessageId: (session as { welcomeMessageId?: string }).welcomeMessageId,
+        welcomeMessageId: (session as { welcomeMessageId?: string })
+          .welcomeMessageId,
       }));
   }
 
@@ -118,11 +120,15 @@ export class WidgetController {
   @Post('sessions/:id/messages')
   @UseGuards(WidgetApiKeyGuard)
   @ApiBearerAuth('widget-api-key')
-  @ApiOperation({ summary: 'Send a user message', description: 'Returns the assistant reply with optional RAG citations.' })
+  @ApiOperation({
+    summary: 'Send a user message',
+    description: 'Returns the assistant reply with optional RAG citations.',
+  })
   @ApiHeader({
     name: 'X-Visitor-Id',
     required: false,
-    description: 'Visitor ID from session creation. Required when the session has a visitorId.',
+    description:
+      'Visitor ID from session creation. Required when the session has a visitorId.',
   })
   @ApiResponse({ status: 201, type: AssistantMessageResponseDto })
   async sendMessage(
@@ -134,11 +140,17 @@ export class WidgetController {
     const { config, key } = req.widgetAuth;
     const session = await this.sessions.getSession(key.tenantId, sessionId);
 
-    if (session.channel === 'widget' && visitorId && session.visitorId !== visitorId) {
+    if (
+      session.channel === 'widget' &&
+      visitorId &&
+      session.visitorId !== visitorId
+    ) {
       throw new ForbiddenException('Session visitor mismatch');
     }
 
-    const widgetUserId = `widget:${visitorId ?? session.visitorId ?? 'anonymous'}`;
+    const widgetUserId = `widget:${
+      visitorId ?? session.visitorId ?? 'anonymous'
+    }`;
     const { assistantMessage } = await this.sessions.sendMessage({
       tenantId: key.tenantId,
       sessionId,
@@ -171,11 +183,17 @@ export class WidgetController {
   ) {
     const { config, key } = req.widgetAuth;
     if (!config.widgetTtsEnabled) {
-      throw new BadRequestException('Text-to-speech is not enabled for this chatbot');
+      throw new BadRequestException(
+        'Text-to-speech is not enabled for this chatbot',
+      );
     }
 
     const session = await this.sessions.getSession(key.tenantId, sessionId);
-    if (session.channel === 'widget' && visitorId && session.visitorId !== visitorId) {
+    if (
+      session.channel === 'widget' &&
+      visitorId &&
+      session.visitorId !== visitorId
+    ) {
       throw new ForbiddenException('Session visitor mismatch');
     }
 

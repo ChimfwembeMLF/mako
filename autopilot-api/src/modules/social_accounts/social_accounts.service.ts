@@ -14,8 +14,14 @@ import { ConfigService } from '@nestjs/config';
 import { SocialAccounts } from './entities/social_accounts.entity';
 import { SocialAccountsCreateDto } from './dto/create-social_accounts.dto';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
-import { summarizeAxiosError, isTokenAuthError } from '../content-publishing/publish-error.util';
-import { isRecoverableMetaTokenError, logOnce } from '../../common/throttled-log.util';
+import {
+  summarizeAxiosError,
+  isTokenAuthError,
+} from '../content-publishing/publish-error.util';
+import {
+  isRecoverableMetaTokenError,
+  logOnce,
+} from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
 import {
   SocialAccountsOAuthService,
@@ -54,7 +60,10 @@ export class SocialAccountsService {
   ) {
     const googleClientId = this.config.get<string>('GOOGLE_CLIENT_ID');
     const googleClientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET');
-    this.googleOauthClient = new google.auth.OAuth2(googleClientId, googleClientSecret);
+    this.googleOauthClient = new google.auth.OAuth2(
+      googleClientId,
+      googleClientSecret,
+    );
   }
 
   toPublicAccount(account: SocialAccounts) {
@@ -64,7 +73,9 @@ export class SocialAccountsService {
 
   async assertTenantAccess(userId: string, tenantId: string) {
     const memberships = await this.tenantMembersService.findForUser(userId);
-    const allowed = memberships.some((m) => m.tenantId === tenantId && m.isActive);
+    const allowed = memberships.some(
+      (m) => m.tenantId === tenantId && m.isActive,
+    );
     if (!allowed) {
       throw new ForbiddenException('You are not a member of this workspace');
     }
@@ -161,7 +172,9 @@ export class SocialAccountsService {
         this.logger,
         'debug',
         `token-refresh:${account.id}`,
-        `Unable to refresh ${account.platform} token (${account.id}): ${summarizeAxiosError(error)}`,
+        `Unable to refresh ${account.platform} token (${
+          account.id
+        }): ${summarizeAxiosError(error)}`,
       );
       return account;
     }
@@ -174,19 +187,27 @@ export class SocialAccountsService {
     return age >= 0 && age < 24 * 60 * 60 * 1000;
   }
 
-  async markDisconnectedAuth(account: SocialAccounts, reason?: string): Promise<SocialAccounts> {
+  async markDisconnectedAuth(
+    account: SocialAccounts,
+    reason?: string,
+  ): Promise<SocialAccounts> {
     this.clearStoredCredentials(account, reason);
     logOnce(
       this.logger,
       'debug',
       `disconnected:${account.id}`,
-      `Disconnected ${account.platform} account ${account.id}: ${reason ?? 'auth failure'}`,
+      `Disconnected ${account.platform} account ${account.id}: ${
+        reason ?? 'auth failure'
+      }`,
     );
     return this.repo.save(account);
   }
 
   /** Mark account disconnected and wipe tokens (safe for NOT NULL access_token column). */
-  private clearStoredCredentials(account: SocialAccounts, reason?: string): void {
+  private clearStoredCredentials(
+    account: SocialAccounts,
+    reason?: string,
+  ): void {
     account.connected = false;
     account.accessToken = '';
     account.refreshToken = undefined;
@@ -244,7 +265,10 @@ export class SocialAccountsService {
       fb_exchange_token: accessToken,
     });
 
-    const { data } = await axios.get<{ access_token: string; expires_in?: number }>(
+    const { data } = await axios.get<{
+      access_token: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`,
     );
 
@@ -279,7 +303,10 @@ export class SocialAccountsService {
       fb_exchange_token: accessToken,
     });
 
-    const { data } = await axios.get<{ access_token: string; expires_in?: number }>(
+    const { data } = await axios.get<{
+      access_token: string;
+      expires_in?: number;
+    }>(
       `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`,
     );
 
@@ -354,7 +381,10 @@ export class SocialAccountsService {
   async findByTenant(tenantId: string, userId: string, workspaceId?: string) {
     await this.assertTenantAccess(userId, tenantId);
     const accounts = await this.repo.find({
-      where: { ...scopeWhere<SocialAccounts>(tenantId, workspaceId), connected: true },
+      where: {
+        ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
+        connected: true,
+      },
       order: { created_at: 'DESC' },
     });
     const refreshed = await Promise.all(
@@ -434,7 +464,9 @@ export class SocialAccountsService {
       return { ready: false, needOAuth: true, reason: 'no_facebook' };
     }
 
-    const hasWhatsAppScopes = await this.oauth.metaTokenHasWhatsAppPermissions(accessToken);
+    const hasWhatsAppScopes = await this.oauth.metaTokenHasWhatsAppPermissions(
+      accessToken,
+    );
     if (!hasWhatsAppScopes) {
       return { ready: false, needOAuth: true, reason: 'missing_scopes' };
     }
@@ -467,7 +499,9 @@ export class SocialAccountsService {
 
     const creds = getWhatsappPlatformCredentials(this.config);
     if (!creds) {
-      throw new BadRequestException('Platform WhatsApp credentials are incomplete on the server.');
+      throw new BadRequestException(
+        'Platform WhatsApp credentials are incomplete on the server.',
+      );
     }
 
     const tokenCheck = await this.validateWhatsappCredentials(creds);
@@ -476,8 +510,11 @@ export class SocialAccountsService {
     }
 
     const displayName =
-      this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')?.trim() || 'Mako  WhatsApp';
-    const displayPhone = this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_PHONE')?.trim();
+      this.config.get<string>('WHATSAPP_PLATFORM_DISPLAY_NAME')?.trim() ||
+      'Mako  WhatsApp';
+    const displayPhone = this.config
+      .get<string>('WHATSAPP_PLATFORM_DISPLAY_PHONE')
+      ?.trim();
 
     return this.connectAccount({
       tenantId,
@@ -501,25 +538,31 @@ export class SocialAccountsService {
     creds: WhatsappCredentials,
   ): Promise<{ valid: boolean; message?: string }> {
     try {
-      await axios.get(`https://graph.facebook.com/v19.0/${creds.phoneNumberId}`, {
-        params: { fields: 'id', access_token: creds.accessToken },
-      });
+      await axios.get(
+        `https://graph.facebook.com/v19.0/${creds.phoneNumberId}`,
+        {
+          params: { fields: 'id', access_token: creds.accessToken },
+        },
+      );
       return { valid: true };
     } catch (err: unknown) {
       const graphMessage = axios.isAxiosError(err)
         ? (() => {
-            const data = err.response?.data as { error?: { message?: string; code?: number } };
+            const data = err.response?.data as {
+              error?: { message?: string; code?: number };
+            };
             return data?.error?.message
               ? `#${data.error.code ?? '?'} ${data.error.message}`
               : err.message;
           })()
         : err instanceof Error
-          ? err.message
-          : String(err);
+        ? err.message
+        : String(err);
 
-      const expired = /#190\b|session has expired|error validating access token/i.test(
-        graphMessage,
-      );
+      const expired =
+        /#190\b|session has expired|error validating access token/i.test(
+          graphMessage,
+        );
       return {
         valid: false,
         message: expired

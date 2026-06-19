@@ -24,7 +24,11 @@ export type PublicPlan = PlanConfig & {
 type StoredPlans = Partial<
   Record<
     PlanKey,
-    Partial<PlanConfig> & { features?: string[]; highlight?: boolean; tenantLimit?: number | null }
+    Partial<PlanConfig> & {
+      features?: string[];
+      highlight?: boolean;
+      tenantLimit?: number | null;
+    }
   >
 >;
 
@@ -61,9 +65,7 @@ export class PlansService implements OnModuleInit {
     return this.getPlan(key).priceZmw;
   }
 
-  async updatePlans(
-    patch: StoredPlans,
-  ): Promise<Record<PlanKey, PublicPlan>> {
+  async updatePlans(patch: StoredPlans): Promise<Record<PlanKey, PublicPlan>> {
     const current = this.getPlansRecord();
     const merged: StoredPlans = {};
     for (const key of ['free', 'starter', 'pro'] as PlanKey[]) {
@@ -77,7 +79,9 @@ export class PlansService implements OnModuleInit {
             ? patch[key]!.aiCallsLimit
             : current[key].aiCallsLimit,
         seatLimit:
-          patch[key]?.seatLimit !== undefined ? patch[key]!.seatLimit : current[key].seatLimit,
+          patch[key]?.seatLimit !== undefined
+            ? patch[key]!.seatLimit
+            : current[key].seatLimit,
         dailyWorkflowEnabled:
           patch[key]?.dailyWorkflowEnabled ?? current[key].dailyWorkflowEnabled,
         features: patch[key]?.features ?? current[key].features,
@@ -117,7 +121,9 @@ export class PlansService implements OnModuleInit {
         features: patch.features?.length ? patch.features : out[key].features,
         highlight: patch.highlight ?? out[key].highlight,
         tenantLimit:
-          patch.tenantLimit !== undefined ? patch.tenantLimit : out[key].tenantLimit,
+          patch.tenantLimit !== undefined
+            ? patch.tenantLimit
+            : out[key].tenantLimit,
       };
     }
     return out;

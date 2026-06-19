@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ContentPublicationsService } from './content-publications.service';
@@ -40,7 +49,11 @@ export class ContentPublicationsController {
     @Query('limit') limit?: string,
     @Query('workspaceId') workspaceId?: string,
   ) {
-    return this.insights.getTopPerforming(tenantId, Number(limit ?? 5), workspaceId);
+    return this.insights.getTopPerforming(
+      tenantId,
+      Number(limit ?? 5),
+      workspaceId,
+    );
   }
 
   @Post('sync-engagement')

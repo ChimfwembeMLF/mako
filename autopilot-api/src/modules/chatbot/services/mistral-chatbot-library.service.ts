@@ -42,7 +42,9 @@ export class MistralChatbotLibraryService {
   private getClient(): Mistral {
     const apiKey = this.config.get<string>('MISTRAL_API_KEY');
     if (!apiKey?.trim()) {
-      throw new ServiceUnavailableException('MISTRAL_API_KEY is not configured');
+      throw new ServiceUnavailableException(
+        'MISTRAL_API_KEY is not configured',
+      );
     }
     if (!this.client) {
       this.client = new Mistral({ apiKey: apiKey.trim() });
@@ -72,12 +74,17 @@ export class MistralChatbotLibraryService {
       libraryId = library.id;
       config.mistralLibraryId = libraryId;
       config = await this.configRepo.save(config);
-      this.logger.log(`Created Mistral library ${libraryId} for tenant ${config.tenantId}`);
+      this.logger.log(
+        `Created Mistral library ${libraryId} for tenant ${config.tenantId}`,
+      );
     }
 
     const instructions = await this.buildAgentInstructions(config);
     const agentPayload = {
-      model: config.model || this.config.get('MISTRAL_DEFAULT_MODEL') || 'mistral-small-latest',
+      model:
+        config.model ||
+        this.config.get('MISTRAL_DEFAULT_MODEL') ||
+        'mistral-small-latest',
       name: config.name || 'Website Assistant',
       description: `Mako  chatbot agent for tenant ${config.tenantId}`,
       instructions,
@@ -97,7 +104,9 @@ export class MistralChatbotLibraryService {
       const agent = await client.beta.agents.create(agentPayload);
       config.mistralAgentId = agent.id;
       config = await this.configRepo.save(config);
-      this.logger.log(`Created Mistral agent ${agent.id} for tenant ${config.tenantId}`);
+      this.logger.log(
+        `Created Mistral agent ${agent.id} for tenant ${config.tenantId}`,
+      );
     }
 
     return config;
@@ -162,7 +171,10 @@ export class MistralChatbotLibraryService {
     return this.docRepo.save(params.doc);
   }
 
-  async deleteDocument(config: ChatbotConfig, doc: KnowledgeDocument): Promise<void> {
+  async deleteDocument(
+    config: ChatbotConfig,
+    doc: KnowledgeDocument,
+  ): Promise<void> {
     const mistralDocId = this.getMistralDocumentId(doc);
     const libraryId = config.mistralLibraryId?.trim();
     if (!config.useMistralLibrary || !libraryId || !mistralDocId) return;
@@ -175,11 +187,16 @@ export class MistralChatbotLibraryService {
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Mistral document delete failed (${mistralDocId}): ${message}`);
+      this.logger.warn(
+        `Mistral document delete failed (${mistralDocId}): ${message}`,
+      );
     }
   }
 
-  async syncUnsyncedDocuments(tenantId: string, config: ChatbotConfig): Promise<void> {
+  async syncUnsyncedDocuments(
+    tenantId: string,
+    config: ChatbotConfig,
+  ): Promise<void> {
     if (!config.useMistralLibrary) return;
     const provisioned = await this.provision(config);
     const docs = await this.docRepo.find({
@@ -210,7 +227,10 @@ export class MistralChatbotLibraryService {
     }
   }
 
-  async recordSyncError(doc: KnowledgeDocument, message: string): Promise<void> {
+  async recordSyncError(
+    doc: KnowledgeDocument,
+    message: string,
+  ): Promise<void> {
     doc.metadata = {
       ...(doc.metadata ?? {}),
       [MISTRAL_SYNC_ERROR_KEY]: message,
@@ -251,7 +271,11 @@ export class MistralChatbotLibraryService {
         });
 
     const content = this.extractAssistantText(response.outputs ?? []);
-    const usage = response.usage as { totalTokens?: number; promptTokens?: number; completionTokens?: number };
+    const usage = response.usage as {
+      totalTokens?: number;
+      promptTokens?: number;
+      completionTokens?: number;
+    };
     const tokensUsed =
       usage?.totalTokens ??
       (usage?.promptTokens ?? 0) + (usage?.completionTokens ?? 0);
@@ -277,7 +301,8 @@ export class MistralChatbotLibraryService {
         role?: string;
         content?: string | Array<{ type?: string; text?: string }>;
       };
-      if (entry.type !== 'message.output' && entry.role !== 'assistant') continue;
+      if (entry.type !== 'message.output' && entry.role !== 'assistant')
+        continue;
       if (typeof entry.content === 'string') {
         parts.push(entry.content);
       } else if (Array.isArray(entry.content)) {
@@ -291,7 +316,10 @@ export class MistralChatbotLibraryService {
   }
 
   private async buildAgentInstructions(config: ChatbotConfig): Promise<string> {
-    const brand = await this.resolveBrand(config.tenantId, config.brandProfileId);
+    const brand = await this.resolveBrand(
+      config.tenantId,
+      config.brandProfileId,
+    );
     const guardrails = [
       brand.bannedWords ? `Never use these words: ${brand.bannedWords}` : '',
       brand.bannedTopics ? `Avoid these topics: ${brand.bannedTopics}` : '',
@@ -300,7 +328,9 @@ export class MistralChatbotLibraryService {
       .join('\n');
 
     const parts = [
-      `You are ${config.name}, a helpful assistant for ${brand.companyName || 'this business'}.`,
+      `You are ${config.name}, a helpful assistant for ${
+        brand.companyName || 'this business'
+      }.`,
       'Use the document library tool to answer questions from uploaded tenant documents.',
       'Ground answers in retrieved documents when relevant. If you do not know something, say so.',
       guardrails,
@@ -319,5 +349,4 @@ export class MistralChatbotLibraryService {
     const profiles = await this.brandProfiles.findForTenant(tenantId);
     return this.prompts.brandFromEntity(profiles[0] ?? null);
   }
-
 }

@@ -80,7 +80,8 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
     messaging: false,
     oauth: true,
     status: 'available',
-    notes: 'Upload videos via YouTube Data API v3. Requires a Google Cloud project with YouTube API enabled.',
+    notes:
+      'Upload videos via YouTube Data API v3. Requires a Google Cloud project with YouTube API enabled.',
   },
   {
     id: 'tiktok',
@@ -139,7 +140,9 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
   },
 ];
 
-export function capabilityOf(platformId: string): PlatformCapability | undefined {
+export function capabilityOf(
+  platformId: string,
+): PlatformCapability | undefined {
   return PLATFORM_CAPABILITIES.find((p) => p.id === platformId);
 }
 

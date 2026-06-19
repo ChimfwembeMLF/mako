@@ -58,7 +58,9 @@ export function summarizeOAuthEnv(): {
   }
 
   const missingPublisherCallbacks: string[] = [
-    ...REQUIRED_PUBLISHER_CALLBACK_KEYS.filter((key) => !process.env[key]?.trim()),
+    ...REQUIRED_PUBLISHER_CALLBACK_KEYS.filter(
+      (key) => !process.env[key]?.trim(),
+    ),
   ];
   if (
     process.env.TIKTOK_CLIENT_KEY?.trim() &&
@@ -69,7 +71,9 @@ export function summarizeOAuthEnv(): {
 
   const frontendUrl = process.env.FRONTEND_URL?.trim() || null;
   const apiPublicUrl =
-    process.env.API_PUBLIC_URL?.trim() || process.env.API_BASE_URL?.trim() || null;
+    process.env.API_PUBLIC_URL?.trim() ||
+    process.env.API_BASE_URL?.trim() ||
+    null;
 
   return {
     ready:

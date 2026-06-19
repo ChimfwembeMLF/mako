@@ -41,9 +41,7 @@ export class ApprovalRequestsService {
     const workflows = await this.workflowsRepo.find({
       where: { tenantId: opts.tenantId },
     });
-    const labelByAction = new Map(
-      workflows.map((w) => [w.actionKey, w.label]),
-    );
+    const labelByAction = new Map(workflows.map((w) => [w.actionKey, w.label]));
 
     return rows.map((ar) => ({
       id: ar.id,

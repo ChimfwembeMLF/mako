@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { google } from 'googleapis';
 import axios from 'axios';
 import { Readable } from 'stream';
-import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import {
+  PublishResult,
+  ContentToPublish,
+} from './interfaces/publish-result.interface';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { PublishMediaResolverService } from './publish-media-resolver.service';
 import { formatPublishError } from './publish-error.util';
@@ -18,7 +21,10 @@ export class YoutubePublishingService {
     private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
-  async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
+  async publishPost(
+    content: ContentToPublish,
+    media: any[] = [],
+  ): Promise<PublishResult> {
     try {
       const account = await this.accounts.getForPublish(
         content.tenantId,
@@ -28,7 +34,10 @@ export class YoutubePublishingService {
       );
 
       if (!account) {
-        return { published: false, message: 'YouTube channel not connected for this workspace' };
+        return {
+          published: false,
+          message: 'YouTube channel not connected for this workspace',
+        };
       }
 
       const resolvedMedia = media?.length
@@ -48,7 +57,10 @@ export class YoutubePublishingService {
       const youtube = google.youtube({ version: 'v3', auth });
 
       const title = (content.title || 'Mako  upload').trim().slice(0, 100);
-      const description = content.content.replace(/<[^>]*>/g, '').trim().slice(0, 5000);
+      const description = content.content
+        .replace(/<[^>]*>/g, '')
+        .trim()
+        .slice(0, 5000);
 
       const videoStream = await this.streamFromUrl(video.media_url);
 
@@ -72,7 +84,10 @@ export class YoutubePublishingService {
 
       const videoId = data.id;
       if (!videoId) {
-        return { published: false, message: 'YouTube upload completed but no video ID was returned' };
+        return {
+          published: false,
+          message: 'YouTube upload completed but no video ID was returned',
+        };
       }
 
       return {

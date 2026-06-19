@@ -2,7 +2,9 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
 
 export class WidgetSuggestionsDto {
-  @ApiPropertyOptional({ description: 'Last assistant message to derive follow-up prompts from' })
+  @ApiPropertyOptional({
+    description: 'Last assistant message to derive follow-up prompts from',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(4000)

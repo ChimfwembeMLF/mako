@@ -194,10 +194,13 @@ export class ChatbotConfigService {
       throw new BadRequestException('file is required');
     }
     if (file.size > AVATAR_MODEL_MAX_BYTES) {
-      throw new BadRequestException(`3D model must be under ${AVATAR_MODEL_MAX_MB} MB`);
+      throw new BadRequestException(
+        `3D model must be under ${AVATAR_MODEL_MAX_MB} MB`,
+      );
     }
 
-    const ext = (file.originalname || '').toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? '';
+    const ext =
+      (file.originalname || '').toLowerCase().match(/\.[a-z0-9]+$/)?.[0] ?? '';
     const mimeOk = AVATAR_MODEL_MIMES.includes(file.mimetype);
     const extOk = AVATAR_MODEL_EXTS.includes(ext);
     if (!mimeOk && !extOk) {

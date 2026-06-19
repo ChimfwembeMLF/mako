@@ -14,8 +14,16 @@ export class RbacController {
     @Param('userId') userId: string,
     @Query('roles') roles: string,
   ) {
-    const requiredRoles = roles?.split(',').map((r) => r.trim()).filter(Boolean) ?? [];
-    const hasRole = await this.rbacService.hasRoles(userId, tenantId, requiredRoles);
+    const requiredRoles =
+      roles
+        ?.split(',')
+        .map((r) => r.trim())
+        .filter(Boolean) ?? [];
+    const hasRole = await this.rbacService.hasRoles(
+      userId,
+      tenantId,
+      requiredRoles,
+    );
     return { success: true, hasRole };
   }
 
@@ -26,12 +34,18 @@ export class RbacController {
     @Param('userId') userId: string,
     @Query('permission') permission: string,
   ) {
-    const hasPermission = await this.rbacService.hasPermission(userId, tenantId, permission);
+    const hasPermission = await this.rbacService.hasPermission(
+      userId,
+      tenantId,
+      permission,
+    );
     return { success: true, hasPermission };
   }
 
   @Get('effective-permissions/:tenantId/:userId')
-  @ApiOperation({ summary: 'Get all effective permissions for a user in a tenant' })
+  @ApiOperation({
+    summary: 'Get all effective permissions for a user in a tenant',
+  })
   async getEffectivePermissions(
     @Param('tenantId') tenantId: string,
     @Param('userId') userId: string,

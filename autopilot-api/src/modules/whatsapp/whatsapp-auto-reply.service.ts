@@ -77,7 +77,9 @@ export class WhatsappAutoReplyService {
       }),
     );
 
-    this.logger.log(`WhatsApp auto-reply sent to ${params.phone} (rule: ${rule.name})`);
+    this.logger.log(
+      `WhatsApp auto-reply sent to ${params.phone} (rule: ${rule.name})`,
+    );
     return true;
   }
 
@@ -88,12 +90,18 @@ export class WhatsappAutoReplyService {
     workspaceId?: string,
   ): Promise<string> {
     if (rule.aiGenerate) {
-      const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } });
+      const tenant = await this.tenantsRepo.findOne({
+        where: { id: tenantId },
+      });
       const brand = tenant
         ? workspaceId
           ? await this.brandRepo.findOne({ where: { tenantId, workspaceId } })
           : await this.brandRepo.findOne({
-              where: { tenantId, userId: tenant.ownerId, workspaceId: IsNull() },
+              where: {
+                tenantId,
+                userId: tenant.ownerId,
+                workspaceId: IsNull(),
+              },
             })
         : null;
       const brandCtx = this.prompts.brandFromEntity(brand);

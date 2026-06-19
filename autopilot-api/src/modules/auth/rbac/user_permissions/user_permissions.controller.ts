@@ -26,7 +26,10 @@ export class UserPermissionsController {
   }
 
   @Get()
-  findAll(@Query('tenantId') tenantId?: string, @Query('userId') userId?: string): Promise<UserPermissions[]> {
+  findAll(
+    @Query('tenantId') tenantId?: string,
+    @Query('userId') userId?: string,
+  ): Promise<UserPermissions[]> {
     return this.service.findAll(tenantId, userId);
   }
 

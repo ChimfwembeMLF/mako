@@ -34,7 +34,9 @@ export class DailyContentWorkflowService {
 
     for (const target of targets) {
       try {
-        const workflowCheck = await this.subscriptions.canRunDailyWorkflow(target.tenantId);
+        const workflowCheck = await this.subscriptions.canRunDailyWorkflow(
+          target.tenantId,
+        );
         if (!workflowCheck.allowed) {
           skipped++;
           errors.push(`${target.tenantId}: ${workflowCheck.reason}`);
@@ -42,8 +44,12 @@ export class DailyContentWorkflowService {
         }
 
         const workspace = target.workspaceId
-          ? await this.workspaceRepo.findOne({ where: { id: target.workspaceId, tenantId: target.tenantId } })
-          : await this.workspaceRepo.findOne({ where: { tenantId: target.tenantId } });
+          ? await this.workspaceRepo.findOne({
+              where: { id: target.workspaceId, tenantId: target.tenantId },
+            })
+          : await this.workspaceRepo.findOne({
+              where: { tenantId: target.tenantId },
+            });
         if (!workspace) {
           skipped++;
           errors.push(`${target.tenantId}: no workspace found`);
@@ -57,7 +63,9 @@ export class DailyContentWorkflowService {
         });
         if (!brand?.companyName && !brand?.description) {
           skipped++;
-          errors.push(`${target.tenantId}: brand profile incomplete — set up Brand Brain first`);
+          errors.push(
+            `${target.tenantId}: brand profile incomplete — set up Brand Brain first`,
+          );
           continue;
         }
 
@@ -79,11 +87,15 @@ export class DailyContentWorkflowService {
         });
 
         generated++;
-        this.logger.log(`Daily workflow generated content for tenant ${target.tenantId} workspace ${workspace.id}`);
+        this.logger.log(
+          `Daily workflow generated content for tenant ${target.tenantId} workspace ${workspace.id}`,
+        );
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         errors.push(`${target.tenantId}: ${msg}`);
-        this.logger.warn(`Daily workflow failed for ${target.tenantId}: ${msg}`);
+        this.logger.warn(
+          `Daily workflow failed for ${target.tenantId}: ${msg}`,
+        );
       }
     }
 
@@ -94,24 +106,37 @@ export class DailyContentWorkflowService {
     tenantId?: string;
     userId?: string;
     workspaceId?: string;
-  }): Promise<Array<{ tenantId: string; userId: string; workspaceId?: string }>> {
+  }): Promise<
+    Array<{ tenantId: string; userId: string; workspaceId?: string }>
+  > {
     if (params.tenantId) {
       let userId = params.userId;
       if (!userId) {
-        const tenant = await this.tenantRepo.findOne({ where: { id: params.tenantId } });
+        const tenant = await this.tenantRepo.findOne({
+          where: { id: params.tenantId },
+        });
         userId = tenant?.ownerId;
       }
       if (!userId) return [];
-      return [{ tenantId: params.tenantId, userId, workspaceId: params.workspaceId }];
+      return [
+        { tenantId: params.tenantId, userId, workspaceId: params.workspaceId },
+      ];
     }
 
-    const eligibleTenantIds = await this.subscriptions.findEligibleForDailyCron();
-    const targets: Array<{ tenantId: string; userId: string; workspaceId?: string }> = [];
+    const eligibleTenantIds =
+      await this.subscriptions.findEligibleForDailyCron();
+    const targets: Array<{
+      tenantId: string;
+      userId: string;
+      workspaceId?: string;
+    }> = [];
 
     for (const tenantId of eligibleTenantIds) {
       const tenant = await this.tenantRepo.findOne({ where: { id: tenantId } });
       if (!tenant?.ownerId) continue;
-      const workspace = await this.workspaceRepo.findOne({ where: { tenantId } });
+      const workspace = await this.workspaceRepo.findOne({
+        where: { tenantId },
+      });
       if (!workspace) continue;
       const brand = await this.brandProfiles.resolveForContext({
         tenantId,
@@ -119,7 +144,11 @@ export class DailyContentWorkflowService {
         workspaceId: workspace.id,
       });
       if (!brand) continue;
-      targets.push({ tenantId, userId: tenant.ownerId, workspaceId: workspace.id });
+      targets.push({
+        tenantId,
+        userId: tenant.ownerId,
+        workspaceId: workspace.id,
+      });
     }
 
     return targets;

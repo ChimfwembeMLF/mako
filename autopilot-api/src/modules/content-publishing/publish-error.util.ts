@@ -33,10 +33,14 @@ export function summarizeAxiosError(err: unknown): string {
   const status = err.response?.status;
   const data = err.response?.data as LinkedInApiError & GraphApiErrorBody;
   if (data?.error?.message) {
-    return `${status ?? '?'} ${data.error.message} (code ${data.error.code ?? '?'})`;
+    return `${status ?? '?'} ${data.error.message} (code ${
+      data.error.code ?? '?'
+    })`;
   }
   if (data?.message) {
-    return `${status ?? '?'} ${data.message}${data.code ? ` (${data.code})` : ''}`;
+    return `${status ?? '?'} ${data.message}${
+      data.code ? ` (${data.code})` : ''
+    }`;
   }
   return `${status ?? '?'} ${err.message}`;
 }
@@ -48,8 +52,13 @@ export function formatPublishError(err: unknown, platform: string): string {
     if (data?.code === 'REVOKED_ACCESS_TOKEN') {
       return 'LinkedIn access was revoked — reconnect LinkedIn in Publisher Connect.';
     }
-    if (data?.code === 'INVALID_ACCESS_TOKEN' || data?.code === 'EXPIRED_ACCESS_TOKEN') {
-      return `LinkedIn session expired — reconnect LinkedIn in Publisher Connect. (${data.message ?? data.code})`;
+    if (
+      data?.code === 'INVALID_ACCESS_TOKEN' ||
+      data?.code === 'EXPIRED_ACCESS_TOKEN'
+    ) {
+      return `LinkedIn session expired — reconnect LinkedIn in Publisher Connect. (${
+        data.message ?? data.code
+      })`;
     }
     if (data?.message) {
       return `${platform}: ${data.message}`;

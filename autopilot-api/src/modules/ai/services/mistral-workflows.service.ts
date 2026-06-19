@@ -36,7 +36,9 @@ export class MistralWorkflowsService {
   private getClient(): Mistral {
     const apiKey = this.config.get<string>('MISTRAL_API_KEY');
     if (!apiKey?.trim()) {
-      throw new ServiceUnavailableException('MISTRAL_API_KEY is not configured');
+      throw new ServiceUnavailableException(
+        'MISTRAL_API_KEY is not configured',
+      );
     }
     if (!this.client) {
       this.client = new Mistral({ apiKey: apiKey.trim() });
@@ -78,12 +80,16 @@ export class MistralWorkflowsService {
       result: (response as { result?: unknown }).result,
     };
     this.logger.log(
-      `Workflow ${params.workflowIdentifier} started (execution=${ref.executionId ?? 'pending'})`,
+      `Workflow ${params.workflowIdentifier} started (execution=${
+        ref.executionId ?? 'pending'
+      })`,
     );
     return ref;
   }
 
-  async escalateSupport(input: SupportEscalationInput): Promise<WorkflowExecutionRef> {
+  async escalateSupport(
+    input: SupportEscalationInput,
+  ): Promise<WorkflowExecutionRef> {
     const supportEmail =
       input.supportEmail?.trim() ||
       this.config.get<string>('SUPPORT_EMAIL')?.trim() ||

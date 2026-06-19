@@ -21,5 +21,9 @@ export function configureClientAssets(
     index: 'index.html',
     fallthrough: true,
   });
-  console.log('[client] Static assets from', clientDist, '(index.html at /; SPA routes via 404 filter)');
+  console.log(
+    '[client] Static assets from',
+    clientDist,
+    '(index.html at /; SPA routes via 404 filter)',
+  );
 }

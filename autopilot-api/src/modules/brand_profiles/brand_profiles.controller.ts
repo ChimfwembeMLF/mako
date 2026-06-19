@@ -28,7 +28,7 @@ interface JwtUser {
   sub: string;
 }
 
-@ApiTags("Brand Profiles")
+@ApiTags('Brand Profiles')
 @Controller('api/v1/brand-profiles')
 export class BrandProfilesController {
   constructor(
@@ -98,7 +98,9 @@ export class BrandProfilesController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   findAll(@Query('tenantId') tenantId?: string): Promise<BrandProfiles[]> {
-    return tenantId ? this.service.findForTenant(tenantId) : this.service.findAll();
+    return tenantId
+      ? this.service.findForTenant(tenantId)
+      : this.service.findAll();
   }
 
   @Get('mine')

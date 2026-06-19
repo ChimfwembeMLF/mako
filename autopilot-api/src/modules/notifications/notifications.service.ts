@@ -58,7 +58,10 @@ export type NotifyInput = {
   email?: boolean;
   emailCategory?: keyof Pick<
     NotificationPreferences,
-    'emailPublishSuccess' | 'emailBilling' | 'emailWeeklyDigest' | 'emailHotLeads'
+    | 'emailPublishSuccess'
+    | 'emailBilling'
+    | 'emailWeeklyDigest'
+    | 'emailHotLeads'
   >;
 };
 
@@ -125,7 +128,12 @@ export class NotificationsService {
     }
 
     if (input.email && input.emailCategory && prefs[input.emailCategory]) {
-      await this.sendEmailToUser(input.userId, input.title, input.body, row?.id);
+      await this.sendEmailToUser(
+        input.userId,
+        input.title,
+        input.body,
+        row?.id,
+      );
     }
 
     return row;
@@ -176,7 +184,10 @@ export class NotificationsService {
     );
   }
 
-  async getPreferences(userId: string, tenantId: string): Promise<NotificationPreferences> {
+  async getPreferences(
+    userId: string,
+    tenantId: string,
+  ): Promise<NotificationPreferences> {
     let prefs = await this.prefsRepo.findOne({ where: { userId, tenantId } });
     if (!prefs) {
       prefs = await this.prefsRepo.save(
@@ -218,7 +229,9 @@ export class NotificationsService {
       userId: params.userId,
       type: 'publish_success',
       title: 'Content published',
-      body: `"${params.title ?? 'Your post'}" was published to ${platformList}.`,
+      body: `"${
+        params.title ?? 'Your post'
+      }" was published to ${platformList}.`,
       link: `/content/${params.contentId}`,
       metadata: { contentId: params.contentId, platforms: params.platforms },
       email: true,
@@ -256,7 +269,9 @@ export class NotificationsService {
     await this.notifyTenantAdmins(params.tenantId, {
       type: 'billing_payment',
       title: 'Payment received',
-      body: `Your ${params.plan} plan is now active${params.amount ? ` (ZMW ${params.amount})` : ''}. Auto-renew is enabled for your saved mobile money number.`,
+      body: `Your ${params.plan} plan is now active${
+        params.amount ? ` (ZMW ${params.amount})` : ''
+      }. Auto-renew is enabled for your saved mobile money number.`,
       link: '/billing',
       metadata: { plan: params.plan, autoRenew: true },
       email: true,
@@ -272,7 +287,9 @@ export class NotificationsService {
     await this.notifyTenantAdmins(params.tenantId, {
       type: 'subscription_renewal',
       title: 'Subscription renewed',
-      body: `Your ${params.plan} plan was renewed successfully${params.amount ? ` (ZMW ${params.amount})` : ''}.`,
+      body: `Your ${params.plan} plan was renewed successfully${
+        params.amount ? ` (ZMW ${params.amount})` : ''
+      }.`,
       link: '/billing',
       metadata: { plan: params.plan, renewed: true },
       email: true,
@@ -280,7 +297,11 @@ export class NotificationsService {
     });
   }
 
-  async notifyRenewalInitiated(tenantId: string, plan: string, paymentId: string): Promise<void> {
+  async notifyRenewalInitiated(
+    tenantId: string,
+    plan: string,
+    paymentId: string,
+  ): Promise<void> {
     await this.notifyTenantAdmins(tenantId, {
       type: 'subscription_renewal',
       title: 'Auto-renewal started',
@@ -292,7 +313,11 @@ export class NotificationsService {
     });
   }
 
-  async notifyRenewalFailed(tenantId: string, plan: string, reason: string): Promise<void> {
+  async notifyRenewalFailed(
+    tenantId: string,
+    plan: string,
+    reason: string,
+  ): Promise<void> {
     await this.notifyTenantAdmins(tenantId, {
       type: 'subscription_renewal_failed',
       title: 'Auto-renewal failed',
@@ -304,8 +329,14 @@ export class NotificationsService {
     });
   }
 
-  async notifySubscriptionPastDue(tenantId: string, plan: string): Promise<void> {
-    if (await this.recentTenantNotification(tenantId, 'subscription_past_due', 24)) return;
+  async notifySubscriptionPastDue(
+    tenantId: string,
+    plan: string,
+  ): Promise<void> {
+    if (
+      await this.recentTenantNotification(tenantId, 'subscription_past_due', 24)
+    )
+      return;
     await this.notifyTenantAdmins(tenantId, {
       type: 'subscription_past_due',
       title: 'Subscription past due',
@@ -317,7 +348,10 @@ export class NotificationsService {
     });
   }
 
-  async notifySubscriptionExpired(tenantId: string, plan: string): Promise<void> {
+  async notifySubscriptionExpired(
+    tenantId: string,
+    plan: string,
+  ): Promise<void> {
     await this.notifyTenantAdmins(tenantId, {
       type: 'subscription_expired',
       title: 'Subscription expired',
@@ -358,15 +392,24 @@ export class NotificationsService {
     for (const sub of subs) {
       if (sub.plan === 'free') continue;
       const daysLeft = Math.ceil(
-        (sub.billingPeriodEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        (sub.billingPeriodEnd.getTime() - now.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
       const remindDays = [7, 3, 1];
       if (!remindDays.includes(daysLeft)) continue;
-      if (await this.recentTenantNotification(sub.tenantId, 'subscription_ending', 20)) continue;
+      if (
+        await this.recentTenantNotification(
+          sub.tenantId,
+          'subscription_ending',
+          20,
+        )
+      )
+        continue;
 
-      const autoRenewNote = sub.autoRenewEnabled && sub.renewalPhone
-        ? ' Auto-renew is enabled — we will charge your saved mobile money number.'
-        : ' Renew on the Billing page to avoid interruption.';
+      const autoRenewNote =
+        sub.autoRenewEnabled && sub.renewalPhone
+          ? ' Auto-renew is enabled — we will charge your saved mobile money number.'
+          : ' Renew on the Billing page to avoid interruption.';
 
       await this.notifyTenantAdmins(sub.tenantId, {
         type: 'subscription_ending',
@@ -534,12 +577,18 @@ export class NotificationsService {
         const byStatus: Record<string, number> = {};
         const byPlatform: Record<string, number> = {};
         for (const item of items) {
-          byStatus[item.status ?? 'draft'] = (byStatus[item.status ?? 'draft'] ?? 0) + 1;
+          byStatus[item.status ?? 'draft'] =
+            (byStatus[item.status ?? 'draft'] ?? 0) + 1;
           for (const p of item.platforms ?? []) {
             byPlatform[p] = (byPlatform[p] ?? 0) + 1;
           }
         }
-        return { reportId, generatedAt: new Date().toISOString(), byStatus, byPlatform };
+        return {
+          reportId,
+          generatedAt: new Date().toISOString(),
+          byStatus,
+          byPlatform,
+        };
       }
       case 'lead-pipeline': {
         const leads = await this.leadsRepo.find({ where: { tenantId } });
@@ -549,7 +598,12 @@ export class NotificationsService {
           if (tier in counts) counts[tier as keyof typeof counts]++;
           else counts.other++;
         }
-        return { reportId, generatedAt: new Date().toISOString(), counts, total: leads.length };
+        return {
+          reportId,
+          generatedAt: new Date().toISOString(),
+          counts,
+          total: leads.length,
+        };
       }
       case 'ai-usage': {
         const sub = await this.subsRepo.findOne({ where: { tenantId } });
@@ -625,8 +679,12 @@ export class NotificationsService {
         const byChannel = Object.fromEntries(
           channelRows.map((r) => [r.channel, parseInt(r.count, 10)]),
         );
-        const totalSessions = await this.chatSessionRepo.count({ where: { tenantId } });
-        const totalMessages = await this.chatMessageRepo.count({ where: { tenantId } });
+        const totalSessions = await this.chatSessionRepo.count({
+          where: { tenantId },
+        });
+        const totalMessages = await this.chatMessageRepo.count({
+          where: { tenantId },
+        });
         const weekSessions = await this.chatSessionRepo.count({
           where: { tenantId, created_at: MoreThanOrEqual(weekAgo) },
         });
@@ -694,8 +752,11 @@ export class NotificationsService {
           where: { tenantId, created_at: Between(from, to) },
         });
         const chatbotFunctions = ['chatbot-message', 'ingest-document'];
-        const chatbotUsage = usage.filter((u) => chatbotFunctions.includes(u.functionName));
-        const byFunction: Record<string, { calls: number; tokens: number }> = {};
+        const chatbotUsage = usage.filter((u) =>
+          chatbotFunctions.includes(u.functionName),
+        );
+        const byFunction: Record<string, { calls: number; tokens: number }> =
+          {};
         for (const u of chatbotUsage) {
           const cur = byFunction[u.functionName] ?? { calls: 0, tokens: 0 };
           cur.calls += 1;

@@ -1,5 +1,10 @@
 /** Permission keys — must stay in sync with resources/client/src/lib/permissions.ts */
-export const PERMISSION_DEFINITIONS: { key: string; label: string; module: string; description?: string }[] = [
+export const PERMISSION_DEFINITIONS: {
+  key: string;
+  label: string;
+  module: string;
+  description?: string;
+}[] = [
   { key: 'content.view', label: 'View content', module: 'content' },
   { key: 'content.create', label: 'Create content', module: 'content' },
   { key: 'content.edit', label: 'Edit content', module: 'content' },
@@ -19,29 +24,57 @@ export const PERMISSION_DEFINITIONS: { key: string; label: string; module: strin
   { key: 'templates.create', label: 'Create templates', module: 'templates' },
   { key: 'templates.edit', label: 'Edit templates', module: 'templates' },
   { key: 'templates.delete', label: 'Delete templates', module: 'templates' },
-  { key: 'templates.activate', label: 'Activate templates', module: 'templates' },
+  {
+    key: 'templates.activate',
+    label: 'Activate templates',
+    module: 'templates',
+  },
   { key: 'replies.view', label: 'View replies', module: 'replies' },
   { key: 'replies.create', label: 'Create replies', module: 'replies' },
-  { key: 'replies.manage_rules', label: 'Manage reply rules', module: 'replies' },
+  {
+    key: 'replies.manage_rules',
+    label: 'Manage reply rules',
+    module: 'replies',
+  },
   { key: 'analytics.view', label: 'View analytics', module: 'analytics' },
   { key: 'team.view', label: 'View team', module: 'team' },
   { key: 'team.invite', label: 'Invite team members', module: 'team' },
   { key: 'team.remove', label: 'Remove team members', module: 'team' },
   { key: 'team.assign_roles', label: 'Assign roles', module: 'team' },
-  { key: 'team.assign_permissions', label: 'Assign permissions', module: 'team' },
+  {
+    key: 'team.assign_permissions',
+    label: 'Assign permissions',
+    module: 'team',
+  },
   { key: 'settings.view', label: 'View settings', module: 'settings' },
   { key: 'settings.billing', label: 'Manage billing', module: 'settings' },
-  { key: 'settings.brand_brain', label: 'Manage brand brain', module: 'settings' },
+  {
+    key: 'settings.brand_brain',
+    label: 'Manage brand brain',
+    module: 'settings',
+  },
   { key: 'chatbot.view', label: 'View chatbot', module: 'chatbot' },
   { key: 'chatbot.use', label: 'Use chatbot playground', module: 'chatbot' },
-  { key: 'chatbot.manage', label: 'Manage chatbot & knowledge', module: 'chatbot' },
+  {
+    key: 'chatbot.manage',
+    label: 'Manage chatbot & knowledge',
+    module: 'chatbot',
+  },
   { key: 'approvals.view', label: 'View approvals', module: 'approvals' },
   { key: 'approvals.review', label: 'Review approvals', module: 'approvals' },
   { key: 'audit.view', label: 'View audit logs', module: 'audit' },
   { key: 'admin.roles', label: 'Manage roles', module: 'admin' },
-  { key: 'admin.maker_checker', label: 'Manage maker-checker', module: 'admin' },
+  {
+    key: 'admin.maker_checker',
+    label: 'Manage maker-checker',
+    module: 'admin',
+  },
   { key: 'admin.system', label: 'System settings & theme', module: 'admin' },
-  { key: 'admin.super', label: 'Platform super admin (backoffice)', module: 'admin' },
+  {
+    key: 'admin.super',
+    label: 'Platform super admin (backoffice)',
+    module: 'admin',
+  },
 ];
 
 /** Platform Super Admin — profile.isSystemAdmin or users.role = SUPER_ADMIN */
@@ -54,10 +87,15 @@ export const SUPER_ADMIN_PERMISSIONS = PERMISSION_DEFINITIONS.filter((p) =>
 ).map((p) => p.key);
 
 /** Permissions reserved for platform Super Admin — not granted via tenant roles */
-export const BACKOFFICE_ONLY_PERMISSIONS = ['admin.system', 'admin.super'] as const;
+export const BACKOFFICE_ONLY_PERMISSIONS = [
+  'admin.system',
+  'admin.super',
+] as const;
 
 /** All permissions assignable within a tenant (excludes platform backoffice) */
-export const TENANT_SCOPED_PERMISSIONS = PERMISSION_DEFINITIONS.map((p) => p.key).filter(
+export const TENANT_SCOPED_PERMISSIONS = PERMISSION_DEFINITIONS.map(
+  (p) => p.key,
+).filter(
   (k) => !(BACKOFFICE_ONLY_PERMISSIONS as readonly string[]).includes(k),
 );
 
@@ -74,31 +112,50 @@ export const SYSTEM_ROLE_DEFINITIONS: {
   {
     name: 'Admin',
     description: 'Manage team, settings, and all content',
-    permissions: TENANT_SCOPED_PERMISSIONS.filter((k) => k !== 'admin.maker_checker'),
+    permissions: TENANT_SCOPED_PERMISSIONS.filter(
+      (k) => k !== 'admin.maker_checker',
+    ),
   },
   {
     name: 'Publisher',
     description: 'Publish and approve content, manage social',
     permissions: [
-      'content.view', 'content.create', 'content.edit', 'content.approve', 'content.publish',
-      'leads.view', 'leads.email', 'leads.classify',
-      'media.view', 'media.upload',
-      'templates.view', 'templates.create', 'templates.edit', 'templates.activate',
-      'replies.view', 'replies.create',
+      'content.view',
+      'content.create',
+      'content.edit',
+      'content.approve',
+      'content.publish',
+      'leads.view',
+      'leads.email',
+      'leads.classify',
+      'media.view',
+      'media.upload',
+      'templates.view',
+      'templates.create',
+      'templates.edit',
+      'templates.activate',
+      'replies.view',
+      'replies.create',
       'analytics.view',
       'team.view',
-      'settings.view', 'settings.brand_brain',
-      'chatbot.view', 'chatbot.use',
-      'approvals.view', 'approvals.review',
+      'settings.view',
+      'settings.brand_brain',
+      'chatbot.view',
+      'chatbot.use',
+      'approvals.view',
+      'approvals.review',
     ],
   },
   {
     name: 'Creator',
     description: 'Create and edit content drafts',
     permissions: [
-      'content.view', 'content.create', 'content.edit',
+      'content.view',
+      'content.create',
+      'content.edit',
       'leads.view',
-      'media.view', 'media.upload',
+      'media.view',
+      'media.upload',
       'templates.view',
       'replies.view',
       'analytics.view',
@@ -110,8 +167,14 @@ export const SYSTEM_ROLE_DEFINITIONS: {
     name: 'Viewer',
     description: 'Read-only access',
     permissions: [
-      'content.view', 'leads.view', 'media.view', 'templates.view',
-      'replies.view', 'analytics.view', 'team.view', 'settings.view',
+      'content.view',
+      'leads.view',
+      'media.view',
+      'templates.view',
+      'replies.view',
+      'analytics.view',
+      'team.view',
+      'settings.view',
     ],
   },
 ];
@@ -122,13 +185,58 @@ export const APPROVAL_WORKFLOW_DEFINITIONS: {
   description: string;
   approverRoleName: string;
 }[] = [
-  { actionKey: 'content.publish', label: 'Publish content', description: 'Requires approval before content goes live', approverRoleName: 'Publisher' },
-  { actionKey: 'content.approve', label: 'Approve content', description: 'Requires second approval for content approval', approverRoleName: 'Publisher' },
-  { actionKey: 'leads.email_bulk', label: 'Bulk email leads', description: 'Requires approval before bulk lead emails', approverRoleName: 'Admin' },
-  { actionKey: 'leads.delete', label: 'Delete leads', description: 'Requires approval before deleting leads', approverRoleName: 'Admin' },
-  { actionKey: 'media.delete', label: 'Delete media', description: 'Requires approval before deleting media assets', approverRoleName: 'Admin' },
-  { actionKey: 'templates.delete', label: 'Delete templates', description: 'Requires approval before deleting templates', approverRoleName: 'Admin' },
-  { actionKey: 'team.invite', label: 'Invite team member', description: 'Requires approval before sending invites', approverRoleName: 'Admin' },
-  { actionKey: 'team.remove', label: 'Remove team member', description: 'Requires approval before removing members', approverRoleName: 'Admin' },
-  { actionKey: 'team.assign_roles', label: 'Assign roles', description: 'Requires approval before changing roles', approverRoleName: 'Admin' },
+  {
+    actionKey: 'content.publish',
+    label: 'Publish content',
+    description: 'Requires approval before content goes live',
+    approverRoleName: 'Publisher',
+  },
+  {
+    actionKey: 'content.approve',
+    label: 'Approve content',
+    description: 'Requires second approval for content approval',
+    approverRoleName: 'Publisher',
+  },
+  {
+    actionKey: 'leads.email_bulk',
+    label: 'Bulk email leads',
+    description: 'Requires approval before bulk lead emails',
+    approverRoleName: 'Admin',
+  },
+  {
+    actionKey: 'leads.delete',
+    label: 'Delete leads',
+    description: 'Requires approval before deleting leads',
+    approverRoleName: 'Admin',
+  },
+  {
+    actionKey: 'media.delete',
+    label: 'Delete media',
+    description: 'Requires approval before deleting media assets',
+    approverRoleName: 'Admin',
+  },
+  {
+    actionKey: 'templates.delete',
+    label: 'Delete templates',
+    description: 'Requires approval before deleting templates',
+    approverRoleName: 'Admin',
+  },
+  {
+    actionKey: 'team.invite',
+    label: 'Invite team member',
+    description: 'Requires approval before sending invites',
+    approverRoleName: 'Admin',
+  },
+  {
+    actionKey: 'team.remove',
+    label: 'Remove team member',
+    description: 'Requires approval before removing members',
+    approverRoleName: 'Admin',
+  },
+  {
+    actionKey: 'team.assign_roles',
+    label: 'Assign roles',
+    description: 'Requires approval before changing roles',
+    approverRoleName: 'Admin',
+  },
 ];

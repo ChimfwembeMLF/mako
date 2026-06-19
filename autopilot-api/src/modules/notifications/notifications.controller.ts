@@ -83,7 +83,11 @@ export class NotificationsController {
     },
   ) {
     const { tenantId, ...patch } = body;
-    return this.notifications.updatePreferences(String(req.user.sub), tenantId, patch);
+    return this.notifications.updatePreferences(
+      String(req.user.sub),
+      tenantId,
+      patch,
+    );
   }
 
   @Get('reports/catalog')

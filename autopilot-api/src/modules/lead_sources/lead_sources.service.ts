@@ -16,7 +16,8 @@ export class LeadSourcesService {
   async create(dto: LeadSourcesCreateDto): Promise<LeadSources> {
     const ent = this.repo.create({
       ...dto,
-      webhookSecret: dto.webhookSecret?.trim() || randomBytes(24).toString('hex'),
+      webhookSecret:
+        dto.webhookSecret?.trim() || randomBytes(24).toString('hex'),
     });
     return this.repo.save(ent as LeadSources);
   }

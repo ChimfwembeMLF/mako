@@ -49,7 +49,11 @@ export class FetchCommentsService {
     userId: string;
     workspaceId?: string;
     runAutoReply?: boolean;
-  }): Promise<{ fetched: number; autoReplied: number; engagementSynced: number }> {
+  }): Promise<{
+    fetched: number;
+    autoReplied: number;
+    engagementSynced: number;
+  }> {
     const publications = await this.publicationsRepo.find({
       where: {
         ...scopeWhere<ContentPublications>(params.tenantId, params.workspaceId),
@@ -72,7 +76,10 @@ export class FetchCommentsService {
         const comments = await this.pullComments(pub, params.userId);
         for (const c of comments) {
           const exists = await this.commentsRepo.findOne({
-            where: { tenantId: params.tenantId, externalCommentId: c.externalCommentId },
+            where: {
+              tenantId: params.tenantId,
+              externalCommentId: c.externalCommentId,
+            },
           });
           if (exists) {
             await this.reconcileBrandClassification(exists, c);
@@ -103,7 +110,9 @@ export class FetchCommentsService {
           this.logger,
           'debug',
           `comment-fetch:${pub.platform}:${pub.externalPostId}`,
-          `Comment fetch failed for ${pub.platform} post ${pub.externalPostId}: ${summarizeAxiosError(err)}`,
+          `Comment fetch failed for ${pub.platform} post ${
+            pub.externalPostId
+          }: ${summarizeAxiosError(err)}`,
         );
       }
     }
@@ -111,7 +120,10 @@ export class FetchCommentsService {
     let autoReplied = 0;
     if (params.runAutoReply !== false) {
       if (newCommentIds.length) {
-        const result = await this.autoReply.processNewComments(newCommentIds, params.userId);
+        const result = await this.autoReply.processNewComments(
+          newCommentIds,
+          params.userId,
+        );
         autoReplied += result.sent;
       }
       // Backlog: threaded / older pending comments (e.g. after enabling rules)
@@ -152,10 +164,16 @@ export class FetchCommentsService {
     let fetched = 0;
     let autoReplied = 0;
     let tenants = 0;
-    const delayMs = Number(this.config.get('COMMENT_SYNC_TENANT_DELAY_MS') ?? 300);
+    const delayMs = Number(
+      this.config.get('COMMENT_SYNC_TENANT_DELAY_MS') ?? 300,
+    );
 
     for (const [tenantId, userId] of tenantUsers) {
-      const result = await this.fetchForTenant({ tenantId, userId, runAutoReply: true });
+      const result = await this.fetchForTenant({
+        tenantId,
+        userId,
+        runAutoReply: true,
+      });
       fetched += result.fetched;
       autoReplied += result.autoReplied;
       tenants++;
@@ -189,7 +207,9 @@ export class FetchCommentsService {
     let account: SocialAccounts | null = null;
 
     if (pub.socialAccountId) {
-      account = await this.socialRepo.findOne({ where: { id: pub.socialAccountId } });
+      account = await this.socialRepo.findOne({
+        where: { id: pub.socialAccountId },
+      });
     }
 
     if (!account) {
@@ -203,7 +223,11 @@ export class FetchCommentsService {
           },
         })) ??
         (await this.socialRepo.findOne({
-          where: { tenantId: pub.tenantId, platform: pub.platform, connected: true },
+          where: {
+            tenantId: pub.tenantId,
+            platform: pub.platform,
+            connected: true,
+          },
         }));
     }
 
@@ -242,13 +266,17 @@ export class FetchCommentsService {
       return [];
     }
 
-    const res = await axios.get(`https://graph.facebook.com/v19.0/${postId}/comments`, {
-      params: {
-        access_token: token,
-        fields: 'id,message,from,created_time,like_count,comments{id,message,from,created_time,like_count}',
-        limit: 50,
+    const res = await axios.get(
+      `https://graph.facebook.com/v19.0/${postId}/comments`,
+      {
+        params: {
+          access_token: token,
+          fields:
+            'id,message,from,created_time,like_count,comments{id,message,from,created_time,like_count}',
+          limit: 50,
+        },
       },
-    });
+    );
 
     const out: FetchedComment[] = [];
     for (const c of res.data?.data ?? []) {
@@ -261,8 +289,11 @@ export class FetchCommentsService {
         likeCount: Number(c.like_count ?? 0),
         isFromBrand: this.isBrandComment(account, from?.name, from?.id),
       });
-      for (const reply of (c.comments as { data?: Record<string, unknown>[] })?.data ?? []) {
-        const replyFrom = reply.from as { name?: string; id?: string } | undefined;
+      for (const reply of (c.comments as { data?: Record<string, unknown>[] })
+        ?.data ?? []) {
+        const replyFrom = reply.from as
+          | { name?: string; id?: string }
+          | undefined;
         out.push({
           externalCommentId: String(reply.id),
           externalPostId: postId,
@@ -270,7 +301,11 @@ export class FetchCommentsService {
           commentText: String(reply.message ?? ''),
           parentCommentId: String(c.id),
           likeCount: Number(reply.like_count ?? 0),
-          isFromBrand: this.isBrandComment(account, replyFrom?.name, replyFrom?.id),
+          isFromBrand: this.isBrandComment(
+            account,
+            replyFrom?.name,
+            replyFrom?.id,
+          ),
         });
       }
     }
@@ -292,19 +327,24 @@ export class FetchCommentsService {
       return [];
     }
 
-    const res = await axios.get(`https://graph.facebook.com/v19.0/${mediaId}/comments`, {
-      params: {
-        access_token: token,
-        fields:
-          'id,text,username,from,timestamp,like_count,replies{id,text,username,from,timestamp,like_count}',
-        limit: 50,
+    const res = await axios.get(
+      `https://graph.facebook.com/v19.0/${mediaId}/comments`,
+      {
+        params: {
+          access_token: token,
+          fields:
+            'id,text,username,from,timestamp,like_count,replies{id,text,username,from,timestamp,like_count}',
+          limit: 50,
+        },
       },
-    });
+    );
 
     const out: FetchedComment[] = [];
     for (const c of res.data?.data ?? []) {
       const from = c.from as { id?: string; username?: string } | undefined;
-      const commenterName = String(from?.username ?? c.username ?? 'Instagram user');
+      const commenterName = String(
+        from?.username ?? c.username ?? 'Instagram user',
+      );
       out.push({
         externalCommentId: String(c.id),
         externalPostId: mediaId,
@@ -313,9 +353,14 @@ export class FetchCommentsService {
         likeCount: Number(c.like_count ?? 0),
         isFromBrand: this.isBrandComment(account, commenterName, from?.id),
       });
-      for (const reply of (c.replies as { data?: Record<string, unknown>[] })?.data ?? []) {
-        const replyFrom = reply.from as { id?: string; username?: string } | undefined;
-        const replyName = String(replyFrom?.username ?? reply.username ?? 'Instagram user');
+      for (const reply of (c.replies as { data?: Record<string, unknown>[] })
+        ?.data ?? []) {
+        const replyFrom = reply.from as
+          | { id?: string; username?: string }
+          | undefined;
+        const replyName = String(
+          replyFrom?.username ?? reply.username ?? 'Instagram user',
+        );
         out.push({
           externalCommentId: String(reply.id),
           externalPostId: mediaId,
@@ -339,9 +384,14 @@ export class FetchCommentsService {
 
     try {
       const res = await axios.get(
-        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(postUrn)}/comments`,
+        `https://api.linkedin.com/v2/socialActions/${encodeURIComponent(
+          postUrn,
+        )}/comments`,
         {
-          headers: { Authorization: `Bearer ${token}`, 'X-Restli-Protocol-Version': '2.0.0' },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'X-Restli-Protocol-Version': '2.0.0',
+          },
           params: { count: 50 },
         },
       );
@@ -353,7 +403,9 @@ export class FetchCommentsService {
         return {
           externalCommentId: String(c.id ?? c.$URN ?? ''),
           externalPostId: postUrn,
-          commenterName: actor?.replace('urn:li:person:', 'LinkedIn user ') ?? 'LinkedIn user',
+          commenterName:
+            actor?.replace('urn:li:person:', 'LinkedIn user ') ??
+            'LinkedIn user',
           commentText: String(message?.text ?? ''),
         };
       });

@@ -24,7 +24,7 @@ interface JwtUser {
   sub: string;
 }
 
-@ApiTags("Content Items")
+@ApiTags('Content Items')
 @Controller('api/v1/content-items')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -36,14 +36,21 @@ export class ContentItemsController {
   ) {}
 
   @Post()
-  async create(@Req() req: { user: JwtUser }, @Body() dto: ContentItemsCreateDto): Promise<ContentItems> {
+  async create(
+    @Req() req: { user: JwtUser },
+    @Body() dto: ContentItemsCreateDto,
+  ): Promise<ContentItems> {
     const userId = String(req.user.sub);
     const enriched: ContentItemsCreateDto = {
       ...dto,
       userId: dto.userId ?? userId,
       brandProfileId:
         dto.brandProfileId ??
-        (await this.resolveBrandProfileId(dto.tenantId, userId, dto.workspaceId)),
+        (await this.resolveBrandProfileId(
+          dto.tenantId,
+          userId,
+          dto.workspaceId,
+        )),
     };
     return this.service.create(enriched);
   }
@@ -53,7 +60,12 @@ export class ContentItemsController {
     @Req() req: { user: JwtUser },
     @Query() query: ListContentItemsQueryDto,
   ) {
-    if (query.page != null || query.limit != null || query.search || query.platform) {
+    if (
+      query.page != null ||
+      query.limit != null ||
+      query.search ||
+      query.platform
+    ) {
       return this.service.findPaginated({
         tenantId: query.tenantId,
         userId: String(req.user.sub),
@@ -91,7 +103,8 @@ export class ContentItemsController {
   attachMedia(
     @Req() req: { user: JwtUser },
     @Param('id') id: string,
-    @Body() body: {
+    @Body()
+    body: {
       tenantId: string;
       items: Array<{ url: string; type?: string; assetId?: string }>;
     },
@@ -122,8 +135,14 @@ export class ContentItemsController {
     return brand?.id;
   }
 
-  private async enrichForUpdate(dto: ContentItemsUpdateDto, userId: string): Promise<ContentItemsUpdateDto> {
-    const enriched: ContentItemsUpdateDto = { ...dto, userId: dto.userId ?? userId };
+  private async enrichForUpdate(
+    dto: ContentItemsUpdateDto,
+    userId: string,
+  ): Promise<ContentItemsUpdateDto> {
+    const enriched: ContentItemsUpdateDto = {
+      ...dto,
+      userId: dto.userId ?? userId,
+    };
     if (!enriched.brandProfileId && enriched.tenantId) {
       const brand = await this.brandProfiles.resolveForContext({
         tenantId: enriched.tenantId,

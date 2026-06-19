@@ -30,16 +30,15 @@ export class ConfigurableMenuFlow {
         messages: [
           {
             kind: 'text',
-            body:
-              'This menu is not set up yet. The business owner needs to add menu options in Lead Agent → WhatsApp → Menu bot.',
+            body: 'This menu is not set up yet. The business owner needs to add menu options in Lead Agent → WhatsApp → Menu bot.',
           },
         ],
       };
     }
 
     const choice = this.normalizeChoice(input);
-    const welcomeTriggers = ((context.welcomeTriggers as string[]) ?? []).map((t) =>
-      t.toLowerCase(),
+    const welcomeTriggers = ((context.welcomeTriggers as string[]) ?? []).map(
+      (t) => t.toLowerCase(),
     );
 
     if (
@@ -55,7 +54,11 @@ export class ConfigurableMenuFlow {
     if (state === FLOW_STATES.MAIN_MENU || !state) {
       const item = this.resolveMenuChoice(choice, menuItems);
       if (!item) {
-        if (aiFallbackEnabled && input.text.trim() && !this.isMenuCommand(choice)) {
+        if (
+          aiFallbackEnabled &&
+          input.text.trim() &&
+          !this.isMenuCommand(choice)
+        ) {
           return {
             nextState: FLOW_STATES.MAIN_MENU,
             context: { menuItems, welcomeMessage },
@@ -63,7 +66,12 @@ export class ConfigurableMenuFlow {
             messages: [],
           };
         }
-        return this.mainMenu(input.serviceName, menuItems, welcomeMessage, true);
+        return this.mainMenu(
+          input.serviceName,
+          menuItems,
+          welcomeMessage,
+          true,
+        );
       }
       return this.showItemResponse(item, menuItems, welcomeMessage);
     }
@@ -86,7 +94,12 @@ export class ConfigurableMenuFlow {
   }
 
   private isMenuCommand(choice: string): boolean {
-    return choice === 'menu' || choice === '0' || choice === 'back' || choice === 'main_menu';
+    return (
+      choice === 'menu' ||
+      choice === '0' ||
+      choice === 'back' ||
+      choice === 'main_menu'
+    );
   }
 
   private normalizeChoice(input: FlowInboundInput): string {
@@ -94,7 +107,10 @@ export class ConfigurableMenuFlow {
     return input.text.trim().toLowerCase();
   }
 
-  private resolveMenuChoice(choice: string, menuItems: WhatsappMenuItem[]): WhatsappMenuItem | null {
+  private resolveMenuChoice(
+    choice: string,
+    menuItems: WhatsappMenuItem[],
+  ): WhatsappMenuItem | null {
     if (!choice) return null;
 
     const byId = menuItems.find((item) => item.id.toLowerCase() === choice);
@@ -105,7 +121,9 @@ export class ConfigurableMenuFlow {
       return menuItems[numeric - 1];
     }
 
-    const byTitle = menuItems.find((item) => item.title.toLowerCase() === choice);
+    const byTitle = menuItems.find(
+      (item) => item.title.toLowerCase() === choice,
+    );
     return byTitle ?? null;
   }
 

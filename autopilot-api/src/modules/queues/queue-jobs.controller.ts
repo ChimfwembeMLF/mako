@@ -13,7 +13,15 @@ import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
 import { QueueDispatchService } from './queue-dispatch.service';
 import { ALL_QUEUES } from './queue.constants';
 
-const JOB_STATES = ['all', 'failed', 'completed', 'active', 'waiting', 'delayed', 'paused'] as const;
+const JOB_STATES = [
+  'all',
+  'failed',
+  'completed',
+  'active',
+  'waiting',
+  'delayed',
+  'paused',
+] as const;
 type JobState = (typeof JOB_STATES)[number];
 
 @ApiTags('Queue Jobs')
@@ -76,7 +84,10 @@ export class QueueJobsController {
 
   @Post(':queue/retry-failed')
   @UseGuards(SuperAdminGuard)
-  retryAllFailed(@Param('queue') queue: string, @Query('limit') limit?: string) {
+  retryAllFailed(
+    @Param('queue') queue: string,
+    @Query('limit') limit?: string,
+  ) {
     if (!ALL_QUEUES.includes(queue as (typeof ALL_QUEUES)[number])) {
       throw new BadRequestException(`Unknown queue: ${queue}`);
     }

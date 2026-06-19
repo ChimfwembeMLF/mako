@@ -14,7 +14,7 @@ import { AutoReplyRulesCreateDto } from './dto/create-auto_reply_rules.dto';
 import { AutoReplyRulesUpdateDto } from './dto/update-auto_reply_rules.dto';
 import { ApiTags } from '@nestjs/swagger';
 
-@ApiTags("Auto Reply Rules")
+@ApiTags('Auto Reply Rules')
 @Controller('api/v1/auto-reply-rules')
 export class AutoReplyRulesController {
   constructor(private readonly service: AutoReplyRulesService) {}

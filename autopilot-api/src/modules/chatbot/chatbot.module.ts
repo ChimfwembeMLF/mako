@@ -65,6 +65,10 @@ import { WidgetSuggestionsService } from './services/widget-suggestions.service'
     ChatbotWidgetSeedService,
     WidgetSuggestionsService,
   ],
-  exports: [ChatbotConfigService, KnowledgeIngestService, ChatbotWidgetSeedService],
+  exports: [
+    ChatbotConfigService,
+    KnowledgeIngestService,
+    ChatbotWidgetSeedService,
+  ],
 })
 export class ChatbotModule {}

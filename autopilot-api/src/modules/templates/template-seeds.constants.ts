@@ -9,7 +9,8 @@ export type TemplateSeed = {
 export const DEFAULT_CONTENT_TEMPLATE_SEEDS: TemplateSeed[] = [
   {
     name: 'Facebook — Community Post',
-    description: 'Conversational feed post with hook, story, and comment-driving CTA.',
+    description:
+      'Conversational feed post with hook, story, and comment-driving CTA.',
     contentType: 'social',
     platforms: ['facebook'],
     body: `Write for Facebook feed.
@@ -20,7 +21,8 @@ End with a question when appropriate. No markdown. Max 5 hashtags if used.`,
   },
   {
     name: 'LinkedIn — Thought Leadership',
-    description: 'Professional post with white-space formatting and insight-led hook.',
+    description:
+      'Professional post with white-space formatting and insight-led hook.',
     contentType: 'social',
     platforms: ['linkedin'],
     body: `Write for LinkedIn.
@@ -83,7 +85,8 @@ One strong CTA verb (Start, Get, Book, Try). 2-4 sentences max.`,
   },
   {
     name: 'General — Blog / Article',
-    description: 'Versatile long-form HTML content for websites and newsletters.',
+    description:
+      'Versatile long-form HTML content for websites and newsletters.',
     contentType: 'content',
     platforms: ['content'],
     body: `Write versatile marketing content as HTML.
@@ -93,7 +96,8 @@ Tone: on-brand, helpful, authoritative. 400-800 words.`,
   },
   {
     name: 'YouTube — Video Description',
-    description: 'SEO-friendly description with timestamps hook and subscribe CTA.',
+    description:
+      'SEO-friendly description with timestamps hook and subscribe CTA.',
     contentType: 'social',
     platforms: ['youtube'],
     body: `Write a YouTube video description.

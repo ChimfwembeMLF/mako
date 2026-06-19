@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
-import { PublishResult, ContentToPublish } from './interfaces/publish-result.interface';
+import {
+  PublishResult,
+  ContentToPublish,
+} from './interfaces/publish-result.interface';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { PublishMediaResolverService } from './publish-media-resolver.service';
 import { formatPublishError } from './publish-error.util';
@@ -28,7 +31,10 @@ export class TiktokPublishingService {
     private readonly mediaResolver: PublishMediaResolverService,
   ) {}
 
-  async publishPost(content: ContentToPublish, media: any[] = []): Promise<PublishResult> {
+  async publishPost(
+    content: ContentToPublish,
+    media: any[] = [],
+  ): Promise<PublishResult> {
     try {
       const account = await this.accounts.getForPublish(
         content.tenantId,
@@ -38,7 +44,10 @@ export class TiktokPublishingService {
       );
 
       if (!account?.accessToken) {
-        return { published: false, message: 'TikTok not connected for this workspace' };
+        return {
+          published: false,
+          message: 'TikTok not connected for this workspace',
+        };
       }
 
       const resolvedMedia = media?.length
@@ -58,11 +67,14 @@ export class TiktokPublishingService {
       if (creatorInfo.can_post_more === false) {
         return {
           published: false,
-          message: 'TikTok rate limit reached for this creator — try again later.',
+          message:
+            'TikTok rate limit reached for this creator — try again later.',
         };
       }
 
-      const privacyLevel = this.pickPrivacyLevel(creatorInfo.privacy_level_options);
+      const privacyLevel = this.pickPrivacyLevel(
+        creatorInfo.privacy_level_options,
+      );
       const caption = this.buildCaption(content);
       const publishId = await this.initVideoPublish(
         account.accessToken,
@@ -72,20 +84,26 @@ export class TiktokPublishingService {
         creatorInfo,
       );
 
-      const status = await this.pollPublishStatus(account.accessToken, publishId);
+      const status = await this.pollPublishStatus(
+        account.accessToken,
+        publishId,
+      );
       if (status.status === 'FAILED') {
         return {
           published: false,
-          message: `TikTok publish failed: ${status.fail_reason ?? 'unknown error'}`,
+          message: `TikTok publish failed: ${
+            status.fail_reason ?? 'unknown error'
+          }`,
         };
       }
 
       const postId = status.publicly_available_post_id?.[0] ?? status.post_id;
       return {
         published: true,
-        message: privacyLevel === 'SELF_ONLY'
-          ? 'Video uploaded to TikTok (private — app may be unaudited; submit for review to post publicly)'
-          : 'Video published to TikTok',
+        message:
+          privacyLevel === 'SELF_ONLY'
+            ? 'Video uploaded to TikTok (private — app may be unaudited; submit for review to post publicly)'
+            : 'Video published to TikTok',
         externalPostId: postId,
       };
     } catch (err) {
@@ -199,16 +217,22 @@ export class TiktokPublishingService {
     path: string,
     body: Record<string, unknown>,
   ): Promise<T | undefined> {
-    const { data } = await axios.post<TikTokApiEnvelope<T>>(`${this.apiBase}${path}`, body, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json; charset=UTF-8',
+    const { data } = await axios.post<TikTokApiEnvelope<T>>(
+      `${this.apiBase}${path}`,
+      body,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        timeout: 120_000,
       },
-      timeout: 120_000,
-    });
+    );
 
     if (data.error?.code && data.error.code !== 'ok') {
-      throw new Error(data.error.message || `TikTok API error: ${data.error.code}`);
+      throw new Error(
+        data.error.message || `TikTok API error: ${data.error.code}`,
+      );
     }
 
     return data.data;

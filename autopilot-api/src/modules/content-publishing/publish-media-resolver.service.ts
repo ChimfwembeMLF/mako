@@ -17,7 +17,11 @@ export class PublishMediaResolverService {
     for (const item of media) {
       resolved.push({
         ...item,
-        media_url: await this.storage.ensureSupabaseUrl(item.media_url, tenantId, 'publish'),
+        media_url: await this.storage.ensureSupabaseUrl(
+          item.media_url,
+          tenantId,
+          'publish',
+        ),
       });
     }
     return resolved;

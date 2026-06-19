@@ -2,7 +2,10 @@ import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContentItems } from '../entities/content_items.entity';
-import { PublishContentService, MAX_CONTENT_PUBLISH_ATTEMPTS } from './publish-content.service';
+import {
+  PublishContentService,
+  MAX_CONTENT_PUBLISH_ATTEMPTS,
+} from './publish-content.service';
 import { isContentDue } from '../utils/schedule.util';
 import { QueueDispatchService } from '../../queues/queue-dispatch.service';
 
@@ -20,10 +23,20 @@ export class AutoPublishService {
   /** Enqueue publish jobs for due approved content in one tenant. */
   async queueDueItemsForTenant(tenantId: string): Promise<{
     queued: number;
-    jobs: Array<{ jobId: string | number | undefined; queue: string; contentId: string }>;
+    jobs: Array<{
+      jobId: string | number | undefined;
+      queue: string;
+      contentId: string;
+    }>;
   }> {
-    const due = (await this.findDueItems()).filter((item) => item.tenantId === tenantId);
-    const jobs: Array<{ jobId: string | number | undefined; queue: string; contentId: string }> = [];
+    const due = (await this.findDueItems()).filter(
+      (item) => item.tenantId === tenantId,
+    );
+    const jobs: Array<{
+      jobId: string | number | undefined;
+      queue: string;
+      contentId: string;
+    }> = [];
 
     for (const item of due) {
       if (!this.queueDispatch?.isEnabled()) {
@@ -43,7 +56,9 @@ export class AutoPublishService {
         platforms: item.platforms,
       });
       jobs.push({ jobId, queue, contentId: item.id });
-      this.logger.log(`Queued auto-publish for ${item.id} (tenant ${tenantId}) → job ${jobId}`);
+      this.logger.log(
+        `Queued auto-publish for ${item.id} (tenant ${tenantId}) → job ${jobId}`,
+      );
     }
 
     return { queued: jobs.length, jobs };
@@ -52,10 +67,18 @@ export class AutoPublishService {
   /** Enqueue publish jobs for all due approved content (used by queue worker). */
   async queueDueItems(): Promise<{
     queued: number;
-    jobs: Array<{ jobId: string | number | undefined; queue: string; contentId: string }>;
+    jobs: Array<{
+      jobId: string | number | undefined;
+      queue: string;
+      contentId: string;
+    }>;
   }> {
     const due = await this.findDueItems();
-    const jobs: Array<{ jobId: string | number | undefined; queue: string; contentId: string }> = [];
+    const jobs: Array<{
+      jobId: string | number | undefined;
+      queue: string;
+      contentId: string;
+    }> = [];
 
     for (const item of due) {
       if (!this.queueDispatch?.isEnabled()) {

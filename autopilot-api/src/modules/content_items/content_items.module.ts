@@ -29,7 +29,14 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ContentItems, MediaAssets, BrandProfiles, Workspaces, Tenants, SocialAccounts]),
+    TypeOrmModule.forFeature([
+      ContentItems,
+      MediaAssets,
+      BrandProfiles,
+      Workspaces,
+      Tenants,
+      SocialAccounts,
+    ]),
     AiModule,
     ContentPublishingModule,
     ContentPublicationsModule,

@@ -11,8 +11,17 @@ import { BrandProfileSeedService } from './brand-profile-seed.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([BrandProfiles, Workspaces]), AiModule],
-  providers: [BrandProfilesService, ScrapeWebsiteService, ParseDocumentService, BrandProfileSeedService],
+  providers: [
+    BrandProfilesService,
+    ScrapeWebsiteService,
+    ParseDocumentService,
+    BrandProfileSeedService,
+  ],
   controllers: [BrandProfilesController],
-  exports: [BrandProfilesService, BrandProfileSeedService, ParseDocumentService],
+  exports: [
+    BrandProfilesService,
+    BrandProfileSeedService,
+    ParseDocumentService,
+  ],
 })
 export class BrandProfilesModule {}

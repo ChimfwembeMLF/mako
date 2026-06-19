@@ -84,8 +84,8 @@ export class CommentRepliesInboxService {
       where: contentId
         ? { tenantId, contentId }
         : workspaceContentIds
-          ? { tenantId, contentId: In(workspaceContentIds) }
-          : { tenantId },
+        ? { tenantId, contentId: In(workspaceContentIds) }
+        : { tenantId },
       order: { created_at: 'ASC' },
     });
 
@@ -166,13 +166,13 @@ export class CommentRepliesInboxService {
       const aTime = a.comments.length
         ? latestActivity(a.comments)
         : a.publishedAt
-          ? new Date(a.publishedAt).getTime()
-          : 0;
+        ? new Date(a.publishedAt).getTime()
+        : 0;
       const bTime = b.comments.length
         ? latestActivity(b.comments)
         : b.publishedAt
-          ? new Date(b.publishedAt).getTime()
-          : 0;
+        ? new Date(b.publishedAt).getTime()
+        : 0;
       return bTime - aTime;
     });
 
@@ -222,7 +222,8 @@ export class CommentRepliesInboxService {
       shareCount: params.pub?.shareCount ?? 0,
       viewCount: params.pub?.viewCount ?? 0,
       engagementScore: params.pub?.engagementScore ?? 0,
-      pendingCount: params.groupComments.filter((c) => c.status === 'pending').length,
+      pendingCount: params.groupComments.filter((c) => c.status === 'pending')
+        .length,
       totalComments: params.groupComments.length,
       comments: buildCommentTree(params.groupComments),
       commentSyncSupported,
@@ -290,7 +291,8 @@ function buildCommentTree(rows: CommentReplies[]): CommentInboxNode[] {
 
   const sortNodes = (list: CommentInboxNode[]) => {
     list.sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
     );
     for (const n of list) sortNodes(n.children);
   };

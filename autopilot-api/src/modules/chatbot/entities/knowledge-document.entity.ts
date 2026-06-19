@@ -6,7 +6,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
-export type KnowledgeDocumentStatus = 'pending' | 'processing' | 'ready' | 'failed';
+export type KnowledgeDocumentStatus =
+  | 'pending'
+  | 'processing'
+  | 'ready'
+  | 'failed';
 
 @Entity({ name: 'knowledge_documents' })
 export class KnowledgeDocument {

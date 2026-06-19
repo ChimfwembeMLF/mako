@@ -19,7 +19,11 @@ export class UserEntity {
   @UpdateDateColumn({ type: 'timestamptz' })
   updatedAt: Date;
 
-  @Column({ type: 'enum', enum: ['local', 'facebook', 'google', 'linkedin', 'instagram'], default: 'local' })
+  @Column({
+    type: 'enum',
+    enum: ['local', 'facebook', 'google', 'linkedin', 'instagram'],
+    default: 'local',
+  })
   provider: string;
 
   @Column({ nullable: true })

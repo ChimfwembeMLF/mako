@@ -2,7 +2,12 @@ import { PLAN_CONFIG, PlanKey } from './plan.constants';
 
 export const DEFAULT_PLAN_FEATURES: Record<PlanKey, string[]> = {
   free: ['100 AI calls/mo', '2 seats', '1 workspace'],
-  starter: ['500 AI calls/mo', '10 seats', 'Daily workflow', 'Approvals & audit'],
+  starter: [
+    '500 AI calls/mo',
+    '10 seats',
+    'Daily workflow',
+    'Approvals & audit',
+  ],
   pro: ['Unlimited AI', 'Unlimited seats', 'Priority support'],
 };
 

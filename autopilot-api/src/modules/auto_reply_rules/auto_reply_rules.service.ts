@@ -18,9 +18,14 @@ export class AutoReplyRulesService {
     return this.repo.save(ent as AutoReplyRules);
   }
 
-  async findAll(tenantId?: string, workspaceId?: string): Promise<AutoReplyRules[]> {
+  async findAll(
+    tenantId?: string,
+    workspaceId?: string,
+  ): Promise<AutoReplyRules[]> {
     if (tenantId) {
-      return this.repo.find({ where: scopeWhere<AutoReplyRules>(tenantId, workspaceId) });
+      return this.repo.find({
+        where: scopeWhere<AutoReplyRules>(tenantId, workspaceId),
+      });
     }
     return this.repo.find();
   }
@@ -48,11 +53,15 @@ export class AutoReplyRulesService {
     for (const rule of rules) {
       const keywords = rule.triggerKeywords ?? [];
       if (!keywords.length) continue;
-      if (keywords.some((kw) => kw.trim() && lower.includes(kw.trim().toLowerCase()))) {
+      if (
+        keywords.some(
+          (kw) => kw.trim() && lower.includes(kw.trim().toLowerCase()),
+        )
+      ) {
         return rule;
       }
     }
-    const catchAll = rules.find((r) => !(r.triggerKeywords?.length));
+    const catchAll = rules.find((r) => !r.triggerKeywords?.length);
     return catchAll ?? null;
   }
 

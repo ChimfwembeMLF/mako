@@ -30,12 +30,17 @@ export class TenantQueueFanoutService {
       if (!pub.externalPostId || seen.has(pub.tenantId)) continue;
       seen.set(pub.tenantId, pub.userId);
     }
-    return [...seen.entries()].map(([tenantId, userId]) => ({ tenantId, userId }));
+    return [...seen.entries()].map(([tenantId, userId]) => ({
+      tenantId,
+      userId,
+    }));
   }
 
   /** Distinct tenants with approved content due for auto-publish. */
   async listTenantsForAutoPublish(): Promise<string[]> {
-    const items = await this.contentRepo.find({ where: { status: 'approved' } });
+    const items = await this.contentRepo.find({
+      where: { status: 'approved' },
+    });
     const tenantIds = new Set<string>();
     for (const item of items) {
       if (isContentDue(item)) tenantIds.add(item.tenantId);

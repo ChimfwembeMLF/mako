@@ -48,7 +48,12 @@ export class WhatsappMessages {
   errorMessage?: string;
 
   @Column({ type: 'jsonb', default: [] })
-  attachments: Array<{ url?: string; type?: string; name?: string; mimeType?: string }>;
+  attachments: Array<{
+    url?: string;
+    type?: string;
+    name?: string;
+    mimeType?: string;
+  }>;
 
   @Column({ type: 'jsonb', default: [] })
   reactions: Array<{ type: string; count?: number }>;

@@ -33,7 +33,9 @@ export function reportDataToSections(
   const sections: ReportSection[] = [];
 
   if (data.error) {
-    return [{ title: 'Error', headers: ['Message'], rows: [[String(data.error)]] }];
+    return [
+      { title: 'Error', headers: ['Message'], rows: [[String(data.error)]] },
+    ];
   }
 
   const summaryRows: string[][] = [
@@ -41,13 +43,24 @@ export function reportDataToSections(
     ['Generated', formatCell(data.generatedAt ?? new Date().toISOString())],
   ];
 
-  for (const key of ['plan', 'totalCalls', 'total', 'pending', 'sent', 'newThisWeek'] as const) {
+  for (const key of [
+    'plan',
+    'totalCalls',
+    'total',
+    'pending',
+    'sent',
+    'newThisWeek',
+  ] as const) {
     if (data[key] !== undefined && typeof data[key] !== 'object') {
       summaryRows.push([key, formatCell(data[key])]);
     }
   }
 
-  sections.push({ title: 'Summary', headers: ['Field', 'Value'], rows: summaryRows });
+  sections.push({
+    title: 'Summary',
+    headers: ['Field', 'Value'],
+    rows: summaryRows,
+  });
 
   if (Array.isArray(data.rows) && data.rows.length > 0) {
     const rows = data.rows as Record<string, unknown>[];
@@ -96,10 +109,9 @@ export function reportDataToSections(
     sections.push({
       title: 'Subscription',
       headers: ['Field', 'Value'],
-      rows: Object.entries(data.subscription as Record<string, unknown>).map(([k, v]) => [
-        k,
-        formatCell(v),
-      ]),
+      rows: Object.entries(data.subscription as Record<string, unknown>).map(
+        ([k, v]) => [k, formatCell(v)],
+      ),
     });
   }
 
@@ -107,10 +119,9 @@ export function reportDataToSections(
     sections.push({
       title: 'Billing period',
       headers: ['Field', 'Value'],
-      rows: Object.entries(data.billingPeriod as Record<string, unknown>).map(([k, v]) => [
-        k,
-        formatCell(v),
-      ]),
+      rows: Object.entries(data.billingPeriod as Record<string, unknown>).map(
+        ([k, v]) => [k, formatCell(v)],
+      ),
     });
   }
 
@@ -124,7 +135,10 @@ function escapeCsvCell(value: string): string {
   return value;
 }
 
-export function renderReportCsv(sections: ReportSection[], title: string): Buffer {
+export function renderReportCsv(
+  sections: ReportSection[],
+  title: string,
+): Buffer {
   const lines: string[] = [`# ${title}`];
   for (const section of sections) {
     lines.push('');
@@ -157,7 +171,12 @@ export async function renderReportPdf(
 
   const drawReportHeader = () => {
     const headerTop = doc.y;
-    const logo = drawMakoLogoPdf(doc, MARGIN, headerTop, REPORT_PDF_LOGO_HEIGHT_PX);
+    const logo = drawMakoLogoPdf(
+      doc,
+      MARGIN,
+      headerTop,
+      REPORT_PDF_LOGO_HEIGHT_PX,
+    );
     const textY = headerTop + (logo.drawn ? logo.height + 10 : 0);
     doc
       .fontSize(16)
@@ -168,7 +187,9 @@ export async function renderReportPdf(
       .fontSize(9)
       .font('Helvetica')
       .fillColor('#666')
-      .text(`Generated ${new Date().toLocaleString()}`, MARGIN, doc.y + 2, { width: pageWidth });
+      .text(`Generated ${new Date().toLocaleString()}`, MARGIN, doc.y + 2, {
+        width: pageWidth,
+      });
     doc.y = doc.y + 18;
   };
 
@@ -179,7 +200,11 @@ export async function renderReportPdf(
   });
 
   for (const section of sections) {
-    doc.fontSize(12).font('Helvetica-Bold').fillColor('#111').text(section.title);
+    doc
+      .fontSize(12)
+      .font('Helvetica-Bold')
+      .fillColor('#111')
+      .text(section.title);
     doc.moveDown(0.3);
 
     const colCount = section.headers.length;
@@ -200,7 +225,10 @@ export async function renderReportPdf(
       const rowY = doc.y;
       x = MARGIN;
       for (let i = 0; i < colCount; i++) {
-        doc.text(row[i] ?? '', x, rowY, { width: colWidth - 4, ellipsis: true });
+        doc.text(row[i] ?? '', x, rowY, {
+          width: colWidth - 4,
+          ellipsis: true,
+        });
         x += colWidth;
       }
       doc.moveDown(0.4);
@@ -213,7 +241,7 @@ export async function renderReportPdf(
 }
 
 function safeSheetName(name: string, used: Set<string>): string {
-  let base = name.replace(/[\\/*?:[\]]/g, '').slice(0, 28) || 'Sheet';
+  const base = name.replace(/[\\/*?:[\]]/g, '').slice(0, 28) || 'Sheet';
   let candidate = base;
   let n = 2;
   while (used.has(candidate)) {
@@ -260,7 +288,10 @@ export async function renderReportXlsx(
   return Buffer.from(buffer);
 }
 
-export function reportExportFilename(reportId: string, format: ReportExportFormat): string {
+export function reportExportFilename(
+  reportId: string,
+  format: ReportExportFormat,
+): string {
   const date = new Date().toISOString().slice(0, 10);
   const ext = format === 'xlsx' ? 'xlsx' : format;
   return `autopilot-${reportId}-${date}.${ext}`;

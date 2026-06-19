@@ -36,12 +36,16 @@ export class WhatsappFlowEngineService {
     leadId?: string;
   }): Promise<boolean> {
     const config = await this.sessions.getConfig(params.tenantId);
-    const globallyEnabled = this.config.get<string>('WHATSAPP_FLOW_ENABLED') === 'true';
+    const globallyEnabled =
+      this.config.get<string>('WHATSAPP_FLOW_ENABLED') === 'true';
     if (!config.enabled && !globallyEnabled) return false;
 
     const normalizedText = params.text.trim().toLowerCase();
     const triggers = (config.welcomeTriggers ?? []).map((t) => t.toLowerCase());
-    const session = await this.sessions.getSession(params.tenantId, params.phone);
+    const session = await this.sessions.getSession(
+      params.tenantId,
+      params.phone,
+    );
 
     const isWelcome =
       triggers.includes(normalizedText) ||
@@ -104,7 +108,9 @@ export class WhatsappFlowEngineService {
       }
     }
 
-    this.logger.log(`WhatsApp menu flow → ${result.nextState} (${params.phone})`);
+    this.logger.log(
+      `WhatsApp menu flow → ${result.nextState} (${params.phone})`,
+    );
     return true;
   }
 
@@ -160,7 +166,12 @@ export class WhatsappFlowEngineService {
       case 'text':
         return this.messaging.sendSessionText(creds, phone, msg.body);
       case 'buttons':
-        return this.messaging.sendInteractiveButtons(creds, phone, msg.body, msg.buttons);
+        return this.messaging.sendInteractiveButtons(
+          creds,
+          phone,
+          msg.body,
+          msg.buttons,
+        );
       case 'list':
         return this.messaging.sendInteractiveList(
           creds,

@@ -33,10 +33,15 @@ export class AdaptPlatformsService {
     platforms: string[];
     title?: string;
     content: string;
-  }): Promise<{ payloads: Record<string, AdaptedPlatformPayload>; tokensUsed: number }> {
+  }): Promise<{
+    payloads: Record<string, AdaptedPlatformPayload>;
+    tokensUsed: number;
+  }> {
     if (!params.tenantId) throw new BadRequestException('tenantId is required');
-    if (!params.platforms?.length) throw new BadRequestException('platforms is required');
-    if (!params.content?.trim()) throw new BadRequestException('content is required');
+    if (!params.platforms?.length)
+      throw new BadRequestException('platforms is required');
+    if (!params.content?.trim())
+      throw new BadRequestException('content is required');
 
     await this.usage.assertWithinLimit(params.tenantId, params.userId);
 
@@ -61,7 +66,9 @@ export class AdaptPlatformsService {
         const guide = template?.body?.trim()
           ? {
               ...base,
-              format: `${base.format}\n\nTemplate instructions:\n${template.body.trim()}`,
+              format: `${
+                base.format
+              }\n\nTemplate instructions:\n${template.body.trim()}`,
             }
           : base;
         return { platform, guide, template };
@@ -83,11 +90,18 @@ export class AdaptPlatformsService {
       totalTokens += tokensUsed;
       payloads[params.platforms[0]] = payload;
     } else {
-      const batch = await this.adaptBatch(brandCtx, platformGuides, plainSource, params.title);
+      const batch = await this.adaptBatch(
+        brandCtx,
+        platformGuides,
+        plainSource,
+        params.title,
+      );
       totalTokens += batch.tokensUsed;
       payloads = batch.payloads;
 
-      const missing = params.platforms.filter((p) => !payloads[p]?.content?.trim());
+      const missing = params.platforms.filter(
+        (p) => !payloads[p]?.content?.trim(),
+      );
       for (const platform of missing) {
         const { payload, tokensUsed } = await this.adaptOne(
           brandCtx,
@@ -101,7 +115,10 @@ export class AdaptPlatformsService {
         payloads[platform] = payload;
       }
 
-      const duplicates = this.findDuplicatePlatforms(payloads, params.platforms);
+      const duplicates = this.findDuplicatePlatforms(
+        payloads,
+        params.platforms,
+      );
       for (const platform of duplicates) {
         const summaries = params.platforms
           .filter((p) => p !== platform && payloads[p]?.content)
@@ -109,27 +126,42 @@ export class AdaptPlatformsService {
           .join('\n');
         const guide = platformPublishGuide(platform);
         const template = templateByPlatform.get(platform);
-        const { data, tokensUsed } = await this.mistral.completeJson<{ title?: string; content?: string }>(
-          [
-            {
-              role: 'system',
-              content: template
-                ? this.prompts.platformAdaptDistinctRetry(brandCtx, platform, guide, summaries) +
-                  `\n\nTemplate instructions:\n${template.body}`
-                : this.prompts.platformAdaptDistinctRetry(brandCtx, platform, guide, summaries),
-            },
-            {
-              role: 'user',
-              content: [
-                `Original title: ${params.title || 'Untitled'}`,
-                `Original content:\n${plainSource}`,
-                `Write a DISTINCT ${platform} version.`,
-              ].join('\n\n'),
-            },
-          ],
-        );
+        const { data, tokensUsed } = await this.mistral.completeJson<{
+          title?: string;
+          content?: string;
+        }>([
+          {
+            role: 'system',
+            content: template
+              ? this.prompts.platformAdaptDistinctRetry(
+                  brandCtx,
+                  platform,
+                  guide,
+                  summaries,
+                ) + `\n\nTemplate instructions:\n${template.body}`
+              : this.prompts.platformAdaptDistinctRetry(
+                  brandCtx,
+                  platform,
+                  guide,
+                  summaries,
+                ),
+          },
+          {
+            role: 'user',
+            content: [
+              `Original title: ${params.title || 'Untitled'}`,
+              `Original content:\n${plainSource}`,
+              `Write a DISTINCT ${platform} version.`,
+            ].join('\n\n'),
+          },
+        ]);
         totalTokens += tokensUsed;
-        payloads[platform] = this.normalizeEntry(platform, data, params.title, plainSource);
+        payloads[platform] = this.normalizeEntry(
+          platform,
+          data,
+          params.title,
+          plainSource,
+        );
       }
     }
 
@@ -145,7 +177,10 @@ export class AdaptPlatformsService {
 
   private async adaptBatch(
     brandCtx: ReturnType<PromptBuilderService['brandFromEntity']>,
-    platformGuides: Array<{ platform: string; guide: ReturnType<typeof platformPublishGuide> }>,
+    platformGuides: Array<{
+      platform: string;
+      guide: ReturnType<typeof platformPublishGuide>;
+    }>,
     plainSource: string,
     title?: string,
   ) {
@@ -154,14 +189,19 @@ export class AdaptPlatformsService {
     >([
       {
         role: 'system',
-        content: this.prompts.platformAdaptBatchSystem(brandCtx, platformGuides),
+        content: this.prompts.platformAdaptBatchSystem(
+          brandCtx,
+          platformGuides,
+        ),
       },
       {
         role: 'user',
         content: [
           `Original title: ${title || 'Untitled'}`,
           `Original content:\n${plainSource}`,
-          `Return separate adapted copy for each platform: ${platformGuides.map((p) => p.platform).join(', ')}.`,
+          `Return separate adapted copy for each platform: ${platformGuides
+            .map((p) => p.platform)
+            .join(', ')}.`,
         ].join('\n\n'),
       },
     ]);
@@ -170,7 +210,12 @@ export class AdaptPlatformsService {
     for (const { platform } of platformGuides) {
       const entry = data[platform] ?? data[platform.toLowerCase()];
       if (entry) {
-        payloads[platform] = this.normalizeEntry(platform, entry, title, plainSource);
+        payloads[platform] = this.normalizeEntry(
+          platform,
+          entry,
+          title,
+          plainSource,
+        );
       }
     }
 
@@ -194,22 +239,28 @@ export class AdaptPlatformsService {
       : '';
 
     const system = otherSummaries
-      ? this.prompts.platformAdaptDistinctRetry(brandCtx, platform, guide, otherSummaries)
+      ? this.prompts.platformAdaptDistinctRetry(
+          brandCtx,
+          platform,
+          guide,
+          otherSummaries,
+        )
       : this.prompts.platformAdaptSystem(brandCtx, platform, guide, template);
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{ title?: string; content?: string }>(
-      [
-        { role: 'system', content: system },
-        {
-          role: 'user',
-          content: [
-            `Original title: ${title || 'Untitled'}`,
-            `Original content:\n${plainSource}`,
-            `Adapt specifically for ${platform}. Follow current ${platform} content trends.`,
-          ].join('\n\n'),
-        },
-      ],
-    );
+    const { data, tokensUsed } = await this.mistral.completeJson<{
+      title?: string;
+      content?: string;
+    }>([
+      { role: 'system', content: system },
+      {
+        role: 'user',
+        content: [
+          `Original title: ${title || 'Untitled'}`,
+          `Original content:\n${plainSource}`,
+          `Adapt specifically for ${platform}. Follow current ${platform} content trends.`,
+        ].join('\n\n'),
+      },
+    ]);
 
     return {
       payload: this.normalizeEntry(platform, data, title, plainSource),

@@ -13,7 +13,7 @@ import { LeadSourcesCreateDto } from './dto/create-lead_sources.dto';
 import { LeadSourcesUpdateDto } from './dto/update-lead_sources.dto';
 import { ApiTags } from '@nestjs/swagger';
 
-@ApiTags("Lead Source")
+@ApiTags('Lead Source')
 @Controller('api/v1/lead-source')
 export class LeadSourcesController {
   constructor(private readonly service: LeadSourcesService) {}

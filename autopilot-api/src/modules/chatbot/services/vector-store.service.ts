@@ -104,7 +104,9 @@ export class VectorStoreService {
           meta,
         ],
       );
-      this.logger.warn('knowledge_chunks.embedding column missing — stored chunk without vector');
+      this.logger.warn(
+        'knowledge_chunks.embedding column missing — stored chunk without vector',
+      );
     }
     return id;
   }
@@ -217,7 +219,9 @@ export class VectorStoreService {
           score,
         };
       })
-      .filter((r): r is RetrievedChunk => r != null && r.score >= params.minScore)
+      .filter(
+        (r): r is RetrievedChunk => r != null && r.score >= params.minScore,
+      )
       .sort((a, b) => b.score - a.score)
       .slice(0, params.topK);
 

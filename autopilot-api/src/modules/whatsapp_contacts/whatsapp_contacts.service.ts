@@ -26,7 +26,10 @@ export class WhatsappContactsService {
     return this.repo.save(ent as WhatsappContacts);
   }
 
-  async findByTenant(tenantId: string, workspaceId?: string): Promise<WhatsappContacts[]> {
+  async findByTenant(
+    tenantId: string,
+    workspaceId?: string,
+  ): Promise<WhatsappContacts[]> {
     return this.repo.find({
       where: scopeWhere<WhatsappContacts>(tenantId, workspaceId),
       order: { created_at: 'DESC' },
@@ -57,6 +60,7 @@ export class WhatsappContactsService {
   async remove(id: string, tenantId?: string): Promise<void> {
     await this.findOne(id, tenantId);
     const res = await this.repo.delete(id);
-    if (res.affected === 0) throw new NotFoundException('WhatsApp contact not found');
+    if (res.affected === 0)
+      throw new NotFoundException('WhatsApp contact not found');
   }
 }

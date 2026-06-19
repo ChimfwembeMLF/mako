@@ -28,6 +28,9 @@ export function isContentDue(item: ContentItems, now = new Date()): boolean {
 }
 
 /** Items approved for today (or earlier) that haven't been published yet. */
-export function isContentDueOrOverdue(item: ContentItems, now = new Date()): boolean {
+export function isContentDueOrOverdue(
+  item: ContentItems,
+  now = new Date(),
+): boolean {
   return isContentDue(item, now) && item.status === 'approved';
 }

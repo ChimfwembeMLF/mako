@@ -17,7 +17,10 @@ import { CommentRepliesInboxService } from './comment-replies-inbox.service';
 import { CommentReplies } from './entities/comment_replies.entity';
 import { CommentRepliesCreateDto } from './dto/create-comment_replies.dto';
 import { CommentRepliesUpdateDto } from './dto/update-comment_replies.dto';
-import { FetchCommentsDto, SendCommentReplyDto } from './dto/comment-actions.dto';
+import {
+  FetchCommentsDto,
+  SendCommentReplyDto,
+} from './dto/comment-actions.dto';
 import { FetchCommentsService } from '../content-publishing/social-comments.service';
 import { SendCommentReplyService } from '../content-publishing/send-comment-reply.service';
 import { CommentReplyAiService } from '../content-publishing/comment-reply-ai.service';
@@ -80,7 +83,11 @@ export class CommentRepliesController {
   }
 
   @Post(':id/send')
-  send(@Req() req: { user: JwtUser }, @Param('id') id: string, @Body() dto: SendCommentReplyDto) {
+  send(
+    @Req() req: { user: JwtUser },
+    @Param('id') id: string,
+    @Body() dto: SendCommentReplyDto,
+  ) {
     return this.sendReply.sendReply({
       commentReplyId: id,
       userId: String(req.user.sub),

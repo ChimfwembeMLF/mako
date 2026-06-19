@@ -1,7 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MistralChatService, ChatMessage as LlmMessage } from '../../ai/services/mistral-chat.service';
+import {
+  MistralChatService,
+  ChatMessage as LlmMessage,
+} from '../../ai/services/mistral-chat.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { BrandProfilesService } from '../../brand_profiles/brand_profiles.service';
@@ -13,7 +16,8 @@ import { MistralChatbotLibraryService } from './mistral-chatbot-library.service'
 import { ChatSession } from '../entities/chat-session.entity';
 import { resolveSystemPromptExtra } from '../constants/default-system-message';
 
-const GREETING_PATTERN = /^(hi|hello|hey|good\s+(morning|afternoon|evening)|howdy)[\s!.?]*$/i;
+const GREETING_PATTERN =
+  /^(hi|hello|hey|good\s+(morning|afternoon|evening)|howdy)[\s!.?]*$/i;
 
 export interface RagReply {
   content: string;
@@ -55,11 +59,16 @@ export class RagOrchestratorService {
         return await this.generateMistralLibraryReply(params, started);
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
-        this.logger.warn(`Mistral library chat failed, falling back to self-hosted RAG: ${message}`);
+        this.logger.warn(
+          `Mistral library chat failed, falling back to self-hosted RAG: ${message}`,
+        );
       }
     }
 
-    const brand = await this.resolveBrand(params.tenantId, params.config.brandProfileId);
+    const brand = await this.resolveBrand(
+      params.tenantId,
+      params.config.brandProfileId,
+    );
     const history = await this.messageRepo.find({
       where: { sessionId: params.sessionId, tenantId: params.tenantId },
       order: { created_at: 'ASC' },
@@ -70,7 +79,8 @@ export class RagOrchestratorService {
     let retrievedBlock = '';
 
     const skipRetrieval =
-      !params.config.ragEnabled || GREETING_PATTERN.test(params.userMessage.trim());
+      !params.config.ragEnabled ||
+      GREETING_PATTERN.test(params.userMessage.trim());
 
     if (!skipRetrieval) {
       const queryEmbedding = await this.mistral.embed(params.userMessage);
@@ -85,13 +95,20 @@ export class RagOrchestratorService {
         retrievedBlock = chunks
           .map(
             (c, i) =>
-              `<source index="${i + 1}" title="${c.title.replace(/"/g, "'")}">\n${c.content}\n</source>`,
+              `<source index="${i + 1}" title="${c.title.replace(
+                /"/g,
+                "'",
+              )}">\n${c.content}\n</source>`,
           )
           .join('\n\n');
       }
     }
 
-    const systemPrompt = this.buildSystemPrompt(brand, params.config, retrievedBlock);
+    const systemPrompt = this.buildSystemPrompt(
+      brand,
+      params.config,
+      retrievedBlock,
+    );
     const messages: LlmMessage[] = [{ role: 'system', content: systemPrompt }];
 
     for (const msg of history) {
@@ -193,7 +210,9 @@ export class RagOrchestratorService {
       .join('\n');
 
     const parts = [
-      `You are ${config.name}, a helpful assistant for ${brand.companyName || 'this business'}.`,
+      `You are ${config.name}, a helpful assistant for ${
+        brand.companyName || 'this business'
+      }.`,
       'Answer accurately using the brand profile and any retrieved document excerpts.',
       'If you use information from documents, be specific but concise.',
       'If you do not know something, say so — do not invent facts.',

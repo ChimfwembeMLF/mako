@@ -53,7 +53,10 @@ export class TenantMembersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Get()
-  findAll(@Query('tenantId') tenantId?: string, @Query('detailed') detailed?: string) {
+  findAll(
+    @Query('tenantId') tenantId?: string,
+    @Query('detailed') detailed?: string,
+  ) {
     if (tenantId && detailed === 'true') {
       return this.service.listByTenant(tenantId);
     }
@@ -84,7 +87,10 @@ export class TenantMembersController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Delete('invitations/:id')
-  revokeInvitation(@Param('id') id: string, @Query('tenantId') tenantId: string) {
+  revokeInvitation(
+    @Param('id') id: string,
+    @Query('tenantId') tenantId: string,
+  ) {
     return this.service.revokeInvitation(id, tenantId);
   }
 

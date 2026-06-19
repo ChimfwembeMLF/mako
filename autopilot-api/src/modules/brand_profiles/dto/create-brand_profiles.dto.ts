@@ -1,8 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsUUID,
-} from 'class-validator';
+import { IsString, IsOptional, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class BrandProfilesCreateDto {

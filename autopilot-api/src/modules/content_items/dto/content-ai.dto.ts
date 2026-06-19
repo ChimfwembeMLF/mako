@@ -1,4 +1,11 @@
-import { IsBoolean, IsOptional, IsString, IsUUID, IsArray, IsObject } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+  IsArray,
+  IsObject,
+} from 'class-validator';
 
 export class GenerateContentDto {
   @IsOptional()

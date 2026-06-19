@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Response, Request } from 'express';
@@ -58,7 +67,9 @@ export class LegalController {
   @Get('api/v1/legal/urls')
   legalUrls() {
     const urls = resolveLegalUrls(this.config);
-    const appName = this.config.get<string>('APP_NAME') ?? 'Tekrem Innovation Solutions - Mako';
+    const appName =
+      this.config.get<string>('APP_NAME') ??
+      'Tekrem Innovation Solutions - Mako';
     const supportEmail =
       this.config.get<string>('SUPPORT_EMAIL')?.trim() ?? 'support@agriwide.co';
     return { appName, supportEmail, ...urls };
@@ -94,7 +105,10 @@ export class LegalController {
   }
 
   @Get('api/v1/legal/data-protection/consent')
-  async consentStatus(@Query('visitorId') visitorId: string, @Query('version') version?: string) {
+  async consentStatus(
+    @Query('visitorId') visitorId: string,
+    @Query('version') version?: string,
+  ) {
     if (!visitorId?.trim()) return { accepted: false };
     const row = await this.consent.hasConsent(visitorId.trim(), version);
     return row ?? { accepted: false };
@@ -146,22 +160,31 @@ export class LegalController {
 
   private sendPublicHtml(res: Response, filename: string) {
     try {
-      const html = readFileSync(join(process.cwd(), 'public', filename), 'utf8');
-      const appName = this.config.get<string>('APP_NAME') ?? 'Tekrem Innovation Solutions - Mako';
-      const frontend = (this.config.get<string>('FRONTEND_URL') ?? '').replace(/\/$/, '');
+      const html = readFileSync(
+        join(process.cwd(), 'public', filename),
+        'utf8',
+      );
+      const appName =
+        this.config.get<string>('APP_NAME') ??
+        'Tekrem Innovation Solutions - Mako';
+      const frontend = (this.config.get<string>('FRONTEND_URL') ?? '').replace(
+        /\/$/,
+        '',
+      );
       const supportEmail =
-        this.config.get<string>('SUPPORT_EMAIL')?.trim() ?? 'support@agriwide.co';
-      const { privacyPolicyUrl, termsOfServiceUrl } = resolveLegalUrls(this.config);
-      res
-        .type('html')
-        .send(
-          html
-            .replace(/\{\{APP_NAME\}\}/g, appName)
-            .replace(/\{\{FRONTEND_URL\}\}/g, frontend)
-            .replace(/\{\{SUPPORT_EMAIL\}\}/g, supportEmail)
-            .replace(/\{\{PRIVACY_URL\}\}/g, privacyPolicyUrl)
-            .replace(/\{\{TERMS_URL\}\}/g, termsOfServiceUrl),
-        );
+        this.config.get<string>('SUPPORT_EMAIL')?.trim() ??
+        'support@agriwide.co';
+      const { privacyPolicyUrl, termsOfServiceUrl } = resolveLegalUrls(
+        this.config,
+      );
+      res.type('html').send(
+        html
+          .replace(/\{\{APP_NAME\}\}/g, appName)
+          .replace(/\{\{FRONTEND_URL\}\}/g, frontend)
+          .replace(/\{\{SUPPORT_EMAIL\}\}/g, supportEmail)
+          .replace(/\{\{PRIVACY_URL\}\}/g, privacyPolicyUrl)
+          .replace(/\{\{TERMS_URL\}\}/g, termsOfServiceUrl),
+      );
     } catch {
       res.status(404).send('Page not found');
     }

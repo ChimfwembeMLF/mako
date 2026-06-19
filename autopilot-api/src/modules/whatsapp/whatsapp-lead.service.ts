@@ -28,7 +28,9 @@ export class WhatsappLeadService {
     message: string;
     messageRowId: string;
   }): Promise<string | undefined> {
-    const tenant = await this.tenantsRepo.findOne({ where: { id: params.tenantId } });
+    const tenant = await this.tenantsRepo.findOne({
+      where: { id: params.tenantId },
+    });
     if (!tenant?.ownerId) return params.contact.leadId;
 
     const lead = await this.leads.upsertFromWhatsapp({
@@ -63,7 +65,9 @@ export class WhatsappLeadService {
         }
       })
       .catch((err) => {
-        this.logger.warn(`Lead classify skipped: ${err instanceof Error ? err.message : err}`);
+        this.logger.warn(
+          `Lead classify skipped: ${err instanceof Error ? err.message : err}`,
+        );
       });
 
     return lead.id;

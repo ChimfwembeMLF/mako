@@ -27,10 +27,18 @@ export class SubscriptionRenewalService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  async processDueRenewals(): Promise<{ initiated: number; pastDue: number; expired: number }> {
+  async processDueRenewals(): Promise<{
+    initiated: number;
+    pastDue: number;
+    expired: number;
+  }> {
     const now = new Date();
-    const renewalWindowEnd = new Date(now.getTime() + RENEWAL_WINDOW_HOURS * 60 * 60 * 1000);
-    const graceCutoff = new Date(now.getTime() - RENEWAL_GRACE_DAYS * 24 * 60 * 60 * 1000);
+    const renewalWindowEnd = new Date(
+      now.getTime() + RENEWAL_WINDOW_HOURS * 60 * 60 * 1000,
+    );
+    const graceCutoff = new Date(
+      now.getTime() - RENEWAL_GRACE_DAYS * 24 * 60 * 60 * 1000,
+    );
 
     const subs = await this.subRepo.find({
       where: { status: In(['active', 'past_due']) },
@@ -48,19 +56,35 @@ export class SubscriptionRenewalService {
       const inRenewalWindow = sub.billingPeriodEnd <= renewalWindowEnd;
 
       if (periodEnded && sub.status === 'active') {
-        const renewed = await this.hasCompletedPaymentSince(sub.tenantId, sub.billingPeriodStart);
+        const renewed = await this.hasCompletedPaymentSince(
+          sub.tenantId,
+          sub.billingPeriodStart,
+        );
         if (!renewed) {
           await this.subscriptions.markPastDue(sub.tenantId);
-          await this.notifications.notifySubscriptionPastDue(sub.tenantId, plan);
+          await this.notifications.notifySubscriptionPastDue(
+            sub.tenantId,
+            plan,
+          );
           pastDue++;
         }
       }
 
-      if (periodEnded && sub.billingPeriodEnd <= graceCutoff && sub.status === 'past_due') {
-        const renewed = await this.hasCompletedPaymentSince(sub.tenantId, sub.billingPeriodStart);
+      if (
+        periodEnded &&
+        sub.billingPeriodEnd <= graceCutoff &&
+        sub.status === 'past_due'
+      ) {
+        const renewed = await this.hasCompletedPaymentSince(
+          sub.tenantId,
+          sub.billingPeriodStart,
+        );
         if (!renewed) {
           await this.subscriptions.downgradeToFree(sub.tenantId);
-          await this.notifications.notifySubscriptionExpired(sub.tenantId, plan);
+          await this.notifications.notifySubscriptionExpired(
+            sub.tenantId,
+            plan,
+          );
           expired++;
           continue;
         }
@@ -70,20 +94,40 @@ export class SubscriptionRenewalService {
       if (!inRenewalWindow) continue;
       if (sub.renewalAttempts >= MAX_RENEWAL_ATTEMPTS) {
         await this.subscriptions.setAutoRenew(sub.tenantId, false);
-        await this.notifications.notifyRenewalFailed(sub.tenantId, plan, 'Max renewal attempts reached');
+        await this.notifications.notifyRenewalFailed(
+          sub.tenantId,
+          plan,
+          'Max renewal attempts reached',
+        );
         continue;
       }
       if (await this.hasPendingRenewal(sub.tenantId)) continue;
-      if (await this.hasCompletedPaymentSince(sub.tenantId, sub.billingPeriodStart)) continue;
+      if (
+        await this.hasCompletedPaymentSince(
+          sub.tenantId,
+          sub.billingPeriodStart,
+        )
+      )
+        continue;
 
       try {
         const result = await this.payments.initiateRenewalDeposit(sub.tenantId);
         await this.subscriptions.recordRenewalAttempt(sub.tenantId);
-        await this.notifications.notifyRenewalInitiated(sub.tenantId, plan, result.paymentId);
+        await this.notifications.notifyRenewalInitiated(
+          sub.tenantId,
+          plan,
+          result.paymentId,
+        );
         initiated++;
-        this.logger.log(`Renewal initiated for tenant ${sub.tenantId} (${plan})`);
+        this.logger.log(
+          `Renewal initiated for tenant ${sub.tenantId} (${plan})`,
+        );
       } catch (err) {
-        this.logger.warn(`Renewal failed for tenant ${sub.tenantId}: ${err instanceof Error ? err.message : err}`);
+        this.logger.warn(
+          `Renewal failed for tenant ${sub.tenantId}: ${
+            err instanceof Error ? err.message : err
+          }`,
+        );
         await this.notifications.notifyRenewalFailed(
           sub.tenantId,
           plan,
@@ -103,7 +147,10 @@ export class SubscriptionRenewalService {
     return !!pending;
   }
 
-  private async hasCompletedPaymentSince(tenantId: string, since: Date): Promise<boolean> {
+  private async hasCompletedPaymentSince(
+    tenantId: string,
+    since: Date,
+  ): Promise<boolean> {
     const paid = await this.depositsRepo.findOne({
       where: {
         tenantId,

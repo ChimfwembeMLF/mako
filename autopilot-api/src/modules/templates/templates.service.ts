@@ -24,16 +24,25 @@ export class TemplatesService {
 
   findActiveByTenant(tenantId: string, workspaceId?: string) {
     return this.repo.find({
-      where: { ...scopeWhere<ContentTemplates>(tenantId, workspaceId), isActive: true },
+      where: {
+        ...scopeWhere<ContentTemplates>(tenantId, workspaceId),
+        isActive: true,
+      },
       order: { updated_at: 'DESC' },
     });
   }
 
-  async findActiveForPlatform(tenantId: string, platform: string, workspaceId?: string) {
+  async findActiveForPlatform(
+    tenantId: string,
+    platform: string,
+    workspaceId?: string,
+  ) {
     const normalized = platform.toLowerCase();
     const active = await this.findActiveByTenant(tenantId, workspaceId);
     return (
-      active.find((t) => t.platforms?.map((p) => p.toLowerCase()).includes(normalized)) ??
+      active.find((t) =>
+        t.platforms?.map((p) => p.toLowerCase()).includes(normalized),
+      ) ??
       active.find((t) => t.contentType?.toLowerCase() === normalized) ??
       null
     );
@@ -47,7 +56,11 @@ export class TemplatesService {
     contentType?: string;
   }) {
     if (params.templateId) {
-      return this.findOne(params.templateId, params.tenantId, params.workspaceId);
+      return this.findOne(
+        params.templateId,
+        params.tenantId,
+        params.workspaceId,
+      );
     }
     if (params.platform) {
       const byPlatform = await this.findActiveForPlatform(
@@ -58,17 +71,24 @@ export class TemplatesService {
       if (byPlatform) return byPlatform;
     }
     if (params.contentType) {
-      const active = await this.findActiveByTenant(params.tenantId, params.workspaceId);
+      const active = await this.findActiveByTenant(
+        params.tenantId,
+        params.workspaceId,
+      );
       return (
-        active.find((t) => t.contentType?.toLowerCase() === params.contentType!.toLowerCase()) ??
-        null
+        active.find(
+          (t) =>
+            t.contentType?.toLowerCase() === params.contentType!.toLowerCase(),
+        ) ?? null
       );
     }
     return null;
   }
 
   async findOne(id: string, tenantId?: string, workspaceId?: string) {
-    const where: { id: string; tenantId?: string; workspaceId?: string } = { id };
+    const where: { id: string; tenantId?: string; workspaceId?: string } = {
+      id,
+    };
     if (tenantId) where.tenantId = tenantId;
     if (workspaceId) where.workspaceId = workspaceId;
     const ent = await this.repo.findOne({ where });
@@ -76,7 +96,12 @@ export class TemplatesService {
     return ent;
   }
 
-  async update(id: string, dto: Partial<ContentTemplates>, tenantId?: string, workspaceId?: string) {
+  async update(
+    id: string,
+    dto: Partial<ContentTemplates>,
+    tenantId?: string,
+    workspaceId?: string,
+  ) {
     await this.findOne(id, tenantId, workspaceId);
     await this.repo.update(id, dto as any);
     return this.findOne(id, tenantId, workspaceId);

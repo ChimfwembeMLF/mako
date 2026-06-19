@@ -3,7 +3,9 @@ import type { CorsOptions } from '@nestjs/common/interfaces/external/cors-option
 export const MAKO_CORS_BUILD = 'cors-v14';
 
 /** LiteSpeed sometimes merges duplicate Origin headers into one comma-separated value. */
-export function normalizeRequestOrigin(origin: string | undefined): string | undefined {
+export function normalizeRequestOrigin(
+  origin: string | undefined,
+): string | undefined {
   if (!origin) return undefined;
   const first = origin.split(',')[0]?.trim();
   return first || undefined;
@@ -21,7 +23,9 @@ export function resolveCorsOrigins(): string[] {
   if (isCorsAllowAll()) return ['*'];
 
   const fromEnv = process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+    ? process.env.CORS_ORIGIN.split(',')
+        .map((o) => o.trim())
+        .filter(Boolean)
     : [];
   const frontend = process.env.FRONTEND_URL?.trim();
   const port = process.env.PORT || '4000';
@@ -30,12 +34,16 @@ export function resolveCorsOrigins(): string[] {
     `http://127.0.0.1:${port}`,
     'http://localhost:5173',
   ];
-  return [...new Set([...fromEnv, ...(frontend ? [frontend] : []), ...defaults])];
+  return [
+    ...new Set([...fromEnv, ...(frontend ? [frontend] : []), ...defaults]),
+  ];
 }
 
 /** Treat 0.0.0.0 as localhost — browsers may send either when binding on 0.0.0.0. */
 export function equivalentLocalOrigins(origin: string): string[] {
-  const match = origin.match(/^https?:\/\/(0\.0\.0\.0|127\.0\.0\.1|localhost)(:\d+)?$/i);
+  const match = origin.match(
+    /^https?:\/\/(0\.0\.0\.0|127\.0\.0\.1|localhost)(:\d+)?$/i,
+  );
   if (!match) return [origin];
   const port = match[2] ?? '';
   return [
@@ -54,7 +62,12 @@ export function buildNestCorsOptions(): CorsOptions | false {
 
   const credentials = process.env.CORS_CREDENTIALS === 'true';
   const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'];
-  const allowedHeaders = ['Content-Type', 'Authorization', 'X-Visitor-Id', 'Accept'];
+  const allowedHeaders = [
+    'Content-Type',
+    'Authorization',
+    'X-Visitor-Id',
+    'Accept',
+  ];
 
   if (isCorsAllowAll()) {
     return {
@@ -68,11 +81,23 @@ export function buildNestCorsOptions(): CorsOptions | false {
 
   const origins = resolveCorsOrigins();
   if (origins.length === 0) {
-    return { origin: true, credentials: false, methods, allowedHeaders, optionsSuccessStatus: 204 };
+    return {
+      origin: true,
+      credentials: false,
+      methods,
+      allowedHeaders,
+      optionsSuccessStatus: 204,
+    };
   }
 
   if (origins.length === 1) {
-    return { origin: origins[0], credentials, methods, allowedHeaders, optionsSuccessStatus: 204 };
+    return {
+      origin: origins[0],
+      credentials,
+      methods,
+      allowedHeaders,
+      optionsSuccessStatus: 204,
+    };
   }
 
   return {
@@ -82,7 +107,9 @@ export function buildNestCorsOptions(): CorsOptions | false {
     ) => {
       const normalized = normalizeRequestOrigin(origin);
       if (!normalized) return callback(null, true);
-      const allowed = origins.some((o) => equivalentLocalOrigins(normalized).includes(o));
+      const allowed = origins.some((o) =>
+        equivalentLocalOrigins(normalized).includes(o),
+      );
       if (allowed) return callback(null, normalized);
       console.warn('[cors] blocked origin:', origin);
       return callback(null, false);

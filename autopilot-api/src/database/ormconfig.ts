@@ -15,7 +15,10 @@ export function typeOrmConfigFactory(
     port: parseInt(configService.get<string>('DB_PORT') || '5432', 10),
     username: configService.get<string>('DB_USERNAME') || 'thecodefather',
     password: configService.get<string>('DB_PASSWORD') || '',
-    database: resolveDatabaseName(configService, isProduction ? 'autopilot_prod' : 'autopilot_dev'),
+    database: resolveDatabaseName(
+      configService,
+      isProduction ? 'autopilot_prod' : 'autopilot_dev',
+    ),
     entities: [__dirname + '/../**/*.entity.{js,ts}'],
     synchronize: configService.get<string>('DB_SYNCHRONIZE') === 'true',
     cache: false,

@@ -41,67 +41,67 @@ export class FacebookAuthService {
 
   async authenticate(token: string): Promise<UserEntity> {
     this.logger.log('Facebook authentication started');
-  
+
     try {
       const userData = await this.getUserData(token);
-  
+
       const provider = 'facebook';
       const providerId = userData.id;
-  
+
       if (!providerId) {
         throw new BadRequestException('Invalid Facebook response');
       }
-  
+
       this.logger.debug('Facebook Graph response', {
         providerId,
         hasEmail: !!userData.email,
       });
-  
+
       // 1. FIND USER BY PROVIDER ID (PRIMARY IDENTITY RULE)
       let user = await this.userService.findOne({
         provider,
         providerId,
       });
-  
+
       if (user) {
         this.logger.log('Existing Facebook user found', {
           userId: user.id,
           providerId,
         });
-  
+
         return user;
       }
-  
+
       // 2. CREATE USER IF NOT FOUND
       this.logger.log('Creating new Facebook user', {
         providerId,
       });
-  
+
       const newUser: SocialAuthRegisterDto = {
         provider,
         providerId,
-  
+
         firstName: userData.first_name ?? undefined,
         lastName: userData.last_name ?? undefined,
         email: userData.email ?? undefined,
         avatar: userData.picture?.data?.url ?? undefined,
-  
+
         isRegisteredWithFacebook: true,
       };
-  
+
       user = await this.userService.createSociallAuthUser(newUser);
-  
+
       this.logger.log('Facebook user created', {
         userId: user.id,
         providerId,
       });
-  
+
       return user;
     } catch (error) {
       this.logger.error('Facebook authentication failed', {
         error: error instanceof Error ? error.message : error,
       });
-  
+
       throw new BadRequestException('Facebook authentication failed');
     }
   }
@@ -121,7 +121,9 @@ export class FacebookAuthService {
     return data;
   }
 
-  async exchangeShortLivedToken(accessToken: string): Promise<{ accessToken: string; expiresAt?: Date }> {
+  async exchangeShortLivedToken(
+    accessToken: string,
+  ): Promise<{ accessToken: string; expiresAt?: Date }> {
     const params = new URLSearchParams({
       grant_type: 'fb_exchange_token',
       client_id: this.config.getOrThrow('FACEBOOK_APP_ID'),
@@ -139,7 +141,9 @@ export class FacebookAuthService {
 
     if (data.error) {
       this.logger.error('Facebook token exchange error', data.error);
-      throw new BadRequestException(`Facebook token exchange error: ${data.error.message}`);
+      throw new BadRequestException(
+        `Facebook token exchange error: ${data.error.message}`,
+      );
     }
 
     if (!data.access_token) {
@@ -171,7 +175,9 @@ export class FacebookAuthService {
 
     if (data.error) {
       this.logger.error('Facebook code exchange error', data.error);
-      throw new BadRequestException(`Facebook code exchange error: ${data.error.message}`);
+      throw new BadRequestException(
+        `Facebook code exchange error: ${data.error.message}`,
+      );
     }
 
     if (!data.access_token) {
@@ -185,14 +191,15 @@ export class FacebookAuthService {
     const { data } = await axios.get<{
       data?: any[];
       error?: { message: string };
-    }>(
-      `https://graph.facebook.com/v19.0/me/accounts`,
-      { params: { access_token: token } },
-    );
+    }>(`https://graph.facebook.com/v19.0/me/accounts`, {
+      params: { access_token: token },
+    });
 
     if (data.error) {
       this.logger.error('Facebook accounts error', data.error);
-      throw new BadRequestException(`Facebook accounts error: ${data.error.message}`);
+      throw new BadRequestException(
+        `Facebook accounts error: ${data.error.message}`,
+      );
     }
 
     return data.data ?? [];

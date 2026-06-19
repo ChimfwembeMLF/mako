@@ -23,7 +23,10 @@ export class WorkspacesService {
 
   async findAll(tenantId?: string): Promise<Workspaces[]> {
     if (tenantId) {
-      return this.repo.find({ where: { tenantId }, order: { created_at: 'ASC' } });
+      return this.repo.find({
+        where: { tenantId },
+        order: { created_at: 'ASC' },
+      });
     }
     return this.repo.find();
   }

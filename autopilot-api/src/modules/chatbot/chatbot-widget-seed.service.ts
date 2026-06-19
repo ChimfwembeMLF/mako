@@ -22,7 +22,10 @@ export class ChatbotWidgetSeedService {
     const config = await this.chatbotConfig.getOrCreate(tenantId);
 
     if (!config.widgetEnabled || !config.isActive) {
-      await this.chatbotConfig.update(tenantId, { widgetEnabled: true, isActive: true });
+      await this.chatbotConfig.update(tenantId, {
+        widgetEnabled: true,
+        isActive: true,
+      });
     }
 
     const fixedKey =
@@ -46,7 +49,9 @@ export class ChatbotWidgetSeedService {
     const keys = await this.apiKeys.listKeys(tenantId);
     const active = keys.filter((k) => !k.revokedAt);
     if (active.length) {
-      this.logger.log(`Widget already has ${active.length} active key(s) for tenant ${tenantId}`);
+      this.logger.log(
+        `Widget already has ${active.length} active key(s) for tenant ${tenantId}`,
+      );
       return { action: 'skipped' };
     }
 

@@ -13,7 +13,9 @@ export class WidgetApiKeyGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<{
       headers: { authorization?: string };
-      widgetAuth?: Awaited<ReturnType<ChatApiKeyService['validateBearerToken']>>;
+      widgetAuth?: Awaited<
+        ReturnType<ChatApiKeyService['validateBearerToken']>
+      >;
     }>();
 
     const auth = req.headers.authorization;
