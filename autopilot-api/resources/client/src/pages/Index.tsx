@@ -91,18 +91,18 @@ const Dashboard = () => {
     : modules.filter((mod) => !mod.permission || can(mod.permission));
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl gradient-primary p-8 shadow-glow">
+      <div className="relative overflow-hidden rounded-2xl gradient-primary p-6 sm:p-8 shadow-glow">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="h-5 w-5 text-primary-foreground" />
-            <span className="text-primary-foreground/80 text-sm font-medium uppercase tracking-wider">
+            <span className="text-primary-foreground/80 text-xs sm:text-sm font-medium uppercase tracking-wider">
               AI Marketing Mako
             </span>
           </div>
-          <h1 className="text-3xl font-bold font-display text-primary-foreground mb-2">
-            Welcome to Mako Co-pilot
+          <h1 className="text-2xl sm:text-3xl font-bold font-display text-primary-foreground mb-2">
+            Welcome to Mako 
           </h1>
           <p className="text-primary-foreground/70 max-w-lg">
             Your autonomous marketing engine. Set up your Brand Brain first, then let AI handle content, publishing, leads, and optimization.

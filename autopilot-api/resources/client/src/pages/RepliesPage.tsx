@@ -25,6 +25,7 @@ import { PermissionGate } from '@/components/PermissionGate';
 import { PostCommentInbox } from '@/components/replies/PostCommentInbox';
 import { WhatsAppInbox } from '@/components/replies/WhatsAppInbox';
 import { UnifiedSocialInbox } from '@/components/replies/UnifiedSocialInbox';
+import { PageContainer } from '@/components/layout/PageContainer';
 import {
   MessageSquareReply,
   Bot,
@@ -287,38 +288,38 @@ export default function RepliesPage() {
 
   return (
     <PermissionGate require={P.replies.view} fallback={true}>
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="flex items-center gap-3">
-            <MessageSquareReply className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-semibold">Replies</h1>
-              <p className="text-sm text-muted-foreground">
+      <PageContainer size="5xl">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3 min-w-0">
+            <MessageSquareReply className="h-6 w-6 text-primary shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <h1 className="text-xl sm:text-2xl font-semibold">Replies</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Unified inbox for all platforms — comments, DMs, attachments, and auto-replies.
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={() => void fetchComments()} disabled={fetching}>
+          <Button variant="outline" size="sm" className="w-full sm:w-auto shrink-0" onClick={() => void fetchComments()} disabled={fetching}>
             {fetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             {fetching ? 'Syncing…' : 'Pull comments'}
           </Button>
         </div>
 
-        <Tabs defaultValue="inbox">
-          <TabsList>
-            <TabsTrigger value="inbox">
+        <Tabs defaultValue="inbox" className="min-w-0">
+          <TabsList className="h-auto flex-wrap justify-start gap-1 p-1">
+            <TabsTrigger value="inbox" className="text-xs sm:text-sm">
               <Inbox className="h-3.5 w-3.5 mr-1.5" />
               All inbox
             </TabsTrigger>
-            <TabsTrigger value="comments">
-              Post comments{pendingCount > 0 ? ` (${pendingCount})` : ''}
+            <TabsTrigger value="comments" className="text-xs sm:text-sm">
+              Comments{pendingCount > 0 ? ` (${pendingCount})` : ''}
             </TabsTrigger>
-            <TabsTrigger value="messages">
+            <TabsTrigger value="messages" className="text-xs sm:text-sm">
               <MessagesSquare className="h-3.5 w-3.5 mr-1.5" />
               WhatsApp
             </TabsTrigger>
-            <TabsTrigger value="rules">
-              Auto-reply rules{activeRules > 0 ? ` (${activeRules} on)` : ''}
+            <TabsTrigger value="rules" className="text-xs sm:text-sm">
+              Rules{activeRules > 0 ? ` (${activeRules} on)` : ''}
             </TabsTrigger>
           </TabsList>
 
@@ -356,9 +357,9 @@ export default function RepliesPage() {
             </p>
 
             <PermissionGate require={P.replies.manageRules}>
-              <div className="rounded-lg border bg-card p-4 space-y-4">
+              <div className="rounded-lg border bg-card p-4 sm:p-5 space-y-4">
                 <p className="font-medium text-sm">{editing?.id ? 'Edit rule' : 'New auto-reply rule'}</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <Label>Rule name</Label>
                     <Input
@@ -395,9 +396,9 @@ export default function RepliesPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1 sm:col-span-2">
                     <Label>Keywords (any match)</Label>
-                    <div className="flex gap-2">
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <Input
                         value={keyInput}
                         onChange={(e) => setKeyInput(e.target.value)}
@@ -409,7 +410,7 @@ export default function RepliesPage() {
                           }
                         }}
                       />
-                      <Button size="sm" onClick={addKeyword} type="button">
+                      <Button size="sm" onClick={addKeyword} type="button" className="shrink-0 w-full sm:w-auto">
                         <Plus className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -433,7 +434,7 @@ export default function RepliesPage() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <Label>Response template (when AI is off)</Label>
                     <div className="flex items-center gap-2 text-sm">
                       <span className="text-muted-foreground">AI generate</span>
@@ -453,7 +454,7 @@ export default function RepliesPage() {
                     className="resize-none text-sm"
                   />
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     size="sm"
                     onClick={() => void saveRule()}
@@ -482,7 +483,7 @@ export default function RepliesPage() {
                 <div className="py-8 text-center text-muted-foreground text-sm">No rules yet.</div>
               )}
               {rules.map((rule) => (
-                <div key={rule.id} className="rounded-lg border bg-card p-4 flex items-center justify-between gap-4">
+                <div key={rule.id} className="rounded-lg border bg-card p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-sm font-medium">{rule.name}</p>
@@ -508,7 +509,7 @@ export default function RepliesPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
                     <Switch
                       checked={rule.is_active}
                       disabled={!can(P.replies.manageRules)}
@@ -543,7 +544,7 @@ export default function RepliesPage() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </PageContainer>
     </PermissionGate>
   );
 }

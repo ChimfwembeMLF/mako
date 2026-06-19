@@ -12,7 +12,7 @@ export type ThemePalette = {
 export const THEME_PALETTES: ThemePalette[] = [
   {
     id: 'mako',
-    name: 'Mako Market Co-pilot',
+    name: 'Mako Market ',
     description: 'Logo palette — golden orange, vibrant purple, teal accent',
     theme: {
       primary: MAKO_THEME.primary,
@@ -23,8 +23,8 @@ export const THEME_PALETTES: ThemePalette[] = [
   },
   {
     id: 'autopilot',
-    name: 'Mako Co-pilot Orange',
-    description: 'Legacy alias — same as Mako Market Co-pilot',
+    name: 'Mako  Orange',
+    description: 'Legacy alias — same as Mako Market ',
     theme: {
       primary: MAKO_THEME.primary,
       secondary: MAKO_THEME.secondary,

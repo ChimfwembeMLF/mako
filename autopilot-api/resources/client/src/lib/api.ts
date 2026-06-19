@@ -1283,7 +1283,7 @@ export const paymentsApi = {
         const blob = await response.blob();
         const disposition = response.headers.get('Content-Disposition') ?? '';
         const nameMatch = disposition.match(/filename="([^"]+)"/);
-        const filename = nameMatch?.[1] ?? `Mako Co-pilot-Invoice-${depositId.slice(0, 8)}.pdf`;
+        const filename = nameMatch?.[1] ?? `Mako -Invoice-${depositId.slice(0, 8)}.pdf`;
         const url = URL.createObjectURL(blob);
         if (view) {
           window.open(url, '_blank', 'noopener,noreferrer');

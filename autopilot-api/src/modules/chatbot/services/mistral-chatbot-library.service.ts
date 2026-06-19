@@ -66,7 +66,7 @@ export class MistralChatbotLibraryService {
 
     if (!libraryId) {
       const library = await client.beta.libraries.create({
-        name: `Mako Co-pilot · ${config.name} (${config.tenantId.slice(0, 8)})`,
+        name: `Mako  · ${config.name} (${config.tenantId.slice(0, 8)})`,
         description: `Knowledge library for tenant ${config.tenantId}`,
       });
       libraryId = library.id;
@@ -79,7 +79,7 @@ export class MistralChatbotLibraryService {
     const agentPayload = {
       model: config.model || this.config.get('MISTRAL_DEFAULT_MODEL') || 'mistral-small-latest',
       name: config.name || 'Website Assistant',
-      description: `Mako Co-pilot chatbot agent for tenant ${config.tenantId}`,
+      description: `Mako  chatbot agent for tenant ${config.tenantId}`,
       instructions,
       tools: [{ type: 'document_library' as const, libraryIds: [libraryId] }],
       completionArgs: {

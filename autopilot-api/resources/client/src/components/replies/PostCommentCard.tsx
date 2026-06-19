@@ -43,8 +43,8 @@ export function PostCommentCard({
   const [replyingToId, setReplyingToId] = useState<string | null>(null);
 
   return (
-    <Card className="overflow-hidden border-border/80 bg-card shadow-sm">
-      <div className="p-4 space-y-3">
+    <Card className="overflow-hidden border-border/80 bg-card shadow-sm min-w-0">
+      <div className="p-3 sm:p-4 space-y-3 min-w-0">
         <PlatformPreview
           mode="published"
           platform={post.platform}

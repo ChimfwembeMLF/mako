@@ -47,7 +47,7 @@ export class YoutubePublishingService {
       const auth = this.oauthClient(account);
       const youtube = google.youtube({ version: 'v3', auth });
 
-      const title = (content.title || 'Mako Co-pilot upload').trim().slice(0, 100);
+      const title = (content.title || 'Mako  upload').trim().slice(0, 100);
       const description = content.content.replace(/<[^>]*>/g, '').trim().slice(0, 5000);
 
       const videoStream = await this.streamFromUrl(video.media_url);

@@ -110,7 +110,7 @@ export default function RolesPage() {
 
   return (
     <PermissionGate requireAny={[P.admin.roles, P.team.assignRoles]} fallback={true}>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-6 w-6 text-primary" />
           <div>
@@ -119,7 +119,7 @@ export default function RolesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-[280px_1fr] gap-6">
+        <div className="grid md:grid-cols-[minmax(200px,280px)_1fr] gap-4 md:gap-6">
           <div className="space-y-3">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Roles</p>
             {roles.map((role) => (

@@ -497,16 +497,16 @@ export default function ContentDetailPage() {
   const pendingTotal = publishedPostGroups.reduce((s, p) => s + p.pendingCount, 0);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="space-y-1">
+    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-12 min-w-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="space-y-1 min-w-0">
           <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 text-muted-foreground">
             <Link to="/content">
               <ArrowLeft className="h-4 w-4 mr-1" />
               Content
             </Link>
           </Button>
-          <h1 className="text-2xl font-bold tracking-tight">{item.title || 'Untitled content'}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{item.title || 'Untitled content'}</h1>
           <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
             {item.status && (
               <Badge variant="secondary" className="capitalize">
@@ -525,7 +525,7 @@ export default function ContentDetailPage() {
             )}
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap w-full sm:w-auto">
           {failedPlatforms.length > 0 && (
             <Button
               type="button"

@@ -261,7 +261,7 @@ function BackofficeContent() {
   const { company, stats, chatbot, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, env } = overview;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-8">
+    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       <TenantDetailSheet tenantId={selectedTenantId} open={sheetOpen} onOpenChange={setSheetOpen} />
 
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -294,7 +294,7 @@ function BackofficeContent() {
           <TabsTrigger value="chatbot">Chatbot ({stats.chatSessions})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="health">Platform Health</TabsTrigger>
-          <TabsTrigger value="company">About Mako Co-pilot</TabsTrigger>
+          <TabsTrigger value="company">About Mako </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6 mt-6">
@@ -684,7 +684,7 @@ function BackofficeContent() {
 
               <div className="rounded-lg border bg-muted/30 p-4 flex items-start gap-3">
                 <Zap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <p><strong className="text-foreground">{company.tagline}</strong> — Mako Co-pilot is built for African agribusiness and growing brands that need enterprise marketing automation without enterprise cost. See <code className="text-xs bg-muted px-1 rounded">autopilot-api/docs/DEPLOY.md</code> for production deployment.</p>
+                <p><strong className="text-foreground">{company.tagline}</strong> — Mako  is built for African agribusiness and growing brands that need enterprise marketing automation without enterprise cost. See <code className="text-xs bg-muted px-1 rounded">autopilot-api/docs/DEPLOY.md</code> for production deployment.</p>
               </div>
             </CardContent>
           </Card>

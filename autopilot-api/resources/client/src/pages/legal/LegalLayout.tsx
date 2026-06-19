@@ -88,7 +88,7 @@ export function LegalLayout({
           <Link to="/" className="flex items-center gap-2 group">
             <Logo className="!h-24 w-24" />
             {/* <span className="hidden sm:inline text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-              Mako Co-pilot
+              Mako 
             </span> */}
           </Link>
           <nav className="flex items-center gap-1 rounded-full border bg-card/80 p-1 text-xs sm:text-sm">
@@ -144,7 +144,7 @@ export function LegalLayout({
         </article>
 
         <footer className="mt-12 flex flex-col items-center gap-4 border-t pt-8 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
-          <p>© {new Date().getFullYear()} Mako Co-pilot · Tekrem Innovation Solutions</p>
+          <p>© {new Date().getFullYear()} Mako  · Tekrem Innovation Solutions</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>

@@ -88,7 +88,7 @@ const platforms: {
     icon: Twitter,
     color: "text-foreground",
     bgColor: "bg-muted",
-    description: "Tweet directly from Mako Co-pilot",
+    description: "Tweet directly from Mako ",
     fields: [
       { key: "api_key", label: "API Key (Consumer Key)", placeholder: "Consumer Key from developer portal", type: "password" },
       { key: "api_secret", label: "API Secret (Consumer Secret)", placeholder: "Consumer Secret from developer portal", type: "password" },
@@ -553,7 +553,7 @@ const PublisherConnect = () => {
   const activePlatform = platforms.find((p) => p.id === connectDialog);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-secondary">
           <Link2 className="h-5 w-5 text-secondary-foreground" />
@@ -588,7 +588,7 @@ const PublisherConnect = () => {
           const isConnecting = connectingOAuth === platform.id;
           const whatsappNotes =
             platform.id === "whatsapp" && whatsappPlatformMode
-              ? `Included with Mako Co-pilot${whatsappPlatformLabel ? ` (${whatsappPlatformLabel})` : ""} — click Enable, no Meta setup required.`
+              ? `Included with Mako ${whatsappPlatformLabel ? ` (${whatsappPlatformLabel})` : ""} — click Enable, no Meta setup required.`
               : cap?.notes ?? platform.description;
 
           return (

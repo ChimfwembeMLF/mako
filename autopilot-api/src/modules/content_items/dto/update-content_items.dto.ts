@@ -6,6 +6,8 @@ import {
   IsArray,
   IsObject,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { toOptionalDate, toOptionalTimeString } from '../../../common/dto/date-transform.util';
 
 export class ContentItemsUpdateDto {
   @IsOptional()
@@ -54,14 +56,17 @@ export class ContentItemsUpdateDto {
   platformPayloads?: Record<string, unknown>;
 
   @IsOptional()
+  @Transform(({ value }) => toOptionalDate(value))
   @IsDate()
   scheduledDate?: Date;
 
   @IsOptional()
-  @IsDate()
-  scheduledTime?: Date;
+  @Transform(({ value }) => toOptionalTimeString(value))
+  @IsString()
+  scheduledTime?: string;
 
   @IsOptional()
+  @Transform(({ value }) => toOptionalDate(value))
   @IsDate()
   publishedAt?: Date;
 
@@ -74,6 +79,7 @@ export class ContentItemsUpdateDto {
   publishFailedReason?: string;
 
   @IsOptional()
+  @Transform(({ value }) => toOptionalDate(value))
   @IsDate()
   deletedAt?: Date;
 }

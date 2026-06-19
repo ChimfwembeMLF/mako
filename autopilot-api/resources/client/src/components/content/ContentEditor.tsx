@@ -240,9 +240,9 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
 
   return (
     <>
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b bg-muted/30">
-          <div>
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden min-w-0">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-4 border-b bg-muted/30">
+          <div className="min-w-0">
             <h2 className="font-display text-base font-semibold">
               {item?.id ? 'Edit draft' : 'Compose'}
             </h2>
@@ -251,14 +251,14 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
             </p>
           </div>
           {item?.id && onReset && (
-            <Button type="button" variant="outline" size="sm" onClick={onReset} className="shrink-0">
+            <Button type="button" variant="outline" size="sm" onClick={onReset} className="shrink-0 w-full sm:w-auto">
               <FilePlus className="h-3.5 w-3.5 mr-1.5" />
               New draft
             </Button>
           )}
         </div>
 
-        <div className="p-5 space-y-5">
+        <div className="p-4 sm:p-5 space-y-5">
           <div className="grid gap-4 sm:grid-cols-2">
             {templates.length > 0 && (
               <div className="space-y-2 sm:col-span-2">
@@ -396,10 +396,10 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
           </Button>
         </div>
 
-        <div className="flex items-center justify-end gap-2 px-5 py-4 border-t bg-muted/20">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 px-4 sm:px-5 py-4 border-t bg-muted/20">
           <Button
             type="button"
-            className="gradient-primary text-primary-foreground border-0 min-w-[140px]"
+            className="gradient-primary text-primary-foreground border-0 w-full sm:w-auto sm:min-w-[140px]"
             onClick={handleSave}
             disabled={saving}
           >

@@ -242,7 +242,7 @@ export class SocialAccountsOAuthService {
     if (!phones.length) {
       throw new BadRequestException(
         'No WhatsApp Business phone numbers are linked to the Meta account you signed in with. ' +
-          'If you are the Mako Co-pilot operator, configure WHATSAPP_PLATFORM_PHONE_NUMBER_ID and WHATSAPP_PLATFORM_ACCESS_TOKEN on the server so clients can enable WhatsApp without Meta setup. ' +
+          'If you are the Mako  operator, configure WHATSAPP_PLATFORM_PHONE_NUMBER_ID and WHATSAPP_PLATFORM_ACCESS_TOKEN on the server so clients can enable WhatsApp without Meta setup. ' +
           'Otherwise your business needs a WhatsApp Business Account in Meta Business Settings (Business settings → WhatsApp accounts), then connect again.',
       );
     }

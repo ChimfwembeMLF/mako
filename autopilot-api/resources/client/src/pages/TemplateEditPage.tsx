@@ -142,7 +142,7 @@ export default function TemplateEditPage() {
 
   return (
     <PermissionGate require={requirePerm} fallback={true}>
-      <div className="max-w-2xl mx-auto p-6 space-y-6">
+      <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6 pb-8 min-w-0">
         <div className="flex items-center gap-3">
           <Link to="/templates">
             <Button variant="ghost" size="sm">

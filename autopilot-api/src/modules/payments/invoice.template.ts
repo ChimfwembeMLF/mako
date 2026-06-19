@@ -111,8 +111,8 @@ export function invoiceDataFromDeposit(
     phone: deposit.phone ?? deposit.msisdn,
     issuedAt: deposit.created_at.toISOString(),
     paidAt: isPaid ? deposit.updated_at.toISOString() : undefined,
-    companyName: 'Mako Co-pilot',
-    companyLegalName: process.env.COMPANY_LEGAL_NAME ?? 'AgriWide Mako Co-pilot',
+    companyName: 'Mako ',
+    companyLegalName: process.env.COMPANY_LEGAL_NAME ?? 'AgriWide Mako ',
     companyTagline: process.env.COMPANY_TAGLINE ?? 'INNOVATION · CREATIVITY · VALUE',
     companyAddress: process.env.COMPANY_ADDRESS ?? 'Lusaka, Zambia',
     companyTpin: process.env.COMPANY_TPIN ?? '',
@@ -121,7 +121,7 @@ export function invoiceDataFromDeposit(
     website: process.env.COMPANY_WEBSITE ?? 'https://agriwide.co',
     bankName: process.env.COMPANY_BANK_NAME ?? '',
     bankBranch: process.env.COMPANY_BANK_BRANCH ?? '',
-    bankAccountName: process.env.COMPANY_BANK_ACCOUNT_NAME ?? 'AgriWide Mako Co-pilot',
+    bankAccountName: process.env.COMPANY_BANK_ACCOUNT_NAME ?? 'AgriWide Mako ',
     bankAccountNumber: process.env.COMPANY_BANK_ACCOUNT_NUMBER ?? '',
     subTotal,
     vatAmount,
@@ -136,7 +136,7 @@ export function renderInvoiceHtml(data: InvoiceData): string {
     year: 'numeric',
   });
 
-  const description = `${data.planLabel} Plan — Mako Co-pilot subscription (AI marketing autopilot, monthly)`;
+  const description = `${data.planLabel} Plan — Mako  subscription (AI marketing autopilot, monthly)`;
   const paymentNote = data.network
     ? `${data.paymentMethod} · ${data.network}${data.phone ? ` · ${data.phone}` : ''}`
     : data.paymentMethod;

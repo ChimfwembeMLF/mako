@@ -476,7 +476,7 @@ const LeadAgent = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-secondary">
           <MessageSquare className="h-5 w-5 text-secondary-foreground" />
@@ -878,7 +878,7 @@ const LeadAgent = () => {
           <Card className="border-border/50">
             <CardContent className="p-4 space-y-3">
               <p className="font-medium text-sm flex items-center gap-2"><Phone className="h-4 w-4 text-green-500"/>Add WhatsApp Contact</p>
-              <div className="grid grid-cols-[1fr_1fr_auto] gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-2">
                 <div><input className="w-full h-9 rounded-md border bg-background px-3 text-sm" placeholder="+260 97X XXX XXX" value={waPhone} onChange={e=>setWaPhone(e.target.value)} /></div>
                 <div><input className="w-full h-9 rounded-md border bg-background px-3 text-sm" placeholder="Name (optional)" value={waName} onChange={e=>setWaName(e.target.value)} /></div>
                 <Button size="sm" onClick={addWaContact} disabled={waLoading||!waPhone.trim()} className="gap-1"><UserPlus className="h-3.5 w-3.5"/>Add</Button>

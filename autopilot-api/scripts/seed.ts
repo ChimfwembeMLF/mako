@@ -53,7 +53,7 @@ async function bootstrap() {
       email: 'superadmin@mako.test',
       password: 'password123',
       firstName: 'Mako',
-      lastName: 'Market Co-pilot',
+      lastName: 'Market ',
       role: RoleType.SUPER_ADMIN,
       isSystemAdmin: true,
     },

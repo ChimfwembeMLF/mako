@@ -218,13 +218,13 @@ const Analytics = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
+    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shrink-0">
           <BarChart3 className="h-5 w-5 text-primary-foreground" />
         </div>
-        <div>
-          <h1 className="text-2xl font-bold font-display">Analytics & Insights</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl sm:text-2xl font-bold font-display">Analytics & Insights</h1>
           <p className="text-muted-foreground text-sm">Real data from your content and leads</p>
         </div>
       </div>
@@ -281,8 +281,9 @@ const Analytics = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-display">Content Created (Last 14 Days)</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="min-w-0">
+                  <div className="w-full min-w-0">
+                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <BarChart data={weeklyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                       <XAxis dataKey="day" tick={{ fontSize: 10 }} />
@@ -292,6 +293,7 @@ const Analytics = () => {
                       <Bar dataKey="published" name="Published" fill={COLORS[3]} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
+                  </div>
                 </CardContent>
               </Card>
             )}
@@ -301,8 +303,8 @@ const Analytics = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-display">Content by Channel</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="flex items-center justify-center min-w-0">
+                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <PieChart>
                       <Pie data={channelBreakdown} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
                         {channelBreakdown.map((_, i) => (
@@ -321,8 +323,8 @@ const Analytics = () => {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-display">Content by Status</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center">
-                  <ResponsiveContainer width="100%" height={250}>
+                <CardContent className="flex items-center justify-center min-w-0">
+                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
                     <PieChart>
                       <Pie data={statusBreakdown} cx="50%" cy="50%" outerRadius={80} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
                         {statusBreakdown.map((_, i) => (

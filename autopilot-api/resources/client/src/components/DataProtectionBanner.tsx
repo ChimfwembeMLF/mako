@@ -59,7 +59,7 @@ export function DataProtectionBanner() {
           <div className="text-sm space-y-1">
             <p className="font-medium">Data protection</p>
             <p className="text-muted-foreground">
-              We use cookies and process account data to run Mako Co-pilot. See our{' '}
+              We use cookies and process account data to run Mako . See our{' '}
               <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
                 Privacy Policy
               </Link>{' '}

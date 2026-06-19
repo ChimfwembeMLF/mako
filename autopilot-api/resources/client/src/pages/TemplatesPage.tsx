@@ -124,7 +124,7 @@ export default function TemplatesPage() {
 
   return (
     <PermissionGate require={P.templates.view} fallback={true}>
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+      <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <LayoutTemplate className="h-6 w-6 text-primary" />

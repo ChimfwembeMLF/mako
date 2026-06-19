@@ -126,7 +126,7 @@ export default function UserPermissionsPage() {
 
   return (
     <PermissionGate require={P.team.assignPermissions} fallback={true}>
-      <div className="max-w-3xl mx-auto p-6 space-y-6">
+      <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6 pb-8 min-w-0">
         <div className="flex items-center gap-3">
           <Link to="/team"><Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button></Link>
           <UserCog className="h-5 w-5 text-primary" />

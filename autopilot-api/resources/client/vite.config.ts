@@ -14,12 +14,12 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     VitePWA({
-      // OAuth full-page redirects break when a service worker serves index.html for /api/*
-      disable: process.env.DISABLE_PWA === "true" || mode === "production",
-      registerType: "autoUpdate",
+      // Set DISABLE_PWA=true only for local builds that must skip the service worker.
+      disable: process.env.DISABLE_PWA === "true",
+      registerType: "prompt",
       // Don't fail production builds when a chunk exceeds Workbox precache limit
       showMaximumFileSizeToCacheInBytesWarning: true,
-      includeAssets: ["favicon.svg", "icons/*.png"],
+      includeAssets: ["favicon.ico", "favicon.svg", "mako-logo.png", "icons/*.png"],
       workbox: {
         // Precache large production bundles (default Workbox limit is 2 MiB)
         maximumFileSizeToCacheInBytes: WORKBOX_MAX_PRECACHE_BYTES,
@@ -50,11 +50,11 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       manifest: {
-        name: "Mako — AI Marketing",
+        name: "Mako Market Co-pilot",
         short_name: "Mako",
-        description: "AI-powered social media content generation and lead management.",
-        theme_color: "#6366f1",
-        background_color: "#0f0f12",
+        description: "AI-powered social media content generation, publishing, and lead management.",
+        theme_color: "#E5A024",
+        background_color: "#220044",
         display: "standalone",
         orientation: "portrait-primary",
         start_url: "/",
@@ -74,7 +74,14 @@ export default defineConfig(({ mode }) => ({
     }),
   ].filter(Boolean),
   resolve: {
-    alias: { "@": path.resolve(__dirname, "./src") },
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      // @react-three/drei/VideoTexture — ensure ESM entry exists (partial installs omit dist/*.mjs)
+      "hls.js": path.resolve(__dirname, "node_modules/hls.js/dist/hls.mjs"),
+    },
+  },
+  optimizeDeps: {
+    include: ["hls.js"],
   },
   build: {
     outDir: path.resolve(__dirname, "../../client/dist"),

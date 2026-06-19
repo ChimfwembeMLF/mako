@@ -94,7 +94,7 @@ export function PlatformPreviewCarousel({
       </div>
 
       {/* Preview carousel */}
-      <div className="relative px-10 mb-5">
+      <div className="relative px-8 sm:px-10 mb-5">
         <Carousel setApi={setApi} opts={{ align: 'start', loop: platforms.length > 1 }}>
           <CarouselContent>
             {platforms.map((p) => {
@@ -146,7 +146,7 @@ export function PlatformPreviewCarousel({
       </div>
 
       {platforms.length > 1 && (
-        <div className="flex justify-center gap-1.5 mb-5">
+        <div className="flex justify-center gap-1.5 mb-5 flex-wrap px-1">
           {platforms.map((p, i) => {
             const def = platformOf(p);
             const PIcon = def.icon;

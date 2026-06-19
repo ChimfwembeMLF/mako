@@ -1,6 +1,6 @@
 # AI Chatbot & RAG Integration Plan
 
-**Product:** Mako Co-pilot / Mako  
+**Product:** Mako  / Mako  
 **Status:** Implemented (Phases 0–3)  
 **Last updated:** 2026-06-09  
 
@@ -10,7 +10,7 @@ This document describes how to add tenant-aware, Brand Brain–powered chatbots 
 
 ## Executive summary
 
-Mako Co-pilot already has:
+Mako  already has:
 
 - **Brand Brain** (`brand_profiles`) — structured tenant knowledge (voice, FAQs, offers, guardrails)
 - **Document parsing** — PDF/DOCX/TXT → one-shot Mistral extraction into Brand Brain fields (not persisted as a knowledge base)

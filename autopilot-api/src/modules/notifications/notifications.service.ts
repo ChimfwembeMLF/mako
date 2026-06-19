@@ -743,7 +743,7 @@ export class NotificationsService {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user?.email) return;
 
-    const text = `${body}\n\n— Mako Co-pilot`;
+    const text = `${body}\n\n— Mako `;
     if (this.queueDispatch?.isEnabled()) {
       await this.queueDispatch.enqueueEmail({
         to: user.email,

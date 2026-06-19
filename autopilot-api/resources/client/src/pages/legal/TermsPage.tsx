@@ -14,7 +14,7 @@ export default function TermsPage() {
   return (
     <LegalLayout
       title="Terms of Service"
-      description="The rules for using Mako Co-pilot — our AI-powered content, publishing, and inbox automation platform."
+      description="The rules for using Mako  — our AI-powered content, publishing, and inbox automation platform."
       icon={FileText}
     >
       <LegalCallout variant="accent">

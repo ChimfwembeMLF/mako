@@ -23,6 +23,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { PostCommentCard } from './PostCommentCard';
 import { MessageAttachments } from './MessageAttachments';
 import { MessageReactions } from './MessageReactions';
+import { InboxSplitLayout } from '@/components/layout/InboxSplitLayout';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 type ChannelFilter = 'all' | 'post_comment' | 'dm';
@@ -32,6 +34,7 @@ export function UnifiedSocialInbox() {
   const { activeWorkspace, workspaceVersion } = useWorkspace();
   const { can } = usePermissions();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [filter, setFilter] = useState<ChannelFilter>('all');
   const [conversations, setConversations] = useState<UnifiedConversation[]>([]);
@@ -54,13 +57,17 @@ export function UnifiedSocialInbox() {
         activeWorkspace,
       );
       setConversations(rows);
-      setSelectedId((prev) => prev ?? rows[0]?.id ?? null);
+      setSelectedId((prev) => {
+        if (prev && rows.some((r) => r.id === prev)) return prev;
+        if (isMobile) return null;
+        return rows[0]?.id ?? null;
+      });
     } catch {
       setConversations([]);
     } finally {
       setLoading(false);
     }
-  }, [tenant, activeWorkspace, filter]);
+  }, [tenant, activeWorkspace, filter, isMobile]);
 
   const selected = useMemo(
     () => conversations.find((c) => c.id === selectedId) ?? null,
@@ -188,22 +195,22 @@ export function UnifiedSocialInbox() {
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex gap-1">
+    <div className="space-y-3 min-w-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap gap-1">
           {(['all', 'post_comment', 'dm'] as ChannelFilter[]).map((f) => (
             <Button
               key={f}
               size="sm"
               variant={filter === f ? 'default' : 'outline'}
-              className="h-7 text-xs capitalize"
+              className="h-7 text-xs capitalize flex-1 sm:flex-none min-w-0"
               onClick={() => setFilter(f)}
             >
-              {f === 'all' ? 'All' : f === 'post_comment' ? 'Post comments' : 'Direct messages'}
+              {f === 'all' ? 'All' : f === 'post_comment' ? 'Comments' : 'Messages'}
             </Button>
           ))}
         </div>
-        <Button size="sm" variant="outline" onClick={() => void syncAll()} disabled={syncing}>
+        <Button size="sm" variant="outline" className="w-full sm:w-auto" onClick={() => void syncAll()} disabled={syncing}>
           {syncing ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
           Sync all
         </Button>
@@ -215,13 +222,15 @@ export function UnifiedSocialInbox() {
           <p>No conversations yet. Connect platforms and sync your inbox.</p>
         </div>
       ) : (
-        <div className="grid md:grid-cols-[280px_1fr] gap-4 min-h-[520px]">
-          <Card className="overflow-hidden">
-            <CardContent className="p-0">
+        <InboxSplitLayout
+          hasSelection={Boolean(selected)}
+          onBack={() => setSelectedId(null)}
+          list={
+            <>
               <div className="p-3 border-b text-xs font-medium text-muted-foreground">
                 {conversations.length} conversation{conversations.length === 1 ? '' : 's'}
               </div>
-              <div className="max-h-[560px] overflow-y-auto">
+              <div className="max-h-[min(60vh,560px)] md:max-h-[560px] overflow-y-auto">
                 {conversations.map((c) => {
                   const plat = platformOf(c.platform);
                   const Icon = plat.icon;
@@ -236,7 +245,7 @@ export function UnifiedSocialInbox() {
                         selectedId === c.id && 'bg-primary/5',
                       )}
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
                         <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: plat.color }} />
                         <span className="text-sm font-medium truncate flex-1">{c.title}</span>
                         {badge > 0 && (
@@ -255,12 +264,11 @@ export function UnifiedSocialInbox() {
                   );
                 })}
               </div>
-            </CardContent>
-          </Card>
-
-          <div className="min-w-0">
-            {!selected ? (
-              <Card className="h-full flex items-center justify-center text-muted-foreground text-sm">
+            </>
+          }
+          detail={
+            !selected ? (
+              <Card className="h-full flex items-center justify-center text-muted-foreground text-sm min-h-[280px]">
                 Select a conversation
               </Card>
             ) : selected.channel === 'post_comment' && postGroup ? (
@@ -291,18 +299,18 @@ export function UnifiedSocialInbox() {
                 fullMedia
               />
             ) : (
-              <Card className="flex flex-col overflow-hidden min-h-[520px]">
-                <CardContent className="p-0 flex flex-col flex-1">
-                  <div className="p-3 border-b flex items-center gap-2">
-                    <Badge variant="outline" className="text-[10px] capitalize">
+              <Card className="flex flex-col overflow-hidden flex-1 min-h-0">
+                <CardContent className="p-0 flex flex-col flex-1 min-h-0">
+                  <div className="p-3 border-b flex items-center gap-2 min-w-0">
+                    <Badge variant="outline" className="text-[10px] capitalize shrink-0">
                       {selected.platform}
                     </Badge>
-                    <span className="text-sm font-medium">
+                    <span className="text-sm font-medium truncate">
                       {selected.participantName ?? selected.title}
                     </span>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[200px]">
                     {dmMessages.map((m) => (
                       <div
                         key={m.id}
@@ -310,7 +318,7 @@ export function UnifiedSocialInbox() {
                       >
                         <div
                           className={cn(
-                            'max-w-[85%] rounded-2xl px-3 py-2 text-sm',
+                            'max-w-[92%] sm:max-w-[85%] rounded-2xl px-3 py-2 text-sm',
                             m.direction === 'outbound'
                               ? m.status === 'auto_reply'
                                 ? 'bg-primary/15 border border-primary/25 rounded-br-sm'
@@ -321,7 +329,7 @@ export function UnifiedSocialInbox() {
                           <p className="whitespace-pre-wrap break-words">{m.body}</p>
                           <MessageAttachments items={m.attachments ?? []} />
                           <MessageReactions items={m.reactions ?? []} />
-                          <div className="flex items-center gap-1.5 mt-1">
+                          <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <span className="text-[10px] opacity-70">
                               {formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}
                             </span>
@@ -347,6 +355,7 @@ export function UnifiedSocialInbox() {
                       />
                       <Button
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => void sendDmReply()}
                         disabled={sending === 'dm' || !replyText.trim()}
                       >
@@ -361,9 +370,9 @@ export function UnifiedSocialInbox() {
                   )}
                 </CardContent>
               </Card>
-            )}
-          </div>
-        </div>
+            )
+          }
+        />
       )}
     </div>
   );

@@ -333,7 +333,7 @@ const BrandBrainInner = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 md:p-6">
+    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">

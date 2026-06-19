@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:prod": "DISABLE_PWA=true VITE_API_BASE_URL= vite build && node ../../scripts/strip-client-dist-pwa.js",
+    "build:prod": "VITE_API_BASE_URL= vite build",
+    "build:no-pwa": "DISABLE_PWA=true VITE_API_BASE_URL= vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -82,6 +83,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "@swc/core": "^1.13.2",
     "@tailwindcss/line-clamp": "^0.4.4",
     "@tailwindcss/typography": "^0.5.16",
     "@testing-library/jest-dom": "^6.6.0",
@@ -96,6 +98,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^15.15.0",
+    "hls.js": "1.5.20",
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
@@ -105,5 +108,8 @@
     "vite": "^5.4.19",
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "hls.js": "1.5.20"
   }
 }

@@ -59,6 +59,8 @@ const DataDeletionPage = lazy(() => import("./pages/legal/DataDeletionPage"));
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
 import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
 import { DataProtectionBanner } from "@/components/DataProtectionBanner";
+import { OfflineGate } from "@/components/OfflineGate";
+import { PwaUpdatePrompt } from "@/components/PwaUpdatePrompt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -125,6 +127,8 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              <OfflineGate>
+              <PwaUpdatePrompt />
               <ChatbotWidgetLoader />
               <DataProtectionBanner />
               <Routes>
@@ -199,6 +203,7 @@ const App = () => (
 
                 <Route path="*" element={<LazyPage><NotFound /></LazyPage>} />
               </Routes>
+              </OfflineGate>
             </BrowserRouter>
           </ErrorBoundary>
             </WorkspaceProvider>

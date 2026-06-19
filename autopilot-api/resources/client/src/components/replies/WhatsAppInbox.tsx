@@ -20,6 +20,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { MessageAttachments } from './MessageAttachments';
 import { MessageReactions } from './MessageReactions';
+import { InboxSplitLayout } from '@/components/layout/InboxSplitLayout';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 
 type Conversation = {
@@ -45,6 +47,7 @@ export function WhatsAppInbox() {
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -63,13 +66,17 @@ export function WhatsAppInbox() {
     try {
       const rows = await whatsappApi.conversations(tenant.id, activeWorkspace);
       setConversations(rows);
-      setSelectedPhone((prev) => prev ?? rows[0]?.phone ?? null);
+      setSelectedPhone((prev) => {
+        if (prev && rows.some((r) => r.phone === prev)) return prev;
+        if (isMobile) return null;
+        return rows[0]?.phone ?? null;
+      });
     } catch {
       setConversations([]);
     } finally {
       setLoading(false);
     }
-  }, [tenant, activeWorkspace]);
+  }, [tenant, activeWorkspace, isMobile]);
 
   const loadMessages = useCallback(async () => {
     if (!tenant || !activeWorkspace || !selectedPhone) {
@@ -162,11 +169,15 @@ export function WhatsAppInbox() {
   }
 
   return (
-    <div className="grid md:grid-cols-[240px_1fr] gap-4 min-h-[480px]">
-      <Card className="overflow-hidden">
-        <CardContent className="p-0">
+    <InboxSplitLayout
+      hasSelection={Boolean(selectedPhone)}
+      onBack={() => setSelectedPhone(null)}
+      listMinHeight="min-h-[280px] md:min-h-[480px]"
+      detailMinHeight="min-h-[360px] md:min-h-[480px]"
+      list={
+        <>
           <div className="p-3 border-b text-xs font-medium text-muted-foreground">Conversations</div>
-          <div className="max-h-[520px] overflow-y-auto">
+          <div className="max-h-[min(60vh,520px)] md:max-h-[520px] overflow-y-auto">
             {conversations.map((c) => (
               <button
                 key={c.phone}
@@ -177,7 +188,7 @@ export function WhatsAppInbox() {
                   selectedPhone === c.phone && 'bg-primary/5',
                 )}
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 min-w-0">
                   <span className="text-sm font-medium truncate">{c.phone}</span>
                   {c.inboundCount > 0 && (
                     <Badge variant="secondary" className="text-[10px] shrink-0">
@@ -192,122 +203,130 @@ export function WhatsAppInbox() {
               </button>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </>
+      }
+      detail={
+        !selectedPhone ? (
+          <Card className="h-full flex items-center justify-center text-muted-foreground text-sm min-h-[280px]">
+            Select a conversation
+          </Card>
+        ) : (
+          <Card className="flex flex-col overflow-hidden flex-1 min-h-0">
+            <CardContent className="p-0 flex flex-col flex-1 min-h-0">
+              <div className="p-3 border-b flex items-center gap-2 min-w-0">
+                <Badge variant="outline" className="text-[10px] shrink-0">WhatsApp</Badge>
+                <span className="text-sm font-medium truncate">{selectedPhone}</span>
+              </div>
 
-      <Card className="flex flex-col overflow-hidden">
-        <CardContent className="p-0 flex flex-col flex-1 min-h-[480px]">
-          <div className="p-3 border-b flex items-center gap-2">
-            <Badge variant="outline" className="text-[10px]">WhatsApp</Badge>
-            <span className="text-sm font-medium">{selectedPhone}</span>
-          </div>
+              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[200px]">
+                {messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={cn(
+                      'flex',
+                      m.direction === 'outbound' ? 'justify-end' : 'justify-start',
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'max-w-[92%] sm:max-w-[85%] rounded-2xl px-3 py-2 text-sm',
+                        m.direction === 'outbound'
+                          ? m.status === 'auto_reply'
+                            ? 'bg-primary/15 border border-primary/25 rounded-br-sm'
+                            : 'bg-primary text-primary-foreground rounded-br-sm'
+                          : 'bg-muted rounded-bl-sm',
+                      )}
+                    >
+                      <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                      <MessageAttachments items={m.attachments ?? []} />
+                      <MessageReactions items={m.reactions ?? []} />
+                      <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                        <span className="text-[10px] opacity-70">
+                          {formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}
+                        </span>
+                        {m.status === 'template' && (
+                          <Badge variant="outline" className="text-[9px] h-4">
+                            template
+                          </Badge>
+                        )}
+                        {m.status === 'failed' && (
+                          <Badge variant="destructive" className="text-[9px] h-4" title={m.error_message}>
+                            not delivered
+                          </Badge>
+                        )}
+                        {m.status === 'auto_reply' && (
+                          <Badge variant="secondary" className="text-[9px] h-4 gap-0.5">
+                            <Bot className="h-2.5 w-2.5" /> auto
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((m) => (
-              <div
-                key={m.id}
-                className={cn(
-                  'flex',
-                  m.direction === 'outbound' ? 'justify-end' : 'justify-start',
-                )}
-              >
-                <div
-                  className={cn(
-                    'max-w-[85%] rounded-2xl px-3 py-2 text-sm',
-                    m.direction === 'outbound'
-                      ? m.status === 'auto_reply'
-                        ? 'bg-primary/15 border border-primary/25 rounded-br-sm'
-                        : 'bg-primary text-primary-foreground rounded-br-sm'
-                      : 'bg-muted rounded-bl-sm',
-                  )}
-                >
-                  <p className="whitespace-pre-wrap break-words">{m.body}</p>
-                  <MessageAttachments items={m.attachments ?? []} />
-                  <MessageReactions items={m.reactions ?? []} />
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-[10px] opacity-70">
-                      {formatDistanceToNow(new Date(m.created_at), { addSuffix: true })}
-                    </span>
-                    {m.status === 'template' && (
-                      <Badge variant="outline" className="text-[9px] h-4">
-                        template
-                      </Badge>
-                    )}
-                    {m.status === 'failed' && (
-                      <Badge variant="destructive" className="text-[9px] h-4" title={m.error_message}>
-                        not delivered
-                      </Badge>
-                    )}
-                    {m.status === 'auto_reply' && (
-                      <Badge variant="secondary" className="text-[9px] h-4 gap-0.5">
-                        <Bot className="h-2.5 w-2.5" /> auto
-                      </Badge>
+              <div className="p-3 border-t space-y-2">
+                <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-2">
+                  <Checkbox
+                    id="wa-use-template"
+                    checked={useTemplate}
+                    onCheckedChange={(v) => setUseTemplate(v === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="space-y-1.5 flex-1 min-w-0">
+                    <Label htmlFor="wa-use-template" className="text-xs font-medium cursor-pointer">
+                      Send as template (outside 24h window)
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground leading-snug">
+                      Use when the customer has not messaged recently. Requires a Meta-approved template.
+                    </p>
+                    {useTemplate && (
+                      <Select
+                        value={`${templateName}::${templateLanguage}`}
+                        onValueChange={(v) => {
+                          const [name, lang] = v.split('::');
+                          setTemplateName(name);
+                          setTemplateLanguage(lang || 'en');
+                        }}
+                      >
+                        <SelectTrigger className="h-8 text-xs mt-1">
+                          <SelectValue placeholder="Select template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(templates.length ? templates : [{ name: 'hello_world', language: 'en', status: 'APPROVED' }]).map(
+                            (t) => (
+                              <SelectItem key={`${t.name}-${t.language}`} value={`${t.name}::${t.language}`}>
+                                {t.name} ({t.language})
+                              </SelectItem>
+                            ),
+                          )}
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
                 </div>
+                <Textarea
+                  rows={2}
+                  placeholder="Reply on WhatsApp…"
+                  className="resize-none text-sm"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      void sendReply();
+                    }
+                  }}
+                />
+                <Button size="sm" className="w-full sm:w-auto" onClick={() => void sendReply()} disabled={sending || !replyText.trim()}>
+                  {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Send className="h-3.5 w-3.5 mr-2" />}
+                  Send
+                </Button>
               </div>
-            ))}
-          </div>
-
-          <div className="p-3 border-t space-y-2">
-            <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-2">
-              <Checkbox
-                id="wa-use-template"
-                checked={useTemplate}
-                onCheckedChange={(v) => setUseTemplate(v === true)}
-              />
-              <div className="space-y-1.5 flex-1 min-w-0">
-                <Label htmlFor="wa-use-template" className="text-xs font-medium cursor-pointer">
-                  Send as template (outside 24h window)
-                </Label>
-                <p className="text-[10px] text-muted-foreground leading-snug">
-                  Use when the customer has not messaged recently. Requires a Meta-approved template.
-                </p>
-                {useTemplate && (
-                  <Select
-                    value={`${templateName}::${templateLanguage}`}
-                    onValueChange={(v) => {
-                      const [name, lang] = v.split('::');
-                      setTemplateName(name);
-                      setTemplateLanguage(lang || 'en');
-                    }}
-                  >
-                    <SelectTrigger className="h-8 text-xs mt-1">
-                      <SelectValue placeholder="Select template" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(templates.length ? templates : [{ name: 'hello_world', language: 'en', status: 'APPROVED' }]).map(
-                        (t) => (
-                          <SelectItem key={`${t.name}-${t.language}`} value={`${t.name}::${t.language}`}>
-                            {t.name} ({t.language})
-                          </SelectItem>
-                        ),
-                      )}
-                    </SelectContent>
-                  </Select>
-                )}
-              </div>
-            </div>
-            <Textarea
-              rows={2}
-              placeholder="Reply on WhatsApp…"
-              className="resize-none text-sm"
-              value={replyText}
-              onChange={(e) => setReplyText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  void sendReply();
-                }
-              }}
-            />
-            <Button size="sm" onClick={() => void sendReply()} disabled={sending || !replyText.trim()}>
-              {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" /> : <Send className="h-3.5 w-3.5 mr-2" />}
-              Send
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+            </CardContent>
+          </Card>
+        )
+      }
+    />
   );
 }

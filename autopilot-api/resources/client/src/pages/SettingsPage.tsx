@@ -137,7 +137,7 @@ const SettingsPage = () => {
   const connectedAccounts = socialAccounts.filter((a) => a.connected);
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6 pb-8 min-w-0">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
           <SettingsIcon className="h-5 w-5 text-muted-foreground" />

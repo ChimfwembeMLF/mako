@@ -164,8 +164,8 @@ export class BackofficeService {
 
     return {
       company: {
-        name: 'Mako Co-pilot',
-        product: 'Tekrem Innvation Solutions Mako Co-pilot',
+        name: 'Mako ',
+        product: 'Tekrem Innvation Solutions Mako ',
         tagline: 'Grow Smarter, Sell Stronger',
         description:
           'AI-powered marketing autopilot for brands — content generation, multi-platform publishing, lead capture, comment automation, and RAG chatbots with embeddable widgets.',

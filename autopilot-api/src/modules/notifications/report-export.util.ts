@@ -229,7 +229,7 @@ export async function renderReportXlsx(
   title: string,
 ): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'Mako Co-pilot';
+  workbook.creator = 'Mako ';
   workbook.created = new Date();
 
   const used = new Set<string>();

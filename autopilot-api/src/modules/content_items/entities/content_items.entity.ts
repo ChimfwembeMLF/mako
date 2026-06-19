@@ -47,7 +47,7 @@ export class ContentItems {
   @Column({ type: 'date', nullable: true })
   scheduledDate?: Date;
   @Column({ type: 'timetz', nullable: true })
-  scheduledTime?: Date;
+  scheduledTime?: string;
   @Column({ type: 'timestamptz', nullable: true })
   publishedAt?: Date;
   @Column({ type: 'text', nullable: true })

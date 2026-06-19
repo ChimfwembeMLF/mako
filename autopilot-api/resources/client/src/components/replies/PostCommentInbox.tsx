@@ -45,8 +45,8 @@ export function PostCommentInbox({
   });
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+    <div className="space-y-4 min-w-0">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-xs text-muted-foreground">
         <span>
           {posts.length} published post{posts.length === 1 ? '' : 's'}
         </span>

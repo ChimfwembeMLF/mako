@@ -57,14 +57,14 @@ function ContentCard({
 
   return (
     <div
-      className={`rounded-xl border bg-card p-4 transition-all flex flex-col gap-3 ${
+      className={`rounded-xl border bg-card p-3 sm:p-4 transition-all flex flex-col gap-3 min-w-0 ${
         isActive ? 'border-primary ring-2 ring-primary/20 shadow-sm' : 'hover:border-primary/30'
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex-1 min-w-0 space-y-1.5">
           <div className="flex items-center gap-2 flex-wrap">
-            {item.title && <span className="text-sm font-semibold truncate">{item.title}</span>}
+            {item.title && <span className="text-sm font-semibold break-words">{item.title}</span>}
             {isActive && (
               <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
                 Editing
@@ -77,19 +77,21 @@ function ContentCard({
             )}
           </div>
           {item.campaign_theme && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
+            <p className="text-xs text-muted-foreground line-clamp-2 sm:line-clamp-1">
               {plainText(item.campaign_theme)}
             </p>
           )}
         </div>
-        <div className="flex gap-1 shrink-0">
-          <Button type="button" size="sm" variant="outline" className="h-8 text-xs" asChild>
+        <div className="flex gap-1.5 shrink-0 self-stretch sm:self-auto">
+          <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" asChild>
             <Link to={`/content/${item.id}`}>
-              <Eye className="h-3 w-3 mr-1" /> Details
+              <Eye className="h-3 w-3 mr-1" />
+              Details
             </Link>
           </Button>
-          <Button type="button" size="sm" variant="outline" className="h-8 text-xs" onClick={() => onPublish(item)}>
-            <Send className="h-3 w-3 mr-1" /> Publish
+          <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" onClick={() => onPublish(item)}>
+            <Send className="h-3 w-3 mr-1" />
+            Publish
           </Button>
           {/* <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(item)} title="Edit">
             <Pencil className="h-3.5 w-3.5" />
@@ -364,19 +366,19 @@ const ContentEngine = () => {
   const showingTo = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-10">
+    <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
             <Pen size={18} className="text-primary" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold font-display tracking-tight">Content Engine</h1>
-            <p className="text-sm text-muted-foreground">Create, refine, and publish across platforms</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight">Content Engine</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">Create, refine, and publish across platforms</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
           <Button asChild variant="outline" size="sm" className="h-9">
             <Link to="/campaigns">AI Campaigns</Link>
           </Button>
@@ -391,17 +393,17 @@ const ContentEngine = () => {
       </div>
 
       {hasBrandBrain === false && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center gap-3">
-          <Sparkles size={15} className="text-amber-500 shrink-0" />
-          <p className="text-sm">
+        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start sm:items-center gap-3">
+          <Sparkles size={15} className="text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
+          <p className="text-sm leading-relaxed">
             <strong className="text-amber-600">Set up Brand Brain</strong> — the AI uses it to match your brand voice.
           </p>
         </div>
       )}
 
       {/* Main layout: compose always visible + library */}
-      <div className="grid gap-6 lg:grid-cols-5 lg:items-start">
-        <div className="lg:col-span-2 lg:sticky lg:top-4">
+      <div className="grid gap-5 sm:gap-6 lg:grid-cols-5 lg:items-start">
+        <div className="lg:col-span-2 lg:sticky lg:top-4 min-w-0">
           <ContentEditor
             item={activeItem}
             workspaceId={activeWorkspace}
@@ -410,7 +412,7 @@ const ContentEngine = () => {
           />
         </div>
 
-        <div className="lg:col-span-3 space-y-3">
+        <div className="lg:col-span-3 space-y-3 min-w-0">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold">Content library</h2>
@@ -458,7 +460,12 @@ const ContentEngine = () => {
               <p className="text-xs text-muted-foreground mt-1">
                 {searchQuery || platformFilter !== 'all'
                   ? 'Try a different title or platform.'
-                  : 'Compose on the left and hit Save draft.'}
+                  : (
+                    <>
+                      <span className="lg:hidden">Compose above and hit Save draft.</span>
+                      <span className="hidden lg:inline">Compose on the left and hit Save draft.</span>
+                    </>
+                  )}
               </p>
             </div>
           ) : (
@@ -481,28 +488,32 @@ const ContentEngine = () => {
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-between pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-xs text-muted-foreground">
+                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between pt-2">
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 sm:flex-none"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 sm:flex-none"
+                      disabled={page >= totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                  <span className="text-xs text-muted-foreground text-center sm:text-left">
                     Page {page} of {totalPages}
                   </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  >
-                    Next
-                  </Button>
                 </div>
               )}
             </>

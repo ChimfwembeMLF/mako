@@ -64,7 +64,7 @@ export class MailService {
     workspaceName: string,
     signupLink: string,
   ): Promise<void> {
-    const appName = this.config.get<string>('APP_NAME') ?? 'Mako Co-pilot';
+    const appName = this.config.get<string>('APP_NAME') ?? 'Mako ';
     const subject = `You've been invited to ${workspaceName} on ${appName}`;
     const text = [
       `You've been invited to join "${workspaceName}" on ${appName}.`,

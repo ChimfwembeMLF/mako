@@ -186,10 +186,10 @@ function CommentRow({
               value={getDraft(node.id)}
               onChange={(e) => onDraftChange(node.id, e.target.value)}
             />
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button
                 size="sm"
-                className="h-8 rounded-lg"
+                className="h-8 rounded-lg flex-1 sm:flex-none"
                 onClick={() => onSend(node)}
                 disabled={sendingId === node.id || !getDraft(node.id).trim()}
               >
@@ -204,7 +204,7 @@ function CommentRow({
               <Button
                 size="sm"
                 variant="outline"
-                className="h-8 rounded-lg"
+                className="h-8 rounded-lg flex-1 sm:flex-none"
                 onClick={() => onAiDraft(node)}
                 disabled={sendingId === node.id}
               >
@@ -233,7 +233,7 @@ export function CommentThread(props: Props) {
         <div
           className={cn(
             'relative mt-2 space-y-3',
-            depth === 0 ? 'ml-11 sm:ml-12' : 'ml-9 sm:ml-10',
+            depth === 0 ? 'ml-8 sm:ml-12' : 'ml-7 sm:ml-10',
           )}
         >
           <div

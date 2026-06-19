@@ -441,21 +441,21 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <div className="sticky top-0 z-10 bg-background border-b px-6 py-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="pr-8">
-            <h2 className="font-display text-xl font-semibold">Publish content</h2>
-            <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+      <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4 sm:py-5">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <div className="pr-6 sm:pr-8 min-w-0">
+            <h2 className="font-display text-lg sm:text-xl font-semibold">Publish content</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-1.5 leading-relaxed">
               Grow Smarter, Sell Stronger with Tekrem Innvation Solutions — pick platforms and preview before publishing.
             </p>
           </div>
-          <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="shrink-0">
+          <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="shrink-0 -mr-1">
             <X className="h-4 w-4" />
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-5 sm:space-y-6 min-w-0">
         <div>
           <Label className="text-xs uppercase tracking-wide text-muted-foreground mb-3 block">
             Select platforms
@@ -544,13 +544,13 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
         )}
       </div>
 
-      <div className="sticky bottom-0 border-t bg-background px-6 py-4 flex gap-2">
-        <Button type="button" variant="outline" onClick={onCancel}>
+      <div className="sticky bottom-0 border-t bg-background px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row gap-2">
+        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
         </Button>
         <Button
           type="button"
-          className="flex-1 gradient-primary text-primary-foreground border-0"
+          className="w-full sm:flex-1 gradient-primary text-primary-foreground border-0"
           onClick={handlePublish}
           disabled={publishing || generating || !publishablePlatforms.length || validationIssues.length > 0}
         >

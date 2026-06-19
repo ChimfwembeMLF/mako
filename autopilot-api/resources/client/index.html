@@ -3,53 +3,54 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
-    <title>Mako Market Co-pilot</title>
-    <meta name="description" content="Lovable Generated Project">
-    <meta name="author" content="Lovable" />
+    <title>Mako Market </title>
+    <meta name="description" content="AI-powered social media content generation, publishing, and lead management — one dashboard for your brand." />
+    <meta name="author" content="Tekrem Innvation Solutions" />
 
-    <!-- TODO: Update og:title to match your application name -->
-    
-    
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <meta name="theme-color" content="#E5A024" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Mako" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e64c236c-d9ed-4cc2-8e6b-6b0b33e2f312/id-preview-487a389a--0646f9b0-06e7-4891-b536-37fdf88412f8.lovable.app-1773006578747.png">
+    <meta property="og:title" content="Mako Market " />
+    <meta property="og:description" content="AI-powered social media content generation, publishing, and lead management — one dashboard for your brand." />
+    <meta property="og:image" content="/mako-logo.png" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@Lovable" />
-    <meta name="twitter:image" content="https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e64c236c-d9ed-4cc2-8e6b-6b0b33e2f312/id-preview-487a389a--0646f9b0-06e7-4891-b536-37fdf88412f8.lovable.app-1773006578747.png">
-    
-  
-  
-  
-  <meta property="og:title" content="Tekrem Mako Co-pilot">
-  <meta name="twitter:title" content="Tekrem Mako Co-pilot">
-  <meta property="og:description" content="Lovable Generated Project">
-  <meta name="twitter:description" content="Lovable Generated Project">
-  <!-- OAuth callbacks (/api/v1/auth/*/redirect, /api/v1/social-accounts/oauth/*/callback) must hit Nest, not this SPA.
-       If a legacy service worker serves this page for /api/*, unregister and reload once. -->
-  <script>
-    (function () {
-      var path = location.pathname;
-      if (!/^\/(api|uploads|documentation|admin)(\/|$)/.test(path)) return;
-      var key = "mako-oauth-api-reload";
-      if (sessionStorage.getItem(key) === location.href) {
-        sessionStorage.removeItem(key);
-        return;
-      }
-      sessionStorage.setItem(key, location.href);
-      function reload() {
-        location.replace(location.href);
-      }
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function (regs) {
-          return Promise.all(regs.map(function (r) { return r.unregister(); }));
-        }).finally(reload);
-      } else {
-        reload();
-      }
-    })();
-  </script>
-</head>
+    <meta name="twitter:title" content="Mako Market " />
+    <meta name="twitter:description" content="AI-powered social media content generation, publishing, and lead management — one dashboard for your brand." />
+    <meta name="twitter:image" content="/mako-logo.png" />
+
+    <!-- OAuth callbacks (/api/v1/auth/*/redirect, /api/v1/social-accounts/oauth/*/callback) must hit Nest, not this SPA.
+         If a legacy service worker serves this page for /api/*, unregister and reload once. -->
+    <script>
+      (function () {
+        var path = location.pathname;
+        if (!/^\/(api|uploads|documentation|admin)(\/|$)/.test(path)) return;
+        var key = "mako-oauth-api-reload";
+        if (sessionStorage.getItem(key) === location.href) {
+          sessionStorage.removeItem(key);
+          return;
+        }
+        sessionStorage.setItem(key, location.href);
+        function reload() {
+          location.replace(location.href);
+        }
+        if ("serviceWorker" in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            return Promise.all(regs.map(function (r) { return r.unregister(); }));
+          }).finally(reload);
+        } else {
+          reload();
+        }
+      })();
+    </script>
+  </head>
 
   <body>
     <div id="root"></div>
