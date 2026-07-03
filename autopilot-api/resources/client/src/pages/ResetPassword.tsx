@@ -46,11 +46,12 @@ const ResetPassword = () => {
         <div className="w-full max-w-md space-y-6">
           <AppBreadcrumbs />
           <Card className="shadow-card border-border/50 rounded-xl">
-          <CardContent className="p-8 text-center text-muted-foreground">
-            <p>Invalid or expired reset link. Please request a new password reset.</p>
-            <Button variant="link" className="mt-4" onClick={() => navigate("/auth")}>Back to Sign In</Button>
-          </CardContent>
-        </Card>
+            <CardContent className="p-8 text-center text-muted-foreground">
+              <p>Invalid or expired reset link. Please request a new password reset.</p>
+              <Button variant="link" className="mt-4" onClick={() => navigate("/auth")}>Back to Sign In</Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
