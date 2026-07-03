@@ -19,6 +19,7 @@ import { useWorkspace } from '@/hooks/useWorkspace';
 import { useTenant } from '@/hooks/useTenant';
 import { usePermissions } from '@/hooks/usePermissions';
 import { P } from '@/lib/permissions';
+import { usePageBreadcrumb } from '@/hooks/usePageBreadcrumb';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { PublishPanel } from '@/components/content/PublishPanel';
 import { ContentItem } from '@/components/content/types';
@@ -30,7 +31,7 @@ import {
   type CommentInboxNode,
   type PostInboxGroup,
 } from '@/lib/api';
-import { platformOf, type PlatformPayload, platformRequiresMedia, instagramHasMedia } from '@/lib/platforms';
+import { platformOf, buildPlatformPayloads, type PlatformPayload, platformRequiresMedia, instagramHasMedia } from '@/lib/platforms';
 import { formatScheduledAt } from '@/lib/schedule';
 import { PostCommentCard } from '@/components/replies/PostCommentCard';
 import { PostMediaGallery } from '@/components/replies/PostMediaGallery';
@@ -224,6 +225,8 @@ export default function ContentDetailPage() {
   const [fetchingComments, setFetchingComments] = useState(false);
   const [manualText, setManualText] = useState<Record<string, string>>({});
   const [sending, setSending] = useState<string | null>(null);
+
+  usePageBreadcrumb(data?.item?.title || undefined);
 
   const loadComments = useCallback(async (contentId: string, tenantId: string) => {
     setLoadingComments(true);
@@ -480,7 +483,7 @@ export default function ContentDetailPage() {
 
   if (error || !data) {
     return (
-      <div className="max-w-3xl mx-auto py-12 text-center space-y-4">
+      <div className="w-full py-12 text-center space-y-4">
         <p className="text-muted-foreground">{error ?? 'Content not found'}</p>
         <Button asChild variant="outline">
           <Link to="/content">
@@ -497,7 +500,7 @@ export default function ContentDetailPage() {
   const pendingTotal = publishedPostGroups.reduce((s, p) => s + p.pendingCount, 0);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-12 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-12 min-w-0">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1 min-w-0">
           <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 text-muted-foreground">
@@ -604,6 +607,37 @@ export default function ContentDetailPage() {
         </div>
       )}
 
+      {draftPlatforms.filter((platform) => pubsByPlatform[platform]?.[0]?.status !== 'failed').length >
+        0 && (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Per-platform content</h2>
+            <p className="text-xs text-muted-foreground mt-1">
+              What will be sent to each channel — visible before publish runs.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            {draftPlatforms.map((platform) => {
+              const latest = pubsByPlatform[platform]?.[0];
+              if (latest?.status === 'failed') return null;
+              const savedDraft = item.platformPayloads?.[platform];
+              const draft =
+                savedDraft ??
+                buildPlatformPayloads(item.content ?? '', item.title ?? '', [platform])[platform];
+              return (
+                <DraftPlatformSection
+                  key={`draft-${platform}`}
+                  platform={platform}
+                  draft={draft}
+                  scheduledAt={scheduledAtLabel}
+                  linkedMediaCount={media.length}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl border bg-card p-4 space-y-2">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Master draft</p>
         {item.campaignTheme && (
@@ -679,11 +713,11 @@ export default function ContentDetailPage() {
         </>
       )}
 
-      {(failedPlatforms.length > 0 || draftPlatforms.length > 0) && (
+      {failedPlatforms.length > 0 && (
         <>
           <Separator />
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Drafts & failed publishes</h2>
+            <h2 className="text-lg font-semibold">Failed publishes</h2>
             <div className="grid gap-4">
               {failedPlatforms.map((platform) => (
                 <FailedPublicationBanner
@@ -694,19 +728,6 @@ export default function ContentDetailPage() {
                   retrying={retryingPlatform === platform}
                 />
               ))}
-              {draftPlatforms.map((platform) => {
-                const latest = pubsByPlatform[platform]?.[0];
-                if (latest?.status === 'failed') return null;
-                return (
-                  <DraftPlatformSection
-                    key={`draft-${platform}`}
-                    platform={platform}
-                    draft={item.platformPayloads?.[platform]}
-                    scheduledAt={scheduledAtLabel}
-                    linkedMediaCount={media.length}
-                  />
-                );
-              })}
             </div>
           </div>
         </>

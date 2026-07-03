@@ -190,7 +190,7 @@ export default function ChatbotPage() {
     : `<script async src="${window.location.origin}/widget/v1/loader.js" data-key="pk_live_YOUR_KEY" data-api="${apiBase}"></script>`;
 
   return (
-    <div className="container max-w-6xl space-y-6">
+    <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-xl gradient-primary text-white">
           <Bot className="h-6 w-6" />

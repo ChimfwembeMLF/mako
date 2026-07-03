@@ -5,12 +5,14 @@ import { AutoReplyRules } from './entities/auto_reply_rules.entity';
 import { AutoReplyRulesCreateDto } from './dto/create-auto_reply_rules.dto';
 import { AutoReplyRulesUpdateDto } from './dto/update-auto_reply_rules.dto';
 import { scopeWhere } from '../../common/workspace-scope.util';
+import { AutoReplySeedService } from './auto-reply-seed.service';
 
 @Injectable()
 export class AutoReplyRulesService {
   constructor(
     @InjectRepository(AutoReplyRules)
     private readonly repo: Repository<AutoReplyRules>,
+    private readonly autoReplySeeds: AutoReplySeedService,
   ) {}
 
   async create(dto: AutoReplyRulesCreateDto): Promise<AutoReplyRules> {
@@ -23,6 +25,7 @@ export class AutoReplyRulesService {
     workspaceId?: string,
   ): Promise<AutoReplyRules[]> {
     if (tenantId) {
+      await this.autoReplySeeds.ensureSeededForTenant(tenantId);
       return this.repo.find({
         where: scopeWhere<AutoReplyRules>(tenantId, workspaceId),
       });

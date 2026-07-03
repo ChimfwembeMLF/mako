@@ -74,7 +74,7 @@ export default function ReportsPage() {
   const selectedName = catalog.find((c) => c.id === selected)?.name;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+    <div className="w-full space-y-6 pb-12">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
           <BarChart3 className="h-5 w-5 text-primary" />

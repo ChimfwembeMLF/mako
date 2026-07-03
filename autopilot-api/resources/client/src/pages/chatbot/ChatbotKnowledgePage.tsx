@@ -111,7 +111,7 @@ export default function ChatbotKnowledgePage() {
   }
 
   return (
-    <div className="container max-w-4xl py-6 space-y-6">
+    <div className="w-full py-6 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
           <div className="p-2.5 rounded-xl gradient-primary text-white shrink-0">

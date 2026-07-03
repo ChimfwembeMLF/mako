@@ -288,7 +288,7 @@ export default function RepliesPage() {
 
   return (
     <PermissionGate require={P.replies.view} fallback={true}>
-      <PageContainer size="5xl">
+      <PageContainer>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-3 min-w-0">
             <MessageSquareReply className="h-6 w-6 text-primary shrink-0 mt-0.5" />

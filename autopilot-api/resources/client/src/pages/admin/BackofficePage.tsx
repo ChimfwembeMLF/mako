@@ -261,7 +261,7 @@ function BackofficeContent() {
   const { company, stats, chatbot, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, env } = overview;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       <TenantDetailSheet tenantId={selectedTenantId} open={sheetOpen} onOpenChange={setSheetOpen} />
 
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">

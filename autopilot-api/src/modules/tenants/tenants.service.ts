@@ -41,14 +41,18 @@ export class TenantsService {
   /** Ensures a default tenant exists — safety net for legacy users or failed first login */
   async findForUserEnsuringBootstrap(userId: string): Promise<Tenants[]> {
     let tenants = await this.findForUser(userId);
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+
     if (tenants.length) {
+      if (user) {
+        await this.bootstrap.seedDefaultsForUserTenants(user);
+      }
       for (const t of tenants) {
         await this.bootstrap.ensureSubscriptionForExistingTenant(t.id);
       }
       return tenants;
     }
 
-    const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) return [];
 
     await this.bootstrap.bootstrapForUser(user);

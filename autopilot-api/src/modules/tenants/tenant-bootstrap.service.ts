@@ -86,14 +86,16 @@ export class TenantBootstrapService {
   async bootstrapForUser(user: UserEntity): Promise<Tenants> {
     await this.ensurePermissionsSeeded();
 
-    const existingMember = await this.membersRepo.findOne({
+    const memberships = await this.membersRepo.find({
       where: { userId: user.id },
     });
-    if (existingMember) {
+    if (memberships.length) {
+      for (const membership of memberships) {
+        await this.seedTenantDefaults(membership.tenantId, user);
+      }
       const tenant = await this.tenantsRepo.findOneOrFail({
-        where: { id: existingMember.tenantId },
+        where: { id: memberships[0].tenantId },
       });
-      await this.seedTenantDefaults(tenant.id, user);
       return tenant;
     }
 
@@ -191,6 +193,16 @@ export class TenantBootstrapService {
     await this.templateSeeds.ensureSeededForTenant(tenantId, user.id);
     await this.autoReplySeeds.ensureSeededForTenant(tenantId);
     await this.brandProfileSeeds.ensureStarterForUser(tenantId, user);
+  }
+
+  /** Backfill defaults for every tenant the user belongs to. */
+  async seedDefaultsForUserTenants(user: UserEntity): Promise<void> {
+    const memberships = await this.membersRepo.find({
+      where: { userId: user.id, isActive: true },
+    });
+    for (const membership of memberships) {
+      await this.seedTenantDefaults(membership.tenantId, user);
+    }
   }
 
   async ensureSubscriptionForExistingTenant(tenantId: string) {

@@ -127,7 +127,7 @@ export default function SystemSettingsPage() {
 
   return (
     <PermissionGate superAdmin fallback={true}>
-      <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6 pb-8 min-w-0">
+      <div className="w-full space-y-5 sm:space-y-6 pb-8 min-w-0">
         <div>
           <h1 className="text-2xl font-semibold font-display">System Settings</h1>
           <p className="text-sm text-muted-foreground">Platform backoffice — global theme and permission catalog.</p>

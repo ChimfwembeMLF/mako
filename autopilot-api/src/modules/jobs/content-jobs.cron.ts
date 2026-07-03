@@ -81,13 +81,20 @@ export class AutoPublishCron {
       if (!tenantIds.length) return;
 
       if (this.queueDispatch.isEnabled()) {
-        const result = await this.queueDispatch.fanOutAutoPublishTenants(
-          tenantIds,
-        );
-        this.logger.log(
-          `Auto-publish enqueued for ${result.enqueued} tenant(s)`,
-        );
-        return;
+        try {
+          const result = await this.queueDispatch.fanOutAutoPublishTenants(
+            tenantIds,
+          );
+          this.logger.log(
+            `Auto-publish enqueued for ${result.enqueued} tenant(s)`,
+          );
+          return;
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.logger.warn(
+            `Queue auto-publish failed (${message}) — falling back to in-process publish`,
+          );
+        }
       }
 
       const result = await this.autoPublish.publishDueItems();
@@ -95,6 +102,9 @@ export class AutoPublishCron {
         this.logger.log(
           `Auto-publish complete: ${result.published}/${result.attempted} published, ${result.failed} failed`,
         );
+        if (result.errors.length) {
+          this.logger.warn(`Auto-publish errors: ${result.errors.join(' | ')}`);
+        }
       }
     } catch (err) {
       this.logger.error('Auto-publish cron error', err);

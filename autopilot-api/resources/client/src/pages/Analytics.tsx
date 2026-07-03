@@ -218,7 +218,7 @@ const Analytics = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary shrink-0">
           <BarChart3 className="h-5 w-5 text-primary-foreground" />

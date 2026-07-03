@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PermissionGate } from '@/components/PermissionGate';
 import { templatePlatforms } from '@/lib/platform-capabilities';
 import { ArrowLeft, Save, LayoutTemplate, Loader2 } from 'lucide-react';
+import { usePageBreadcrumb } from '@/hooks/usePageBreadcrumb';
 
 const TEMPLATE_PLATFORM_LIST = templatePlatforms();
 const PLATFORM_LABELS: Record<string, string> = Object.fromEntries(
@@ -61,6 +62,8 @@ export default function TemplateEditPage() {
   });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+
+  usePageBreadcrumb(isNew ? 'New template' : form.name || undefined);
 
   useEffect(() => {
     if (!isNew && id && tenant && activeWorkspace) loadTemplate(id, tenant.id);
@@ -142,7 +145,7 @@ export default function TemplateEditPage() {
 
   return (
     <PermissionGate require={requirePerm} fallback={true}>
-      <div className="max-w-2xl mx-auto space-y-5 sm:space-y-6 pb-8 min-w-0">
+      <div className="w-full space-y-5 sm:space-y-6 pb-8 min-w-0">
         <div className="flex items-center gap-3">
           <Link to="/templates">
             <Button variant="ghost" size="sm">

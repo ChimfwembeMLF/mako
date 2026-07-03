@@ -7,14 +7,13 @@ export function formatScheduledAt(
 
   const dateStr =
     scheduledDate instanceof Date
-      ? scheduledDate.toISOString().slice(0, 10)
+      ? `${scheduledDate.getUTCFullYear()}-${String(scheduledDate.getUTCMonth() + 1).padStart(2, '0')}-${String(scheduledDate.getUTCDate()).padStart(2, '0')}`
       : String(scheduledDate).slice(0, 10);
 
-  let hours = 9;
+  let hours = 0;
   let minutes = 0;
   if (scheduledTime) {
-    const raw = String(scheduledTime);
-    const match = raw.match(/(\d{1,2}):(\d{2})/);
+    const match = String(scheduledTime).match(/(\d{1,2}):(\d{2})/);
     if (match) {
       hours = parseInt(match[1], 10);
       minutes = parseInt(match[2], 10);

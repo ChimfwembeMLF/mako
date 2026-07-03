@@ -8,6 +8,17 @@ import {
   brandExtractionSystemPrompt,
   normalizeBrandExtraction,
 } from '../../ai/prompts/brand-fields';
+import {
+  buildFetchQueue,
+  mergeDiscoveredIntoQueue,
+  mergeBrandDiscoveryConfig,
+  normalizeScrapeUrl,
+  rankDiscoveredLinks,
+  type BrandDiscoveryConfig,
+  ScrapeRateLimiter,
+  DiscoveryStatsCollector,
+  resolveLogger,
+} from '../utils/brand-scrape-paths.util';
 
 @Injectable()
 export class ScrapeWebsiteService {
@@ -27,6 +38,7 @@ export class ScrapeWebsiteService {
     await this.usage.assertWithinLimit(params.tenantId, params.userId);
 
     const normalized = this.normalizeUrl(params.url);
+    const discoveryConfig = this.discoveryConfig();
     const timeout = parseInt(
       this.config.get<string>('SCRAPE_TIMEOUT_MS') || '15000',
       10,
@@ -36,7 +48,12 @@ export class ScrapeWebsiteService {
       10,
     );
 
-    const pages = await this.fetchPages(normalized, maxPages, timeout);
+    const pages = await this.fetchPages(
+      normalized,
+      maxPages,
+      timeout,
+      discoveryConfig,
+    );
     const combined = pages.join('\n\n---\n\n').slice(0, 24000);
 
     if (!combined.trim()) {
@@ -67,49 +84,101 @@ export class ScrapeWebsiteService {
     return { ...result, websiteUrl: normalized };
   }
 
+  private discoveryConfig(): BrandDiscoveryConfig {
+    return mergeBrandDiscoveryConfig({
+      delayBetweenRequests: parseInt(
+        this.config.get<string>('SCRAPE_DELAY_MS') || '0',
+        10,
+      ),
+      debug: this.config.get<string>('BRAND_SCRAPE_DEBUG') === 'true',
+      stats: this.config.get<string>('BRAND_SCRAPE_STATS') === 'true',
+      respectRobotsTxt:
+        this.config.get<string>('SCRAPE_RESPECT_ROBOTS') === 'true',
+      minScoreForQueue: parseInt(
+        this.config.get<string>('BRAND_SCRAPE_MIN_SCORE') || '30',
+        10,
+      ),
+      maxSeedUrls: parseInt(
+        this.config.get<string>('BRAND_SCRAPE_MAX_SEEDS') || '120',
+        10,
+      ),
+      userAgent:
+        this.config.get<string>('SCRAPE_USER_AGENT') ??
+        'AutoPilotBot/1.0 (+https://brandpilot.app; brand onboarding)',
+    });
+  }
+
   private normalizeUrl(url: string): string {
     const trimmed = url.trim();
-    if (!/^https?:\/\//i.test(trimmed)) return `https://${trimmed}`;
-    return trimmed;
+    const withScheme = !/^https?:\/\//i.test(trimmed)
+      ? `https://${trimmed}`
+      : trimmed;
+    return normalizeScrapeUrl(withScheme);
   }
 
   private async fetchPages(
     baseUrl: string,
     maxPages: number,
     timeout: number,
+    discoveryConfig: BrandDiscoveryConfig,
   ): Promise<string[]> {
     const texts: string[] = [];
     const visited = new Set<string>();
-    const origin = new URL(baseUrl).origin;
-    const queue: string[] = [
-      baseUrl,
-      ...[
-        '/about',
-        '/about-us',
-        '/company',
-        '/services',
-        '/products',
-        '/solutions',
-        '/faq',
-        '/contact',
-      ].map((path) => `${origin}${path}`),
-    ];
+    let queue = buildFetchQueue(baseUrl, discoveryConfig);
+    let fetchFailures = 0;
+    const rateLimiter = new ScrapeRateLimiter(
+      discoveryConfig.delayBetweenRequests,
+    );
+    const stats = discoveryConfig.stats
+      ? new DiscoveryStatsCollector()
+      : undefined;
+    const discoveryLogger = resolveLogger(discoveryConfig);
 
     while (queue.length && texts.length < maxPages) {
       const url = queue.shift()!;
-      if (visited.has(url)) continue;
-      visited.add(url);
+      const canonical = normalizeScrapeUrl(url);
+      if (visited.has(canonical)) continue;
+      visited.add(canonical);
+      stats?.recordScanned();
+
+      await rateLimiter.wait();
 
       try {
-        const { data: html } = await axios.get<string>(url, {
+        const { data: html } = await axios.get<string>(canonical, {
           timeout,
           headers: {
-            'User-Agent':
-              'AutoPilotBot/1.0 (+https://brandpilot.app; brand onboarding)',
+            'User-Agent': discoveryConfig.userAgent,
             Accept: 'text/html',
           },
-          maxRedirects: 3,
+          maxRedirects: 5,
+          validateStatus: (status) => status >= 200 && status < 400,
         });
+
+        const $discover = cheerio.load(html);
+        const anchors: Array<{ href: string; text: string }> = [];
+        $discover('a[href]').each((_, el) => {
+          anchors.push({
+            href: $discover(el).attr('href') ?? '',
+            text: $discover(el).text(),
+          });
+        });
+        const discovered = rankDiscoveredLinks(
+          anchors,
+          canonical,
+          discoveryConfig,
+        );
+        for (const link of discovered) {
+          stats?.recordRelevant(link.url, link.score);
+        }
+        discoveryLogger.debug(
+          `Discovered ${discovered.length} brand links from ${canonical}`,
+        );
+        queue = mergeDiscoveredIntoQueue(
+          queue,
+          discovered,
+          visited,
+          discoveryConfig,
+        );
 
         const $ = cheerio.load(html);
         $('script, style, nav, footer, noscript, iframe').remove();
@@ -121,30 +190,25 @@ export class ScrapeWebsiteService {
           .trim()
           .slice(0, 12000);
 
-        if (body) texts.push(`URL: ${url}\nTitle: ${title}\n${body}`);
-
-        if (texts.length < maxPages) {
-          const origin = new URL(url).origin;
-          $('a[href]').each((_, el) => {
-            const href = $(el).attr('href');
-            if (!href) return;
-            try {
-              const abs = new URL(href, url).href;
-              if (!abs.startsWith(origin)) return;
-              if (/\.(pdf|jpg|png|zip)$/i.test(abs)) return;
-              if (/(\/about|\/services|\/products|\/company)/i.test(abs)) {
-                queue.push(abs);
-              }
-            } catch {
-              /* ignore bad URLs */
-            }
-          });
-        }
+        if (body) texts.push(`URL: ${canonical}\nTitle: ${title}\n${body}`);
       } catch (err) {
-        this.logger.warn(`Scrape failed for ${url}`, err);
-        if (!texts.length)
-          throw new BadRequestException(`Could not fetch ${url}`);
+        fetchFailures++;
+        const message = err instanceof Error ? err.message : String(err);
+        stats?.recordError(canonical, message);
+        this.logger.warn(`Scrape failed for ${canonical}`, err);
       }
+    }
+
+    if (stats) {
+      discoveryLogger.info(stats.generateReport());
+    }
+
+    if (!texts.length) {
+      throw new BadRequestException(
+        fetchFailures > 0
+          ? 'Could not fetch any pages from that website. Try pasting your About or Contact page URL directly.'
+          : 'Could not extract text from the website',
+      );
     }
 
     return texts;

@@ -1,14 +1,38 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { AppNavbar } from "@/components/AppNavbar";
+import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 import { BackendStatusBanner } from "@/components/BackendStatusBanner";
 import { OnboardingWizard, useNeedsOnboarding } from "@/components/OnboardingWizard";
+import { pageWidthClass, resolvePageWidth } from "@/components/layout/PageContainer";
 import { ThemeProvider } from "@/hooks/useTheme";
+import { PageBreadcrumbProvider } from "@/hooks/usePageBreadcrumb";
+import { cn } from "@/lib/utils";
+
+function DashboardMain() {
+  const { pathname } = useLocation();
+  const width = resolvePageWidth(pathname);
+
+  return (
+    <main className="flex-1 overflow-auto m-3 sm:m-4 md:m-6 min-w-0">
+      <div
+        className={cn(
+          "mx-auto w-full min-w-0",
+          pageWidthClass(width),
+        )}
+      >
+        <AppBreadcrumbs className="mb-3 sm:mb-4 w-full" />
+        <Outlet />
+      </div>
+    </main>
+  );
+}
 
 export function DashboardLayout() {
   const { needs, dismiss } = useNeedsOnboarding();
 
   return (
     <ThemeProvider>
+    <PageBreadcrumbProvider>
     <div className="min-h-screen flex flex-col relative">
       {/* Ambient background */}
       <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -20,12 +44,11 @@ export function DashboardLayout() {
       <AppNavbar />
       <BackendStatusBanner />
 
-      <main className="flex-1 overflow-auto m-3 sm:m-4 md:m-6 min-w-0">
-        <Outlet />
-      </main>
+      <DashboardMain />
 
       {needs && <OnboardingWizard onComplete={dismiss} />}
     </div>
+    </PageBreadcrumbProvider>
     </ThemeProvider>
   );
 }

@@ -238,7 +238,7 @@ export default function BillingPage() {
 
   if (!canAccessBilling) {
     return (
-      <div className="max-w-4xl mx-auto pb-8 min-w-0">
+      <div className="w-full pb-8 min-w-0">
         <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 rounded-md border border-dashed">
           You don&apos;t have permission to access billing for this workspace.
         </div>
@@ -248,7 +248,7 @@ export default function BillingPage() {
 
   return (
     <>
-      <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
+      <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center gap-3">
           <CreditCard className="h-6 w-6 text-primary" />
           <div>

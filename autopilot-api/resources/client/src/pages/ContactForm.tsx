@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { brandProfilesApi } from "@/lib/api";
 import { invokeEdgeFunction } from "@/lib/edgeFunctions";
+import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 
 interface Branding {
   name: string;
@@ -87,11 +88,14 @@ const ContactForm = () => {
   if (!userId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-6 text-center text-muted-foreground">
-            Invalid contact form link.
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-md space-y-4">
+          <AppBreadcrumbs />
+          <Card className="w-full">
+            <CardContent className="p-6 text-center text-muted-foreground">
+              Invalid contact form link.
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -99,31 +103,36 @@ const ContactForm = () => {
   if (submitted) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full overflow-hidden">
-          <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
-            <CheckCircle2 className="h-12 w-12 mx-auto mb-3" />
-            <h2 className="text-xl font-bold">Thank you!</h2>
-            <p className="text-sm opacity-90 mt-1">We've received your message</p>
-          </div>
-          <CardContent className="p-6 space-y-4">
-            <p className="text-muted-foreground text-sm text-center">
-              We'll get back to you as soon as possible.
-            </p>
-            {aiReply && (
-              <div className={`${branding.bgClass} border rounded-lg p-4 text-left`}>
-                <p className="text-xs text-muted-foreground mb-1">Quick response:</p>
-                <p className="text-sm">{aiReply}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="w-full max-w-md space-y-4">
+          <AppBreadcrumbs />
+          <Card className="w-full overflow-hidden">
+            <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
+              <CheckCircle2 className="h-12 w-12 mx-auto mb-3" />
+              <h2 className="text-xl font-bold">Thank you!</h2>
+              <p className="text-sm opacity-90 mt-1">We've received your message</p>
+            </div>
+            <CardContent className="p-6 space-y-4">
+              <p className="text-muted-foreground text-sm text-center">
+                We'll get back to you as soon as possible.
+              </p>
+              {aiReply && (
+                <div className={`${branding.bgClass} border rounded-lg p-4 text-left`}>
+                  <p className="text-xs text-muted-foreground mb-1">Quick response:</p>
+                  <p className="text-sm">{aiReply}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="max-w-md w-full shadow-card overflow-hidden">
+      <div className="w-full max-w-md space-y-4">
+        <AppBreadcrumbs />
+        <Card className="w-full shadow-card overflow-hidden">
         <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
           <Send className="h-10 w-10 mx-auto mb-3" />
           <h1 className="text-xl font-bold">{branding.name}</h1>
@@ -156,7 +165,8 @@ const ContactForm = () => {
             </Button>
           </form>
         </CardContent>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 };

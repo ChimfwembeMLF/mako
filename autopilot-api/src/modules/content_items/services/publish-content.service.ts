@@ -72,11 +72,25 @@ export class PublishContentService {
     });
     if (!item) throw new NotFoundException('Content item not found');
 
-    const platforms = params.platforms?.length
-      ? params.platforms
+    const explicitPlatforms = Boolean(params.platforms?.length);
+    const platforms = explicitPlatforms
+      ? params.platforms!
       : item.platforms?.length
-      ? item.platforms
-      : ['facebook'];
+        ? item.platforms
+        : ['facebook'];
+
+    const latestBefore = await this.latestStatusByPlatform(item.id);
+    const platformsToRun = explicitPlatforms
+      ? platforms
+      : platforms.filter((p) => latestBefore.get(p) !== 'published');
+
+    if (platformsToRun.length === 0) {
+      const itemPlatforms = item.platforms?.length ? item.platforms : platforms;
+      const allPublished = itemPlatforms.every(
+        (p) => latestBefore.get(p) === 'published',
+      );
+      return { published: allPublished, results: {} };
+    }
 
     const platformPayloads =
       params.platformPayloads && Object.keys(params.platformPayloads).length
@@ -105,9 +119,8 @@ export class PublishContentService {
       string,
       { published: boolean; message: string; externalPostId?: string }
     > = {};
-    let anyPublished = false;
 
-    for (const platform of platforms) {
+    for (const platform of platformsToRun) {
       const pp = platformPayloads[platform];
       const publishedContent = formatContentForPlatform(
         platform,
@@ -232,21 +245,30 @@ export class PublishContentService {
         status: result.published ? 'published' : 'failed',
         errorMessage: result.published ? undefined : result.message,
       });
-
-      if (result.published) anyPublished = true;
     }
+
+    const itemPlatforms = item.platforms?.length ? item.platforms : platforms;
+    const latestAfter = await this.latestStatusByPlatform(item.id);
+    const allPlatformsPublished = itemPlatforms.every(
+      (p) => latestAfter.get(p) === 'published',
+    );
+    const anyPlatformPublished = itemPlatforms.some(
+      (p) => latestAfter.get(p) === 'published',
+    );
 
     const primaryExternalId = Object.values(results).find(
       (r) => r.published && r.externalPostId,
     )?.externalPostId;
 
-    if (anyPublished) {
+    const failedThisRun = Object.entries(results).filter(([, r]) => !r.published);
+
+    if (allPlatformsPublished) {
       await this.contentRepo.update(item.id, {
         status: 'published',
         publishedAt: new Date(),
         publishFailedReason: undefined,
         publishAttempts: 0,
-        externalPostId: primaryExternalId,
+        externalPostId: primaryExternalId ?? item.externalPostId,
       } as Partial<ContentItems>);
 
       const publishedPlatforms = Object.entries(results)
@@ -257,19 +279,69 @@ export class PublishContentService {
         userId: params.userId,
         contentId: item.id,
         title: item.title,
-        platforms: publishedPlatforms,
+        platforms: publishedPlatforms.length
+          ? publishedPlatforms
+          : itemPlatforms,
       });
+    } else if (anyPlatformPublished) {
+      const stillFailed = itemPlatforms.filter(
+        (p) => latestAfter.get(p) !== 'published',
+      );
+      const reasons = failedThisRun
+        .map(([p, r]) => `${p}: ${r.message}`)
+        .join('; ');
+      const nextAttempts =
+        failedThisRun.length > 0
+          ? (item.publishAttempts ?? 0) + 1
+          : (item.publishAttempts ?? 0);
+      const exhausted = nextAttempts >= MAX_CONTENT_PUBLISH_ATTEMPTS;
+
+      await this.contentRepo.update(item.id, {
+        status: 'approved',
+        publishedAt: item.publishedAt ?? new Date(),
+        publishFailedReason: reasons || undefined,
+        publishAttempts: nextAttempts,
+        externalPostId: primaryExternalId ?? item.externalPostId,
+        ...(exhausted ? { status: 'publish_failed' as const } : {}),
+      } as Partial<ContentItems>);
+
+      const publishedThisRun = Object.entries(results)
+        .filter(([, r]) => r.published)
+        .map(([p]) => p);
+      if (publishedThisRun.length > 0) {
+        void this.notifications?.notifyPublishSuccess({
+          tenantId: item.tenantId,
+          userId: params.userId,
+          contentId: item.id,
+          title: item.title,
+          platforms: publishedThisRun,
+        });
+      }
+      if (stillFailed.length > 0) {
+        const notifyReason =
+          failedThisRun.length === 1
+            ? this.shortenText(failedThisRun[0][1].message, 120)
+            : `${stillFailed.length} platform(s) still pending (${stillFailed.join(', ')})`;
+        void this.notifications?.notifyPublishFailed({
+          tenantId: item.tenantId,
+          userId: params.userId,
+          contentId: item.id,
+          title: item.title,
+          reason: exhausted
+            ? `${notifyReason} (stopped after ${MAX_CONTENT_PUBLISH_ATTEMPTS} attempts)`
+            : notifyReason,
+        });
+      }
     } else {
-      const failed = Object.entries(results).filter(([, r]) => !r.published);
-      const reasons = failed.map(([p, r]) => `${p}: ${r.message}`).join('; ');
+      const reasons = failedThisRun.map(([p, r]) => `${p}: ${r.message}`).join('; ');
       const notifyReason =
-        failed.length === 0
+        failedThisRun.length === 0
           ? 'Publish failed'
-          : failed.length === 1
-          ? this.shortenText(failed[0][1].message, 120)
-          : `${failed.length} platforms failed (${failed
-              .map(([p]) => p)
-              .join(', ')})`;
+          : failedThisRun.length === 1
+            ? this.shortenText(failedThisRun[0][1].message, 120)
+            : `${failedThisRun.length} platforms failed (${failedThisRun
+                .map(([p]) => p)
+                .join(', ')})`;
       const nextAttempts = (item.publishAttempts ?? 0) + 1;
       const exhausted = nextAttempts >= MAX_CONTENT_PUBLISH_ATTEMPTS;
       await this.contentRepo.update(item.id, {
@@ -289,7 +361,21 @@ export class PublishContentService {
       });
     }
 
-    return { published: anyPublished, results };
+    return { published: allPlatformsPublished, results };
+  }
+
+  /** Latest publication status per platform (publications ordered newest first). */
+  private async latestStatusByPlatform(
+    contentId: string,
+  ): Promise<Map<string, 'published' | 'failed'>> {
+    const rows = await this.publications.findByContentId(contentId);
+    const map = new Map<string, 'published' | 'failed'>();
+    for (const row of rows) {
+      if (!map.has(row.platform)) {
+        map.set(row.platform, row.status as 'published' | 'failed');
+      }
+    }
+    return map;
   }
 
   private shortenText(text: string, max: number): string {

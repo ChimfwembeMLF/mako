@@ -112,14 +112,21 @@ export class AutoPublishService {
     queued?: number;
   }> {
     if (this.queueDispatch?.isEnabled()) {
-      const result = await this.queueDueItems();
-      return {
-        attempted: result.queued,
-        published: 0,
-        failed: 0,
-        errors: [],
-        queued: result.queued,
-      };
+      try {
+        const result = await this.queueDueItems();
+        return {
+          attempted: result.queued,
+          published: 0,
+          failed: 0,
+          errors: [],
+          queued: result.queued,
+        };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `Queue publish failed (${message}) — publishing due items in-process`,
+        );
+      }
     }
 
     const due = await this.findDueItems();

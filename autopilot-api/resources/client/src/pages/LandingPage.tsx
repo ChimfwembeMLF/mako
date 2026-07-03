@@ -88,7 +88,7 @@ function SectionHeader({
   className?: string;
 }) {
   return (
-    <div className={cn('text-center max-w-2xl mx-auto', className)}>
+    <div className={cn('text-center w-full', className)}>
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-3">{label}</p>
       <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">{title}</h2>
       {desc && <p className="text-muted-foreground mt-3 leading-relaxed">{desc}</p>}
@@ -423,7 +423,7 @@ function Pricing() {
 
   return (
     <section id="pricing" className="py-24 border-t border-border/50">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6">
+      <div className="w-full px-4 sm:px-6">
         <Reveal>
           <SectionHeader
             label="Pricing"
@@ -477,7 +477,7 @@ function FinalCTA() {
   return (
     <section className="py-24 px-4 border-t border-border/50">
       <Reveal variant="scale">
-        <div className="max-w-3xl mx-auto rounded-2xl border border-border/80 bg-card p-10 sm:p-12 text-center shadow-card transition-shadow duration-500 hover:shadow-glow">
+        <div className="w-full rounded-2xl border border-border/80 bg-card p-10 sm:p-12 text-center shadow-card transition-shadow duration-500 hover:shadow-glow">
           <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">Start with a free account</h2>
           <p className="text-muted-foreground mt-4 text-lg max-w-lg mx-auto leading-relaxed">
             Set up your brand, connect a channel, and publish your first post. Most teams are up and running the same day.

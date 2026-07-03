@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Field, FormInput } from "@/components/forms";
 import { Lock, Rocket } from "lucide-react";
+import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -42,7 +43,9 @@ const ResetPassword = () => {
   if (!token) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="w-full max-w-md shadow-card border-border/50 rounded-xl">
+        <div className="w-full max-w-md space-y-6">
+          <AppBreadcrumbs />
+          <Card className="shadow-card border-border/50 rounded-xl">
           <CardContent className="p-8 text-center text-muted-foreground">
             <p>Invalid or expired reset link. Please request a new password reset.</p>
             <Button variant="link" className="mt-4" onClick={() => navigate("/auth")}>Back to Sign In</Button>
@@ -55,6 +58,7 @@ const ResetPassword = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
+        <AppBreadcrumbs />
         <div className="text-center space-y-2">
           <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-glow">
             <Rocket className="h-7 w-7 text-primary-foreground" />

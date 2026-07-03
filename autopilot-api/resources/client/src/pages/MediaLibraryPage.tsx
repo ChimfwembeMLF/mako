@@ -96,7 +96,7 @@ export default function MediaLibraryPage() {
 
   return (
     <PermissionGate require={P.media.view} fallback={true}>
-      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+      <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <Image className="h-6 w-6 text-primary" />

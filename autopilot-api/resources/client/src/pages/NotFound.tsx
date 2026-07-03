@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 
 const NotFound = () => {
   const location = useLocation();
@@ -13,8 +14,10 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted px-4">
-      <div className="text-center max-w-md">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted px-4 py-8">
+      <div className="w-full max-w-md space-y-6">
+        <AppBreadcrumbs />
+        <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold font-display">404</h1>
         <p className="mb-2 text-xl text-muted-foreground">Page not found</p>
         <p className="mb-6 text-sm text-muted-foreground break-all">
@@ -23,6 +26,7 @@ const NotFound = () => {
         <Button asChild>
           <Link to={homeTo}>{user ? "Back to dashboard" : "Return to home"}</Link>
         </Button>
+        </div>
       </div>
     </div>
   );

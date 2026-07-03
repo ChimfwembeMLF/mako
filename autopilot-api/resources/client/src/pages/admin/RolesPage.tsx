@@ -110,7 +110,7 @@ export default function RolesPage() {
 
   return (
     <PermissionGate requireAny={[P.admin.roles, P.team.assignRoles]} fallback={true}>
-      <div className="max-w-6xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+      <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center gap-3">
           <ShieldCheck className="h-6 w-6 text-primary" />
           <div>

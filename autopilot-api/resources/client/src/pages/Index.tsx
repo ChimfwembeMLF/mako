@@ -91,7 +91,7 @@ const Dashboard = () => {
     : modules.filter((mod) => !mod.permission || can(mod.permission));
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       {/* Hero */}
       <div className="relative overflow-hidden rounded-2xl gradient-primary p-6 sm:p-8 shadow-glow">
         <div className="relative z-10">

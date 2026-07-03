@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 
 export default function SocialCallback() {
   const location = useLocation();
@@ -49,10 +50,13 @@ export default function SocialCallback() {
   }, [location, navigate, toast, completeOAuthLogin]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-        <p className="mt-4 text-muted-foreground">Completing sign in...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        <AppBreadcrumbs />
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Completing sign in...</p>
+        </div>
       </div>
     </div>
   );

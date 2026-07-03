@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useRef, DragEvent } from "react";
+import { useState, useEffect, useCallback, useRef, DragEvent, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { sanitizeHtml } from "@/lib/sanitize";
 import {
   CalendarClock, Plus, CheckCircle2, XCircle, Send, Facebook, Linkedin, Instagram,
   Twitter, Mail, Megaphone, Zap, Loader2, List, CalendarDays, ChevronLeft, ChevronRight,
-  AlertCircle, RotateCcw,
+  AlertCircle, RotateCcw, Clock, Eye,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,12 +14,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import RichTextEditor from "@/components/RichTextEditor";
 import { MediaUpload } from "@/components/MediaUpload";
 import { MultiPlatformPicker } from "@/components/content/MultiPlatformPicker";
 import { PlatformPreviewPanel } from "@/components/content/PlatformPreviewPanel";
-import { buildPlatformPayloads } from "@/lib/platforms";
+import { PublishPanel } from "@/components/content/PublishPanel";
+import type { ContentItem } from "@/components/content/types";
+import { buildPlatformPayloads, platformRequiresMedia, instagramHasMedia, type PlatformMediaAttachment, type PlatformPayload } from "@/lib/platforms";
+import { resolveRetryPublishArgs, submitPublish, toPublishMediaUrl } from "@/lib/publishContent";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -53,6 +64,48 @@ const statusDots: Record<string, string> = {
   rejected: "bg-destructive",
 };
 
+function toLocalDateInput(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function parseScheduleDateFromApi(value: unknown): string | null {
+  if (value == null) return null;
+  const raw = String(value);
+  return raw.includes("T") ? raw.split("T")[0] : raw.slice(0, 10);
+}
+
+/** Normalize API timetz to HH:mm for time inputs */
+function parseTimeForInput(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const match = String(value).match(/(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  return `${match[1].padStart(2, "0")}:${match[2]}`;
+}
+
+function formatTimeDisplay(value: string | null | undefined): string | null {
+  const parsed = parseTimeForInput(value);
+  if (!parsed) return null;
+  const [h, m] = parsed.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
+function formatScheduleLabel(date: string | null, time: string | null | undefined): string {
+  if (!date) return "Not scheduled";
+  const datePart = new Date(`${date}T12:00:00`).toLocaleDateString();
+  const timePart = formatTimeDisplay(time);
+  return timePart ? `${datePart} at ${timePart}` : datePart;
+}
+
+function toApiTime(value: string): string {
+  const parsed = parseTimeForInput(value);
+  return parsed ? `${parsed}:00` : "09:00:00";
+}
+
 interface ScheduledPost {
   id: string;
   content: string;
@@ -68,6 +121,32 @@ interface ScheduledPost {
   scheduled_time: string | null;
   publish_failed_reason: string | null;
   published_at: string | null;
+  platform_payloads?: Record<string, PlatformPayload>;
+  workspace_id?: string;
+}
+
+function postToContentItem(post: ScheduledPost): ContentItem {
+  return {
+    id: post.id,
+    title: post.title ?? undefined,
+    content: post.content,
+    content_type: post.content_type,
+    platforms: post.platforms,
+    platformPayloads: post.platform_payloads,
+    workspaceId: post.workspace_id,
+    campaign_theme: post.campaign_theme ?? undefined,
+    status: post.status,
+    created_at: post.created_at,
+  };
+}
+
+function getPostPreviewPayloads(post: ScheduledPost): Record<string, PlatformPayload> {
+  if (post.platform_payloads && Object.keys(post.platform_payloads).length > 0) {
+    return post.platform_payloads;
+  }
+  const platforms =
+    post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+  return buildPlatformPayloads(post.content, post.title ?? "", platforms);
 }
 
 const Scheduler = () => {
@@ -82,18 +161,62 @@ const Scheduler = () => {
   const [newTitle, setNewTitle] = useState("");
   const [newMedia, setNewMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
-  const [publishing, setPublishing] = useState<string | null>(null);
   const [runningWorkflow, setRunningWorkflow] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [dragId, setDragId] = useState<string | null>(null);
+  const [reschedule, setReschedule] = useState<{
+    postId: string;
+    date: string;
+    time: string;
+  } | null>(null);
+  const [savingReschedule, setSavingReschedule] = useState(false);
+  const [publishItem, setPublishItem] = useState<ContentItem | null>(null);
+  const [previewPost, setPreviewPost] = useState<ScheduledPost | null>(null);
+  const [queuePreviewTab, setQueuePreviewTab] = useState("facebook");
+  const [schedulePayloadOverrides, setSchedulePayloadOverrides] = useState<
+    Record<string, PlatformPayload>
+  >({});
   const { toast } = useToast();
   const { user } = useAuth();
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
 
+  const schedulePreviewPayloads = useMemo(() => {
+    const baseMedia: PlatformMediaAttachment[] = newMedia
+      ? [{ url: newMedia.url, type: newMedia.type }]
+      : [];
+    return buildPlatformPayloads(newContent, newTitle, selectedPlatforms, baseMedia);
+  }, [newContent, newTitle, selectedPlatforms, newMedia]);
+
+  const displaySchedulePayloads = useMemo(() => {
+    const merged = { ...schedulePreviewPayloads };
+    for (const [platform, payload] of Object.entries(schedulePayloadOverrides)) {
+      if (merged[platform]) {
+        merged[platform] = { ...merged[platform], ...payload };
+      }
+    }
+    return merged;
+  }, [schedulePreviewPayloads, schedulePayloadOverrides]);
+
+  const instagramNeedsMedia = selectedPlatforms.some(
+    (p) => platformRequiresMedia(p) && !instagramHasMedia(displaySchedulePayloads[p], newMedia ? 1 : 0),
+  );
+
   useEffect(() => {
     if (user && activeWorkspace) loadPosts();
   }, [user, tenant?.id, activeWorkspace, workspaceVersion]);
+
+  useEffect(() => {
+    if (sheetOpen && !newDate) {
+      setNewDate(toLocalDateInput(new Date()));
+    }
+  }, [sheetOpen, newDate]);
+
+  useEffect(() => {
+    if (!sheetOpen) {
+      setSchedulePayloadOverrides({});
+    }
+  }, [sheetOpen]);
 
   const loadPosts = async () => {
     if (!user || !activeWorkspace) return;
@@ -116,10 +239,12 @@ const Scheduler = () => {
           media_url: null,
           media_type: null,
           campaign_theme: item.campaignTheme != null ? String(item.campaignTheme) : null,
-          scheduled_date: item.scheduledDate != null ? String(item.scheduledDate).split("T")[0] : null,
+          scheduled_date: parseScheduleDateFromApi(item.scheduledDate),
           scheduled_time: item.scheduledTime != null ? String(item.scheduledTime) : null,
           publish_failed_reason: item.publishFailedReason != null ? String(item.publishFailedReason) : null,
           published_at: item.publishedAt != null ? String(item.publishedAt) : null,
+          platform_payloads: item.platformPayloads as Record<string, PlatformPayload> | undefined,
+          workspace_id: item.workspaceId != null ? String(item.workspaceId) : undefined,
         })),
       );
     } catch {
@@ -130,8 +255,16 @@ const Scheduler = () => {
   const handleRetry = async (id: string) => {
     setRetrying(id);
     try {
-      const { submitPublish } = await import('@/lib/publishContent');
-      await submitPublish(id, undefined, undefined, (t) => toast(t));
+      const retryArgs = await resolveRetryPublishArgs(id);
+      if (retryArgs.alreadyComplete) {
+        toast({
+          title: "Already published",
+          description: "All platforms for this post were published successfully.",
+        });
+        loadPosts();
+        return;
+      }
+      await submitPublish(id, retryArgs.platforms, retryArgs.platformPayloads, (t) => toast(t));
       loadPosts();
     } catch (err: any) {
       toast({ title: "Retry failed", description: err.message, variant: "destructive" });
@@ -142,22 +275,65 @@ const Scheduler = () => {
 
   const handleSchedule = async () => {
     if (!user || !newContent.trim() || !selectedPlatforms.length || !activeWorkspace) return;
-    const payloads = buildPlatformPayloads(newContent, newTitle, selectedPlatforms);
+    if (!newDate) {
+      toast({ title: "Date required", description: "Pick a date and time for this post.", variant: "destructive" });
+      return;
+    }
+    const baseMedia: PlatformMediaAttachment[] = newMedia
+      ? [{ url: newMedia.url, type: newMedia.type }]
+      : [];
+
+    const missingMedia = selectedPlatforms.filter(
+      (p) => platformRequiresMedia(p) && !instagramHasMedia(displaySchedulePayloads[p], newMedia ? 1 : 0),
+    );
+    if (missingMedia.length > 0) {
+      toast({
+        title: "Media required",
+        description: `${missingMedia.map((p) => channelLabels[p] ?? p).join(", ")} requires at least one image or video before scheduling.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const storedPayloads = Object.fromEntries(
+      Object.entries(displaySchedulePayloads).map(([platform, payload]) => [
+        platform,
+        {
+          ...payload,
+          media: payload.media?.map((m) => ({
+            ...m,
+            url: toPublishMediaUrl(m.url),
+          })),
+        },
+      ]),
+    );
+
     try {
-      await contentItemsApi.create({
+      const created = await contentItemsApi.create({
         userId: user.id,
         tenantId: tenant?.id,
         workspaceId: activeWorkspace,
         content: newContent,
         contentType: selectedPlatforms[0],
         platforms: selectedPlatforms,
-        platformPayloads: payloads,
-        title: newTitle.trim() || `Scheduled for ${newDate} ${newTime}`,
+        platformPayloads: storedPayloads,
+        title: newTitle.trim() || `Scheduled for ${formatScheduleLabel(newDate, newTime)}`,
         status: "approved",
-        scheduledDate: newDate || undefined,
-        scheduledTime: newTime ? `${newTime}:00` : undefined,
+        scheduledDate: newDate,
+        scheduledTime: toApiTime(newTime || "09:00"),
       } as any);
-      toast({ title: "Scheduled!", description: `One post scheduled for ${selectedPlatforms.length} platform(s).` });
+
+      const contentId = created?.id ?? created?.data?.id;
+      if (newMedia && tenant?.id && contentId) {
+        await contentItemsApi.attachMedia(contentId, tenant.id, [
+          { url: toPublishMediaUrl(newMedia.url), type: newMedia.type },
+        ]);
+      }
+
+      toast({
+        title: "Scheduled!",
+        description: `Post scheduled for ${formatScheduleLabel(newDate, newTime)} on ${selectedPlatforms.length} platform(s).`,
+      });
       setSheetOpen(false);
       setNewContent("");
       setNewTitle("");
@@ -174,17 +350,22 @@ const Scheduler = () => {
     loadPosts();
   };
 
-  const handlePublish = async (id: string) => {
-    setPublishing(id);
-    try {
-      const { submitPublish } = await import('@/lib/publishContent');
-      await submitPublish(id, undefined, undefined, (t) => toast(t));
-      loadPosts();
-    } catch (err: any) {
-      toast({ title: "Publish failed", description: err.message, variant: "destructive" });
-    } finally {
-      setPublishing(null);
-    }
+  const handlePublish = (post: ScheduledPost) => {
+    setPublishItem(postToContentItem(post));
+  };
+
+  const openQueuePreview = (post: ScheduledPost) => {
+    const platforms =
+      post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+    setQueuePreviewTab(platforms[0] ?? "facebook");
+    setPreviewPost(post);
+  };
+
+  const closePublish = () => setPublishItem(null);
+
+  const handlePublished = () => {
+    closePublish();
+    loadPosts();
   };
 
   const handleDailyWorkflow = async () => {
@@ -242,12 +423,48 @@ const Scheduler = () => {
   }, [calendarMonth]);
 
   const getPostsForDate = useCallback((date: Date) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = toLocalDateInput(date);
     return posts.filter((p) => {
       if (p.scheduled_date) return p.scheduled_date === dateStr;
       return p.created_at.startsWith(dateStr);
     });
   }, [posts]);
+
+  const openReschedule = (post: ScheduledPost, dateOverride?: string) => {
+    setReschedule({
+      postId: post.id,
+      date: dateOverride ?? post.scheduled_date ?? toLocalDateInput(new Date()),
+      time: parseTimeForInput(post.scheduled_time) ?? "09:00",
+    });
+  };
+
+  const saveReschedule = async () => {
+    if (!reschedule?.date) {
+      toast({ title: "Date required", variant: "destructive" });
+      return;
+    }
+    setSavingReschedule(true);
+    try {
+      await contentItemsApi.update(reschedule.postId, {
+        scheduledDate: reschedule.date,
+        scheduledTime: toApiTime(reschedule.time || "09:00"),
+      } as any);
+      toast({
+        title: "Schedule updated",
+        description: formatScheduleLabel(reschedule.date, reschedule.time),
+      });
+      setReschedule(null);
+      loadPosts();
+    } catch (err: unknown) {
+      toast({
+        title: "Failed to update schedule",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    } finally {
+      setSavingReschedule(false);
+    }
+  };
 
   const handleDragStart = (e: DragEvent, postId: string) => {
     setDragId(postId);
@@ -266,14 +483,9 @@ const Scheduler = () => {
     if (!postId) return;
     setDragId(null);
 
-    const dateStr = date.toISOString().split("T")[0];
-    try {
-      await contentItemsApi.update(postId, { scheduledDate: dateStr } as any);
-      toast({ title: "Rescheduled!", description: `Moved to ${date.toLocaleDateString()}` });
-      loadPosts();
-    } catch (err: any) {
-      toast({ title: "Failed to reschedule", description: err.message, variant: "destructive" });
-    }
+    const post = posts.find((p) => p.id === postId);
+    if (!post) return;
+    openReschedule(post, toLocalDateInput(date));
   };
 
   const today = new Date();
@@ -292,7 +504,7 @@ const Scheduler = () => {
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
@@ -350,7 +562,12 @@ const Scheduler = () => {
                     <RichTextEditor value={newContent} onChange={setNewContent} placeholder="Write your post content..." minHeight="100px" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Media <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                    <Label>
+                      Media{" "}
+                      <span className="text-muted-foreground text-xs">
+                        {instagramNeedsMedia ? "(required for Instagram)" : "(optional)"}
+                      </span>
+                    </Label>
                     {newMedia ? (
                       <div className="relative w-full rounded-lg overflow-hidden border border-border/50 bg-muted/30">
                         {newMedia.type === "image" ? (
@@ -367,18 +584,34 @@ const Scheduler = () => {
                       <MediaUpload label="" onUpload={(url, type) => setNewMedia({ url, type })} />
                     )}
                   </div>
-                  <Button onClick={handleSchedule} disabled={!newContent.trim() || !selectedPlatforms.length} className="w-full gradient-primary text-primary-foreground border-0">
+                  <Button
+                    onClick={handleSchedule}
+                    disabled={
+                      !newContent.trim() ||
+                      !selectedPlatforms.length ||
+                      !newDate ||
+                      instagramNeedsMedia
+                    }
+                    className="w-full gradient-primary text-primary-foreground border-0"
+                  >
                     <Send className="mr-2 h-4 w-4" /> Schedule to {selectedPlatforms.length} platform{selectedPlatforms.length !== 1 ? 's' : ''}
                   </Button>
                 </div>
                 <PlatformPreviewPanel
                   platforms={selectedPlatforms}
-                  platformPayloads={{}}
+                  platformPayloads={displaySchedulePayloads}
                   title={newTitle}
                   baseContent={newContent}
                   previewTab={previewTab}
                   onPreviewTabChange={setPreviewTab}
                   mediaUrls={newMedia ? [newMedia.url] : []}
+                  showEditors
+                  onEditPayload={(platform, patch) =>
+                    setSchedulePayloadOverrides((prev) => ({
+                      ...prev,
+                      [platform]: { ...displaySchedulePayloads[platform], ...prev[platform], ...patch },
+                    }))
+                  }
                 />
               </div>
             </SheetContent>
@@ -457,26 +690,44 @@ const Scheduler = () => {
                     <div className="space-y-0.5">
                       {dayPosts.slice(0, 3).map((post) => {
                         const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+                        const timeLabel = formatTimeDisplay(post.scheduled_time);
                         return (
                           <div
                             key={post.id}
                             draggable
                             onDragStart={(e) => handleDragStart(e, post.id)}
-                            className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border cursor-grab active:cursor-grabbing bg-muted/60 ${
+                            className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium border cursor-grab active:cursor-grabbing bg-muted/60 hover:bg-muted ${
                               dragId === post.id ? "opacity-50" : ""
                             }`}
-                            title={`${platforms.map((p) => channelLabels[p] || p).join(', ')} • ${post.status}\n${post.content.replace(/<[^>]*>/g, "").slice(0, 80)}`}
+                            title={`${platforms.map((p) => channelLabels[p] || p).join(', ')} • ${post.status}${timeLabel ? ` • ${timeLabel}` : ''}\n${post.content.replace(/<[^>]*>/g, "").slice(0, 80)}`}
                           >
-                            <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${statusDots[post.status] || "bg-muted-foreground"}`} />
-                            {/* Show all platform icons */}
-                            {platforms.map((p) => {
-                              const Icon = channelIcons[p] || CalendarClock;
-                              return <Icon key={p} className="h-2.5 w-2.5 shrink-0" />;
-                            })}
-                            <span className="truncate">
-                              {post.title?.replace(/<[^>]*>/g, "").slice(0, 15) ||
-                                platforms.map((p) => channelLabels[p] || p).join(", ")}
-                            </span>
+                            <Link
+                              to={`/content/${post.id}`}
+                              className="flex items-center gap-1 min-w-0 flex-1 cursor-pointer"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${statusDots[post.status] || "bg-muted-foreground"}`} />
+                              {platforms.map((p) => {
+                                const Icon = channelIcons[p] || CalendarClock;
+                                return <Icon key={p} className="h-2.5 w-2.5 shrink-0" />;
+                              })}
+                              <span className="truncate">
+                                {timeLabel ||
+                                  post.title?.replace(/<[^>]*>/g, "").slice(0, 15) ||
+                                  platforms.map((p) => channelLabels[p] || p).join(", ")}
+                              </span>
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openReschedule(post);
+                              }}
+                              className="shrink-0 rounded p-0.5 hover:bg-background/80 cursor-pointer"
+                              title="Set date & time"
+                            >
+                              <Clock className="h-2.5 w-2.5 text-muted-foreground" />
+                            </button>
                           </div>
                         );
                       })}
@@ -494,7 +745,7 @@ const Scheduler = () => {
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Approved</span>
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> Published</span>
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-destructive" /> Rejected</span>
-              <span className="ml-auto">Drag posts to reschedule</span>
+              <span className="ml-auto">Click to view · clock to reschedule · drag to move</span>
             </div>
           </CardContent>
         </Card>
@@ -528,12 +779,18 @@ const Scheduler = () => {
                             <Badge key={p} variant="secondary" className="text-xs mr-1">{channelLabels[p] || p}</Badge>
                           ))}
                           <Badge className={`text-xs ${statusColors[post.status]}`}>{post.status}</Badge>
-                          {post.scheduled_date && (
-                            <Badge variant="outline" className="text-xs">
-                              <CalendarDays className="h-3 w-3 mr-1" />
-                              {new Date(post.scheduled_date + "T00:00:00").toLocaleDateString()}
-                            </Badge>
-                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs gap-1"
+                            onClick={() => openReschedule(post)}
+                          >
+                            <CalendarDays className="h-3 w-3" />
+                            {post.scheduled_date
+                              ? formatScheduleLabel(post.scheduled_date, post.scheduled_time)
+                              : "Set schedule"}
+                          </Button>
                           {post.campaign_theme && <span className="text-xs text-muted-foreground">{post.campaign_theme}</span>}
                           {post.publish_failed_reason && (
                             <TooltipProvider>
@@ -570,7 +827,11 @@ const Scheduler = () => {
                             <img src={post.media_url} alt="" className="w-full max-h-32 object-cover" />
                           </div>
                         )}
-                        <div className="text-sm text-foreground line-clamp-2" dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }} />
+                        <Link
+                          to={`/content/${post.id}`}
+                          className="text-sm text-foreground line-clamp-2 hover:underline block"
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.content) }}
+                        />
                         <p className="text-xs text-muted-foreground mt-1">
                           {post.published_at
                             ? `Published ${new Date(post.published_at).toLocaleString()}`
@@ -578,16 +839,29 @@ const Scheduler = () => {
                         </p>
                       </div>
                       <div className="flex gap-1 shrink-0">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => openQueuePreview(post)}
+                          className="h-8 text-muted-foreground"
+                          title="Preview per-platform content"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         {post.status === "draft" && (
                           <Button size="sm" variant="ghost" onClick={() => updateStatus(post.id, "approved")} className="text-primary h-8">
                             <CheckCircle2 className="h-4 w-4" />
                           </Button>
                         )}
                         {(post.status === "approved" || post.status === "published" || post.status === "rejected") && (
-                          <Button size="sm" variant="ghost" onClick={() => handlePublish(post.id)} disabled={publishing === post.id}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handlePublish(post)}
                             className={`h-8 ${post.status === "approved" ? "text-green-600" : "text-muted-foreground"}`}
-                            title={post.status === "published" ? "Re-publish" : post.status === "rejected" ? "Retry publish" : "Publish"}>
-                            {publishing === post.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                            title={post.status === "published" ? "Publish again" : post.status === "rejected" ? "Open publisher" : "Publish"}
+                          >
+                            <Send className="h-4 w-4" />
                           </Button>
                         )}
                         {post.publish_failed_reason && (
@@ -610,6 +884,109 @@ const Scheduler = () => {
           )}
         </div>
       )}
+
+      <Dialog open={reschedule != null} onOpenChange={(open) => !open && setReschedule(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Set publish date & time</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="reschedule-date">Date</Label>
+              <Input
+                id="reschedule-date"
+                type="date"
+                value={reschedule?.date ?? ""}
+                onChange={(e) =>
+                  setReschedule((prev) => (prev ? { ...prev, date: e.target.value } : prev))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reschedule-time">Time</Label>
+              <Input
+                id="reschedule-time"
+                type="time"
+                value={reschedule?.time ?? "09:00"}
+                onChange={(e) =>
+                  setReschedule((prev) => (prev ? { ...prev, time: e.target.value } : prev))
+                }
+              />
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" />
+            Auto-publish runs when this date and time is reached (approved posts only).
+          </p>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setReschedule(null)}>
+              Cancel
+            </Button>
+            <Button type="button" onClick={saveReschedule} disabled={savingReschedule || !reschedule?.date}>
+              {savingReschedule ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save schedule
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Sheet open={!!previewPost} onOpenChange={(open) => { if (!open) setPreviewPost(null); }}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-display">Per-platform content</SheetTitle>
+          </SheetHeader>
+          {previewPost && (
+            <div className="mt-4 space-y-4">
+              <p className="text-sm text-muted-foreground">
+                What will be sent to each platform when this post publishes.
+                {previewPost.scheduled_date
+                  ? ` Scheduled for ${formatScheduleLabel(previewPost.scheduled_date, previewPost.scheduled_time)}.`
+                  : ""}
+              </p>
+              <PlatformPreviewPanel
+                platforms={
+                  previewPost.platforms && previewPost.platforms.length > 0
+                    ? previewPost.platforms
+                    : [previewPost.content_type]
+                }
+                platformPayloads={getPostPreviewPayloads(previewPost)}
+                title={previewPost.title ?? ""}
+                baseContent={previewPost.content}
+                previewTab={queuePreviewTab}
+                onPreviewTabChange={setQueuePreviewTab}
+              />
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" className="flex-1" asChild>
+                  <Link to={`/content/${previewPost.id}`}>Open full detail</Link>
+                </Button>
+                <Button
+                  type="button"
+                  className="flex-1 gradient-primary text-primary-foreground border-0"
+                  onClick={() => {
+                    setPreviewPost(null);
+                    handlePublish(previewPost);
+                  }}
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Edit & publish
+                </Button>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={!!publishItem} onOpenChange={(open) => { if (!open) closePublish(); }}>
+        <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col overflow-hidden">
+          {publishItem && (
+            <PublishPanel
+              item={publishItem}
+              onCancel={closePublish}
+              onPublished={handlePublished}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

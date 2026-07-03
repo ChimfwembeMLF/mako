@@ -1,8 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, FileText, Shield, Trash2 } from 'lucide-react';
+import { FileText, Shield, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from '@/components/Logo';
+import { AppBreadcrumbs } from '@/components/AppBreadcrumbs';
 
 const LEGAL_PAGES = [
   { to: '/privacy', label: 'Privacy', icon: Shield },
@@ -115,13 +116,7 @@ export function LegalLayout({
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
-        <Link
-          to="/"
-          className="mb-8 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to home
-        </Link>
+        <AppBreadcrumbs className="mb-6" />
 
         <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div className="flex items-start gap-4">

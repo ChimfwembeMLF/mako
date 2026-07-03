@@ -106,7 +106,7 @@ export default function TeamPage() {
 
   return (
     <PermissionGate require={P.team.view} fallback={true}>
-      <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+      <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
             <Users className="h-5 w-5 text-primary" />

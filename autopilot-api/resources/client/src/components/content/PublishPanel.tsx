@@ -33,6 +33,7 @@ import {
   formatContentForPlatform,
 } from '@/lib/platforms';
 import { normalizeMediaAsset, type MediaAsset } from '@/lib/mediaUrl';
+import { toPublishMediaUrl } from '@/lib/publishContent';
 import { PlatformPickerCarousel } from './PlatformPickerCarousel';
 import { PlatformPreviewCarousel } from './PlatformPreviewCarousel';
 import { ContentItem } from './types';
@@ -50,16 +51,6 @@ function toMediaAttachments(assets: MediaAsset[]): PlatformMediaAttachment[] {
     name: a.name ?? undefined,
     fileSizeBytes: a.fileSizeBytes ?? undefined,
   }));
-}
-
-/** Send relative /uploads paths so the API can resolve public URLs server-side. */
-function toPublishMediaUrl(url: string): string {
-  if (!url) return url;
-  if (url.startsWith('/uploads/')) return url;
-  if (/supabase\.co\/storage\//i.test(url)) return url;
-  const match = url.match(/\/uploads\/[^?#]+/);
-  if (match) return match[0];
-  return url;
 }
 
 function normalizePayloadsForPublish(
@@ -286,11 +277,8 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
   const missingConnect = selectedPlatforms.filter((p) => !connectedPlatforms.has(p));
 
   const linkedCount = libraryAssets.filter((a) => a.contentId === item.id).length;
-  const publishablePlatforms = selectedPlatforms.filter(
-    (p) => !platformRequiresMedia(p) || instagramHasMedia(platformPayloads[p], linkedCount),
-  );
 
-  const validationIssues = publishablePlatforms.flatMap((p) => {
+  const validationIssues = selectedPlatforms.flatMap((p) => {
     const v = validatePlatformPayload(p, platformPayloads[p] ?? { content: '' });
     return v.errors.map((e) => ({ platform: p, message: e }));
   });
@@ -301,38 +289,29 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       return;
     }
 
-    const skippedInstagram = selectedPlatforms.filter(
+    const missingMedia = selectedPlatforms.filter(
       (p) =>
         platformRequiresMedia(p) &&
-        !instagramHasMedia(platformPayloads[p], libraryAssets.filter((a) => a.contentId === item.id).length),
+        !instagramHasMedia(platformPayloads[p], linkedCount),
     );
-    const platformsToPublish = selectedPlatforms.filter((p) => !skippedInstagram.includes(p));
-
-    if (platformsToPublish.length === 0) {
+    if (missingMedia.length > 0) {
       toast({
-        title: 'Nothing to publish',
-        description: 'Instagram requires at least one attachment. Add media or deselect Instagram.',
+        title: 'Media required',
+        description: `${missingMedia.map((p) => platformOf(p).label).join(', ')} requires at least one image or video. Add media or deselect those platforms.`,
         variant: 'destructive',
       });
       return;
     }
 
-    if (skippedInstagram.length > 0) {
-      toast({
-        title: 'Instagram skipped',
-        description: 'Instagram requires an image or video — publishing other selected platforms only.',
-      });
-    }
-
-    const validationIssues = platformsToPublish.flatMap((p) => {
+    const publishValidationIssues = selectedPlatforms.flatMap((p) => {
       const v = validatePlatformPayload(p, platformPayloads[p] ?? { content: '' });
       return v.errors.map((e) => ({ platform: p, message: e }));
     });
 
-    if (validationIssues.length > 0) {
+    if (publishValidationIssues.length > 0) {
       toast({
         title: 'Fix validation issues',
-        description: validationIssues[0].message,
+        description: publishValidationIssues[0].message,
         variant: 'destructive',
       });
       return;
@@ -342,6 +321,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
     setPublishing(true);
     try {
       let payloadsToUse = { ...platformPayloads };
+      const platformsToPublish = selectedPlatforms;
 
       const shouldAdaptWithAi =
         tenant &&
@@ -395,6 +375,11 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       }
       const publishPayloads = normalizePayloadsForPublish(rawPayloads);
 
+      await contentItemsApi.update(item.id, {
+        platforms: selectedPlatforms,
+        platformPayloads: publishPayloads,
+      } as Parameters<typeof contentItemsApi.update>[1]);
+
       const mediaByUrl = new Map<string, { url: string; type: string; assetId?: string }>();
       for (const p of platformsToPublish) {
         for (const m of publishPayloads[p]?.media ?? []) {
@@ -425,7 +410,10 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
         },
       );
 
-      if (result?.published) {
+      const anySuccess =
+        result?.published ||
+        Object.values(result?.results ?? {}).some((r) => r.published);
+      if (anySuccess) {
         onPublished();
       }
     } catch (err: unknown) {
@@ -552,7 +540,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           type="button"
           className="w-full sm:flex-1 gradient-primary text-primary-foreground border-0"
           onClick={handlePublish}
-          disabled={publishing || generating || !publishablePlatforms.length || validationIssues.length > 0}
+          disabled={publishing || generating || !selectedPlatforms.length || validationIssues.length > 0}
         >
           {publishing ? (
             <Loader2 className="h-4 w-4 animate-spin mr-2" />

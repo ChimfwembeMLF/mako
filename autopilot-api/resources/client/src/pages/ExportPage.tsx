@@ -174,7 +174,7 @@ export default function ExportPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-5 sm:space-y-6 pb-8 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 min-w-0">
       <div className="flex items-center gap-3">
         <Download className="h-6 w-6 text-primary" />
         <div>

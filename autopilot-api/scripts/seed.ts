@@ -126,7 +126,10 @@ async function bootstrap() {
   const autoReplySeeds = app.get(AutoReplySeedService);
   const { UserEntity } = await import('../src/modules/user/user.entity');
   const usersRepo = dataSource.getRepository(UserEntity);
-
+  const backfilled = await autoReplySeeds.backfillTenantsWithNoRules();
+  if (backfilled > 0) {
+    console.log(`Backfilled ${backfilled} auto-reply rule(s) for tenants with none.`);
+  }
   for (const tenant of allTenants) {
     if (tenant.ownerId) {
       await templateSeeds.ensureSeededForTenant(tenant.id, tenant.ownerId);

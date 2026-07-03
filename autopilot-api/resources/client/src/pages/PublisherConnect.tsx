@@ -553,7 +553,7 @@ const PublisherConnect = () => {
   const activePlatform = platforms.find((p) => p.id === connectDialog);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-secondary">
           <Link2 className="h-5 w-5 text-secondary-foreground" />

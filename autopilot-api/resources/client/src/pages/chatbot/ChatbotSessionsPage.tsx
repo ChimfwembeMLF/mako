@@ -36,7 +36,7 @@ export default function ChatbotSessionsPage() {
   }
 
   return (
-    <div className="container max-w-6xl py-6 space-y-6">
+    <div className="w-full py-6 space-y-6">
       <div className="flex items-center gap-3">
         <div className="p-2.5 rounded-xl gradient-primary text-white">
           <History className="h-6 w-6" />

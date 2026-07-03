@@ -105,6 +105,10 @@ async function bootstrap() {
 
   console.log('Seeding tenant defaults for all tenants...');
   const allTenants = await tenantsRepo.find({ select: ['id', 'ownerId'] });
+  const backfilled = await autoReplySeeds.backfillTenantsWithNoRules();
+  if (backfilled > 0) {
+    console.log(`Backfilled ${backfilled} auto-reply rule(s) for tenants with none.`);
+  }
   for (const tenant of allTenants) {
     if (!tenant.ownerId) continue;
     await templateSeeds.ensureSeededForTenant(tenant.id, tenant.ownerId);

@@ -36,10 +36,10 @@ export class TenantQueueFanoutService {
     }));
   }
 
-  /** Distinct tenants with approved content due for auto-publish. */
+  /** Distinct tenants with approved/scheduled content due for auto-publish. */
   async listTenantsForAutoPublish(): Promise<string[]> {
     const items = await this.contentRepo.find({
-      where: { status: 'approved' },
+      where: [{ status: 'approved' }, { status: 'scheduled' }],
     });
     const tenantIds = new Set<string>();
     for (const item of items) {
