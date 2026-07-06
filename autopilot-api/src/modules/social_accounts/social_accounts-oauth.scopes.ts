@@ -9,6 +9,9 @@ export const FACEBOOK_PUBLISHER_SCOPES = [
   'pages_read_engagement',
   'pages_manage_engagement',
   'pages_show_list',
+  'ads_management',
+  'ads_read',
+  'business_management',
 ] as const;
 
 /**

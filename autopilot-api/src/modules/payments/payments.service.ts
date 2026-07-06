@@ -3,6 +3,7 @@ import {
   Logger,
   ForbiddenException,
   NotFoundException,
+  BadRequestException,
   Optional,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -119,6 +120,59 @@ export class PaymentsService {
     };
   }
 
+  async initiateAdsDeposit(
+    params: {
+      tenantId: string;
+      amount: number;
+      phone?: string;
+      correspondent?: string;
+    },
+    userId?: string,
+  ) {
+    if (userId) await this.assertTenantAccess(userId, params.tenantId);
+
+    const amount = Number(params.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new BadRequestException('Amount must be a positive number');
+    }
+
+    const depositId = randomUUID();
+    const amountStr = String(amount);
+
+    const deposit = await this.depositsRepo.save(
+      this.depositsRepo.create({
+        depositId,
+        tenantId: params.tenantId,
+        plan: 'ADS_TOPUP',
+        status: 'ACCEPTED',
+        amount: amountStr,
+        currency: 'ZMW',
+        phone: params.phone,
+        msisdn: params.phone,
+        correspondent: params.correspondent ?? 'MTN_MOMO_ZMB',
+        provider: 'mobile_money',
+        isRenewal: false,
+      }),
+    );
+
+    const autoComplete = this.devAutoCompleteEnabled();
+    if (autoComplete) {
+      await this.completeDeposit(deposit.depositId);
+    }
+
+    return {
+      paymentId: deposit.depositId,
+      status: autoComplete ? 'COMPLETED' : deposit.status,
+      activated: autoComplete,
+      plan: 'ADS_TOPUP',
+      amount: amountStr,
+      isRenewal: false,
+      message: autoComplete
+        ? 'Ads balance topped up successfully'
+        : 'Payment request sent — approve the prompt on your phone',
+    };
+  }
+
   async initiateRenewalDeposit(tenantId: string) {
     const sub = await this.subscriptions.getRenewalContext(tenantId);
     const plan = normalizePlanKey(sub.plan);
@@ -149,6 +203,19 @@ export class PaymentsService {
     }
 
     await this.depositsRepo.update(deposit.id, { status: 'COMPLETED' });
+    
+    if (deposit.plan === 'ADS_TOPUP') {
+      const amount = Number(deposit.amount) || 0;
+      await this.tenantsRepo.createQueryBuilder()
+        .update(Tenants)
+        .set({ adsBalance: () => `"ads_balance" + ${amount}` })
+        .where('id = :id', { id: deposit.tenantId })
+        .execute();
+      
+      this.logger.log(`Added ${amount} ZMW to ads balance for tenant ${deposit.tenantId} via deposit ${depositId}`);
+      return { tenantId: deposit.tenantId, plan: 'ADS_TOPUP', status: 'COMPLETED', amount };
+    }
+
     const plan = normalizePlanKey(deposit.plan) as PlanKey;
     const paidAt = new Date();
     await this.subscriptions.activatePlan(deposit.tenantId, plan, paidAt);

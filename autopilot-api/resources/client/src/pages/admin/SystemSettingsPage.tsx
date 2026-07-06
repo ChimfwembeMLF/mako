@@ -10,7 +10,7 @@ import { Field, FormSection, FormRow, FormInput } from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, ShieldCheck, Plus, Trash2, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { Palette, ShieldCheck, Plus, Trash2, Save, ChevronDown, ChevronUp, Target } from 'lucide-react';
 
 import { MAKO_THEME } from '@/lib/mako-brand';
 
@@ -34,6 +34,9 @@ export default function SystemSettingsPage() {
   const [newPerm, setNewPerm] = useState({ key: '', label: '', module: '' });
   const [showGlobalAdvanced, setShowGlobalAdvanced] = useState(false);
   const [showTenantAdvanced, setShowTenantAdvanced] = useState(false);
+
+  const [enabledAds, setEnabledAds] = useState<string[]>(['META', 'GOOGLE', 'EMBED', 'TIKTOK', 'LINKEDIN', 'PINTEREST', 'TABOOLA', 'X']);
+  const [savingAds, setSavingAds] = useState(false);
 
   function ThemePreviewStrip({ theme }: { theme: ThemeConfig }) {
     const swatches = [
@@ -65,6 +68,9 @@ export default function SystemSettingsPage() {
   useEffect(() => {
     systemSettingsApi.getTheme().then(setGlobalTheme).catch(() => {});
     permissionsApi.findAll().then((d) => setPermissions(Array.isArray(d) ? d : [])).catch(() => {});
+    systemSettingsApi.findOne('enabled_ad_platforms').then((d) => {
+      if (d?.value?.platforms) setEnabledAds(d.value.platforms);
+    }).catch(() => {});
     if (tenant?.themeConfig) setTenantTheme(tenant.themeConfig as ThemeConfig);
   }, [tenant]);
 
@@ -125,6 +131,21 @@ export default function SystemSettingsPage() {
     }
   }
 
+  async function saveEnabledAds() {
+    setSavingAds(true);
+    try {
+      await systemSettingsApi.upsert('enabled_ad_platforms', {
+        value: { platforms: enabledAds },
+        description: 'Globally enabled Ad Platforms',
+      });
+      toast({ title: 'Ad platforms updated' });
+    } catch (err: unknown) {
+      toast({ title: 'Error', description: 'Failed to save', variant: 'destructive' });
+    } finally {
+      setSavingAds(false);
+    }
+  }
+
   return (
     <PermissionGate superAdmin fallback={true}>
       <div className="w-full space-y-5 sm:space-y-6 pb-8 min-w-0">
@@ -137,6 +158,7 @@ export default function SystemSettingsPage() {
           <TabsList>
             <TabsTrigger value="theme" className="gap-1.5"><Palette className="h-3.5 w-3.5" /> Theme</TabsTrigger>
             <TabsTrigger value="permissions" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Permissions</TabsTrigger>
+            <TabsTrigger value="ads" className="gap-1.5"><Target className="h-3.5 w-3.5" /> Ad Platforms</TabsTrigger>
           </TabsList>
 
           <TabsContent value="theme" className="space-y-6 mt-4">
@@ -265,6 +287,33 @@ export default function SystemSettingsPage() {
                 <Button size="sm" onClick={addPermission} className="gap-1 h-9 rounded-lg"><Plus className="h-3.5 w-3.5" /> Add</Button>
               </FormSection>
             )}
+          </TabsContent>
+
+          <TabsContent value="ads" className="space-y-4 mt-4">
+            <FormSection title="Enabled Ad Platforms" description="Toggle which platforms are available for users to generate campaigns.">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 p-4 border rounded-xl bg-card">
+                {['META', 'GOOGLE', 'EMBED', 'TIKTOK', 'LINKEDIN', 'PINTEREST', 'TABOOLA', 'X'].map((plat) => (
+                  <label key={plat} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
+                      checked={enabledAds.includes(plat)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEnabledAds(prev => [...prev, plat]);
+                        } else {
+                          setEnabledAds(prev => prev.filter(p => p !== plat));
+                        }
+                      }}
+                    />
+                    <span className="font-medium text-sm">{plat}</span>
+                  </label>
+                ))}
+              </div>
+              <Button onClick={saveEnabledAds} disabled={savingAds} className="gap-1.5 h-10 rounded-lg">
+                <Save className="h-4 w-4" /> Save Configuration
+              </Button>
+            </FormSection>
           </TabsContent>
         </Tabs>
       </div>

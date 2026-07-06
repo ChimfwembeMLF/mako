@@ -1250,6 +1250,11 @@ export const paymentsApi = {
             '/api/v1/payments/deposits/initiate',
             { method: 'POST', body: JSON.stringify(data) },
         ),
+    initiateAdsDeposit: (data: { tenantId: string; amount: number; phone?: string; correspondent?: string }) =>
+        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; activated?: boolean }>(
+            '/api/v1/payments/ads-deposit',
+            { method: 'POST', body: JSON.stringify(data) },
+        ),
     listDeposits: (tenantId: string) =>
         request<Array<{
             id: string;
@@ -2440,4 +2445,45 @@ export const notificationsApi = {
         a.remove();
         URL.revokeObjectURL(url);
     },
+};
+export const adsApi = {
+    createCampaign: (tenantId: string, data: any) =>
+        request('/api/v1/ads/campaigns', {
+            method: 'POST',
+            body: JSON.stringify({ ...data, tenantId, launch: true }),
+        }),
+    getCampaigns: (tenantId: string) =>
+        request<any[]>(`/api/v1/ads/campaigns?tenantId=${tenantId}`),
+    publishCampaign: (tenantId: string, id: string) =>
+        request(`/api/v1/ads/campaigns/${id}/publish`, {
+            method: 'POST',
+            body: JSON.stringify({ tenantId }),
+        }),
+    pauseCampaign: (tenantId: string, id: string) =>
+        request(`/api/v1/ads/campaigns/${id}/pause`, {
+            method: 'POST',
+            body: JSON.stringify({ tenantId }),
+        }),
+    getMetrics: (tenantId: string, id: string) =>
+        request<{ spend: number; impressions: number; clicks: number }>(
+            `/api/v1/ads/campaigns/${id}/metrics?tenantId=${tenantId}`,
+        ),
+    getDashboardStats: (tenantId: string) =>
+        request<{ activeCampaigns: number; totalSpend: number; totalImpressions: number }>(
+            `/api/v1/ads/dashboard-stats?tenantId=${tenantId}`,
+        ),
+    getEmbedScript: (tenantId: string, id: string) =>
+        request<{ scriptUrl: string; snippet: string }>(
+            `/api/v1/ads/campaigns/${id}/embed-script?tenantId=${tenantId}`,
+        ),
+    getBalance: (tenantId: string) =>
+        request<{ balance: number }>(`/api/v1/ads/balance?tenantId=${tenantId}`),
+    generateCampaignAssist: (tenantId: string, prompt: string, platform: string) =>
+        request<{ name: string; targetAudience: string; prompt: string; location: string; ageRange: string }>(
+            '/api/v1/ads/ai-assist',
+            {
+                method: 'POST',
+                body: JSON.stringify({ tenantId, prompt, platform }),
+            },
+        ),
 };

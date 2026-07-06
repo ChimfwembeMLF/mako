@@ -12,6 +12,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
 import { ContentCampaignsModule } from './modules/content_campaigns/content-campaigns.module';
 import { ContentItemsModule } from './modules/content_items/content_items.module';
 import { ContentPublicationsModule } from './modules/content_publications/content-publications.module';
+import { AdsModule } from './modules/ads/ads.module';
 import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { MediaModule } from './modules/media/media.module';
@@ -81,6 +82,7 @@ import { ClientStaticModule } from './client-static.module';
     ContentItemsModule,
     ContentPublicationsModule,
     ContentCampaignsModule,
+    AdsModule,
     SubscriptionsModule,
     PaymentsModule,
     MediaModule,

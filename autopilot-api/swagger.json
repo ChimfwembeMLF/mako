@@ -6020,9 +6020,333 @@
         ]
       }
     },
+    "/api/v1/ads/campaigns": {
+      "post": {
+        "operationId": "AdsController_createCampaign",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Draft a new AI Ad Campaign",
+        "tags": [
+          "Ads"
+        ]
+      },
+      "get": {
+        "operationId": "AdsController_getCampaigns",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List all ad campaigns",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/publish": {
+      "post": {
+        "operationId": "AdsController_publishCampaign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Publish a draft campaign to the actual Ad Platform",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/pause": {
+      "post": {
+        "operationId": "AdsController_pauseCampaign",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pause an active campaign",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/dashboard-stats": {
+      "get": {
+        "operationId": "AdsController_getDashboardStats",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Aggregate ads dashboard metrics",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/metrics": {
+      "get": {
+        "operationId": "AdsController_getCampaignMetrics",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get real-time metrics for an active campaign",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/embed-script": {
+      "get": {
+        "operationId": "AdsController_getEmbedScript",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get embed script snippet for self-hosted ads",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/balance": {
+      "get": {
+        "operationId": "AdsController_getBalance",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get current ads balance for tenant",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/ai-assist": {
+      "post": {
+        "operationId": "AdsController_generateCampaignAssist",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Generate AI assist content for Ads",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/embed-ads/widget/{id}.js": {
+      "get": {
+        "operationId": "EmbedAdsController_serveWidget",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Serve the dynamic JS widget for a self-hosted ad",
+        "tags": [
+          "Public Embed Ads"
+        ]
+      }
+    },
+    "/embed-ads/click/{id}": {
+      "get": {
+        "operationId": "EmbedAdsController_trackClick",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Track a click and redirect to the target URL",
+        "tags": [
+          "Public Embed Ads"
+        ]
+      }
+    },
     "/api/v1/payments/deposits/initiate": {
       "post": {
         "operationId": "PaymentsController_initiate",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/ads-deposit": {
+      "post": {
+        "operationId": "PaymentsController_initiateAdsDeposit",
         "parameters": [],
         "responses": {
           "201": {

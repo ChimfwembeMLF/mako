@@ -167,6 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         clearAuthData();
         if (window.location.pathname !== "/auth" && window.location.pathname !== "/auth/callback") {
+          console.warn(`[AUTH] Forcing redirect to /auth at ${new Date().toISOString()} because loadUserFromToken failed with AuthError.`);
           window.location.href = "/auth";
         }
       } else if (isNetworkError(error)) {
@@ -231,15 +232,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authApi.requestPasswordReset(email);
   };
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       await authApi.logout();
     } catch {
-      // ignore logout API failures
+      // ignore
     } finally {
       clearAuthData();
+      console.warn(`[AUTH] User signed out at ${new Date().toISOString()}, redirecting to /auth`);
+      window.location.href = "/auth";
     }
-  };
+  }, [clearAuthData]);
 
   return (
     <AuthContext.Provider value={{

@@ -3,7 +3,7 @@ import {
   Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply, Megaphone,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity,
-  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers,
+  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +178,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <NavItem title="Media Library" url="/media" icon={Image} />
               <NavItem title="Templates" url="/templates" icon={LayoutTemplate} />
+              <NavItem title="Ad Campaigns" url="/ads" icon={Target} />
               <NavItem title="Workspaces" url="/workspaces" icon={Building2} />
             </SidebarMenu>
           </SidebarGroupContent>

@@ -29,6 +29,9 @@ export class Tenants {
   @Column({ type: 'jsonb', nullable: true })
   themeConfig?: Record<string, unknown>;
 
+  @Column('decimal', { precision: 10, scale: 2, default: 0 })
+  adsBalance: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

@@ -34,6 +34,22 @@ export class PaymentsController {
     return this.payments.initiateDeposit(body);
   }
 
+  @Post('ads-deposit')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  initiateAdsDeposit(
+    @Body()
+    body: {
+      tenantId: string;
+      amount: number;
+      phone?: string;
+      correspondent?: string;
+    },
+    @Req() req: Request,
+  ) {
+    return this.payments.initiateAdsDeposit(body, req.user?.['sub'] as string);
+  }
+
   @Post('webhooks/deposit')
   @ApiExcludeEndpoint()
   webhook(@Body() body: { depositId?: string; status?: string }) {

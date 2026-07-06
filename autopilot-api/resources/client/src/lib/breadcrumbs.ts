@@ -48,6 +48,7 @@ const ROUTE_PATTERNS: RoutePattern[] = [
   { path: '/team', crumbs: [DASH, TEAM] },
   { path: '/audit', crumbs: [DASH, { label: 'Audit Logs' }] },
   { path: '/billing', crumbs: [DASH, { label: 'Billing' }] },
+  { path: '/ads', crumbs: [DASH, { label: 'Ads' }] },
   { path: '/export', crumbs: [DASH, { label: 'Export' }] },
   { path: '/workspaces', crumbs: [DASH, { label: 'Workspaces' }] },
   { path: '/admin/roles', crumbs: [DASH, ADMIN, { label: 'Roles' }] },

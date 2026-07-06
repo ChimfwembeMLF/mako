@@ -41,6 +41,7 @@ const TeamPage = lazy(() => import("./pages/team/TeamPage"));
 const UserPermissionsPage = lazy(() => import("./pages/team/UserPermissionsPage"));
 const ApprovalsPage = lazy(() => import("./pages/ApprovalsPage"));
 const MediaLibraryPage = lazy(() => import("./pages/MediaLibraryPage"));
+const AdsPage = lazy(() => import('./pages/AdsPage'));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
 const TemplateEditPage = lazy(() => import("./pages/TemplateEditPage"));
 const RepliesPage = lazy(() => import("./pages/RepliesPage"));
@@ -161,6 +162,9 @@ const App = () => (
 
                   {/* Media */}
                   <Route path="/media" element={<LazyPage><MediaLibraryPage /></LazyPage>} />
+
+                  {/* Ads Management */}
+                  <Route path="/ads" element={<LazyPage><AdsPage /></LazyPage>} />
 
                   {/* Templates */}
                   <Route path="/templates" element={<LazyPage><TemplatesPage /></LazyPage>} />

@@ -1,4 +1,4 @@
-import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History } from "lucide-react";
+import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -37,6 +37,14 @@ const modules: DashboardModule[] = [
     icon: CalendarClock,
     href: "/scheduler",
     gradient: "gradient-accent",
+    status: "Ready",
+  },
+  {
+    title: "Ad Campaigns",
+    description: "Launch AI-generated ads on Meta, Google, TikTok, LinkedIn, Pinterest, Taboola, and X",
+    icon: Target,
+    href: "/ads",
+    gradient: "gradient-primary",
     status: "Ready",
   },
   {
