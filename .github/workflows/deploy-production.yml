@@ -51,7 +51,7 @@ jobs:
             cd autopilot-api
 
             if [ "$RUN_MIGRATIONS" = "true" ]; then
-              yarn deploy:prod
+              corepack yarn deploy:prod
             else
               bash scripts/deploy-production.sh
             fi

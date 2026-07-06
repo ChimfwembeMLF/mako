@@ -21,17 +21,17 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "==> Installing dependencies"
-yarn install --frozen-lockfile 2>/dev/null || yarn install
+corepack yarn install --immutable 2>/dev/null || corepack yarn install
 if [[ -f "$CLIENT/package.json" ]]; then
   (cd "$CLIENT" && npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)
 fi
 
 echo "==> Building client + API (output: client/dist + dist/)"
-yarn build
+corepack yarn build
 
 if [[ "$WITH_MIGRATIONS" == true ]]; then
   echo "==> Running production migrations"
-  yarn migrations:run:prod
+  corepack yarn migrations:run:prod
 fi
 
 mkdir -p logs
