@@ -56,7 +56,9 @@ export class XAdsAdapter implements AdsProviderAdapter {
       `${this.apiBase}/accounts/${accountId}/campaigns`,
       {
         name: payload.campaign.name,
-        funding_instrument_id: this.adsAccount.optionalConfig('X_ADS_FUNDING_INSTRUMENT_ID'),
+        funding_instrument_id: this.adsAccount.optionalConfig(
+          'X_ADS_FUNDING_INSTRUMENT_ID',
+        ),
         daily_budget_amount_local_micro: Math.round(
           Number(payload.campaign.dailyBudget) * 1_000_000,
         ),

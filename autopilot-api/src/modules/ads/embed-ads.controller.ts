@@ -3,7 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Response } from 'express';
 import { ConfigService } from '@nestjs/config';
-import { AdCampaignEntity, AdCampaignStatus } from './entities/ad-campaign.entity';
+import {
+  AdCampaignEntity,
+  AdCampaignStatus,
+} from './entities/ad-campaign.entity';
 import { AdCreativeEntity } from './entities/ad-creative.entity';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { resolveApiPublicUrl } from '../../common/env-urls.util';
@@ -23,24 +26,35 @@ export class EmbedAdsController {
 
   @Get('widget/:id.js')
   @ApiOperation({ summary: 'Serve the dynamic JS widget for a self-hosted ad' })
-  async serveWidget(@Param('id') platformCampaignId: string, @Res() res: Response) {
-    const campaign = await this.campaignRepo.findOne({ where: { platformCampaignId } });
+  async serveWidget(
+    @Param('id') platformCampaignId: string,
+    @Res() res: Response,
+  ) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { platformCampaignId },
+    });
     if (!campaign || campaign.status !== AdCampaignStatus.ACTIVE) {
       return res.status(404).send('console.error("Ad not found or inactive");');
     }
 
-    const creative = await this.creativeRepo.findOne({ where: { campaignId: campaign.id } });
+    const creative = await this.creativeRepo.findOne({
+      where: { campaignId: campaign.id },
+    });
     if (!creative) {
       return res.status(404).send('console.error("Ad creative not found");');
     }
 
     // Increment impressions natively
-    await this.campaignRepo.increment({ id: campaign.id }, 'nativeImpressions', 1);
+    await this.campaignRepo.increment(
+      { id: campaign.id },
+      'nativeImpressions',
+      1,
+    );
 
     // Build the dynamic JavaScript that renders the banner
     const apiBase = resolveApiPublicUrl(this.config) || 'http://localhost:4000';
     const redirectUrl = `${apiBase}/embed-ads/click/${platformCampaignId}`;
-    
+
     // A clean, modern banner ad injected into the DOM
     const jsContent = `
       (function() {
@@ -86,8 +100,13 @@ export class EmbedAdsController {
 
   @Get('click/:id')
   @ApiOperation({ summary: 'Track a click and redirect to the target URL' })
-  async trackClick(@Param('id') platformCampaignId: string, @Res() res: Response) {
-    const campaign = await this.campaignRepo.findOne({ where: { platformCampaignId } });
+  async trackClick(
+    @Param('id') platformCampaignId: string,
+    @Res() res: Response,
+  ) {
+    const campaign = await this.campaignRepo.findOne({
+      where: { platformCampaignId },
+    });
     if (!campaign || campaign.status !== AdCampaignStatus.ACTIVE) {
       return res.status(404).send('Ad not found or inactive');
     }

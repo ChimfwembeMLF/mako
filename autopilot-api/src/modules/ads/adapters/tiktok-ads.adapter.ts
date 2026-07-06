@@ -13,7 +13,9 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
 
   constructor(private readonly adsAccount: AdsAccountService) {}
 
-  private advertiserId(account: { metadata?: Record<string, unknown> }): string {
+  private advertiserId(account: {
+    metadata?: Record<string, unknown>;
+  }): string {
     const fromMeta = account.metadata?.advertiser_id;
     if (typeof fromMeta === 'string' && fromMeta.trim()) return fromMeta.trim();
     return this.adsAccount.requireConfig(
@@ -58,7 +60,9 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
       );
     }
 
-    this.logger.log(`Created TikTok campaign ${campaignId} for tenant ${tenantId}`);
+    this.logger.log(
+      `Created TikTok campaign ${campaignId} for tenant ${tenantId}`,
+    );
     return String(campaignId);
   }
 
@@ -112,7 +116,11 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
         dimensions: JSON.stringify(['campaign_id']),
         metrics: JSON.stringify(['spend', 'impressions', 'clicks']),
         filtering: JSON.stringify([
-          { field_name: 'campaign_ids', filter_type: 'IN', filter_value: [platformCampaignId] },
+          {
+            field_name: 'campaign_ids',
+            filter_type: 'IN',
+            filter_value: [platformCampaignId],
+          },
         ]),
       },
     });

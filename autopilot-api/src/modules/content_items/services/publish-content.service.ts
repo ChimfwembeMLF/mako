@@ -76,8 +76,8 @@ export class PublishContentService {
     const platforms = explicitPlatforms
       ? params.platforms!
       : item.platforms?.length
-        ? item.platforms
-        : ['facebook'];
+      ? item.platforms
+      : ['facebook'];
 
     const latestBefore = await this.latestStatusByPlatform(item.id);
     const platformsToRun = explicitPlatforms
@@ -260,7 +260,9 @@ export class PublishContentService {
       (r) => r.published && r.externalPostId,
     )?.externalPostId;
 
-    const failedThisRun = Object.entries(results).filter(([, r]) => !r.published);
+    const failedThisRun = Object.entries(results).filter(
+      ([, r]) => !r.published,
+    );
 
     if (allPlatformsPublished) {
       await this.contentRepo.update(item.id, {
@@ -293,7 +295,7 @@ export class PublishContentService {
       const nextAttempts =
         failedThisRun.length > 0
           ? (item.publishAttempts ?? 0) + 1
-          : (item.publishAttempts ?? 0);
+          : item.publishAttempts ?? 0;
       const exhausted = nextAttempts >= MAX_CONTENT_PUBLISH_ATTEMPTS;
 
       await this.contentRepo.update(item.id, {
@@ -321,7 +323,9 @@ export class PublishContentService {
         const notifyReason =
           failedThisRun.length === 1
             ? this.shortenText(failedThisRun[0][1].message, 120)
-            : `${stillFailed.length} platform(s) still pending (${stillFailed.join(', ')})`;
+            : `${
+                stillFailed.length
+              } platform(s) still pending (${stillFailed.join(', ')})`;
         void this.notifications?.notifyPublishFailed({
           tenantId: item.tenantId,
           userId: params.userId,
@@ -333,15 +337,17 @@ export class PublishContentService {
         });
       }
     } else {
-      const reasons = failedThisRun.map(([p, r]) => `${p}: ${r.message}`).join('; ');
+      const reasons = failedThisRun
+        .map(([p, r]) => `${p}: ${r.message}`)
+        .join('; ');
       const notifyReason =
         failedThisRun.length === 0
           ? 'Publish failed'
           : failedThisRun.length === 1
-            ? this.shortenText(failedThisRun[0][1].message, 120)
-            : `${failedThisRun.length} platforms failed (${failedThisRun
-                .map(([p]) => p)
-                .join(', ')})`;
+          ? this.shortenText(failedThisRun[0][1].message, 120)
+          : `${failedThisRun.length} platforms failed (${failedThisRun
+              .map(([p]) => p)
+              .join(', ')})`;
       const nextAttempts = (item.publishAttempts ?? 0) + 1;
       const exhausted = nextAttempts >= MAX_CONTENT_PUBLISH_ATTEMPTS;
       await this.contentRepo.update(item.id, {

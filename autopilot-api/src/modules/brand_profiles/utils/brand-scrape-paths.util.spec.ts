@@ -85,10 +85,13 @@ describe('brand-scrape-paths.util', () => {
     });
 
     it('respects configurable thresholds', () => {
-      const cfg = mergeBrandDiscoveryConfig({ aboutScore: 200, linkTextBonus: 10 });
-      expect(scoreBrandPageUrl(`${origin}/about`, '', cfg)).toBeGreaterThanOrEqual(
-        200,
-      );
+      const cfg = mergeBrandDiscoveryConfig({
+        aboutScore: 200,
+        linkTextBonus: 10,
+      });
+      expect(
+        scoreBrandPageUrl(`${origin}/about`, '', cfg),
+      ).toBeGreaterThanOrEqual(200);
     });
   });
 
@@ -180,9 +183,9 @@ describe('brand-scrape-paths.util', () => {
     it('returns config-bound helpers', () => {
       const discovery = createBrandDiscovery({ aboutScore: 150 });
       expect(discovery.config.aboutScore).toBe(150);
-      expect(discovery.scoreBrandPageUrl(`${origin}/about`)).toBeGreaterThanOrEqual(
-        150,
-      );
+      expect(
+        discovery.scoreBrandPageUrl(`${origin}/about`),
+      ).toBeGreaterThanOrEqual(150);
     });
   });
 

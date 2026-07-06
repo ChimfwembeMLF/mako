@@ -26,9 +26,7 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
         'LinkedIn ad account id missing — reconnect LinkedIn or set LINKEDIN_AD_ACCOUNT_ID',
       );
     }
-    return id.startsWith('urn:')
-      ? id
-      : `urn:li:sponsoredAccount:${id}`;
+    return id.startsWith('urn:') ? id : `urn:li:sponsoredAccount:${id}`;
   }
 
   async createCampaign(
@@ -78,7 +76,9 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
       throw new Error('LinkedIn Ads API did not return a campaign id');
     }
 
-    this.logger.log(`Created LinkedIn campaign ${campaignId} for tenant ${tenantId}`);
+    this.logger.log(
+      `Created LinkedIn campaign ${campaignId} for tenant ${tenantId}`,
+    );
     return String(campaignId);
   }
 
@@ -95,7 +95,9 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
     );
 
     await axios.post(
-      `https://api.linkedin.com/rest/adCampaigns/${encodeURIComponent(platformCampaignId)}`,
+      `https://api.linkedin.com/rest/adCampaigns/${encodeURIComponent(
+        platformCampaignId,
+      )}`,
       { patch: { $set: { status: 'PAUSED' } } },
       {
         headers: {
@@ -132,7 +134,8 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
           q: 'analytics',
           pivot: 'CAMPAIGN',
           campaigns: `List(${platformCampaignId})`,
-          dateRange: '(start:(year:2024,month:1,day:1),end:(year:2030,month:12,day:31))',
+          dateRange:
+            '(start:(year:2024,month:1,day:1),end:(year:2030,month:12,day:31))',
           fields: 'impressions,clicks,costInLocalCurrency',
         },
       },

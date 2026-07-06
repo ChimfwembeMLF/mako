@@ -87,7 +87,9 @@ export class AdsAccountService {
 
   resolveMetaPageId(account: SocialAccounts): string | undefined {
     const pageId = account.metadata?.page_id ?? account.externalId;
-    return typeof pageId === 'string' && pageId.trim() ? pageId.trim() : undefined;
+    return typeof pageId === 'string' && pageId.trim()
+      ? pageId.trim()
+      : undefined;
   }
 
   async resolveMetaAdAccountId(accessToken: string): Promise<string> {

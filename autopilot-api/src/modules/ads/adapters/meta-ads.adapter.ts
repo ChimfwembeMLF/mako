@@ -42,7 +42,9 @@ export class MetaAdsAdapter implements AdsProviderAdapter {
       AdPlatform.META,
     );
     const accessToken = this.adsAccount.resolveMetaAccessToken(account);
-    const adAccountId = await this.adsAccount.resolveMetaAdAccountId(accessToken);
+    const adAccountId = await this.adsAccount.resolveMetaAdAccountId(
+      accessToken,
+    );
     const pageId = this.adsAccount.resolveMetaPageId(account);
 
     bizSdk.FacebookAdsApi.init(accessToken);
@@ -87,11 +89,15 @@ export class MetaAdsAdapter implements AdsProviderAdapter {
         await adAccount.createAdSet([], adSetParams);
       } catch (adSetErr) {
         this.logger.warn(
-          `Meta ad set creation skipped for campaign ${campaign.id}: ${formatMetaError(adSetErr)}`,
+          `Meta ad set creation skipped for campaign ${
+            campaign.id
+          }: ${formatMetaError(adSetErr)}`,
         );
       }
 
-      this.logger.log(`Created Meta campaign ${campaign.id} for tenant ${tenantId}`);
+      this.logger.log(
+        `Created Meta campaign ${campaign.id} for tenant ${tenantId}`,
+      );
       return String(campaign.id);
     } catch (err) {
       throw new Error(formatMetaError(err));

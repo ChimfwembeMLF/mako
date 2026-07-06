@@ -51,7 +51,9 @@ export class AdsController {
   }
 
   @Post('campaigns/:id/publish')
-  @ApiOperation({ summary: 'Publish a draft campaign to the actual Ad Platform' })
+  @ApiOperation({
+    summary: 'Publish a draft campaign to the actual Ad Platform',
+  })
   async publishCampaign(
     @Req() req: Request,
     @Body('tenantId') tenantId: string,
@@ -80,10 +82,7 @@ export class AdsController {
 
   @Get('campaigns')
   @ApiOperation({ summary: 'List all ad campaigns' })
-  async getCampaigns(
-    @Req() req: Request,
-    @Query('tenantId') tenantId: string,
-  ) {
+  async getCampaigns(@Req() req: Request, @Query('tenantId') tenantId: string) {
     return this.adsService.getCampaigns(this.userId(req), tenantId);
   }
 
@@ -126,10 +125,7 @@ export class AdsController {
 
   @Get('balance')
   @ApiOperation({ summary: 'Get current ads balance for tenant' })
-  async getBalance(
-    @Req() req: Request,
-    @Query('tenantId') tenantId: string,
-  ) {
+  async getBalance(@Req() req: Request, @Query('tenantId') tenantId: string) {
     return this.adsService.getBalance(this.userId(req), tenantId);
   }
 

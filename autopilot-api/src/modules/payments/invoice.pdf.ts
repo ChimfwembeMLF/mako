@@ -1,4 +1,4 @@
-import PDFDocument = require('pdfkit');
+import PDFDocument from 'pdfkit';
 import { InvoiceData, buildInvoiceNumber } from './invoice.template';
 import { drawMakoLogoPdf, INVOICE_LOGO_HEIGHT_PX } from './invoice-logo.util';
 

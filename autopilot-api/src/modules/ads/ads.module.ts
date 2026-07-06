@@ -36,14 +36,14 @@ import { TenantMembersModule } from '../tenant_members/tenant_members.module';
   providers: [
     AdsService,
     AdsAccountService,
-    MetaAdsAdapter, 
-    GoogleAdsAdapter, 
+    MetaAdsAdapter,
+    GoogleAdsAdapter,
     EmbedAdsAdapter,
     TiktokAdsAdapter,
     LinkedinAdsAdapter,
     PinterestAdsAdapter,
     TaboolaAdsAdapter,
-    XAdsAdapter
+    XAdsAdapter,
   ],
   exports: [AdsService],
 })

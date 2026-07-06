@@ -185,9 +185,7 @@ export class DiscoveryStatsCollector {
       totalRelevantUrls: this.totalRelevantUrls,
       totalSkippedUrls: this.totalSkippedUrls,
       averageScore:
-        this.totalRelevantUrls > 0
-          ? this.scoreSum / this.totalRelevantUrls
-          : 0,
+        this.totalRelevantUrls > 0 ? this.scoreSum / this.totalRelevantUrls : 0,
       highValueUrls: [...this.highValueUrls],
       processingTimeMs: Date.now() - this.startTime,
       errors: [...this.errors],

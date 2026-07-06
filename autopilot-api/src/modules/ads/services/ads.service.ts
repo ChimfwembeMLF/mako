@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, ForbiddenException, HttpException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -72,12 +77,19 @@ export class AdsService {
   private getAdapter(platform: AdPlatform): AdsProviderAdapter {
     const adapter = this.adapters.get(platform);
     if (!adapter) {
-      throw new BadRequestException(`Platform ${platform} is not supported yet`);
+      throw new BadRequestException(
+        `Platform ${platform} is not supported yet`,
+      );
     }
     return adapter;
   }
 
-  computeCampaignCost(campaign: Pick<AdCampaignEntity, 'dailyBudget' | 'startDate' | 'endDate' | 'platform'>): number {
+  computeCampaignCost(
+    campaign: Pick<
+      AdCampaignEntity,
+      'dailyBudget' | 'startDate' | 'endDate' | 'platform'
+    >,
+  ): number {
     if (campaign.platform === AdPlatform.EMBED) return 0;
 
     let duration = 1;
@@ -284,11 +296,7 @@ export class AdsService {
 
     const adapter = this.getAdapter(campaign.platform);
     const payload: AdsPublishPayload = { campaign, creative, userId };
-    await adapter.pauseCampaign(
-      tenantId,
-      campaign.platformCampaignId,
-      payload,
-    );
+    await adapter.pauseCampaign(tenantId, campaign.platformCampaignId, payload);
 
     campaign.status = AdCampaignStatus.PAUSED;
     await this.campaignRepo.save(campaign);
@@ -334,11 +342,7 @@ export class AdsService {
 
     const adapter = this.getAdapter(campaign.platform);
     const payload: AdsPublishPayload = { campaign, creative, userId };
-    return adapter.getMetrics(
-      tenantId,
-      campaign.platformCampaignId,
-      payload,
-    );
+    return adapter.getMetrics(tenantId, campaign.platformCampaignId, payload);
   }
 
   async getDashboardStats(userId: string, tenantId: string) {
@@ -423,7 +427,9 @@ export class AdsService {
   ) {
     await this.assertTenantAccess(userId, tenantId);
 
-    const systemPrompt = `You are an expert ad campaign strategist. Based on the user's idea, generate a structured JSON configuration for an ad campaign on ${platform ?? 'digital'} ads.
+    const systemPrompt = `You are an expert ad campaign strategist. Based on the user's idea, generate a structured JSON configuration for an ad campaign on ${
+      platform ?? 'digital'
+    } ads.
     Return ONLY valid JSON with no markdown formatting or extra text.
     Format:
     {
@@ -445,7 +451,10 @@ export class AdsService {
     try {
       let rawJson = response.content.trim();
       if (rawJson.startsWith('```json')) {
-        rawJson = rawJson.replace(/^```json/, '').replace(/```$/, '').trim();
+        rawJson = rawJson
+          .replace(/^```json/, '')
+          .replace(/```$/, '')
+          .trim();
       } else if (rawJson.startsWith('```')) {
         rawJson = rawJson.replace(/^```/, '').replace(/```$/, '').trim();
       }

@@ -15,9 +15,7 @@ export function formatGraphApiError(err: unknown, prefix: string): string {
   if (axios.isAxiosError(err)) {
     const fb = err.response?.data as GraphErrorBody | undefined;
     const detail =
-      fb?.error?.error_user_msg ??
-      fb?.error?.message ??
-      err.message;
+      fb?.error?.error_user_msg ?? fb?.error?.message ?? err.message;
     const code = fb?.error?.code ? ` (Meta error ${fb.error.code})` : '';
     return `${prefix}: ${detail}${code}`;
   }
@@ -25,7 +23,9 @@ export function formatGraphApiError(err: unknown, prefix: string): string {
   return `${prefix}: ${String(err)}`;
 }
 
-export async function assertMetaAdsPermissions(accessToken: string): Promise<void> {
+export async function assertMetaAdsPermissions(
+  accessToken: string,
+): Promise<void> {
   try {
     const { data } = await axios.get<{
       data?: Array<{ permission: string; status: string }>;
@@ -43,7 +43,9 @@ export async function assertMetaAdsPermissions(accessToken: string): Promise<voi
     const missing = required.filter((r) => !granted.has(r));
     if (missing.length) {
       throw new BadRequestException(
-        `Facebook is missing ads permissions (${missing.join(', ')}). Open Publisher Connect → disconnect Facebook → reconnect so Meta can grant ads access.`,
+        `Facebook is missing ads permissions (${missing.join(
+          ', ',
+        )}). Open Publisher Connect → disconnect Facebook → reconnect so Meta can grant ads access.`,
       );
     }
   } catch (err) {
@@ -57,7 +59,9 @@ export async function assertMetaAdsPermissions(accessToken: string): Promise<voi
   }
 }
 
-export async function fetchMetaAdAccountId(accessToken: string): Promise<string> {
+export async function fetchMetaAdAccountId(
+  accessToken: string,
+): Promise<string> {
   try {
     const { data } = await axios.get<{
       data?: Array<{ id: string; account_id?: string; name?: string }>;

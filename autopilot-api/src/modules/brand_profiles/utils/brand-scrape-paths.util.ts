@@ -52,14 +52,12 @@ export const SCORE_PATTERNS = {
   about: /\/about(-us|_us)?\b|\/aboutus\b/i,
   whoWeAre:
     /who-we-are|who_we_are|our-story|our_story|our-company|sobre-nosotros|quienes-somos|a-propos|qui-sommes-nous|uber-uns|wer-wir-sind|chi-siamo/i,
-  companyMission: /\/company\b|\/mission\b|\/vision\b|\/values\b|\/mision\b|\/missione\b/i,
+  companyMission:
+    /\/company\b|\/mission\b|\/vision\b|\/values\b|\/mision\b|\/missione\b/i,
   servicesProducts:
     /services|products|solutions|what-we-do|what_we_do|servicios|produits|servizi/i,
   contactFaq: /contact|faq|contacto|kontakt|contatti|contato/i,
-  brandRelevant: new RegExp(
-    `/(?:${ESCAPED_SLUGS.join('|')})(?:/|$)`,
-    'i',
-  ),
+  brandRelevant: new RegExp(`/(?:${ESCAPED_SLUGS.join('|')})(?:/|$)`, 'i'),
 } as const;
 
 const SKIP_PATH = new RegExp(

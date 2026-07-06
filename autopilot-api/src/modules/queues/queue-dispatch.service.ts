@@ -48,7 +48,10 @@ export class QueueDispatchService {
   ) {}
 
   isEnabled(): boolean {
-    const flag = this.config.get<string>('QUEUES_ENABLED')?.trim().toLowerCase();
+    const flag = this.config
+      .get<string>('QUEUES_ENABLED')
+      ?.trim()
+      .toLowerCase();
     // Opt-in only — cron falls back to in-process publish when false/unset.
     return flag === 'true' || flag === '1';
   }

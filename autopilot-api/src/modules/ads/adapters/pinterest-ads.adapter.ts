@@ -37,7 +37,9 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
         name: payload.campaign.name,
         status: 'PAUSED',
         objective_type: 'AWARENESS',
-        daily_spend_cap: Math.round(Number(payload.campaign.dailyBudget) * 1_000_000),
+        daily_spend_cap: Math.round(
+          Number(payload.campaign.dailyBudget) * 1_000_000,
+        ),
       },
       {
         headers: {
@@ -51,7 +53,9 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
       throw new Error('Pinterest Ads API did not return a campaign id');
     }
 
-    this.logger.log(`Created Pinterest campaign ${data.id} for tenant ${tenantId}`);
+    this.logger.log(
+      `Created Pinterest campaign ${data.id} for tenant ${tenantId}`,
+    );
     return String(data.id);
   }
 
@@ -60,7 +64,9 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
     platformCampaignId: string,
   ): Promise<void> {
     await axios.patch(
-      `${this.apiBase}/ad_accounts/${this.adAccountId()}/campaigns/${platformCampaignId}`,
+      `${
+        this.apiBase
+      }/ad_accounts/${this.adAccountId()}/campaigns/${platformCampaignId}`,
       { status: 'PAUSED' },
       {
         headers: {
@@ -76,7 +82,9 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
     platformCampaignId: string,
   ): Promise<AdMetrics> {
     const { data } = await axios.get(
-      `${this.apiBase}/ad_accounts/${this.adAccountId()}/campaigns/${platformCampaignId}/analytics`,
+      `${
+        this.apiBase
+      }/ad_accounts/${this.adAccountId()}/campaigns/${platformCampaignId}/analytics`,
       {
         headers: { Authorization: `Bearer ${this.accessToken()}` },
         params: {

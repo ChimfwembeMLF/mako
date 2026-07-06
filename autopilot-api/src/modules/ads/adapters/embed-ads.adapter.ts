@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AdMetrics, AdsProviderAdapter } from './ads-provider.adapter';
-import { AdPlatform, AdCampaignEntity, AdCampaignStatus } from '../entities/ad-campaign.entity';
+import {
+  AdPlatform,
+  AdCampaignEntity,
+  AdCampaignStatus,
+} from '../entities/ad-campaign.entity';
 import { AdsPublishPayload } from './ads-provider.types';
 
 @Injectable()
@@ -23,7 +27,9 @@ export class EmbedAdsAdapter implements AdsProviderAdapter {
     if (!payload.campaign.targetUrl?.trim()) {
       throw new Error('Target URL is required for embed ads');
     }
-    const hash = `widget_${Math.random().toString(36).substring(2, 10)}${Date.now().toString(36)}`;
+    const hash = `widget_${Math.random()
+      .toString(36)
+      .substring(2, 10)}${Date.now().toString(36)}`;
     return hash;
   }
 

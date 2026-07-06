@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum AdPlatform {
   META = 'META',
@@ -36,7 +42,11 @@ export class AdCampaignEntity {
   @Column()
   name: string;
 
-  @Column({ type: 'enum', enum: AdCampaignStatus, default: AdCampaignStatus.DRAFT })
+  @Column({
+    type: 'enum',
+    enum: AdCampaignStatus,
+    default: AdCampaignStatus.DRAFT,
+  })
   status: AdCampaignStatus;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })

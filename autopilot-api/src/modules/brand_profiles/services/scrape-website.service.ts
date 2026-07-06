@@ -137,7 +137,11 @@ export class ScrapeWebsiteService {
 
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ],
     });
 
     try {
@@ -157,54 +161,54 @@ export class ScrapeWebsiteService {
           await page.goto(canonical, { waitUntil: 'networkidle2', timeout });
           const html = await page.content();
 
-        const $discover = cheerio.load(html);
-        const anchors: Array<{ href: string; text: string }> = [];
-        $discover('a[href]').each((_, el) => {
-          anchors.push({
-            href: $discover(el).attr('href') ?? '',
-            text: $discover(el).text(),
+          const $discover = cheerio.load(html);
+          const anchors: Array<{ href: string; text: string }> = [];
+          $discover('a[href]').each((_, el) => {
+            anchors.push({
+              href: $discover(el).attr('href') ?? '',
+              text: $discover(el).text(),
+            });
           });
-        });
-        const discovered = rankDiscoveredLinks(
-          anchors,
-          canonical,
-          discoveryConfig,
-        );
-        for (const link of discovered) {
-          stats?.recordRelevant(link.url, link.score);
-        }
-        discoveryLogger.debug(
-          `Discovered ${discovered.length} brand links from ${canonical}`,
-        );
-        queue = mergeDiscoveredIntoQueue(
-          queue,
-          discovered,
-          visited,
-          discoveryConfig,
-        );
+          const discovered = rankDiscoveredLinks(
+            anchors,
+            canonical,
+            discoveryConfig,
+          );
+          for (const link of discovered) {
+            stats?.recordRelevant(link.url, link.score);
+          }
+          discoveryLogger.debug(
+            `Discovered ${discovered.length} brand links from ${canonical}`,
+          );
+          queue = mergeDiscoveredIntoQueue(
+            queue,
+            discovered,
+            visited,
+            discoveryConfig,
+          );
 
-        const $ = cheerio.load(html);
-        $('script, style, nav, footer, noscript, iframe').remove();
-        const title = $('title').text().trim();
-        const body = $('main, article, [role=main], .content, #content, body')
-          .first()
-          .text()
-          .replace(/\s+/g, ' ')
-          .trim()
-          .slice(0, 12000);
+          const $ = cheerio.load(html);
+          $('script, style, nav, footer, noscript, iframe').remove();
+          const title = $('title').text().trim();
+          const body = $('main, article, [role=main], .content, #content, body')
+            .first()
+            .text()
+            .replace(/\s+/g, ' ')
+            .trim()
+            .slice(0, 12000);
 
-        if (body) texts.push(`URL: ${canonical}\nTitle: ${title}\n${body}`);
-      } catch (err) {
-        fetchFailures++;
-        const message = err instanceof Error ? err.message : String(err);
-        stats?.recordError(canonical, message);
-        this.logger.warn(`Scrape failed for ${canonical}`, err);
-      } finally {
-        if (page) {
-          await page.close().catch(() => undefined);
+          if (body) texts.push(`URL: ${canonical}\nTitle: ${title}\n${body}`);
+        } catch (err) {
+          fetchFailures++;
+          const message = err instanceof Error ? err.message : String(err);
+          stats?.recordError(canonical, message);
+          this.logger.warn(`Scrape failed for ${canonical}`, err);
+        } finally {
+          if (page) {
+            await page.close().catch(() => undefined);
+          }
         }
       }
-    }
     } finally {
       await browser.close();
     }

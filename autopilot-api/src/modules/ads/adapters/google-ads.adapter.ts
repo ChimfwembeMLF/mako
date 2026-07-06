@@ -34,10 +34,12 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
   }
 
   private customer(refreshToken: string) {
-    const customerId = this.adsAccount.requireConfig(
-      'GOOGLE_ADS_CUSTOMER_ID',
-      'GOOGLE_ADS_CUSTOMER_ID is required for Google Ads',
-    ).replace(/-/g, '');
+    const customerId = this.adsAccount
+      .requireConfig(
+        'GOOGLE_ADS_CUSTOMER_ID',
+        'GOOGLE_ADS_CUSTOMER_ID is required for Google Ads',
+      )
+      .replace(/-/g, '');
 
     return this.client().Customer({
       customer_id: customerId,
@@ -55,7 +57,9 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
       AdPlatform.GOOGLE,
     );
     if (!account.refreshToken) {
-      throw new Error('Google refresh token missing — reconnect Google in Publisher Connect');
+      throw new Error(
+        'Google refresh token missing — reconnect Google in Publisher Connect',
+      );
     }
 
     const customer = this.customer(account.refreshToken);
@@ -110,7 +114,9 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
     if (!account.refreshToken) return;
 
     const customer = this.customer(account.refreshToken);
-    const customerId = this.adsAccount.requireConfig('GOOGLE_ADS_CUSTOMER_ID').replace(/-/g, '');
+    const customerId = this.adsAccount
+      .requireConfig('GOOGLE_ADS_CUSTOMER_ID')
+      .replace(/-/g, '');
     await customer.campaigns.update([
       {
         resource_name: `customers/${customerId}/campaigns/${platformCampaignId}`,

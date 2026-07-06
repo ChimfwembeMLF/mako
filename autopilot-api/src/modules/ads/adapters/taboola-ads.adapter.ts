@@ -75,7 +75,9 @@ export class TaboolaAdsAdapter implements AdsProviderAdapter {
       throw new Error('Taboola Ads API did not return a campaign id');
     }
 
-    this.logger.log(`Created Taboola campaign ${data.id} for tenant ${tenantId}`);
+    this.logger.log(
+      `Created Taboola campaign ${data.id} for tenant ${tenantId}`,
+    );
     return String(data.id);
   }
 

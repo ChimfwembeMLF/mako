@@ -1,4 +1,4 @@
-import PDFDocument = require('pdfkit');
+import PDFDocument from 'pdfkit';
 import ExcelJS from 'exceljs';
 import { REPORT_CATALOG } from './report-catalog';
 import {

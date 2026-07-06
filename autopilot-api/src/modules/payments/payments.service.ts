@@ -203,17 +203,25 @@ export class PaymentsService {
     }
 
     await this.depositsRepo.update(deposit.id, { status: 'COMPLETED' });
-    
+
     if (deposit.plan === 'ADS_TOPUP') {
       const amount = Number(deposit.amount) || 0;
-      await this.tenantsRepo.createQueryBuilder()
+      await this.tenantsRepo
+        .createQueryBuilder()
         .update(Tenants)
         .set({ adsBalance: () => `"ads_balance" + ${amount}` })
         .where('id = :id', { id: deposit.tenantId })
         .execute();
-      
-      this.logger.log(`Added ${amount} ZMW to ads balance for tenant ${deposit.tenantId} via deposit ${depositId}`);
-      return { tenantId: deposit.tenantId, plan: 'ADS_TOPUP', status: 'COMPLETED', amount };
+
+      this.logger.log(
+        `Added ${amount} ZMW to ads balance for tenant ${deposit.tenantId} via deposit ${depositId}`,
+      );
+      return {
+        tenantId: deposit.tenantId,
+        plan: 'ADS_TOPUP',
+        status: 'COMPLETED',
+        amount,
+      };
     }
 
     const plan = normalizePlanKey(deposit.plan) as PlanKey;
