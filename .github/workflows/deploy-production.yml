@@ -48,7 +48,9 @@ jobs:
             git checkout -f main
             git reset --hard origin/main
 
-            cd autopilot-api
+            if [ "$(basename "$PWD")" != "autopilot-api" ]; then
+              cd autopilot-api
+            fi
 
             if [ "$RUN_MIGRATIONS" = "true" ]; then
               corepack yarn deploy:prod
