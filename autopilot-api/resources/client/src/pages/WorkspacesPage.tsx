@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import {
   Building2,
   Check,
@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { mediaApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 
 type Workspace = {
@@ -61,6 +62,8 @@ export default function WorkspacesPage() {
   const [name, setName] = useState('');
   const [slug, setSlug] = useState('');
   const [logoUrl, setLogoUrl] = useState('');
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
   const [slugTouched, setSlugTouched] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -169,6 +172,24 @@ export default function WorkspacesPage() {
       toast({ title: 'Error', description: message, variant: 'destructive' });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleLogoFile(file?: File) {
+    if (!tenant) return;
+    const scopedWorkspaceId = activeWorkspace ?? undefined;
+    if (!file) return;
+    setUploadingLogo(true);
+    try {
+      const asset = await mediaApi.upload(file, tenant.id, undefined, scopedWorkspaceId);
+      const url = String((asset as any).mediaUrl);
+      setLogoUrl(url);
+      toast({ title: 'Logo uploaded' });
+    } catch (err: unknown) {
+      toast({ title: 'Upload failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
+    } finally {
+      setUploadingLogo(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
   }
 

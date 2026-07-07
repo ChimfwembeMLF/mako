@@ -135,13 +135,16 @@ export function normalizeBrandExtraction(
 }
 
 export function brandExtractionSystemPrompt(): string {
-  return `You extract structured brand profile fields from website or document text.
+  return `You extract structured brand profile fields from website text, document text, or a resume/CV.
 Return ONLY valid JSON with these keys (camelCase exactly): ${BRAND_FIELD_KEYS.join(
     ', ',
   )}.
 
 Rules:
 - Include ALL keys in your JSON response.
+- If the document is a resume, CV, portfolio, or personal profile of an individual (e.g., freelancer, creator, consultant, or software engineer):
+  - Use the individual's full name as the 'companyName'.
+  - Populate the other fields (like 'description', 'services', 'targetAudience', and 'brandPersonality') to represent the individual's professional background, skills, target employers/clients, and personal work style.
 - Populate every field you can from the content. Do not omit keys.
 - When a field is not explicitly stated, infer a reasonable value from context (tone, industry, offerings, copy style).
 - toneOfVoice & brandPersonality: infer from how the site writes (formal, friendly, bold, etc.).
