@@ -445,6 +445,7 @@ export class SocialAccountsController {
   setupWhatsappFromMeta(
     @Req() req: Request,
     @Query('tenantId') tenantId?: string,
+    @Query('workspaceId') workspaceId?: string,
   ) {
     if (!tenantId) {
       throw new BadRequestException('tenantId query parameter is required');
@@ -452,6 +453,7 @@ export class SocialAccountsController {
     return this.service.prepareWhatsappFromExistingMeta(
       tenantId,
       this.getUserId(req),
+      workspaceId,
     );
   }
 

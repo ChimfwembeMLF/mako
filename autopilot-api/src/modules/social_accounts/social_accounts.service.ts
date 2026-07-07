@@ -451,6 +451,7 @@ export class SocialAccountsService {
   async prepareWhatsappFromExistingMeta(
     tenantId: string,
     userId: string,
+    workspaceId?: string,
   ): Promise<WhatsappSetupFromMetaResult> {
     await this.assertTenantAccess(userId, tenantId);
 
@@ -484,6 +485,7 @@ export class SocialAccountsService {
     const setupToken = this.oauth.createWhatsAppSetupToken({
       userId,
       tenantId,
+      workspaceId,
       accessToken,
       expiresAt: account.expiresAt?.toISOString(),
       phones,
