@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Send, Loader2, X, Link2, AlertCircle, Sparkles } from 'lucide-react';
+import { Send, Loader2, X, Link2, AlertCircle, Sparkles, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -283,6 +283,83 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
     return v.errors.map((e) => ({ platform: p, message: e }));
   });
 
+  const [savingDraft, setSavingDraft] = useState(false);
+
+  const saveChanges = async (
+    platformsToSave: string[],
+    payloadsToUse: Record<string, PlatformPayload>,
+  ) => {
+    if (!tenant?.id) throw new Error('Tenant context missing');
+
+    const rawPayloads: Record<string, PlatformPayload> = {};
+    const fallback = buildPlatformPayloads(item.content ?? '', item.title ?? '', platformsToSave);
+    for (const p of platformsToSave) {
+      rawPayloads[p] = payloadsToUse[p] ?? fallback[p];
+    }
+    const publishPayloads = normalizePayloadsForPublish(rawPayloads);
+
+    await contentItemsApi.update(item.id, {
+      platforms: selectedPlatforms,
+      platformPayloads: publishPayloads,
+    } as Parameters<typeof contentItemsApi.update>[1]);
+
+    const mediaByUrl = new Map<string, { url: string; type: string; assetId?: string }>();
+    for (const p of platformsToSave) {
+      for (const m of publishPayloads[p]?.media ?? []) {
+        const url = toPublishMediaUrl(m.url);
+        const asset = libraryAssets.find(
+          (a) => a.mediaUrl === m.url || toPublishMediaUrl(a.mediaUrl) === url,
+        );
+        mediaByUrl.set(url, { url, type: m.type, assetId: asset?.id });
+      }
+    }
+    if (mediaByUrl.size > 0) {
+      await contentItemsApi.attachMedia(
+        item.id,
+        tenant.id,
+        Array.from(mediaByUrl.values()),
+      );
+    }
+    return { publishPayloads };
+  };
+
+  const handleSaveDraftOnly = async () => {
+    if (!selectedPlatforms.length) {
+      toast({ title: 'Select at least one platform', variant: 'destructive' });
+      return;
+    }
+    setSavingDraft(true);
+    try {
+      const platformsToSave = selectedPlatforms;
+      const payloadsToUse = { ...platformPayloads };
+
+      // Ensure proper formatting for draft saving
+      for (const p of platformsToSave) {
+        if (payloadsToUse[p]?.content) {
+          payloadsToUse[p] = {
+            ...payloadsToUse[p],
+            content: plainToHtml(payloadsToUse[p].content),
+          };
+        }
+      }
+
+      await saveChanges(platformsToSave, payloadsToUse);
+      toast({
+        title: 'Draft saved successfully',
+        description: 'Your per-platform customizations and media attachments have been saved.',
+      });
+      onPublished();
+    } catch (err: unknown) {
+      toast({
+        title: 'Save draft failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingDraft(false);
+    }
+  };
+
   const handlePublish = async () => {
     if (!selectedPlatforms.length) {
       toast({ title: 'Select at least one platform', variant: 'destructive' });
@@ -368,35 +445,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
         }
       }
 
-      const rawPayloads: Record<string, PlatformPayload> = {};
-      const fallback = buildPlatformPayloads(item.content ?? '', item.title ?? '', platformsToPublish);
-      for (const p of platformsToPublish) {
-        rawPayloads[p] = payloadsToUse[p] ?? fallback[p];
-      }
-      const publishPayloads = normalizePayloadsForPublish(rawPayloads);
-
-      await contentItemsApi.update(item.id, {
-        platforms: selectedPlatforms,
-        platformPayloads: publishPayloads,
-      } as Parameters<typeof contentItemsApi.update>[1]);
-
-      const mediaByUrl = new Map<string, { url: string; type: string; assetId?: string }>();
-      for (const p of platformsToPublish) {
-        for (const m of publishPayloads[p]?.media ?? []) {
-          const url = toPublishMediaUrl(m.url);
-          const asset = libraryAssets.find(
-            (a) => a.mediaUrl === m.url || toPublishMediaUrl(a.mediaUrl) === url,
-          );
-          mediaByUrl.set(url, { url, type: m.type, assetId: asset?.id });
-        }
-      }
-      if (mediaByUrl.size > 0) {
-        await contentItemsApi.attachMedia(
-          item.id,
-          tenant.id,
-          Array.from(mediaByUrl.values()),
-        );
-      }
+      const { publishPayloads } = await saveChanges(platformsToPublish, payloadsToUse);
 
       const { submitPublish } = await import('@/lib/publishContent');
       const result = await submitPublish(
@@ -535,6 +584,20 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       <div className="sticky bottom-0 border-t bg-background px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row gap-2">
         <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
           Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleSaveDraftOnly}
+          disabled={savingDraft || publishing || generating || !selectedPlatforms.length}
+          className="w-full sm:w-auto text-xs"
+        >
+          {savingDraft ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+          ) : (
+            <Check className="h-4 w-4 mr-1 text-green-600" />
+          )}
+          Save draft
         </Button>
         <Button
           type="button"

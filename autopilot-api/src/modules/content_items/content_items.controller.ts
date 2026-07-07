@@ -122,6 +122,14 @@ export class ContentItemsController {
     return this.service.remove(id);
   }
 
+  @Post('bulk-delete')
+  async bulkDelete(
+    @Body() body: { ids: string[] },
+  ): Promise<{ success: boolean; affected: number }> {
+    const affected = await this.service.bulkRemove(body.ids);
+    return { success: true, affected };
+  }
+
   private async resolveBrandProfileId(
     tenantId: string,
     userId: string,

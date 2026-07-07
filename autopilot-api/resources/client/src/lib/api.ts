@@ -1422,6 +1422,12 @@ export const contentItemsApi = {
 
     remove: (id: string) =>
         request<any>(`/api/v1/content-items/${id}`, { method: 'DELETE' }),
+
+    bulkDelete: (ids: string[]) =>
+        request<{ success: boolean; affected: number }>('/api/v1/content-items/bulk-delete', {
+            method: 'POST',
+            body: JSON.stringify({ ids }),
+        }),
 };
 
 // ==================== Leads ====================

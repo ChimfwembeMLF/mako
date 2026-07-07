@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
@@ -41,6 +42,8 @@ function ContentCard({
   onRepurpose,
   copiedId,
   repurposingId,
+  isSelected,
+  onSelectChange,
 }: {
   item: ContentItem;
   isActive?: boolean;
@@ -51,131 +54,109 @@ function ContentCard({
   onRepurpose: (id: string) => void;
   copiedId: string | null;
   repurposingId: string | null;
+  isSelected: boolean;
+  onSelectChange: (id: string, selected: boolean) => void;
 }) {
   const platforms = item.platforms?.length ? item.platforms : [];
   const [expanded, setExpanded] = useState(false);
 
   return (
     <div
-      className={`rounded-xl border bg-card p-3 sm:p-4 transition-all flex flex-col gap-3 min-w-0 ${
+      className={`rounded-xl border bg-card p-3 sm:p-4 transition-all flex gap-3 sm:gap-4 min-w-0 ${
         isActive ? 'border-primary ring-2 ring-primary/20 shadow-sm' : 'hover:border-primary/30'
       }`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex-1 min-w-0 space-y-1.5">
-          <div className="flex items-center gap-2 flex-wrap">
-            {item.title && <span className="text-sm font-semibold break-words">{item.title}</span>}
-            {isActive && (
-              <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-                Editing
-              </Badge>
-            )}
-            {item.status && (
-              <Badge variant="secondary" className="text-[10px] capitalize">
-                {item.status}
-              </Badge>
+      <div className="flex items-start pt-1.5 shrink-0">
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={(checked) => onSelectChange(item.id, !!checked)}
+        />
+      </div>
+      <div className="flex-1 min-w-0 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex items-center gap-2 flex-wrap">
+              {item.title && <span className="text-sm font-semibold break-words">{item.title}</span>}
+              {isActive && (
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
+                  Editing
+                </Badge>
+              )}
+              {item.status && (
+                <Badge variant="secondary" className="text-[10px] capitalize">
+                  {item.status}
+                </Badge>
+              )}
+            </div>
+            {item.campaign_theme && (
+              <p className="text-xs text-muted-foreground line-clamp-2 sm:line-clamp-1">
+                {plainText(item.campaign_theme)}
+              </p>
             )}
           </div>
-          {item.campaign_theme && (
-            <p className="text-xs text-muted-foreground line-clamp-2 sm:line-clamp-1">
-              {plainText(item.campaign_theme)}
-            </p>
+          <div className="flex gap-1.5 shrink-0 self-stretch sm:self-auto">
+            <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" asChild>
+              <Link to={`/content/${item.id}`}>
+                <Eye className="h-3 w-3 mr-1" />
+                Details
+              </Link>
+            </Button>
+            <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" onClick={() => onPublish(item)}>
+              <Send className="h-3 w-3 mr-1" />
+              Publish
+            </Button>
+            <Button
+              type="button"
+              size="icon"
+              variant="ghost"
+              className="h-8 w-8 text-destructive hover:text-destructive"
+              onClick={() => onDelete(item.id)}
+              title="Delete"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {platforms.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {platforms.map((p) => {
+              const plat = platformOf(p);
+              const Icon = plat.icon;
+              return (
+                <span
+                  key={p}
+                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full"
+                >
+                  <Icon size={11} style={{ color: plat.color }} />
+                  {plat.label}
+                </span>
+              );
+            })}
+          </div>
+        )}
+
+        <div>
+          <p
+            className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${expanded ? '' : 'line-clamp-2'}`}
+          >
+            {plainText(item.content ?? '')}
+          </p>
+          {(item.content?.length ?? 0) > 120 && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="text-xs text-primary mt-1 flex items-center gap-1 hover:underline"
+            >
+              {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
+            </button>
           )}
         </div>
-        <div className="flex gap-1.5 shrink-0 self-stretch sm:self-auto">
-          <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" asChild>
-            <Link to={`/content/${item.id}`}>
-              <Eye className="h-3 w-3 mr-1" />
-              Details
-            </Link>
-          </Button>
-          <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" onClick={() => onPublish(item)}>
-            <Send className="h-3 w-3 mr-1" />
-            Publish
-          </Button>
-          {/* <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={() => onEdit(item)} title="Edit">
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            onClick={() => onRepurpose(item.id)}
-            title="Repurpose"
-            disabled={repurposingId === item.id}
-          >
-            {repurposingId === item.id ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <RefreshCw className="h-3.5 w-3.5" />
-            )}
-          </Button> */}
-          {/* <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8"
-            onClick={() => onCopy(item.id, item.content ?? '')}
-            title="Copy"
-          >
-            {copiedId === item.id ? (
-              <Check className="h-3.5 w-3.5 text-green-600" />
-            ) : (
-              <Copy className="h-3.5 w-3.5" />
-            )}
-          </Button> */}
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-destructive hover:text-destructive"
-            onClick={() => onDelete(item.id)}
-            title="Delete"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
 
-      {platforms.length > 0 && (
-        <div className="flex gap-2 flex-wrap">
-          {platforms.map((p) => {
-            const plat = platformOf(p);
-            const Icon = plat.icon;
-            return (
-              <span
-                key={p}
-                className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full"
-              >
-                <Icon size={11} style={{ color: plat.color }} />
-                {plat.label}
-              </span>
-            );
-          })}
-        </div>
-      )}
-
-      <div>
-        <p
-          className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${expanded ? '' : 'line-clamp-2'}`}
-        >
-          {plainText(item.content ?? '')}
-        </p>
-        {(item.content?.length ?? 0) > 120 && (
-          <button
-            type="button"
-            onClick={() => setExpanded((v) => !v)}
-            className="text-xs text-primary mt-1 flex items-center gap-1 hover:underline"
-          >
-            {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
-          </button>
+        {item.created_at && (
+          <p className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p>
         )}
       </div>
-
-      {item.created_at && (
-        <p className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p>
-      )}
     </div>
   );
 }
@@ -199,6 +180,58 @@ const ContentEngine = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState('all');
   const { toast } = useToast();
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deletingBulk, setDeletingBulk] = useState(false);
+
+  const handleSelectChange = (id: string, selected: boolean) => {
+    setSelectedIds((prev) =>
+      selected ? [...prev, id] : prev.filter((x) => x !== id)
+    );
+  };
+
+  const handleSelectAllPage = () => {
+    const pageIds = generatedContent.map((c) => c.id);
+    setSelectedIds((prev) => {
+      const filtered = prev.filter((id) => !pageIds.includes(id));
+      return [...filtered, ...pageIds];
+    });
+  };
+
+  const handleDeselectAllPage = () => {
+    const pageIds = generatedContent.map((c) => c.id);
+    setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
+  };
+
+  const isAllPageSelected =
+    generatedContent.length > 0 &&
+    generatedContent.every((c) => selectedIds.includes(c.id));
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected items?`)) return;
+    setDeletingBulk(true);
+    try {
+      await contentItemsApi.bulkDelete(selectedIds);
+      toast({
+        title: 'Bulk delete successful',
+        description: `Successfully deleted ${selectedIds.length} content items.`,
+      });
+      setSelectedIds([]);
+      void loadContent();
+    } catch (err: any) {
+      toast({
+        title: 'Bulk delete failed',
+        description: err.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDeletingBulk(false);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [page, searchQuery, platformFilter, activeWorkspace]);
 
   const mapContentItem = (item: Record<string, unknown>): ContentItem => ({
     id: String(item.id),
@@ -470,6 +503,53 @@ const ContentEngine = () => {
             </div>
           ) : (
             <>
+              {selectedIds.length > 0 && (
+                <div className="flex items-center justify-between p-2.5 rounded-xl border bg-muted/40 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      checked={isAllPageSelected}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          handleSelectAllPage();
+                        } else {
+                          handleDeselectAllPage();
+                        }
+                      }}
+                      id="select-all-checkbox"
+                    />
+                    <label htmlFor="select-all-checkbox" className="font-medium cursor-pointer">
+                      {selectedIds.length} selected
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs"
+                      onClick={() => setSelectedIds([])}
+                    >
+                      Clear selection
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 text-xs font-semibold"
+                      onClick={handleBulkDelete}
+                      disabled={deletingBulk}
+                    >
+                      {deletingBulk ? (
+                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                      ) : (
+                        <Trash2 className="h-3 w-3 mr-1" />
+                      )}
+                      Delete selected
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-3">
                 {generatedContent.map((item) => (
                   <ContentCard
@@ -483,6 +563,8 @@ const ContentEngine = () => {
                     onRepurpose={handleRepurpose}
                     copiedId={copiedId}
                     repurposingId={repurposingId}
+                    isSelected={selectedIds.includes(item.id)}
+                    onSelectChange={handleSelectChange}
                   />
                 ))}
               </div>

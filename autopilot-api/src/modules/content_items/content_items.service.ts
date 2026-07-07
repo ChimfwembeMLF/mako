@@ -162,4 +162,10 @@ export class ContentItemsService {
     if (res.affected === 0)
       throw new NotFoundException('ContentItems not found');
   }
+
+  async bulkRemove(ids: string[]): Promise<number> {
+    if (!ids?.length) return 0;
+    const res = await this.repo.delete(ids);
+    return res.affected ?? 0;
+  }
 }

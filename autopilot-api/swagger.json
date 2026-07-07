@@ -2861,6 +2861,25 @@
         ]
       }
     },
+    "/api/v1/content-items/bulk-delete": {
+      "post": {
+        "operationId": "ContentItemsController_bulkDelete",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
     "/api/v1/content-ai/generate": {
       "post": {
         "operationId": "ContentAiController_generate",
