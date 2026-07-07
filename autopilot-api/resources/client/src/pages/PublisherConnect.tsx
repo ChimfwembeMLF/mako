@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 // type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp" | "tiktok";
-type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "whatsapp";
+type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp";
 type ManualPlatform = "twitter";
 type PlatformId = OAuthPlatform | ManualPlatform;
 
@@ -34,7 +34,7 @@ type FacebookPageOption = {
 };
 
 // const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "youtube", "whatsapp", "tiktok"];
-const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "whatsapp"];
+const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "youtube", "whatsapp"];
 const platforms: {
   id: PlatformId;
   name: string;
