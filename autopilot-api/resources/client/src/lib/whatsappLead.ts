@@ -4,7 +4,7 @@ export function whatsappPhoneFromLead(lead: {
   source?: string | null;
 }): string | null {
   const email = lead.email?.trim().toLowerCase() ?? '';
-  const match = email.match(/^wa\+(\d+)@inbox\.autopilot$/);
+  const match = email.match(/^wa\+(\d+)@inbox\.mako$/);
   if (match) return match[1];
   return null;
 }

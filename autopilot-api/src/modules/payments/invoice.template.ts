@@ -145,7 +145,7 @@ export function renderInvoiceHtml(data: InvoiceData): string {
     },
   );
 
-  const description = `${data.planLabel} Plan — Mako  subscription (AI marketing autopilot, monthly)`;
+  const description = `${data.planLabel} Plan — Mako  subscription (AI marketing suite, monthly)`;
   const paymentNote = data.network
     ? `${data.paymentMethod} · ${data.network}${
         data.phone ? ` · ${data.phone}` : ''

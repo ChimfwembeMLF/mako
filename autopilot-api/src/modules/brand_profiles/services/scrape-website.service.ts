@@ -105,7 +105,7 @@ export class ScrapeWebsiteService {
       ),
       userAgent:
         this.config.get<string>('SCRAPE_USER_AGENT') ??
-        'AutoPilotBot/1.0 (+https://brandpilot.app; brand onboarding)',
+        'MakoBot/1.0 (+https://mako.test; brand onboarding)',
     });
   }
 

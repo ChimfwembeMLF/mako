@@ -24,6 +24,7 @@ const EditContent = lazy(() => import("./pages/EditContent"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
 const Scheduler = lazy(() => import("./pages/Scheduler"));
 const LeadAgent = lazy(() => import("./pages/LeadAgent"));
+const WhatsappTemplatesPage = lazy(() => import("./pages/WhatsappTemplatesPage"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ContactForm = lazy(() => import("./pages/ContactForm"));
@@ -155,6 +156,7 @@ const App = () => (
                   <Route path="/content/:id" element={<LazyPage><ContentDetailPage /></LazyPage>} />
                   <Route path="/scheduler" element={<LazyPage><Scheduler /></LazyPage>} />
                   <Route path="/leads" element={<LazyPage><LeadAgent /></LazyPage>} />
+                  <Route path="/whatsapp/templates" element={<LazyPage><WhatsappTemplatesPage /></LazyPage>} />
                   <Route path="/analytics" element={<LazyPage><Analytics /></LazyPage>} />
                   <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
                   <Route path="/publisher" element={<LazyPage><PublisherConnect /></LazyPage>} />

@@ -444,7 +444,7 @@ const Scheduler = () => {
     }
   };
 
-  const applyAutopilotSlot = () => {
+  const applyMakoSlot = () => {
     // Find all future posts (ignoring the one we are editing)
     const futurePosts = posts.filter(
       (p) => p.id !== reschedule?.postId && p.scheduled_date
@@ -464,7 +464,7 @@ const Scheduler = () => {
       if (postsOnDate.length === 0) {
         setReschedule((prev) => (prev ? { ...prev, date: dateString, time: "09:00" } : prev));
         toast({
-          title: "Autopilot Slot Selected",
+          title: "Mako Slot Selected",
           description: `Scheduled for ${dateString} (next fully empty day).`,
         });
         return;
@@ -491,7 +491,7 @@ const Scheduler = () => {
 
     setReschedule((prev) => (prev ? { ...prev, date: bestDate, time: "09:00" } : prev));
     toast({
-      title: "Autopilot Slot Selected",
+      title: "Mako Slot Selected",
       description: `Scheduled for ${bestDate} (day with lowest posting volume).`,
     });
   };
@@ -1005,13 +1005,13 @@ const Scheduler = () => {
           <div className="flex justify-between items-center bg-muted/40 p-2.5 rounded-lg border border-border/50">
             <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
               <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
-              Autopilot Scheduler
+              Mako Scheduler
             </div>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              onClick={applyAutopilotSlot}
+              onClick={applyMakoSlot}
               className="h-7 text-[10px] px-2 font-medium cursor-pointer"
             >
               Find next slot

@@ -45,7 +45,7 @@ export class LeadsService {
 
   private whatsappEmail(phone: string): string {
     const digits = phone.replace(/\D/g, '');
-    return `wa+${digits}@inbox.autopilot`;
+    return `wa+${digits}@inbox.mako`;
   }
 
   async findByWhatsappPhone(

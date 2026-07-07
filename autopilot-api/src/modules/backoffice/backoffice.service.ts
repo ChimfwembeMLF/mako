@@ -198,7 +198,7 @@ export class BackofficeService {
         product: 'Tekrem Innvation Solutions Mako ',
         tagline: 'Grow Smarter, Sell Stronger',
         description:
-          'AI-powered marketing autopilot for brands — content generation, multi-platform publishing, lead capture, comment automation, and RAG chatbots with embeddable widgets.',
+          'AI-powered marketing suite for brands — content generation, multi-platform publishing, lead capture, comment automation, and RAG chatbots with embeddable widgets.',
         operator: 'Tekrem Innvation Solutions',
         region: 'Zambia · Southern Africa',
         supportEmail: process.env.SUPPORT_EMAIL ?? 'support@agriwide.co',

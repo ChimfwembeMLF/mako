@@ -8,6 +8,7 @@ import {
   IsNumber,
   IsInt,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class WhatsappContactsUpdateDto {
   @IsOptional()
@@ -27,6 +28,7 @@ export class WhatsappContactsUpdateDto {
   optedIn?: boolean;
 
   @IsOptional()
+  @Type(() => Date)
   @IsDate()
   optedInAt?: Date;
 
@@ -36,6 +38,11 @@ export class WhatsappContactsUpdateDto {
   tags?: string[];
 
   @IsOptional()
+  @IsUUID()
+  workspaceId?: string;
+
+  @IsOptional()
+  @Type(() => Date)
   @IsDate()
   createdAt?: Date;
 }

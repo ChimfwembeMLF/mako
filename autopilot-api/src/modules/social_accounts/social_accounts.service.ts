@@ -493,7 +493,11 @@ export class SocialAccountsService {
   }
 
   /** One-click WhatsApp for tenants when the operator configured platform-level Meta credentials. */
-  async enablePlatformWhatsapp(tenantId: string, userId: string) {
+  async enablePlatformWhatsapp(
+    tenantId: string,
+    userId: string,
+    workspaceId?: string,
+  ) {
     await this.assertTenantAccess(userId, tenantId);
 
     if (!isWhatsappPlatformEnabled(this.config)) {
@@ -524,6 +528,7 @@ export class SocialAccountsService {
     return this.connectAccount({
       tenantId,
       userId,
+      workspaceId,
       platform: 'whatsapp',
       accountName: displayName,
       externalId: creds.phoneNumberId,

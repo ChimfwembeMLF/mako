@@ -22,6 +22,7 @@ import { LeadsModule } from './modules/leads/leads.module';
 import { PaymentFailuresModule } from './modules/payment_failures/payment_failures.module';
 import { ApprovalRequestsModule } from './modules/approval_requests/approval_requests.module';
 import { WhatsappContactsModule } from './modules/whatsapp_contacts/whatsapp_contacts.module';
+import { WhatsappTemplatesModule } from './modules/whatsapp_templates/whatsapp-templates.module';
 import { AuditLogsModule } from './modules/audit_logs/audit_logs.module';
 import { AiUsageModule } from './modules/ai_usage/ai_usage.module';
 import { AiModule } from './modules/ai/ai.module';
@@ -96,6 +97,7 @@ import { ClientStaticModule } from './client-static.module';
     ApprovalWorkflowsModule,
     AutoReplyRulesModule,
     WhatsappContactsModule,
+    WhatsappTemplatesModule,
     CommentRepliesModule,
     AuditLogsModule,
     AiUsageModule,

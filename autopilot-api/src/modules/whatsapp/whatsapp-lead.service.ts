@@ -53,7 +53,7 @@ export class WhatsappLeadService {
         tenantId: params.tenantId,
         userId: tenant.ownerId,
         name: params.contact.name ?? `WhatsApp ${params.contact.phone}`,
-        email: `wa+${params.contact.phone.replace(/\D/g, '')}@inbox.autopilot`,
+        email: `wa+${params.contact.phone.replace(/\D/g, '')}@inbox.mako`,
         message: params.message,
       })
       .then(async (result) => {

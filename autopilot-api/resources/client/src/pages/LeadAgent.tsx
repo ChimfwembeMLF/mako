@@ -672,7 +672,7 @@ const LeadAgent = () => {
               <ul className="text-xs text-muted-foreground space-y-1 list-disc pl-4">
                 <li>
                   When a customer messages your <strong>connected WhatsApp Business number</strong>, they become a lead
-                  (email like <code className="text-[10px]">wa+260…@inbox.autopilot</code>).
+                  (email like <code className="text-[10px]">wa+260…@inbox.mako</code>).
                 </li>
                 <li>
                   You do <strong>not</strong> send messages as the lead — you reply <strong>to their phone</strong> from

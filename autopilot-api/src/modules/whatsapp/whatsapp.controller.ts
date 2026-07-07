@@ -63,7 +63,31 @@ export class WhatsappController {
     );
   }
 
-  @Get('flows/config')
+  @Get('flows/sessions')
+  @ApiOperation({ summary: 'List all active flow sessions for a tenant' })
+  async listFlowSessions(
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
+  ) {
+    const sessions = await this.flowSessions.listSessions(tenantId, workspaceId);
+    return sessions.map((s) => ({
+      id: s.id,
+      phone: s.phone,
+      currentState: s.currentState,
+      expiresAt: s.expiresAt,
+      updatedAt: s.updated_at,
+    }));
+  }
+
+  @ApiOperation({ summary: 'Reset (clear) a flow session for a specific phone' })
+  async resetFlowSession(
+    @Query('tenantId') tenantId: string,
+    @Query('phone') phone: string,
+  ) {
+    await this.flowSessions.clearSession(tenantId, phone);
+    return { cleared: true };
+  }
+
   @ApiOperation({
     summary: 'Get WhatsApp USSD-style menu flow config for a workspace',
   })
@@ -90,21 +114,24 @@ export class WhatsappController {
   async listMessages(
     @Query('tenantId') tenantId: string,
     @Query('phone') phone?: string,
+    @Query('contactId') contactId?: string,
     @Query('take') take?: string,
     @Query('workspaceId') workspaceId?: string,
   ) {
-    const limit = Math.min(parseInt(take ?? '50', 10) || 50, 200);
+    const limit = Math.min(parseInt(take ?? '100', 10) || 100, 500);
     const qb = this.messagesRepo
       .createQueryBuilder('m')
       .where('m.tenantId = :tenantId', { tenantId })
-      .orderBy('m.created_at', 'DESC')
+      .orderBy('m.created_at', 'ASC')
       .take(limit);
 
     if (workspaceId) {
       qb.andWhere('m.workspaceId = :workspaceId', { workspaceId });
     }
 
-    if (phone?.trim()) {
+    if (contactId?.trim()) {
+      qb.andWhere('m.contactId = :contactId', { contactId: contactId.trim() });
+    } else if (phone?.trim()) {
       qb.andWhere('m.phone = :phone', {
         phone: this.messaging.normalizePhone(phone),
       });

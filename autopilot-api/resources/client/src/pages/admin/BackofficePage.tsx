@@ -684,7 +684,7 @@ function BackofficeContent() {
 
               <div className="rounded-lg border bg-muted/30 p-4 flex items-start gap-3">
                 <Zap className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <p><strong className="text-foreground">{company.tagline}</strong> — Mako  is built for African agribusiness and growing brands that need enterprise marketing automation without enterprise cost. See <code className="text-xs bg-muted px-1 rounded">autopilot-api/docs/DEPLOY.md</code> for production deployment.</p>
+                <p><strong className="text-foreground">{company.tagline}</strong> — Mako is built for African agribusiness and growing brands that need enterprise marketing automation without enterprise cost. See <code className="text-xs bg-muted px-1 rounded">mako-api/docs/DEPLOY.md</code> for production deployment.</p>
               </div>
             </CardContent>
           </Card>

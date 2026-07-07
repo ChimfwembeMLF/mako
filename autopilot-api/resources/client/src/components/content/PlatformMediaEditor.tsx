@@ -133,12 +133,13 @@ export function PlatformMediaEditor({
 
       <div className="rounded-lg border bg-muted/20 px-3 py-2 text-[11px] text-muted-foreground leading-relaxed">
         <strong className="text-foreground">{def.label} limits:</strong>{' '}
-        {rules.mediaNotes} · Images ≤ {rules.maxImageSizeMB} MB
+        {rules.mediaNotes}
+        {rules.maxImageSizeMB > 0 && ` · Images ≤ ${rules.maxImageSizeMB} MB`}
         {rules.supportsVideo ? ` · Video ≤ ${rules.maxVideoSizeMB} MB, ~${rules.maxVideoDurationSec}s` : ''}
-        · Recommended {rules.recommendedImageSize} ({rules.aspectRatio})
+        {rules.maxImageSizeMB > 0 && rules.recommendedImageSize !== 'N/A' && ` · Recommended ${rules.recommendedImageSize} (${rules.aspectRatio})`}
       </div>
 
-      {media.length > 0 ? (
+      {rules.maxAttachments > 0 && (media.length > 0 ? (
         <div className="space-y-2">
           <p className="text-[11px] text-muted-foreground">Drag order: first attachment publishes first (carousels, galleries).</p>
           <div className="space-y-2">
@@ -202,9 +203,9 @@ export function PlatformMediaEditor({
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">No attachments for {def.label} yet — pick from the library below.</p>
-      )}
+      ))}
 
-      {available.length > 0 && media.length < rules.maxAttachments && (
+      {rules.maxAttachments > 0 && available.length > 0 && media.length < rules.maxAttachments && (
         <div className="space-y-2">
           <p className="text-[11px] text-muted-foreground">
             Select from library (click to toggle), then add to this platform or all platforms

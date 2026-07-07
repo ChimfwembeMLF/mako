@@ -515,13 +515,6 @@ export const socialAccountsApi = {
         });
     },
 
-    enablePlatformWhatsapp: (tenantId: string, workspaceId?: string) => {
-        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
-        return request<SocialAccount>(
-            `/api/v1/social-accounts/whatsapp/enable-platform?${qs}`,
-            { method: 'POST' },
-        );
-    },
 
     finalizeWhatsapp: (data: { setupToken: string; phoneNumberId: string }) =>
         request<any>('/api/v1/social-accounts/whatsapp/finalize', {
@@ -544,7 +537,76 @@ export const socialAccountsApi = {
         ),
 };
 
-// ==================== Tenants ====================
+// ==================== WhatsApp Templates ====================
+export const whatsappTemplatesApi = {
+    list: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any[]>(`/api/v1/whatsapp/templates?${qs}`);
+    },
+
+    create: (dto: {
+        tenantId: string;
+        workspaceId?: string;
+        name: string;
+        language?: string;
+        category?: string;
+        components?: any[];
+        variables?: any[];
+    }) =>
+        request<any>('/api/v1/whatsapp/templates', {
+            method: 'POST',
+            body: JSON.stringify(dto),
+        }),
+
+    update: (id: string, tenantId: string, dto: Partial<{
+        name: string;
+        language: string;
+        category: string;
+        components: any[];
+        variables: any[];
+    }>, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any>(`/api/v1/whatsapp/templates/${id}?${qs}`, {
+            method: 'PATCH',
+            body: JSON.stringify(dto),
+        });
+    },
+
+    remove: (id: string, tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any>(`/api/v1/whatsapp/templates/${id}?${qs}`, { method: 'DELETE' });
+    },
+
+    submit: (id: string, tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any>(`/api/v1/whatsapp/templates/${id}/submit?${qs}`, { method: 'POST' });
+    },
+
+    sync: (id: string, tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any>(`/api/v1/whatsapp/templates/${id}/sync?${qs}`, { method: 'POST' });
+    },
+
+    syncAll: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<{ synced: number; errors: number }>(`/api/v1/whatsapp/templates/sync-all?${qs}`, { method: 'POST' });
+    },
+
+    listFromMeta: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any[]>(`/api/v1/whatsapp/templates/meta?${qs}`);
+    },
+
+    importFromMeta: (tenantId: string, workspaceId: string | undefined, template: any) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any>(`/api/v1/whatsapp/templates/import?${qs}`, {
+            method: 'POST',
+            body: JSON.stringify(template),
+        });
+    },
+};
+
+
 export const backofficeApi = {
     getOverview: () =>
         request<{

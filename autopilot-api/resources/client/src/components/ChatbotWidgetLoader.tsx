@@ -24,7 +24,7 @@ export function ChatbotWidgetLoader() {
     document.body.appendChild(script);
 
     return () => {
-      document.getElementById("autopilot-widget-root")?.remove();
+      document.getElementById("mako-widget-root")?.remove();
       script.remove();
     };
   }, [pathname]);

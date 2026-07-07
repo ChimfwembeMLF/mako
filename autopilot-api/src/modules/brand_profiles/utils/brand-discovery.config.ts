@@ -67,7 +67,7 @@ export const DEFAULT_BRAND_DISCOVERY_CONFIG: BrandDiscoveryConfig = {
   respectRobotsTxt: false,
   debug: false,
   stats: false,
-  userAgent: 'AutoPilotBot/1.0 (+https://brandpilot.app; brand onboarding)',
+  userAgent: 'MakoBot/1.0 (+https://mako.test; brand onboarding)',
 };
 
 export function mergeBrandDiscoveryConfig(

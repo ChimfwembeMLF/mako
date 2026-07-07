@@ -294,7 +294,7 @@ export function reportExportFilename(
 ): string {
   const date = new Date().toISOString().slice(0, 10);
   const ext = format === 'xlsx' ? 'xlsx' : format;
-  return `autopilot-${reportId}-${date}.${ext}`;
+  return `mako-${reportId}-${date}.${ext}`;
 }
 
 export function reportExportMime(format: ReportExportFormat): string {

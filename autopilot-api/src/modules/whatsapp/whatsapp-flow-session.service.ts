@@ -130,4 +130,19 @@ export class WhatsappFlowSessionService {
   async clearSession(tenantId: string, phone: string): Promise<void> {
     await this.sessions.delete({ tenantId, phone });
   }
+
+  async listSessions(
+    tenantId: string,
+    workspaceId?: string,
+  ): Promise<WhatsappFlowSession[]> {
+    const where: Record<string, unknown> = { tenantId };
+    if (workspaceId) where.workspaceId = workspaceId;
+    const now = new Date();
+    const rows = await this.sessions.find({
+      where,
+      order: { updated_at: 'DESC' },
+    });
+    // filter expired ones out
+    return rows.filter((s) => !s.expiresAt || s.expiresAt > now);
+  }
 }

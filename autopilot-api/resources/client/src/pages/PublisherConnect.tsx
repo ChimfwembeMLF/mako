@@ -9,7 +9,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { socialAccountsApi, platformsApi, SocialAccount } from "@/lib/api";
+import { socialAccountsApi, SocialAccount } from "@/lib/api";
 import { capabilityOf } from "@/lib/platform-capabilities";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -151,8 +151,7 @@ const PublisherConnect = () => {
   const [loadingYoutubeSetup, setLoadingYoutubeSetup] = useState(false);
   const [finalizingYoutube, setFinalizingYoutube] = useState(false);
 
-  const [whatsappPlatformMode, setWhatsappPlatformMode] = useState(false);
-  const [whatsappPlatformLabel, setWhatsappPlatformLabel] = useState<string | null>(null);
+
 
   const { toast } = useToast();
   const { tenant } = useTenant();
@@ -174,20 +173,7 @@ const PublisherConnect = () => {
     }
   };
 
-  useEffect(() => {
-    platformsApi
-      .capabilities()
-      .then((data) => {
-        const mode = data.whatsapp?.connectionMode;
-        setWhatsappPlatformMode(mode === "platform" && Boolean(data.whatsapp?.platformConfigured));
-        setWhatsappPlatformLabel(
-          data.whatsapp?.displayPhone || data.whatsapp?.displayName || null,
-        );
-      })
-      .catch(() => {
-        setWhatsappPlatformMode(false);
-      });
-  }, []);
+
 
   useEffect(() => {
     if (tenant && activeWorkspace) loadAccounts();
@@ -362,24 +348,6 @@ const PublisherConnect = () => {
   const startWhatsappConnect = async () => {
     if (!tenant || !activeWorkspace) {
       toast({ title: "No workspace", description: "Select or create a workspace before connecting accounts.", variant: "destructive" });
-      return;
-    }
-
-    if (whatsappPlatformMode) {
-      setConnectingOAuth("whatsapp");
-      try {
-        await socialAccountsApi.enablePlatformWhatsapp(tenant.id, activeWorkspace);
-        toast({
-          title: "WhatsApp enabled",
-          description: "This workspace can send broadcasts and receive replies — add contacts in Lead Agent.",
-        });
-        loadAccounts();
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : "Failed to enable WhatsApp";
-        toast({ title: "Error", description: message, variant: "destructive" });
-      } finally {
-        setConnectingOAuth(null);
-      }
       return;
     }
 
@@ -584,12 +552,9 @@ const PublisherConnect = () => {
           const isComingSoon = cap?.status === 'coming_soon';
           const account = getAccount(platform.id);
           const Icon = platform.icon;
-          const isOAuth = platform.oauth === true && !(platform.id === "whatsapp" && whatsappPlatformMode);
+          const isOAuth = platform.oauth === true;
           const isConnecting = connectingOAuth === platform.id;
-          const whatsappNotes =
-            platform.id === "whatsapp" && whatsappPlatformMode
-              ? `Included with Mako ${whatsappPlatformLabel ? ` (${whatsappPlatformLabel})` : ""} — click Enable, no Meta setup required.`
-              : cap?.notes ?? platform.description;
+          const whatsappNotes = cap?.notes ?? platform.description;
 
           return (
             <Card key={platform.id} className={`border-border/50 hover:shadow-card transition-shadow ${isComingSoon ? 'opacity-75' : ''}`}>
@@ -618,7 +583,7 @@ const PublisherConnect = () => {
                           )}
                         </div>
                       )}
-                      {platform.id === "whatsapp" && !account && !whatsappPlatformMode && getAccount("facebook") && (
+                      {platform.id === "whatsapp" && !account && getAccount("facebook") && (
                         <p className="text-[11px] text-muted-foreground mt-1.5">
                           Facebook connected — will reuse if WhatsApp permissions are already granted.
                         </p>
@@ -633,7 +598,7 @@ const PublisherConnect = () => {
                     <Button size="sm" variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/5" onClick={() => handleDisconnect(account)}>
                       <XCircle className="h-3.5 w-3.5 mr-1" /> Disconnect
                     </Button>
-                  ) : isOAuth || (platform.id === "whatsapp" && whatsappPlatformMode) ? (
+                  ) : isOAuth ? (
                     <div className="flex flex-col items-end gap-1.5">
                       <Button
                         size="sm"
@@ -646,15 +611,9 @@ const PublisherConnect = () => {
                         }
                       >
                         {isConnecting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
-                        {isConnecting
-                          ? whatsappPlatformMode && platform.id === "whatsapp"
-                            ? "Enabling..."
-                            : "Redirecting..."
-                          : whatsappPlatformMode && platform.id === "whatsapp"
-                            ? "Enable"
-                            : "Connect"}
+                        {isConnecting ? "Redirecting..." : "Connect"}
                       </Button>
-                      {platform.manualFallback && !whatsappPlatformMode && (
+                      {platform.manualFallback && (
                         <button
                           type="button"
                           className="text-[11px] text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
@@ -695,7 +654,7 @@ const PublisherConnect = () => {
       </Card>
 
       <Sheet
-        open={!!connectDialog && (!oauthPlatforms.includes(connectDialog as OAuthPlatform) || (connectDialog === "whatsapp" && !whatsappPlatformMode))}
+        open={!!connectDialog && !oauthPlatforms.includes(connectDialog as OAuthPlatform)}
         onOpenChange={(open) => {
           if (!open) {
             setConnectDialog(null);

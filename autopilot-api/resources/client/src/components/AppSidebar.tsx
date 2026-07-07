@@ -3,7 +3,7 @@ import {
   Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply, Megaphone,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity,
-  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target
+  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target, FileText
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
@@ -165,6 +165,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <NavItem title="Lead Agent" url="/leads" icon={MessageSquare} />
+              <NavItem title="WA Templates" url="/whatsapp/templates" icon={FileText} />
               <NavItem title="Replies" url="/replies" icon={MessageSquareReply} />
               <NavItem title="Analytics" url="/analytics" icon={BarChart3} />
             </SidebarMenu>

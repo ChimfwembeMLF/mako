@@ -426,17 +426,13 @@ export class SocialAccountsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary:
-      'Enable platform-managed WhatsApp for a workspace (no client Meta setup)',
+      'Disabled — platform-managed (shared) WhatsApp is no longer supported. Each client must connect their own WhatsApp Business number via OAuth.',
   })
   @Post('whatsapp/enable-platform')
-  enablePlatformWhatsapp(
-    @Req() req: Request,
-    @Query('tenantId') tenantId?: string,
-  ) {
-    if (!tenantId) {
-      throw new BadRequestException('tenantId query parameter is required');
-    }
-    return this.service.enablePlatformWhatsapp(tenantId, this.getUserId(req));
+  enablePlatformWhatsapp() {
+    throw new BadRequestException(
+      'Shared platform WhatsApp is disabled. Connect your own WhatsApp Business number via Publisher Connect → WhatsApp → Connect.',
+    );
   }
 
   @UseGuards(JwtAuthGuard)

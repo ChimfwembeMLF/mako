@@ -3428,16 +3428,7 @@
     "/api/v1/social-accounts/whatsapp/enable-platform": {
       "post": {
         "operationId": "SocialAccountsController_enablePlatformWhatsapp",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
+        "parameters": [],
         "responses": {
           "201": {
             "description": ""
@@ -3448,7 +3439,7 @@
             "bearer": []
           }
         ],
-        "summary": "Enable platform-managed WhatsApp for a workspace (no client Meta setup)",
+        "summary": "Disabled — platform-managed (shared) WhatsApp is no longer supported. Each client must connect their own WhatsApp Business number via OAuth.",
         "tags": [
           "Social Accounts"
         ]
@@ -3616,9 +3607,9 @@
         ]
       }
     },
-    "/api/v1/whatsapp/flows/config": {
+    "/api/v1/whatsapp/flows/sessions": {
       "get": {
-        "operationId": "WhatsappController_getFlowConfig",
+        "operationId": "WhatsappController_listFlowSessions",
         "parameters": [
           {
             "name": "tenantId",
@@ -3647,11 +3638,13 @@
             "bearer": []
           }
         ],
-        "summary": "Get WhatsApp USSD-style menu flow config for a workspace",
+        "summary": "List all active flow sessions for a tenant",
         "tags": [
           "WhatsApp"
         ]
-      },
+      }
+    },
+    "/api/v1/whatsapp/flows/config": {
       "patch": {
         "operationId": "WhatsappController_updateFlowConfig",
         "parameters": [
@@ -3712,6 +3705,14 @@
           },
           {
             "name": "phone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contactId",
             "required": true,
             "in": "query",
             "schema": {
@@ -3800,10 +3801,18 @@
     },
     "/api/v1/whatsapp/templates": {
       "get": {
-        "operationId": "WhatsappController_listTemplates",
+        "operationId": "WhatsappTemplatesController_list",
         "parameters": [
           {
             "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
             "required": true,
             "in": "query",
             "schema": {
@@ -3821,8 +3830,37 @@
             "bearer": []
           }
         ],
+        "summary": "List all saved WhatsApp templates for a tenant",
         "tags": [
-          "WhatsApp"
+          "WhatsApp Templates"
+        ]
+      },
+      "post": {
+        "operationId": "WhatsappTemplatesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateWhatsappTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Create a new DRAFT WhatsApp template",
+        "tags": [
+          "WhatsApp Templates"
         ]
       }
     },
@@ -7145,6 +7183,289 @@
         ]
       }
     },
+    "/api/v1/whatsapp/templates/{id}": {
+      "patch": {
+        "operationId": "WhatsappTemplatesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateWhatsappTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Update a DRAFT or REJECTED template",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      },
+      "delete": {
+        "operationId": "WhatsappTemplatesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Delete a DRAFT or REJECTED template",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/{id}/submit": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Submit a DRAFT template to Meta for approval",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/{id}/sync": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_syncOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Pull latest approval status from Meta for one template",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/sync-all": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_syncAll",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sync all PENDING/APPROVED templates from Meta",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/meta": {
+      "get": {
+        "operationId": "WhatsappTemplatesController_listFromMeta",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Fetch templates directly from Meta WABA (for import)",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/import": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_importFromMeta",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import an already-approved Meta template into local registry",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
     "/api/v1/comment-replies/fetch": {
       "post": {
         "operationId": "CommentRepliesController_fetch",
@@ -8757,6 +9078,14 @@
         "properties": {}
       },
       "WhatsappContactsUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "CreateWhatsappTemplateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateWhatsappTemplateDto": {
         "type": "object",
         "properties": {}
       },
