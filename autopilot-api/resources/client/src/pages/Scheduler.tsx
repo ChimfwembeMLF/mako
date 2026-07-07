@@ -4,7 +4,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import {
   CalendarClock, Plus, CheckCircle2, XCircle, Send, Facebook, Linkedin, Instagram,
   Twitter, Mail, Megaphone, Zap, Loader2, List, CalendarDays, ChevronLeft, ChevronRight,
-  AlertCircle, RotateCcw, Clock, Eye,
+  AlertCircle, RotateCcw, Clock, Eye, Youtube,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,12 +39,12 @@ import { invokeEdgeFunction } from "@/lib/edgeFunctions";
 
 const channelIcons: Record<string, any> = {
   facebook: Facebook, linkedin: Linkedin, instagram: Instagram,
-  twitter: Twitter, email: Mail, ad_copy: Megaphone, tiktok: Instagram, // Replace with TikTok icon if available
+  twitter: Twitter, email: Mail, ad_copy: Megaphone, tiktok: Instagram, youtube: Youtube,
 };
 
 const channelLabels: Record<string, string> = {
   facebook: "Facebook", linkedin: "LinkedIn", instagram: "Instagram",
-  twitter: "X / Twitter", email: "Email", ad_copy: "Ad", tiktok: "TikTok Video",
+  twitter: "X / Twitter", email: "Email", ad_copy: "Ad", tiktok: "TikTok Video", youtube: "YouTube",
 };
 
 const channelColors: Record<string, string> = {
@@ -55,6 +55,7 @@ const channelColors: Record<string, string> = {
   email: "bg-amber-100 text-amber-700 border-amber-200",
   ad_copy: "bg-purple-100 text-purple-700 border-purple-200",
   tiktok: "bg-black text-white border-gray-400",
+  youtube: "bg-red-100 text-red-700 border-red-200",
 };
 
 const statusDots: Record<string, string> = {
@@ -430,6 +431,71 @@ const Scheduler = () => {
     });
   }, [posts]);
 
+  const getPlatformBorderColor = (p: string) => {
+    switch (p) {
+      case "facebook": return "border-l-[3px] border-l-[#1877F2]";
+      case "linkedin": return "border-l-[3px] border-l-[#0A66C2]";
+      case "instagram": return "border-l-[3px] border-l-[#E1306C]";
+      case "twitter": return "border-l-[3px] border-l-[#000000]";
+      case "tiktok": return "border-l-[3px] border-l-[#000000]";
+      case "whatsapp": return "border-l-[3px] border-l-[#25D366]";
+      case "youtube": return "border-l-[3px] border-l-[#ff0000]";
+      default: return "border-l-[3px] border-l-muted-foreground";
+    }
+  };
+
+  const applyAutopilotSlot = () => {
+    // Find all future posts (ignoring the one we are editing)
+    const futurePosts = posts.filter(
+      (p) => p.id !== reschedule?.postId && p.scheduled_date
+    );
+
+    // Convert to tomorrow's date to start looking
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Check up to 30 days
+    let targetDate = tomorrow;
+    for (let i = 0; i < 30; i++) {
+      const dateString = toLocalDateInput(targetDate);
+      const postsOnDate = futurePosts.filter((p) => p.scheduled_date === dateString);
+
+      // If there are no posts on this day, select this day!
+      if (postsOnDate.length === 0) {
+        setReschedule((prev) => (prev ? { ...prev, date: dateString, time: "09:00" } : prev));
+        toast({
+          title: "Autopilot Slot Selected",
+          description: `Scheduled for ${dateString} (next fully empty day).`,
+        });
+        return;
+      }
+
+      // Move to next day
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+
+    // Fallback: if all next 30 days have posts, find the day with the fewest posts
+    targetDate = new Date(tomorrow);
+    let bestDate = toLocalDateInput(targetDate);
+    let minPostsCount = 999;
+
+    for (let i = 0; i < 30; i++) {
+      const dateString = toLocalDateInput(targetDate);
+      const postsOnDate = futurePosts.filter((p) => p.scheduled_date === dateString);
+      if (postsOnDate.length < minPostsCount) {
+        minPostsCount = postsOnDate.length;
+        bestDate = dateString;
+      }
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+
+    setReschedule((prev) => (prev ? { ...prev, date: bestDate, time: "09:00" } : prev));
+    toast({
+      title: "Autopilot Slot Selected",
+      description: `Scheduled for ${bestDate} (day with lowest posting volume).`,
+    });
+  };
+
   const openReschedule = (post: ScheduledPost, dateOverride?: string) => {
     setReschedule({
       postId: post.id,
@@ -670,65 +736,87 @@ const Scheduler = () => {
             <div className="grid grid-cols-7 gap-px bg-border/30 rounded-lg overflow-hidden">
               {getCalendarDays().map((day, idx) => {
                 if (!day) {
-                  return <div key={`empty-${idx}`} className="bg-background min-h-[100px] p-1" />;
+                  return <div key={`empty-${idx}`} className="bg-background min-h-[110px] p-1" />;
                 }
                 const dayPosts = getPostsForDate(day);
                 const todayClass = isToday(day) ? "ring-2 ring-primary ring-inset" : "";
+                const isDraggingActive = dragId !== null;
 
                 return (
                   <div
                     key={day.toISOString()}
-                    className={`bg-background min-h-[100px] p-1.5 ${todayClass} transition-colors ${
-                      dragId ? "hover:bg-primary/5" : ""
+                    className={`bg-background min-h-[110px] p-1.5 flex flex-col gap-1 ${todayClass} transition-all relative ${
+                      isDraggingActive
+                        ? "border border-dashed border-primary/30 bg-primary/5/10 hover:border-primary/60 hover:bg-primary/10"
+                        : "hover:bg-muted/15"
                     }`}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, day)}
                   >
-                    <div className={`text-xs font-medium mb-1 ${isToday(day) ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                    <div className={`text-xs font-semibold mb-1 ${isToday(day) ? "text-primary font-bold" : "text-muted-foreground"}`}>
                       {day.getDate()}
                     </div>
-                    <div className="space-y-0.5">
+                    <div className="space-y-1 z-10">
                       {dayPosts.slice(0, 3).map((post) => {
                         const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
                         const timeLabel = formatTimeDisplay(post.scheduled_time);
                         return (
-                          <div
-                            key={post.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, post.id)}
-                            className={`flex items-center gap-0.5 px-1 py-0.5 rounded text-[10px] font-medium border cursor-grab active:cursor-grabbing bg-muted/60 hover:bg-muted ${
-                              dragId === post.id ? "opacity-50" : ""
-                            }`}
-                            title={`${platforms.map((p) => channelLabels[p] || p).join(', ')} • ${post.status}${timeLabel ? ` • ${timeLabel}` : ''}\n${post.content.replace(/<[^>]*>/g, "").slice(0, 80)}`}
-                          >
-                            <Link
-                              to={`/content/${post.id}`}
-                              className="flex items-center gap-1 min-w-0 flex-1 cursor-pointer"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${statusDots[post.status] || "bg-muted-foreground"}`} />
-                              {platforms.map((p) => {
-                                const Icon = channelIcons[p] || CalendarClock;
-                                return <Icon key={p} className="h-2.5 w-2.5 shrink-0" />;
-                              })}
-                              <span className="truncate">
-                                {timeLabel ||
-                                  post.title?.replace(/<[^>]*>/g, "").slice(0, 15) ||
-                                  platforms.map((p) => channelLabels[p] || p).join(", ")}
-                              </span>
-                            </Link>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openReschedule(post);
-                              }}
-                              className="shrink-0 rounded p-0.5 hover:bg-background/80 cursor-pointer"
-                              title="Set date & time"
-                            >
-                              <Clock className="h-2.5 w-2.5 text-muted-foreground" />
-                            </button>
-                          </div>
+                          <TooltipProvider key={post.id}>
+                            <Tooltip delayDuration={200}>
+                              <TooltipTrigger asChild>
+                                <div
+                                  draggable
+                                  onDragStart={(e) => handleDragStart(e, post.id)}
+                                  className={`flex items-center justify-between gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border cursor-grab active:cursor-grabbing bg-card hover:shadow-sm transition-all ${
+                                    getPlatformBorderColor(platforms[0] ?? "")
+                                  } ${dragId === post.id ? "opacity-40 scale-95" : ""}`}
+                                >
+                                  <Link
+                                    to={`/content/${post.id}`}
+                                    className="flex items-center gap-1 min-w-0 flex-1 cursor-pointer"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${statusDots[post.status] || "bg-muted-foreground"}`} />
+                                    {platforms.map((p) => {
+                                      const Icon = channelIcons[p] || CalendarClock;
+                                      return <Icon key={p} className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />;
+                                    })}
+                                    <span className="truncate font-semibold text-foreground/90">
+                                      {timeLabel || post.title?.replace(/<[^>]*>/g, "").slice(0, 12) || "Untitled"}
+                                    </span>
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openReschedule(post);
+                                    }}
+                                    className="shrink-0 rounded p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                                    title="Set date & time"
+                                  >
+                                    <Clock className="h-2.5 w-2.5" />
+                                  </button>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" align="start" className="w-72 p-3 space-y-2 text-xs bg-popover border border-border/80 text-popover-foreground rounded-xl shadow-md z-50">
+                                <div className="flex items-center justify-between border-b pb-1.5 mb-1.5">
+                                  <span className="font-semibold text-primary truncate max-w-[160px]">
+                                    {post.title || "Draft Post"}
+                                  </span>
+                                  <Badge variant="outline" className={`text-[9px] capitalize font-medium ${statusColors[post.status] || ""}`}>
+                                    {post.status}
+                                  </Badge>
+                                </div>
+                                <p className="line-clamp-3 leading-relaxed text-muted-foreground italic">
+                                  "{post.content ? post.content.replace(/<[^>]*>/g, "").slice(0, 150) : "No content"}"
+                                </p>
+                                <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1.5 border-t mt-1.5">
+                                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeLabel || "All day"}</span>
+                                  <span className="font-semibold uppercase text-[9px] tracking-wider">{platforms.join(', ')}</span>
+                                </div>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         );
                       })}
                       {dayPosts.length > 3 && (
@@ -913,6 +1001,21 @@ const Scheduler = () => {
                 }
               />
             </div>
+          </div>
+          <div className="flex justify-between items-center bg-muted/40 p-2.5 rounded-lg border border-border/50">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-primary">
+              <Zap className="h-3.5 w-3.5 text-amber-500 fill-amber-500/20" />
+              Autopilot Scheduler
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={applyAutopilotSlot}
+              className="h-7 text-[10px] px-2 font-medium cursor-pointer"
+            >
+              Find next slot
+            </Button>
           </div>
           <p className="text-xs text-muted-foreground flex items-center gap-1.5">
             <Clock className="h-3.5 w-3.5" />

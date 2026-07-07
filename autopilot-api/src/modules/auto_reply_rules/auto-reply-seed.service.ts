@@ -69,8 +69,6 @@ export class AutoReplySeedService implements OnModuleInit {
     let totalCreated = 0;
 
     for (const tenant of tenants) {
-      const count = await this.countForTenant(tenant.id);
-      if (count > 0) continue;
       totalCreated += await this.ensureSeededForTenant(tenant.id);
     }
 

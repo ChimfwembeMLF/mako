@@ -8,6 +8,7 @@ import {
   Twitter,
   Video,
   LucideIcon,
+  Youtube,
 } from 'lucide-react';
 import { publishablePlatforms } from '@/lib/platform-capabilities';
 import {
@@ -167,6 +168,27 @@ const ALL_PLATFORM_DEFS: PlatformDef[] = [
       supportsVideo: true,
       supportsCarousel: false,
       mediaNotes: 'One MP4 video per post (9:16 recommended). Caption supports hashtags.',
+    },
+  },
+  {
+    value: 'youtube',
+    label: 'YouTube',
+    icon: Youtube,
+    color: '#ff0000',
+    maxChars: 5000,
+    previewType: 'social',
+    media: {
+      maxAttachments: 1,
+      maxImages: 0,
+      maxVideos: 1,
+      maxImageSizeMB: 0,
+      maxVideoSizeMB: 128000,
+      maxVideoDurationSec: 12 * 60 * 60,
+      recommendedImageSize: 'N/A',
+      aspectRatio: '16:9 or 9:16 (Shorts)',
+      supportsVideo: true,
+      supportsCarousel: false,
+      mediaNotes: 'Requires a video attachment (MP4, MOV, etc.). Title and description will be published.',
     },
   },
   {
