@@ -157,6 +157,7 @@ export class FormSuggestionsService {
 
   async getSuggestions(params: {
     tenantId: string;
+    workspaceId?: string;
     userId: string;
     form: FormSuggestionType;
     fields?: string[];
@@ -172,9 +173,16 @@ export class FormSuggestionsService {
 
     await this.usage.assertWithinLimit(params.tenantId, params.userId);
 
-    const brand = await this.brandRepo.findOne({
-      where: { tenantId: params.tenantId, userId: params.userId },
-    });
+    const brand = params.workspaceId
+      ? await this.brandRepo.findOne({
+          where: { workspaceId: params.workspaceId, tenantId: params.tenantId },
+        }) || await this.brandRepo.findOne({
+          where: { tenantId: params.tenantId, userId: params.userId },
+        })
+      : await this.brandRepo.findOne({
+          where: { tenantId: params.tenantId, userId: params.userId },
+        });
+
     const brandCtx = this.prompts.brandFromEntity(brand);
 
     const fieldList = fields

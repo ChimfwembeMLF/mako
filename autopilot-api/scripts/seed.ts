@@ -6,6 +6,9 @@ import { TenantBootstrapService } from '../src/modules/tenants/tenant-bootstrap.
 import { UserService } from '../src/modules/user/user.service';
 import { Profiles } from '../src/modules/profiles/entities/profiles.entity';
 import { RoleType } from '../src/constants';
+import { UserEntity } from '../src/modules/user/user.entity';
+import { BrandProfileSeedService } from '../src/modules/brand_profiles/brand-profile-seed.service';
+import { AutoReplySeedService } from '../src/modules/auto_reply_rules/auto-reply-seed.service';
 
 /**
  * Run: npm run seed:dev
@@ -22,6 +25,7 @@ async function bootstrap() {
   const { TemplateSeedService } = await import('../src/modules/templates/template-seed.service');
   const { Tenants } = await import('../src/modules/tenants/entities/tenants.entity');
   const templateSeeds = app.get(TemplateSeedService);
+  const autoReplySeeds = app.get(AutoReplySeedService);
   const tenantsRepo = dataSource.getRepository(Tenants);
 
   console.log('Seeding permissions...');
@@ -49,39 +53,39 @@ async function bootstrap() {
     role: RoleType;
     isSystemAdmin: boolean;
   }[] = [
-    {
-      email: 'superadmin@mako.test',
-      password: 'password123',
-      firstName: 'Mako',
-      lastName: 'Market ',
-      role: RoleType.SUPER_ADMIN,
-      isSystemAdmin: true,
-    },
-    {
-      email: 'owner@brandpilot.test',
-      password: 'password123',
-      firstName: 'Demo',
-      lastName: 'Owner',
-      role: RoleType.USER,
-      isSystemAdmin: false,
-    },
-    {
-      email: 'admin@brandpilot.test',
-      password: 'password123',
-      firstName: 'Demo',
-      lastName: 'Admin',
-      role: RoleType.ADMIN,
-      isSystemAdmin: false,
-    },
-    {
-      email: 'creator@brandpilot.test',
-      password: 'password123',
-      firstName: 'Demo',
-      lastName: 'Creator',
-      role: RoleType.USER,
-      isSystemAdmin: false,
-    },
-  ];
+      {
+        email: 'superadmin@mako.test',
+        password: 'password123',
+        firstName: 'Mako',
+        lastName: 'Market ',
+        role: RoleType.SUPER_ADMIN,
+        isSystemAdmin: true,
+      },
+      {
+        email: 'owner@brandpilot.test',
+        password: 'password123',
+        firstName: 'Demo',
+        lastName: 'Owner',
+        role: RoleType.USER,
+        isSystemAdmin: false,
+      },
+      {
+        email: 'admin@brandpilot.test',
+        password: 'password123',
+        firstName: 'Demo',
+        lastName: 'Admin',
+        role: RoleType.ADMIN,
+        isSystemAdmin: false,
+      },
+      {
+        email: 'creator@brandpilot.test',
+        password: 'password123',
+        firstName: 'Demo',
+        lastName: 'Creator',
+        role: RoleType.USER,
+        isSystemAdmin: false,
+      },
+    ];
 
   for (const demo of demoUsers) {
     let user = await userService.findOne({ email: demo.email });
@@ -120,12 +124,24 @@ async function bootstrap() {
     }
   }
 
+
+  const usersRepo = dataSource.getRepository(UserEntity);
+
+  console.log('Ensuring all users in database are bootstrapped...');
+  const allUsers = await usersRepo.find();
+  let bootstrappedCount = 0;
+  for (const user of allUsers) {
+    try {
+      await bootstrapService.bootstrapForUser(user);
+      bootstrappedCount++;
+    } catch (err) {
+      console.error(`Failed to bootstrap user ${user.email ?? user.id}:`, err);
+    }
+  }
+  console.log(`Bootstrapped/verified ${bootstrappedCount} user(s).`);
+
   console.log('Seeding tenant defaults for all tenants...');
   const allTenants = await tenantsRepo.find({ select: ['id', 'ownerId'] });
-  const { AutoReplySeedService } = await import('../src/modules/auto_reply_rules/auto-reply-seed.service');
-  const autoReplySeeds = app.get(AutoReplySeedService);
-  const { UserEntity } = await import('../src/modules/user/user.entity');
-  const usersRepo = dataSource.getRepository(UserEntity);
   const backfilled = await autoReplySeeds.backfillTenantsWithNoRules();
   if (backfilled > 0) {
     console.log(`Backfilled ${backfilled} auto-reply rule(s) for tenants with none.`);
@@ -136,7 +152,6 @@ async function bootstrap() {
       await autoReplySeeds.ensureSeededForTenant(tenant.id);
       const owner = await usersRepo.findOne({ where: { id: tenant.ownerId } });
       if (owner) {
-        const { BrandProfileSeedService } = await import('../src/modules/brand_profiles/brand-profile-seed.service');
         const brandProfileSeeds = app.get(BrandProfileSeedService);
         await brandProfileSeeds.ensureStarterForUser(tenant.id, owner);
       }

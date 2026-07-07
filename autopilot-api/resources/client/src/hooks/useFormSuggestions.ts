@@ -11,6 +11,8 @@ import {
   ROTATION_INTERVAL_MS,
 } from '@/lib/formSuggestionForms';
 
+import { useWorkspace } from '@/hooks/useWorkspace';
+
 const PAUSE_MS = 60_000;
 
 interface UseFormSuggestionsOptions {
@@ -28,6 +30,7 @@ export function useFormSuggestions({
   values,
   enabled = true,
 }: UseFormSuggestionsOptions) {
+  const { activeWorkspace } = useWorkspace();
   const [suggestions, setSuggestions] = useState<SuggestionMap>({});
   const [selectedIndex, setSelectedIndex] = useState<Record<string, number>>({});
   const [activeFieldKey, setActiveFieldKey] = useState<string | null>(null);
@@ -43,7 +46,7 @@ export function useFormSuggestions({
   useEffect(() => {
     if (!enabled || !tenantId || fieldKeys.length === 0) return;
 
-    const cached = readSuggestionCache(tenantId, form);
+    const cached = readSuggestionCache(tenantId, form, activeWorkspace);
     if (cached) {
       setSuggestions(cached);
       return;
@@ -52,12 +55,17 @@ export function useFormSuggestions({
     let cancelled = false;
     setLoading(true);
     aiApi
-      .getFormSuggestions({ tenantId, form, fields: FORM_SUGGESTION_FIELDS[form] })
+      .getFormSuggestions({
+        tenantId,
+        workspaceId: activeWorkspace || undefined,
+        form,
+        fields: FORM_SUGGESTION_FIELDS[form],
+      })
       .then((res) => {
         if (cancelled) return;
         const next = res.suggestions ?? {};
         setSuggestions(next);
-        writeSuggestionCache(tenantId, form, next);
+        writeSuggestionCache(tenantId, form, next, activeWorkspace);
       })
       .catch(() => {
         if (!cancelled) setSuggestions({});
@@ -69,7 +77,7 @@ export function useFormSuggestions({
     return () => {
       cancelled = true;
     };
-  }, [enabled, tenantId, form, fieldKeys.length]);
+  }, [enabled, tenantId, form, fieldKeys.length, activeWorkspace]);
 
   const isFieldPaused = useCallback((fieldKey: string) => {
     const until = pausedUntilRef.current[fieldKey] ?? 0;

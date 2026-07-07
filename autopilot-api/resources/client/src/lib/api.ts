@@ -1956,6 +1956,7 @@ export type FormSuggestionForm = 'brand-brain' | 'content' | 'campaign' | 'whats
 export const aiApi = {
     getFormSuggestions: (data: {
         tenantId: string;
+        workspaceId?: string;
         form: FormSuggestionForm;
         fields?: string[];
     }) =>

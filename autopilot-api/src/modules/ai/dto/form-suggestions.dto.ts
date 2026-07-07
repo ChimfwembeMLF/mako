@@ -5,6 +5,10 @@ export class FormSuggestionsDto {
   @IsUUID()
   tenantId: string;
 
+  @IsOptional()
+  @IsUUID()
+  workspaceId?: string;
+
   @IsIn(['brand-brain', 'content', 'campaign', 'whatsapp-menu'])
   form: FormSuggestionType;
 

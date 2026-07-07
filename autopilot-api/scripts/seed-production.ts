@@ -103,6 +103,19 @@ async function bootstrap() {
   const plansResult = await app.get(PlansSeedService).ensureSeeded();
   console.log(`Billing plans ${plansResult}.`);
 
+  console.log('Ensuring all users in database are bootstrapped...');
+  const allUsers = await usersRepo.find();
+  let bootstrappedCount = 0;
+  for (const user of allUsers) {
+    try {
+      await bootstrapService.bootstrapForUser(user);
+      bootstrappedCount++;
+    } catch (err) {
+      console.error(`Failed to bootstrap user ${user.email ?? user.id}:`, err);
+    }
+  }
+  console.log(`Bootstrapped/verified ${bootstrappedCount} user(s).`);
+
   console.log('Seeding tenant defaults for all tenants...');
   const allTenants = await tenantsRepo.find({ select: ['id', 'ownerId'] });
   const backfilled = await autoReplySeeds.backfillTenantsWithNoRules();

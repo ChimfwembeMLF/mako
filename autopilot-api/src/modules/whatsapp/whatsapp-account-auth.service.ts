@@ -29,7 +29,7 @@ export class WhatsappAccountAuthService {
   ): Promise<{ creds: WhatsappCredentials | null; account: SocialAccounts }> {
     let active = account;
     if (!isPlatformManagedWhatsappAccount(account.metadata)) {
-      active = await this.socialAccounts.forceRefreshToken(account);
+      active = await this.socialAccounts.refreshAccessTokenIfNeeded(account);
     }
     return {
       account: active,

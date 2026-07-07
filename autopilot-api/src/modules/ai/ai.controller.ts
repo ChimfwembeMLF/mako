@@ -31,6 +31,7 @@ export class AiController {
   suggestions(@Req() req: { user: JwtUser }, @Body() dto: FormSuggestionsDto) {
     return this.formSuggestions.getSuggestions({
       tenantId: dto.tenantId,
+      workspaceId: dto.workspaceId,
       userId: String(req.user.sub),
       form: dto.form,
       fields: dto.fields,

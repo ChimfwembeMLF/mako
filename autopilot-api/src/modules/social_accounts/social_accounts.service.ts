@@ -119,7 +119,12 @@ export class SocialAccountsService {
     if (!account.connected) return account;
     if (this.hasRecentAuthFailure(account)) return account;
 
-    const bufferMs = 5 * 60 * 1000;
+    const isMeta =
+      account.platform === 'facebook' ||
+      account.platform === 'instagram' ||
+      account.platform === 'whatsapp';
+    const bufferMs = isMeta ? 15 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000;
+
     const expiresSoon =
       account.expiresAt && account.expiresAt.getTime() - Date.now() <= bufferMs;
 
