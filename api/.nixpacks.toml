@@ -1,0 +1,21 @@
+[phases.setup]
+nixPackages = ["nodejs_20", "yarn", "unzip"]
+
+[phases.install]
+cmds = [
+    "yarn install --check-cache --ignore-engines"
+]
+
+[phases.build]
+cmds = [
+    "yarn run build"
+]
+
+[start]
+cmd = "node dist/main.js"
+
+[build]
+# Skip puppeteer download during build
+env = {
+    PUPPETEER_SKIP_DOWNLOAD = "true"
+}
