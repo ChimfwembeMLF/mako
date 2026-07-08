@@ -2,10 +2,12 @@
   "name": "mako",
   "private": true,
   "scripts": {
-    "dev": "cd autopilot-api && yarn dev",
-    "build": "cd autopilot-api && yarn build",
-    "deploy:prod": "cd autopilot-api && yarn deploy:prod",
-    "install:all": "cd autopilot-api && yarn install:all"
+    "dev": "cd api && yarn dev",
+    "dev:ui": "cd client && npm run dev",
+    "build": "cd api && yarn build",
+    "build:ui": "cd client && npm run build",
+    "deploy:prod": "cd api && yarn deploy:prod",
+    "install:all": "cd api && yarn install && cd ../client && npm install"
   },
   "engines": {
     "node": ">=20"
