@@ -3,20 +3,16 @@ nixPackages = ["nodejs_20", "yarn", "unzip"]
 
 [phases.install]
 cmds = [
-    "PUPPETEER_SKIP_DOWNLOAD=true yarn install --check-cache --ignore-engines"
+    "export PUPPETEER_SKIP_DOWNLOAD=true && yarn install --check-cache --ignore-engines"
 ]
 
 [phases.build]
 cmds = [
-    "yarn run build"
+    "export PUPPETEER_SKIP_DOWNLOAD=true && yarn run build"
 ]
 
 [start]
 cmd = "node dist/main.js"
 
-[build]
-excludeNodeModules = true
-
 [build.env]
 PUPPETEER_SKIP_DOWNLOAD = "true"
-NODE_VERSION = "20"
