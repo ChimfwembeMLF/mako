@@ -111,5 +111,8 @@
   },
   "overrides": {
     "hls.js": "1.5.20"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
