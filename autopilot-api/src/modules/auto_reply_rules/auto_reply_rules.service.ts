@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import { AutoReplyRules } from './entities/auto_reply_rules.entity';
 import { AutoReplyRulesCreateDto } from './dto/create-auto_reply_rules.dto';
 import { AutoReplyRulesUpdateDto } from './dto/update-auto_reply_rules.dto';
@@ -26,8 +26,18 @@ export class AutoReplyRulesService {
   ): Promise<AutoReplyRules[]> {
     if (tenantId) {
       await this.autoReplySeeds.ensureSeededForTenant(tenantId);
+      
+      let whereClause: any = { tenantId };
+      if (workspaceId) {
+        // Fetch rules specific to the workspace, OR rules that are tenant-wide (seeded defaults)
+        whereClause = [
+          { tenantId, workspaceId },
+          { tenantId, workspaceId: IsNull() },
+        ];
+      }
+      
       return this.repo.find({
-        where: scopeWhere<AutoReplyRules>(tenantId, workspaceId),
+        where: whereClause,
       });
     }
     return this.repo.find();
@@ -38,12 +48,15 @@ export class AutoReplyRulesService {
     platform: string,
     workspaceId?: string,
   ): Promise<AutoReplyRules[]> {
+    let whereClause: any = { tenantId, platform, isActive: true };
+    if (workspaceId) {
+      whereClause = [
+        { tenantId, platform, isActive: true, workspaceId },
+        { tenantId, platform, isActive: true, workspaceId: IsNull() },
+      ];
+    }
     return this.repo.find({
-      where: {
-        ...scopeWhere<AutoReplyRules>(tenantId, workspaceId),
-        platform,
-        isActive: true,
-      },
+      where: whereClause,
       order: { created_at: 'ASC' },
     });
   }

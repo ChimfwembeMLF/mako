@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
 import { SpaNotFoundFilter } from './filters/spa-not-found.filter';
 import { typeOrmConfigFactory } from './database/ormconfig';
@@ -62,6 +63,11 @@ import { ClientStaticModule } from './client-static.module';
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
     }),
 
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -118,6 +124,10 @@ import { ClientStaticModule } from './client-static.module';
     ClientStaticModule.register(),
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_FILTER,
       useClass: AllExceptionsFilter,

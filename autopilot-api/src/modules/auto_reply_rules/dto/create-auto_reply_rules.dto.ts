@@ -42,13 +42,4 @@ export class AutoReplyRulesCreateDto {
   @IsBoolean()
   isActive: boolean;
 
-  @IsDate()
-  createdAt: Date;
-
-  @IsDate()
-  updatedAt: Date;
-
-  @IsOptional()
-  @IsDate()
-  deletedAt?: Date;
 }
