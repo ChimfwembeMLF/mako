@@ -97,7 +97,7 @@ export default defineConfig(({ mode }) => ({
     include: ["hls.js"],
   },
   build: {
-    outDir: path.resolve(__dirname, "../../client/dist"),
+    outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
     rollupOptions: {
       output: {
