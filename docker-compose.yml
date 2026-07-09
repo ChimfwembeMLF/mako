@@ -5,6 +5,7 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile
+    command: sh -c "yarn migrations:run:prod && yarn start:prod"
     ports:
       - "4000"
     environment:
