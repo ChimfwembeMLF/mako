@@ -23,3 +23,8 @@ services:
     ports:
       - "5173"
     restart: unless-stopped
+
+networks:
+  default:
+    name: dokploy-network
+    external: true
