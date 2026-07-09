@@ -22,8 +22,8 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Update Nginx to listen on port 5173 instead of 80
-RUN sed -i 's/80/5173/g' /etc/nginx/conf.d/default.conf
+# Copy custom Nginx configuration to handle API proxying and SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 5173
 
