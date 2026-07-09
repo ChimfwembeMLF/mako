@@ -1,0 +1,20 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copy dependency files
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY .yarn .yarn
+
+# Install dependencies
+RUN yarn install --immutable
+
+# Copy source code
+COPY . .
+
+# Build the application
+RUN yarn build
+
+EXPOSE 4000
+
+CMD ["yarn", "start:prod"]
