@@ -2,9 +2,11 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Enable Corepack to use the correct Yarn version
+RUN corepack enable
+
 # Copy dependency files
 COPY package.json yarn.lock .yarnrc.yml ./
-COPY .yarn .yarn
 
 # Install dependencies
 RUN yarn install --immutable
