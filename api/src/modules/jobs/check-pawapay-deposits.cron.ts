@@ -8,7 +8,7 @@ export class CheckPawapayDepositsCron {
 
   constructor(private readonly payments: PaymentsService) {}
 
-  @Cron(CronExpression.EVERY_2_MINUTES)
+  @Cron('*/2 * * * *')
   async handleCron() {
     this.logger.debug('Running check pending PawaPay deposits job...');
     try {
