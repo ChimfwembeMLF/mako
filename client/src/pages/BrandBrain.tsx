@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Brain, Building2, Users, Megaphone, MessageCircle, ShieldCheck, Save, Globe, Loader2, FileText } from "lucide-react";
+import { Brain, Building2, Users, Megaphone, MessageCircle, ShieldCheck, Save, Globe, Loader2, FileText, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
