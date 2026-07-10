@@ -102,6 +102,40 @@ export class PaymentsService {
     const autoComplete = this.devAutoCompleteEnabled();
     if (autoComplete) {
       await this.completeDeposit(deposit.depositId);
+    } else {
+      const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+      if (token) {
+        const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
+        const baseUrl = isSandbox 
+          ? 'https://api.sandbox.pawapay.cloud/v1' 
+          : 'https://api.pawapay.io/v1';
+
+        try {
+          await axios.post(
+            `${baseUrl}/deposits`,
+            {
+              depositId: deposit.depositId,
+              amount: deposit.amount,
+              currency: 'ZMW',
+              country: 'ZMB',
+              correspondent: deposit.correspondent,
+              payer: {
+                type: 'MSISDN',
+                address: { value: params.phone },
+              },
+              statementDescription: `Mako ${plan} Plan`,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        } catch (error) {
+          this.logger.error(`Failed to initiate deposit with PawaPay for ${deposit.depositId}`, error);
+          throw new Error('Failed to communicate with payment gateway');
+        }
+      } else {
+        this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
+      }
     }
 
     const isRenewal = params.isRenewal ?? false;
@@ -160,6 +194,40 @@ export class PaymentsService {
     const autoComplete = this.devAutoCompleteEnabled();
     if (autoComplete) {
       await this.completeDeposit(deposit.depositId);
+    } else {
+      const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+      if (token) {
+        const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
+        const baseUrl = isSandbox 
+          ? 'https://api.sandbox.pawapay.cloud/v1' 
+          : 'https://api.pawapay.io/v1';
+
+        try {
+          await axios.post(
+            `${baseUrl}/deposits`,
+            {
+              depositId: deposit.depositId,
+              amount: deposit.amount,
+              currency: 'ZMW',
+              country: 'ZMB',
+              correspondent: deposit.correspondent,
+              payer: {
+                type: 'MSISDN',
+                address: { value: params.phone },
+              },
+              statementDescription: `Mako Ads Topup`,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          );
+        } catch (error) {
+          this.logger.error(`Failed to initiate ads deposit with PawaPay for ${deposit.depositId}`, error);
+          throw new Error('Failed to communicate with payment gateway');
+        }
+      } else {
+        this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
+      }
     }
 
     return {
