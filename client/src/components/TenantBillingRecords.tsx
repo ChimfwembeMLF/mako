@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Download, ExternalLink, Loader2, Receipt } from 'lucide-react';
+import { Download, ExternalLink, Loader2, Receipt, RefreshCw } from 'lucide-react';
 import { paymentsApi } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -144,7 +144,30 @@ export function TenantBillingRecords({ tenantId }: { tenantId: string }) {
                       {networkLabel(r.network)}
                     </TableCell>
                     <TableCell className="text-right">
-                      {r.canDownloadInvoice ? (
+                      {r.status?.toUpperCase() === 'ACCEPTED' ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={downloadingId === r.id}
+                          onClick={async () => {
+                            setDownloadingId(r.id);
+                            try {
+                              await paymentsApi.checkDepositStatus(r.id);
+                              toast({ title: 'Status checked', description: 'If the payment was successful, your plan is now active.' });
+                              // Reload records
+                              const updated = await paymentsApi.listDeposits(tenantId);
+                              setRecords(updated);
+                            } catch (e: unknown) {
+                              toast({ title: 'Check failed', description: e instanceof Error ? e.message : 'Error', variant: 'destructive' });
+                            } finally {
+                              setDownloadingId(null);
+                            }
+                          }}
+                        >
+                          {downloadingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
+                          Refresh Status
+                        </Button>
+                      ) : r.canDownloadInvoice ? (
                         <div className="flex justify-end gap-1">
                           <Button
                             variant="ghost"

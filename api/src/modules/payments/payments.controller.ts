@@ -66,6 +66,13 @@ export class PaymentsController {
     return this.payments.checkPendingDeposits();
   }
 
+  @Post('deposits/:depositId/check')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  checkDepositStatus(@Param('depositId') depositId: string) {
+    return this.payments.checkDepositStatus(depositId);
+  }
+
   @Get('deposits/tenant/:tenantId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

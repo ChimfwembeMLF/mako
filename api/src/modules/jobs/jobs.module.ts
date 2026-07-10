@@ -11,6 +11,7 @@ import {
   PaymentsCron,
 } from './content-jobs.cron';
 import { SubscriptionRenewalCron } from './subscription-renewal.cron';
+import { CheckPawapayDepositsCron } from './check-pawapay-deposits.cron';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SubscriptionRenewalCron } from './subscription-renewal.cron';
     DailyContentWorkflowCron,
     PaymentsCron,
     SubscriptionRenewalCron,
+    CheckPawapayDepositsCron,
   ],
 })
 export class JobsModule {}

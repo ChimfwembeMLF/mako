@@ -6,6 +6,7 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
+import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
@@ -262,9 +263,74 @@ export class PaymentsService {
       if (this.devAutoCompleteEnabled()) {
         await this.completeDeposit(d.depositId);
         completed++;
+      } else {
+        const result = await this.checkDepositStatus(d.depositId);
+        if (result.status === 'COMPLETED') {
+          completed++;
+        }
       }
     }
     return { completed };
+  }
+
+  async checkDepositStatus(depositId: string) {
+    const deposit = await this.depositsRepo.findOne({ where: { depositId } });
+    if (!deposit) throw new NotFoundException('Deposit not found');
+    
+    if (deposit.status === 'COMPLETED') {
+      return { status: 'COMPLETED' };
+    }
+
+    if (this.devAutoCompleteEnabled()) {
+      await this.completeDeposit(depositId);
+      return { status: 'COMPLETED' };
+    }
+
+    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    if (!token) {
+      this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping status check');
+      return { status: deposit.status };
+    }
+
+    const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
+    const baseUrl = isSandbox 
+      ? 'https://api.sandbox.pawapay.cloud/v1' 
+      : 'https://api.pawapay.io/v1';
+
+    try {
+      const response = await axios.get(`${baseUrl}/deposits/${depositId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = response.data;
+      if (Array.isArray(data) && data.length > 0) {
+        const depositData = data[0];
+        const newStatus = depositData.status;
+
+        if (newStatus === 'COMPLETED' && deposit.status !== 'COMPLETED') {
+          await this.completeDeposit(depositId);
+          return { status: 'COMPLETED' };
+        } else if (newStatus !== deposit.status) {
+          await this.depositsRepo.update(deposit.id, { status: newStatus });
+          return { status: newStatus };
+        }
+      } else if (!Array.isArray(data) && data.status) {
+        const newStatus = data.status;
+        if (newStatus === 'COMPLETED' && deposit.status !== 'COMPLETED') {
+          await this.completeDeposit(depositId);
+          return { status: 'COMPLETED' };
+        } else if (newStatus !== deposit.status) {
+          await this.depositsRepo.update(deposit.id, { status: newStatus });
+          return { status: newStatus };
+        }
+      }
+      return { status: deposit.status };
+    } catch (error) {
+      this.logger.error(`Failed to check PawaPay status for ${depositId}`, error);
+      return { status: deposit.status };
+    }
   }
 
   async findByTenant(

@@ -1317,6 +1317,10 @@ export const paymentsApi = {
             '/api/v1/payments/ads-deposit',
             { method: 'POST', body: JSON.stringify(data) },
         ),
+    checkDepositStatus: (depositId: string) =>
+        request<{ status: string }>(`/api/v1/payments/deposits/${depositId}/check`, {
+            method: 'POST',
+        }),
     listDeposits: (tenantId: string) =>
         request<Array<{
             id: string;
