@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles } from "lucide-react";
+import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2 } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,6 +81,9 @@ const LeadAgent = () => {
   const [sendingEmail, setSendingEmail] = useState(false);
   const [replySheetOpen, setReplySheetOpen] = useState(false);
   const [emailSheetOpen, setEmailSheetOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+  const [editLeadData, setEditLeadData] = useState<Partial<Lead>>({});
+  const [savingEdit, setSavingEdit] = useState(false);
   // WhatsApp state
   const [waContacts, setWaContacts] = useState<WhatsAppContact[]>([]);
   const [waPhone, setWaPhone] = useState("");
@@ -124,6 +127,7 @@ const LeadAgent = () => {
     pauseField: pauseWaMenuField,
     isFieldActive: isWaMenuFieldActive,
     loading: waMenuSuggestionsLoading,
+    fetchSuggestions: fetchWaMenuSuggestions,
   } = useFormSuggestions({
     form: "whatsapp-menu",
     tenantId: tenant?.id,
@@ -443,6 +447,23 @@ const LeadAgent = () => {
     setSendingEmail(false);
   };
 
+  const handleEditLead = async () => {
+    if (!selectedLead || !editLeadData.name || !editLeadData.email) {
+      toast({ title: "Missing fields", description: "Name and email are required", variant: "destructive" });
+      return;
+    }
+    setSavingEdit(true);
+    try {
+      await leadsApi.update(selectedLead.id, editLeadData as any);
+      toast({ title: "Lead updated", description: "Changes saved successfully" });
+      setEditSheetOpen(false);
+      loadLeads();
+    } catch (e: any) {
+      toast({ title: "Update failed", description: e.message || "Could not update lead", variant: "destructive" });
+    }
+    setSavingEdit(false);
+  };
+
   const handleClassify = async (id: string, classification: string) => {
     await leadsApi.update(id, { classification } as any);
     loadLeads();
@@ -609,6 +630,23 @@ const LeadAgent = () => {
                     className="h-7 text-xs"
                     onClick={() => {
                       setSelectedLead(lead);
+                      setEditLeadData({
+                        name: lead.name,
+                        email: lead.email,
+                        status: lead.status,
+                        classification: lead.classification,
+                      });
+                      setEditSheetOpen(true);
+                    }}
+                  >
+                    <Edit2 className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setSelectedLead(lead);
                       setReplyText(lead.ai_reply || "");
                       setReplySheetOpen(true);
                     }}
@@ -688,12 +726,15 @@ const LeadAgent = () => {
           <Card className="border-border/50 border-green-200/50 bg-green-50/30 dark:bg-green-950/10">
             <CardContent className="p-4 space-y-4">
               <div>
-                <p className="font-medium text-sm flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-green-600" />
-                  WhatsApp menu bot
-                  {waMenuSuggestionsLoading && (
-                    <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
-                  )}
+                <p className="font-medium text-sm flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-green-600" />
+                    WhatsApp menu bot
+                  </span>
+                  <Button variant="outline" size="sm" onClick={() => fetchWaMenuSuggestions()}>
+                    <Sparkles className="mr-2 h-3.5 w-3.5 text-primary" />
+                    Suggestions
+                  </Button>
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Build your own menu — customers tap an option or reply with a number (1, 2, 3…).
@@ -1061,6 +1102,66 @@ const LeadAgent = () => {
               className="w-full gradient-primary text-primary-foreground border-0"
             >
               <Mail className="mr-2 h-4 w-4" /> {sendingEmail ? "Sending..." : "Send Email"}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={editSheetOpen} onOpenChange={setEditSheetOpen}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="font-display">Edit Lead</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-1.5">
+              <Label>Name</Label>
+              <Input
+                value={editLeadData.name || ""}
+                onChange={(e) => setEditLeadData((prev) => ({ ...prev, name: e.target.value }))}
+                placeholder="Lead name"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input
+                value={editLeadData.email || ""}
+                onChange={(e) => setEditLeadData((prev) => ({ ...prev, email: e.target.value }))}
+                placeholder="Lead email"
+                type="email"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Classification</Label>
+              <select
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                value={editLeadData.classification || "cold"}
+                onChange={(e) => setEditLeadData((prev) => ({ ...prev, classification: e.target.value }))}
+              >
+                <option value="hot">Hot</option>
+                <option value="warm">Warm</option>
+                <option value="cold">Cold</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <select
+                className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background"
+                value={editLeadData.status || "new"}
+                onChange={(e) => setEditLeadData((prev) => ({ ...prev, status: e.target.value }))}
+              >
+                <option value="new">New</option>
+                <option value="qualifying">Qualifying</option>
+                <option value="qualified">Qualified</option>
+                <option value="meeting_booked">Meeting Booked</option>
+                <option value="escalated">Escalated</option>
+              </select>
+            </div>
+            <Button
+              onClick={handleEditLead}
+              disabled={savingEdit}
+              className="w-full gradient-primary text-primary-foreground border-0 mt-2"
+            >
+              {savingEdit ? "Saving..." : "Save Changes"}
             </Button>
           </div>
         </SheetContent>

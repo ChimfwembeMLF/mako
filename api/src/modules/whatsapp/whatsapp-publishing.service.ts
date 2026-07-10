@@ -122,15 +122,21 @@ export class WhatsappPublishingService {
         failed++;
         if (result.error && errors.length < 3)
           errors.push(`${contact.phone}: ${result.error}`);
+        
+        // Auto opt-out invalid numbers so they don't block future broadcasts
+        if (result.error && /133010|131026/.test(result.error)) {
+          contact.optedIn = false;
+          await this.contactsRepo.save(contact);
+        }
       }
     }
 
     if (sent === 0) {
+      const hasAuthError = errors.some(e => /190|session|invalid oauth/i.test(e));
       return {
-        published: false,
-        message: `WhatsApp broadcast failed for all ${
-          contacts.length
-        } contacts. ${errors.join('; ')}`,
+        published: !hasAuthError, // Only fail (and retry) if there's an auth/transient error
+        message: `WhatsApp broadcast processed but 0 sent. ${errors.join('; ')}`,
+        externalPostId: `wa-broadcast-${Date.now()}`,
       };
     }
 

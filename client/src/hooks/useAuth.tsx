@@ -166,10 +166,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
         }
         clearAuthData();
-        if (window.location.pathname !== "/auth" && window.location.pathname !== "/auth/callback") {
-          console.warn(`[AUTH] Forcing redirect to /auth at ${new Date().toISOString()} because loadUserFromToken failed with AuthError.`);
-          window.location.href = "/auth";
-        }
+        // Removed hard window.location.href reload. 
+        // clearAuthData() sets user to null, which gracefully triggers React Router's <Navigate to="/auth" /> in <ProtectedRoute>.
       } else if (isNetworkError(error)) {
         const cached = readCachedUser();
         if (cached) {
@@ -239,8 +237,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // ignore
     } finally {
       clearAuthData();
-      console.warn(`[AUTH] User signed out at ${new Date().toISOString()}, redirecting to /auth`);
-      window.location.href = "/auth";
+      // Rely on React Router <Navigate> to smoothly transition the user without a browser reload.
     }
   }, [clearAuthData]);
 

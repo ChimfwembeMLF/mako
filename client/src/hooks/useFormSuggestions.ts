@@ -43,8 +43,8 @@ export function useFormSuggestions({
     [fieldKeys, values],
   );
 
-  useEffect(() => {
-    if (!enabled || !tenantId || fieldKeys.length === 0) return;
+  const fetchSuggestions = useCallback(() => {
+    if (!tenantId || fieldKeys.length === 0) return;
 
     const cached = readSuggestionCache(tenantId, form, activeWorkspace);
     if (cached) {
@@ -52,7 +52,6 @@ export function useFormSuggestions({
       return;
     }
 
-    let cancelled = false;
     setLoading(true);
     aiApi
       .getFormSuggestions({
@@ -62,22 +61,17 @@ export function useFormSuggestions({
         fields: FORM_SUGGESTION_FIELDS[form],
       })
       .then((res) => {
-        if (cancelled) return;
         const next = res.suggestions ?? {};
         setSuggestions(next);
         writeSuggestionCache(tenantId, form, next, activeWorkspace);
       })
       .catch(() => {
-        if (!cancelled) setSuggestions({});
+        setSuggestions({});
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled, tenantId, form, fieldKeys.length, activeWorkspace]);
+  }, [tenantId, form, fieldKeys.length, activeWorkspace]);
 
   const isFieldPaused = useCallback((fieldKey: string) => {
     const until = pausedUntilRef.current[fieldKey] ?? 0;
@@ -170,5 +164,6 @@ export function useFormSuggestions({
     pauseField,
     isFieldActive,
     activeFieldKey,
+    fetchSuggestions,
   };
 }

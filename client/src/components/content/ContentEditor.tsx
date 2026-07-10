@@ -63,7 +63,7 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
 
   const contentFieldKeys = useMemo(() => ['theme', 'title'], []);
   const contentValues = useMemo(() => ({ theme, title }), [theme, title]);
-  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive } = useFormSuggestions({
+  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive, fetchSuggestions } = useFormSuggestions({
     form: 'content',
     tenantId: tenant?.id,
     fieldKeys: contentFieldKeys,
@@ -250,6 +250,10 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
               Write or generate content — publish to platforms when ready.
             </p>
           </div>
+          <Button variant="outline" size="sm" onClick={() => fetchSuggestions()}>
+            <Sparkles className="mr-2 h-3.5 w-3.5 text-primary" />
+            Suggestions
+          </Button>
           {item?.id && onReset && (
             <Button type="button" variant="outline" size="sm" onClick={onReset} className="shrink-0 w-full sm:w-auto">
               <FilePlus className="h-3.5 w-3.5 mr-1.5" />

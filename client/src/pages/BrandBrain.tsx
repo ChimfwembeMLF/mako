@@ -199,7 +199,7 @@ const BrandBrainInner = () => {
     [visibleFieldKeys, data],
   );
 
-  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive } = useFormSuggestions({
+  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive, fetchSuggestions } = useFormSuggestions({
     form: "brand-brain",
     tenantId: tenant?.id,
     fieldKeys: visibleFieldKeys,
@@ -348,10 +348,16 @@ const BrandBrainInner = () => {
             </p>
           </div>
         </div>
-        <Button onClick={handleSave} disabled={saving} className="shrink-0">
-          {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          {saving ? "Saving..." : "Save Brand Brain"}
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" onClick={() => fetchSuggestions()}>
+            <Sparkles className="mr-2 h-4 w-4 text-primary" />
+            Get AI Suggestions
+          </Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {saving ? "Saving..." : "Save Brand Brain"}
+          </Button>
+        </div>
       </div>
 
       <Card className="border-border/50">

@@ -181,7 +181,7 @@ export default function CampaignsPage() {
 
   const campaignFieldKeys = useMemo(() => ['name', 'theme', 'goal'], []);
   const campaignValues = useMemo(() => ({ name, theme, goal }), [name, theme, goal]);
-  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive } = useFormSuggestions({
+  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive, fetchSuggestions } = useFormSuggestions({
     form: 'campaign',
     tenantId: tenant?.id,
     fieldKeys: campaignFieldKeys,
@@ -277,11 +277,17 @@ export default function CampaignsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Generator */}
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden lg:col-span-1">
-          <div className="px-5 py-4 border-b bg-muted/30">
-            <h2 className="font-semibold text-sm">Create campaign</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              AI plans posts across days and platforms using your Brand Brain
-            </p>
+          <div className="px-5 py-4 border-b bg-muted/30 flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-sm">Create campaign</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                AI plans posts across days and platforms using your Brand Brain
+              </p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => fetchSuggestions()}>
+              <Sparkles className="mr-2 h-3.5 w-3.5 text-primary" />
+              Suggestions
+            </Button>
           </div>
           <div className="p-5 space-y-4">
             <div className="space-y-2">

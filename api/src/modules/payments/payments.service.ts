@@ -63,6 +63,7 @@ export class PaymentsService {
     if (explicit === 'false') return false;
     if (this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') === 'true')
       return true;
+    if (this.config.get<string>('PAWAPAY_ENV') === 'sandbox') return true;
     return this.config.get<string>('NODE_ENV') === 'development';
   }
 
