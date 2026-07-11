@@ -8,6 +8,7 @@ export class PromptBuilderService {
   brandFromEntity(profile: BrandProfiles | null): BrandContext {
     if (!profile) return {};
     return {
+      brandType: profile.brandType,
       companyName: profile.companyName,
       industry: profile.industry,
       description: profile.description,
@@ -48,10 +49,13 @@ export class PromptBuilderService {
         ? 'Return ONLY valid JSON: {"title":"...","content":"plain text post body"}'
         : 'Return ONLY valid JSON: {"title":"...","content":"<p>HTML paragraphs</p>"}\nUse simple HTML (<p>, <ul>, <li>, <strong>) — no scripts or external links.';
 
-    return `You are a marketing copywriter for ${
-      brand.companyName || 'this brand'
+    const entityDescriptor = brand.brandType === 'professional_resume' ? 'this professional' : (brand.brandType === 'product' ? 'this product' : 'this brand');
+    const roleDescriptor = brand.brandType === 'professional_resume' ? 'professional content writer' : 'marketing copywriter';
+
+    return `You are a ${roleDescriptor} for ${
+      brand.companyName || entityDescriptor
     }.
-Write on-brand content using the brand profile below.
+Write on-brand content using the profile below.
 ${platform ? `Optimize for ${platform}.` : 'Write versatile marketing copy.'}
 ${templateBlock}${guardrails}
 ${outputFormat}`;
@@ -99,8 +103,10 @@ Return ONLY valid JSON: {"title":"...","content":"<p>HTML</p>"}`;
         }":\n${template.body.trim()}\n`
       : '';
 
+    const entityDescriptor = brand.brandType === 'professional_resume' ? 'this professional' : (brand.brandType === 'product' ? 'this product' : 'this brand');
+
     return `You are an expert ${platform} content strategist for ${
-      brand.companyName || 'this brand'
+      brand.companyName || entityDescriptor
     }.
 ${brandContextBlock(brand)}
 
@@ -141,8 +147,10 @@ Rules:
 
     const keys = platforms.map((p) => `"${p.platform}"`).join(', ');
 
+    const entityDescriptor = brand.brandType === 'professional_resume' ? 'this professional' : (brand.brandType === 'product' ? 'this product' : 'this brand');
+
     return `You are a multi-platform social content strategist for ${
-      brand.companyName || 'this brand'
+      brand.companyName || entityDescriptor
     }.
 ${brandContextBlock(brand)}
 
@@ -190,8 +198,10 @@ Return ONLY valid JSON: {"content":"plain text reply under 280 chars"}`;
       .filter(Boolean)
       .join('\n');
 
+    const entityDescriptor = brand.brandType === 'professional_resume' ? 'this professional' : (brand.brandType === 'product' ? 'this product' : 'this brand');
+
     return `You write public ${platform} comment replies for ${
-      brand.companyName || 'this brand'
+      brand.companyName || entityDescriptor
     }.
 ${brandContextBlock(brand)}
 ${guardrails}

@@ -20,6 +20,10 @@ export class BrandProfilesUpdateDto {
 
   @IsOptional()
   @IsString()
+  brandType?: string;
+
+  @IsOptional()
+  @IsString()
   companyName?: string;
 
   @IsOptional()

@@ -22,6 +22,8 @@ export class BrandProfiles {
   userId: string;
   @Column({ type: 'uuid', nullable: true })
   workspaceId?: string;
+  @Column({ type: 'text', default: 'business' })
+  brandType: string;
   @Column({ type: 'text', nullable: true })
   companyName?: string;
   @Column({ type: 'text', nullable: true })

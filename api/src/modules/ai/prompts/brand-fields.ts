@@ -21,6 +21,7 @@ export const BRAND_FIELD_KEYS = [
 export type BrandFieldKey = (typeof BRAND_FIELD_KEYS)[number];
 
 export interface BrandContext {
+  brandType?: string;
   companyName?: string;
   industry?: string;
   description?: string;
@@ -161,8 +162,11 @@ Rules:
 
 export function brandContextBlock(brand: BrandContext): string {
   const lines: string[] = [];
+  if (brand.brandType) {
+    lines.push(`Brand Type: ${brand.brandType.trim()}`);
+  }
   for (const [key, value] of Object.entries(brand)) {
-    if (value?.trim()) lines.push(`${key}: ${value.trim()}`);
+    if (key !== 'brandType' && value?.trim()) lines.push(`${key}: ${value.trim()}`);
   }
   return lines.length ? lines.join('\n') : 'No brand profile configured yet.';
 }

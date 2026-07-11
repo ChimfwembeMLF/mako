@@ -18,6 +18,10 @@ export class BrandProfilesCreateDto {
 
   @IsOptional()
   @IsString()
+  brandType?: string;
+
+  @IsOptional()
+  @IsString()
   companyName?: string;
 
   @IsOptional()

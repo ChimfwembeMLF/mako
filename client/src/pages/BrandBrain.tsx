@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -15,6 +16,7 @@ import { brandProfilesApi } from "@/lib/api";
 import { DocumentUpload } from "@/components/DocumentUpload";
 
 interface BrandData {
+  brandType: string;
   companyName: string;
   industry: string;
   description: string;
@@ -43,7 +45,7 @@ type FieldDef = {
 };
 
 const BRAND_FIELD_KEYS: (keyof BrandData)[] = [
-  "companyName", "industry", "description", "services", "targetAudience",
+  "brandType", "companyName", "industry", "description", "services", "targetAudience",
   "audiencePainPoints", "toneOfVoice", "brandPersonality", "currentOffers",
   "uniqueSellingPoints", "faqs", "caseStudies", "bannedWords", "bannedTopics",
   "competitors", "keywords",
@@ -77,7 +79,7 @@ function applyScrapedResult(prev: BrandData, scraped: Record<string, unknown>, f
 }
 
 const initialData: BrandData = {
-  companyName: "", industry: "", description: "", services: "",
+  brandType: "business", companyName: "", industry: "", description: "", services: "",
   targetAudience: "", audiencePainPoints: "", toneOfVoice: "", brandPersonality: "",
   currentOffers: "", uniqueSellingPoints: "", faqs: "", caseStudies: "",
   bannedWords: "", bannedTopics: "", competitors: "", keywords: "",
@@ -85,6 +87,7 @@ const initialData: BrandData = {
 };
 
 const fromApi = (row: Record<string, unknown>): BrandData => ({
+  brandType: String(row.brandType || "business"),
   companyName: String(row.companyName ?? ""),
   industry: String(row.industry ?? ""),
   description: String(row.description ?? ""),
@@ -105,6 +108,7 @@ const fromApi = (row: Record<string, unknown>): BrandData => ({
 });
 
 const toApi = (d: BrandData) => ({
+  brandType: d.brandType,
   companyName: d.companyName,
   industry: d.industry,
   description: d.description,
@@ -420,6 +424,27 @@ const BrandBrainInner = () => {
         </TabsList>
         {sections.map((section) => (
           <TabsContent key={section.id} value={section.id} className="mt-4 space-y-4">
+            {section.id === 'company' && (
+              <Card className="border-border/50">
+                <CardContent className="p-4 space-y-2">
+                  <Label htmlFor="brandType">Brand Profile Type</Label>
+                  <Select
+                    value={data.brandType}
+                    onValueChange={(val) => updateField('brandType', val)}
+                  >
+                    <SelectTrigger id="brandType">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="business">Business / Agency</SelectItem>
+                      <SelectItem value="product">Product / App</SelectItem>
+                      <SelectItem value="professional_resume">Professional / Resume / Creator</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">This helps our AI generate the right tone for your profile.</p>
+                </CardContent>
+              </Card>
+            )}
             {section.fields.map((field) => (
               <Card key={field.key} className="border-border/50">
                 <CardContent className="p-4 space-y-2">
