@@ -285,14 +285,22 @@ async function request<T>(
         const isAuthError = response.status === 401 || response.status === 403;
 
         if (isAuthError && requireAuth && !options._isRetry) {
+            console.error(`[API] Received 401/403 for ${endpoint}, attempting token refresh...`);
             const refreshed = await refreshAccessToken();
             if (refreshed) {
+                console.log(`[API] Token refresh successful, retrying ${endpoint}...`);
                 return request<T>(endpoint, { ...options, _isRetry: true });
             }
+            console.error(`[API] Token refresh failed for ${endpoint}, clearing auth token.`);
             setAuthToken(null);
         }
 
-        throw new ApiError(errorMessage, { status: response.status, isAuthError });
+        const isNetworkError = response.status >= 500;
+        if (isNetworkError) {
+            reportApiFailure(new Error(`Server error: ${response.status}`));
+        }
+
+        throw new ApiError(errorMessage, { status: response.status, isAuthError, isNetworkError });
     }
 
     reportApiSuccess();

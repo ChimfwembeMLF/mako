@@ -2,7 +2,6 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import puppeteer from 'puppeteer';
 import { MistralChatService } from '../../ai/services/mistral-chat.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import {
@@ -135,15 +134,6 @@ export class ScrapeWebsiteService {
       : undefined;
     const discoveryLogger = resolveLogger(discoveryConfig);
 
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-      ],
-    });
-
     try {
       while (queue.length && texts.length < maxPages) {
         const url = queue.shift()!;
@@ -154,12 +144,12 @@ export class ScrapeWebsiteService {
 
         await rateLimiter.wait();
 
-        let page: Awaited<ReturnType<typeof browser.newPage>> | null = null;
         try {
-          page = await browser.newPage();
-          await page.setUserAgent(discoveryConfig.userAgent);
-          await page.goto(canonical, { waitUntil: 'networkidle2', timeout });
-          const html = await page.content();
+          const response = await axios.get(canonical, {
+            headers: { 'User-Agent': discoveryConfig.userAgent },
+            timeout: timeout,
+          });
+          const html = response.data;
 
           const $discover = cheerio.load(html);
           const anchors: Array<{ href: string; text: string }> = [];
@@ -203,14 +193,10 @@ export class ScrapeWebsiteService {
           const message = err instanceof Error ? err.message : String(err);
           stats?.recordError(canonical, message);
           this.logger.warn(`Scrape failed for ${canonical}`, err);
-        } finally {
-          if (page) {
-            await page.close().catch(() => undefined);
-          }
         }
       }
     } finally {
-      await browser.close();
+      // Cleanup if necessary
     }
 
     if (stats) {

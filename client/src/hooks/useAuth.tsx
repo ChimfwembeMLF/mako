@@ -165,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
           }
         }
+        console.error('[useAuth] AuthError triggered, clearing auth data. Error details:', error);
         clearAuthData();
         // Removed hard window.location.href reload. 
         // clearAuthData() sets user to null, which gracefully triggers React Router's <Navigate to="/auth" /> in <ProtectedRoute>.
@@ -175,6 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSession({ accessToken: token, user: cached });
         }
       } else {
+        console.error('[useAuth] Unknown error during auth load, clearing auth data. Error details:', error);
         clearAuthData();
       }
     } finally {

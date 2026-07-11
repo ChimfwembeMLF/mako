@@ -5,7 +5,7 @@ db:
   username: 'thecodefather'
   password: ''
   host: 'localhost'
-  synchronize: true
+  synchronize: false
   database: 'autopilot_dev'
   env: "development"
   

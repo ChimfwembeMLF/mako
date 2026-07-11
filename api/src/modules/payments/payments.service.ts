@@ -107,8 +107,8 @@ export class PaymentsService {
       if (token) {
         const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
         const baseUrl = isSandbox 
-          ? 'https://api.sandbox.pawapay.cloud/v1' 
-          : 'https://api.pawapay.io/v1';
+          ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
+          : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
 
         try {
           await axios.post(
@@ -199,8 +199,8 @@ export class PaymentsService {
       if (token) {
         const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
         const baseUrl = isSandbox 
-          ? 'https://api.sandbox.pawapay.cloud/v1' 
-          : 'https://api.pawapay.io/v1';
+          ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
+          : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
 
         try {
           await axios.post(
@@ -362,8 +362,8 @@ export class PaymentsService {
 
     const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
     const baseUrl = isSandbox 
-      ? 'https://api.sandbox.pawapay.cloud/v1' 
-      : 'https://api.pawapay.io/v1';
+      ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
+      : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
 
     try {
       const response = await axios.get(`${baseUrl}/deposits/${depositId}`, {
