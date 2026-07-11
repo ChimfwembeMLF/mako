@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { contentItemsApi, contentPublicationsApi, leadsApi, type TopPerformingPost } from "@/lib/api";
+import { contentItemsApi, contentPublicationsApi, leadsApi, analyticsApi, type TopPerformingPost } from "@/lib/api";
 import { platformOf } from "@/lib/platforms";
 import { Link } from "react-router-dom";
 import { invokeEdgeFunction } from "@/lib/edgeFunctions";
@@ -39,6 +39,8 @@ const Analytics = () => {
   const [suggestions, setSuggestions] = useState<{ title: string; description: string; trend: string }[]>([]);
   const [topPosts, setTopPosts] = useState<TopPerformingPost[]>([]);
   const [syncingEngagement, setSyncingEngagement] = useState(false);
+  const [pageInsights, setPageInsights] = useState<any[]>([]);
+  const [aiReport, setAiReport] = useState<any>(null);
 
   useEffect(() => {
     if (!user || !activeWorkspace) return;
@@ -48,8 +50,18 @@ const Analytics = () => {
   const loadAllData = async () => {
     if (!user) return;
     setLoading(true);
-    await Promise.all([loadContentStats(), loadLeadStats(), loadWeeklyTrend(), loadTopPosts()]);
+    await Promise.all([loadContentStats(), loadLeadStats(), loadWeeklyTrend(), loadTopPosts(), loadPageInsights()]);
     setLoading(false);
+  };
+
+  const loadPageInsights = async () => {
+    if (!activeWorkspace) return;
+    try {
+      const data = await analyticsApi.getInsights(30, activeWorkspace);
+      setPageInsights(Array.isArray(data) ? data : []);
+    } catch {
+      setPageInsights([]);
+    }
   };
 
   const loadTopPosts = async () => {
@@ -170,24 +182,10 @@ const Analytics = () => {
   const generateSuggestions = async () => {
     setGeneratingSuggestions(true);
     try {
-      const context = `Content stats: ${contentStats.total} total, ${contentStats.published} published, ${contentStats.draft} drafts, ${contentStats.approved} approved. Channels: ${channelBreakdown.map(c => `${c.name}: ${c.value}`).join(", ")}. Leads: ${leadStats.total} total (${leadStats.hot} hot, ${leadStats.warm} warm, ${leadStats.cold} cold).`;
-
-      const { data, error } = await invokeEdgeFunction("generate-content", {
-        body: {
-          contentType: "ad_copy",
-          theme: `ANALYTICS SUGGESTIONS MODE: Based on this data, provide exactly 4 marketing optimization suggestions as a JSON array. Each item must have "title" (short), "description" (1 sentence), and "trend" ("up" or "down"). Data: ${context}. Return ONLY the JSON array, no other text.`,
-        },
-      });
-
-      if (error) throw error;
-      const content = (data as { content?: string } | null)?.content || "";
-      // Try to parse JSON from the response
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        setSuggestions(parsed);
+      const data = await analyticsApi.getAiReport(activeWorkspace);
+      if (data) {
+        setAiReport(data);
       } else {
-        // Fallback suggestions based on real data
         setSuggestions(getDefaultSuggestions());
       }
     } catch {
@@ -292,6 +290,28 @@ const Analytics = () => {
                       <Bar dataKey="total" name="Created" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
                       <Bar dataKey="published" name="Published" fill={COLORS[3]} radius={[4, 4, 0, 0]} />
                     </BarChart>
+                  </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {pageInsights.length > 0 && (
+              <Card className="border-border/50 col-span-1 lg:col-span-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-display">Follower Growth</CardTitle>
+                </CardHeader>
+                <CardContent className="min-w-0">
+                  <div className="w-full min-w-0">
+                  <ResponsiveContainer width="100%" height={250} minWidth={0}>
+                    <LineChart data={pageInsights}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="date" tickFormatter={(val) => new Date(val).toLocaleDateString("en-US", { month: "short", day: "numeric" })} tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+                      <Tooltip labelFormatter={(val) => new Date(val).toLocaleDateString()} />
+                      <Line type="monotone" dataKey="followersCount" name="Followers" stroke={COLORS[1]} strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="reach" name="Reach" stroke={COLORS[2]} strokeWidth={2} dot={false} />
+                    </LineChart>
                   </ResponsiveContainer>
                   </div>
                 </CardContent>
@@ -434,7 +454,69 @@ const Analytics = () => {
                 {generatingSuggestions ? "Analyzing..." : "Get AI Suggestions"}
               </Button>
             </div>
-            {suggestions.length > 0 ? (
+            {aiReport ? (
+              <Card className="border-border/50 shadow-sm overflow-hidden">
+                <CardContent className="p-0">
+                  <div className="p-5 border-b border-border/50 bg-muted/20">
+                    <p className="text-sm leading-relaxed">{aiReport.summary}</p>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x border-border/50">
+                    <div className="p-5 space-y-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2 text-green-600">
+                        <ArrowUp className="h-4 w-4" /> Top Performing Traits
+                      </h3>
+                      <ul className="space-y-2">
+                        {aiReport.topPerformingTraits?.map((trait: string, i: number) => (
+                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-green-500 shrink-0" />
+                            {trait}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="p-5 space-y-3">
+                      <h3 className="text-sm font-semibold flex items-center gap-2 text-destructive">
+                        <ArrowDown className="h-4 w-4" /> Underperforming Traits
+                      </h3>
+                      <ul className="space-y-2">
+                        {aiReport.underperformingTraits?.map((trait: string, i: number) => (
+                          <li key={i} className="text-sm text-muted-foreground flex items-start gap-2">
+                            <span className="mt-1 h-1.5 w-1.5 rounded-full bg-destructive shrink-0" />
+                            {trait}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  <div className="p-5 border-t border-border/50 bg-primary/5">
+                    <h3 className="text-sm font-semibold mb-3">Actionable Recommendations</h3>
+                    <div className="space-y-2">
+                      {aiReport.contentRecommendations?.map((rec: string, i: number) => (
+                        <div key={i} className="flex gap-3 text-sm">
+                          <span className="text-primary font-bold">{i + 1}.</span>
+                          <p>{rec}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {aiReport.optimalPostingTimes?.length > 0 && (
+                    <div className="p-5 border-t border-border/50">
+                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                        Optimal Posting Times
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {aiReport.optimalPostingTimes.map((time: string, i: number) => (
+                          <Badge key={i} variant="secondary">{time}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : suggestions.length > 0 ? (
               suggestions.map((s, i) => (
                 <Card key={i} className="border-border/50 hover:shadow-card transition-shadow">
                   <CardContent className="p-4 flex items-start gap-3">

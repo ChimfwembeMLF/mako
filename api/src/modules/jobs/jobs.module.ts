@@ -4,6 +4,7 @@ import { ContentItemsModule } from '../content_items/content_items.module';
 import { ContentPublishingModule } from '../content-publishing/content-publishing.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { QueuesModule } from '../queues/queues.module';
+import { AnalyticsModule } from '../analytics/analytics.module';
 import {
   AutoPublishCron,
   CommentSyncCron,
@@ -12,6 +13,7 @@ import {
 } from './content-jobs.cron';
 import { SubscriptionRenewalCron } from './subscription-renewal.cron';
 import { CheckPawapayDepositsCron } from './check-pawapay-deposits.cron';
+import { SyncInsightsCron } from './sync-insights.cron';
 
 @Module({
   imports: [
@@ -20,6 +22,7 @@ import { CheckPawapayDepositsCron } from './check-pawapay-deposits.cron';
     ContentPublishingModule,
     PaymentsModule,
     QueuesModule,
+    AnalyticsModule,
   ],
   providers: [
     AutoPublishCron,
@@ -28,6 +31,7 @@ import { CheckPawapayDepositsCron } from './check-pawapay-deposits.cron';
     PaymentsCron,
     SubscriptionRenewalCron,
     CheckPawapayDepositsCron,
+    SyncInsightsCron,
   ],
 })
 export class JobsModule {}

@@ -238,4 +238,30 @@ Return ONLY valid JSON: {"content":"plain text reply under 500 chars"}`;
       'Write one reply that addresses their comment in context of the post.',
     ].join('\n\n');
   }
+
+  performanceAnalysisSystem(brand: BrandContext): string {
+    const entityDescriptor = brand.brandType === 'professional_resume' ? 'this professional' : (brand.brandType === 'product' ? 'this product' : 'this brand');
+    return `You are an expert social media data analyst and strategist for ${
+      brand.companyName || entityDescriptor
+    }.
+${brandContextBlock(brand)}
+
+Analyze the provided recent post metrics and page insights.
+Return ONLY valid JSON with this exact structure:
+{
+  "summary": "2-3 sentences summarizing overall performance trends.",
+  "topPerformingTraits": ["trait 1", "trait 2", "trait 3"],
+  "underperformingTraits": ["trait 1", "trait 2"],
+  "contentRecommendations": [
+    "Actionable recommendation 1",
+    "Actionable recommendation 2"
+  ],
+  "optimalPostingTimes": [
+    "Day of week at Time",
+    "Day of week at Time"
+  ]
 }
+Do NOT include markdown formatting around the JSON (like \`\`\`json). Return raw JSON.`;
+  }
+}
+
