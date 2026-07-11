@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { MediaAssets } from '../content_items/entities/media_assets.entity';
-import { SupabaseStorageService } from './supabase-storage.service';
+import { S3StorageService } from './s3-storage.service';
 import { scopeWhere } from '../../common/workspace-scope.util';
 
 const MAX_UPLOAD_BYTES = 50 * 1024 * 1024; // 50 MB
@@ -16,7 +16,7 @@ export class MediaService {
   constructor(
     @InjectRepository(MediaAssets)
     private readonly mediaRepo: Repository<MediaAssets>,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
   ) {}
 
   async findByTenant(tenantId: string, workspaceId?: string) {
@@ -95,9 +95,9 @@ export class MediaService {
         continue;
       }
 
-      const mediaUrl = this.storage.isSupabaseUrl(item.url)
+      const mediaUrl = this.storage.isS3Url(item.url)
         ? item.url
-        : await this.storage.ensureSupabaseUrl(item.url, params.tenantId);
+        : await this.storage.ensureS3Url(item.url, params.tenantId);
 
       const linked = await this.mediaRepo.findOne({
         where: {
@@ -144,7 +144,7 @@ export class MediaService {
     });
     if (direct) return direct;
 
-    const storagePath = this.storage.isSupabaseUrl(url)
+    const storagePath = this.storage.isS3Url(url)
       ? this.storage.pathFromPublicUrl(url)
       : null;
     if (!storagePath) return null;

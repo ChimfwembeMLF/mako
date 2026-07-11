@@ -11,7 +11,7 @@ import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { BrandProfilesService } from '../../brand_profiles/brand_profiles.service';
 import { brandContextBlock } from '../../ai/prompts/brand-fields';
 import { resolveSystemPromptExtra } from '../constants/default-system-message';
-import { SupabaseStorageService } from '../../media/supabase-storage.service';
+import { S3StorageService } from '../../media/s3-storage.service';
 import { ChatbotConfig } from '../entities/chatbot-config.entity';
 import { KnowledgeDocument } from '../entities/knowledge-document.entity';
 
@@ -32,7 +32,7 @@ export class MistralChatbotLibraryService {
     private readonly configRepo: Repository<ChatbotConfig>,
     @InjectRepository(KnowledgeDocument)
     private readonly docRepo: Repository<KnowledgeDocument>,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
   ) {}
 
   isEnabled(config: ChatbotConfig): boolean {

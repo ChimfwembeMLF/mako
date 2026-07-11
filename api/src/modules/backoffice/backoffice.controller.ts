@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Patch, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Patch, Body, UseGuards, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { SuperAdminGuard } from '../auth/guards/super-admin.guard';
@@ -35,5 +35,20 @@ export class BackofficeController {
   @Patch('plans')
   updatePlans(@Body() dto: UpdatePlansDto) {
     return this.backoffice.updatePlans(dto);
+  }
+
+  @Get('refunds')
+  listRefunds() {
+    return this.backoffice.listRefunds();
+  }
+
+  @Post('refunds/:id/approve')
+  approveRefund(@Param('id') id: string) {
+    return this.backoffice.approveRefund(id);
+  }
+
+  @Post('refunds/:id/reject')
+  rejectRefund(@Param('id') id: string, @Body() body: { notes?: string }) {
+    return this.backoffice.rejectRefund(id, body.notes);
   }
 }

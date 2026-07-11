@@ -2568,3 +2568,15 @@ export const adsApi = {
             },
         ),
 };
+
+// ==================== Analytics ====================
+export const analyticsApi = {
+    getInsights: (days: number, tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ days: String(days), tenantId }), workspaceId);
+        return request<any[]>(`/api/v1/analytics/insights?${qs}`);
+    },
+    getAiReport: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<any>(`/api/v1/analytics/ai-report?${qs}`);
+    },
+};

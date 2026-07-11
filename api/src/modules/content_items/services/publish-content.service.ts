@@ -15,7 +15,7 @@ import {
   ContentToPublish,
   MediaAttachment,
 } from '../../content-publishing/interfaces/publish-result.interface';
-import { SupabaseStorageService } from '../../media/supabase-storage.service';
+import { S3StorageService } from '../../media/s3-storage.service';
 import { ContentPublicationsService } from '../../content_publications/content-publications.service';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { QUEUE_JOB_MAX_ATTEMPTS } from '../../queues/queue.constants';
@@ -50,7 +50,7 @@ export class PublishContentService {
     @InjectRepository(SocialAccounts)
     private readonly socialRepo: Repository<SocialAccounts>,
     private readonly publications: ContentPublicationsService,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
     private readonly facebook: FacebookPublishingService,
     private readonly instagram: InstagramPublishingService,
     private readonly linkedin: LinkedInPublishingService,
@@ -395,7 +395,7 @@ export class PublishContentService {
     tenantId: string,
     assetId?: string,
   ): Promise<string> {
-    const resolved = await this.storage.ensureSupabaseUrl(url, tenantId);
+    const resolved = await this.storage.ensureS3Url(url, tenantId);
     if (assetId && resolved !== url) {
       await this.mediaRepo.update(assetId, { mediaUrl: resolved });
     }

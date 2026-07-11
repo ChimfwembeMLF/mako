@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KnowledgeDocument } from '../entities/knowledge-document.entity';
 import { ParseDocumentService } from '../../brand_profiles/services/parse-document.service';
-import { SupabaseStorageService } from '../../media/supabase-storage.service';
+import { S3StorageService } from '../../media/s3-storage.service';
 import { MistralChatService } from '../../ai/services/mistral-chat.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { VectorStoreService } from './vector-store.service';
@@ -21,7 +21,7 @@ export class KnowledgeIngestService {
     @InjectRepository(KnowledgeDocument)
     private readonly docRepo: Repository<KnowledgeDocument>,
     private readonly parseDocument: ParseDocumentService,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
     private readonly mistral: MistralChatService,
     private readonly usage: AiUsageTrackerService,
     private readonly vectorStore: VectorStoreService,

@@ -25,10 +25,14 @@ import { ChatMessage } from '../chatbot/entities/chat-message.entity';
 import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity';
 import { KnowledgeChunk } from '../chatbot/entities/knowledge-chunk.entity';
 import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
+import { RefundRequests } from '../payments/entities/refund_requests.entity';
+
+import { PaymentsModule } from '../payments/payments.module';
 
 @Module({
   imports: [
     SubscriptionsModule,
+    PaymentsModule,
     TypeOrmModule.forFeature([
       Tenants,
       UserEntity,
@@ -50,6 +54,7 @@ import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
       KnowledgeDocument,
       KnowledgeChunk,
       ChatbotApiKey,
+      RefundRequests,
     ]),
   ],
   providers: [BackofficeService, SuperAdminGuard],

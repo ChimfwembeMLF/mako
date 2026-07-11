@@ -100,4 +100,20 @@ export class PaymentsController {
     res.setHeader('Content-Length', pdf.length);
     res.send(pdf);
   }
+
+  @Post('deposits/:depositId/refund-request')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  requestRefund(
+    @Param('depositId') depositId: string,
+    @Body() body: { tenantId: string; reason: string },
+    @Req() req: Request,
+  ) {
+    return this.payments.requestRefund(
+      body.tenantId,
+      depositId,
+      body.reason,
+      req.user?.['sub'] as string,
+    );
+  }
 }

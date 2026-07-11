@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { SupabaseStorageService } from '../media/supabase-storage.service';
+import { S3StorageService } from '../media/s3-storage.service';
 import { MediaAttachment } from './interfaces/publish-result.interface';
 
 @Injectable()
 export class PublishMediaResolverService {
-  constructor(private readonly storage: SupabaseStorageService) {}
+  constructor(private readonly storage: S3StorageService) {}
 
   /** Ensure all publish attachments use Supabase public HTTPS URLs. */
   async resolveForPublish(
@@ -17,7 +17,7 @@ export class PublishMediaResolverService {
     for (const item of media) {
       resolved.push({
         ...item,
-        media_url: await this.storage.ensureSupabaseUrl(
+        media_url: await this.storage.ensureS3Url(
           item.media_url,
           tenantId,
           'publish',

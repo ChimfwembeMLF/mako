@@ -25,6 +25,8 @@ import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
 import { IsNull, MoreThanOrEqual } from 'typeorm';
 import { PlansService } from '../subscriptions/plans.service';
 import { UpdatePlansDto } from '../subscriptions/dto/update-plans.dto';
+import { RefundRequests } from '../payments/entities/refund_requests.entity';
+import { PaymentsService } from '../payments/payments.service';
 
 @Injectable()
 export class BackofficeService {
@@ -67,7 +69,10 @@ export class BackofficeService {
     private readonly knowledgeChunkRepo: Repository<KnowledgeChunk>,
     @InjectRepository(ChatbotApiKey)
     private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
+    @InjectRepository(RefundRequests)
+    private readonly refundRequestsRepo: Repository<RefundRequests>,
     private readonly plans: PlansService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   async getOverview() {
@@ -518,7 +523,22 @@ export class BackofficeService {
     return this.plans.getPlansList();
   }
 
-  updatePlans(dto: UpdatePlansDto) {
+  async updatePlans(dto: UpdatePlansDto) {
     return this.plans.updatePlans(dto);
+  }
+
+  async listRefunds() {
+    return this.refundRequestsRepo.find({
+      relations: ['tenant', 'deposit'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async approveRefund(id: string) {
+    return this.paymentsService.processRefund(id, 'Approved by admin', true);
+  }
+
+  async rejectRefund(id: string, notes?: string) {
+    return this.paymentsService.processRefund(id, notes || 'Rejected by admin', false);
   }
 }

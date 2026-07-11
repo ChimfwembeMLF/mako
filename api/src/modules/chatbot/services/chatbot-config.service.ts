@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatbotConfig } from '../entities/chatbot-config.entity';
-import { SupabaseStorageService } from '../../media/supabase-storage.service';
+import { S3StorageService } from '../../media/s3-storage.service';
 import { MistralChatbotLibraryService } from './mistral-chatbot-library.service';
 import { DEFAULT_CHATBOT_SYSTEM_MESSAGE } from '../constants/default-system-message';
 import { compressAvatarModel } from '../utils/avatar-model-compress.util';
@@ -23,7 +23,7 @@ export class ChatbotConfigService {
   constructor(
     @InjectRepository(ChatbotConfig)
     private readonly repo: Repository<ChatbotConfig>,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
     private readonly mistralLibrary: MistralChatbotLibraryService,
   ) {}
 

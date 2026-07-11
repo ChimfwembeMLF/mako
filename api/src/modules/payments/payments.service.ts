@@ -13,6 +13,7 @@ import { Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { Deposits } from '../deposits/entities/deposits.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
+import { RefundRequests } from './entities/refund_requests.entity';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
 import { normalizePlanKey, PlanKey } from '../subscriptions/plan.constants';
@@ -50,6 +51,8 @@ export class PaymentsService {
     private readonly depositsRepo: Repository<Deposits>,
     @InjectRepository(Tenants)
     private readonly tenantsRepo: Repository<Tenants>,
+    @InjectRepository(RefundRequests)
+    private readonly refundRequestsRepo: Repository<RefundRequests>,
     private readonly subscriptions: SubscriptionsService,
     private readonly plans: PlansService,
     private readonly tenantMembers: TenantMembersService,
@@ -57,16 +60,7 @@ export class PaymentsService {
     @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
-  /** Server-only flag; defaults to true in development for local testing. */
-  private devAutoCompleteEnabled(): boolean {
-    const explicit = this.config.get<string>('PAYMENTS_DEV_AUTO_COMPLETE');
-    if (explicit === 'true') return true;
-    if (explicit === 'false') return false;
-    if (this.config.get<string>('PAWAPAY_DEV_AUTO_COMPLETE') === 'true')
-      return true;
-    if (this.config.get<string>('PAWAPAY_ENV') === 'sandbox') return true;
-    return this.config.get<string>('NODE_ENV') === 'development';
-  }
+
 
   async initiateDeposit(params: {
     tenantId: string;
@@ -99,58 +93,49 @@ export class PaymentsService {
       }),
     );
 
-    const autoComplete = this.devAutoCompleteEnabled();
-    if (autoComplete) {
-      await this.completeDeposit(deposit.depositId);
-    } else {
-      const token = this.config.get<string>('PAWAPAY_API_TOKEN');
-      if (token) {
-        const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
-        const baseUrl = isSandbox 
-          ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
-          : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
+    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    if (token) {
+      const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
+      const baseUrl = isSandbox 
+        ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
+        : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
 
-        try {
-          await axios.post(
-            `${baseUrl}/deposits`,
-            {
-              depositId: deposit.depositId,
-              amount: deposit.amount,
-              currency: 'ZMW',
-              country: 'ZMB',
-              correspondent: deposit.correspondent,
-              payer: {
-                type: 'MSISDN',
-                address: { value: params.phone },
-              },
-              statementDescription: `Mako ${plan} Plan`,
+      try {
+        await axios.post(
+          `${baseUrl}/deposits`,
+          {
+            depositId: deposit.depositId,
+            amount: deposit.amount,
+            currency: 'ZMW',
+            country: 'ZMB',
+            correspondent: deposit.correspondent,
+            payer: {
+              type: 'MSISDN',
+              address: { value: params.phone },
             },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-        } catch (error) {
-          this.logger.error(`Failed to initiate deposit with PawaPay for ${deposit.depositId}`, error);
-          throw new Error('Failed to communicate with payment gateway');
-        }
-      } else {
-        this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
+            statementDescription: `Mako ${plan} Plan`,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      } catch (error) {
+        this.logger.error(`Failed to initiate deposit with PawaPay for ${deposit.depositId}`, error);
+        throw new Error('Failed to communicate with payment gateway');
       }
+    } else {
+      this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
     }
 
     const isRenewal = params.isRenewal ?? false;
     return {
       paymentId: deposit.depositId,
-      status: autoComplete ? 'COMPLETED' : deposit.status,
-      activated: autoComplete,
+      status: deposit.status,
+      activated: false,
       plan,
       amount,
       isRenewal,
-      message: autoComplete
-        ? isRenewal
-          ? 'Subscription renewed successfully'
-          : 'Payment completed — your plan is now active'
-        : isRenewal
+      message: isRenewal
         ? 'Renewal payment sent — approve the prompt on your phone'
         : 'Payment request sent — approve the prompt on your phone',
     };
@@ -191,55 +176,48 @@ export class PaymentsService {
       }),
     );
 
-    const autoComplete = this.devAutoCompleteEnabled();
-    if (autoComplete) {
-      await this.completeDeposit(deposit.depositId);
-    } else {
-      const token = this.config.get<string>('PAWAPAY_API_TOKEN');
-      if (token) {
-        const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
-        const baseUrl = isSandbox 
-          ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
-          : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
+    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    if (token) {
+      const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
+      const baseUrl = isSandbox 
+        ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
+        : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
 
-        try {
-          await axios.post(
-            `${baseUrl}/deposits`,
-            {
-              depositId: deposit.depositId,
-              amount: deposit.amount,
-              currency: 'ZMW',
-              country: 'ZMB',
-              correspondent: deposit.correspondent,
-              payer: {
-                type: 'MSISDN',
-                address: { value: params.phone },
-              },
-              statementDescription: `Mako Ads Topup`,
+      try {
+        await axios.post(
+          `${baseUrl}/deposits`,
+          {
+            depositId: deposit.depositId,
+            amount: deposit.amount,
+            currency: 'ZMW',
+            country: 'ZMB',
+            correspondent: deposit.correspondent,
+            payer: {
+              type: 'MSISDN',
+              address: { value: params.phone },
             },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-        } catch (error) {
-          this.logger.error(`Failed to initiate ads deposit with PawaPay for ${deposit.depositId}`, error);
-          throw new Error('Failed to communicate with payment gateway');
-        }
-      } else {
-        this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
+            statementDescription: `Mako Ads Topup`,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      } catch (error) {
+        this.logger.error(`Failed to initiate ads deposit with PawaPay for ${deposit.depositId}`, error);
+        throw new Error('Failed to communicate with payment gateway');
       }
+    } else {
+      this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
     }
 
     return {
       paymentId: deposit.depositId,
-      status: autoComplete ? 'COMPLETED' : deposit.status,
-      activated: autoComplete,
+      status: deposit.status,
+      activated: false,
       plan: 'ADS_TOPUP',
       amount: amountStr,
       isRenewal: false,
-      message: autoComplete
-        ? 'Ads balance topped up successfully'
-        : 'Payment request sent — approve the prompt on your phone',
+      message: 'Payment request sent — approve the prompt on your phone',
     };
   }
 
@@ -328,14 +306,9 @@ export class PaymentsService {
     });
     let completed = 0;
     for (const d of pending) {
-      if (this.devAutoCompleteEnabled()) {
-        await this.completeDeposit(d.depositId);
+      const result = await this.checkDepositStatus(d.depositId);
+      if (result.status === 'COMPLETED') {
         completed++;
-      } else {
-        const result = await this.checkDepositStatus(d.depositId);
-        if (result.status === 'COMPLETED') {
-          completed++;
-        }
       }
     }
     return { completed };
@@ -346,11 +319,6 @@ export class PaymentsService {
     if (!deposit) throw new NotFoundException('Deposit not found');
     
     if (deposit.status === 'COMPLETED') {
-      return { status: 'COMPLETED' };
-    }
-
-    if (this.devAutoCompleteEnabled()) {
-      await this.completeDeposit(depositId);
       return { status: 'COMPLETED' };
     }
 
@@ -456,6 +424,98 @@ export class PaymentsService {
       label: this.plans.getPlan(deposit.plan ?? 'free').label,
       priceZmw: this.plans.getPlanPriceZmw(deposit.plan ?? 'free'),
     });
+  }
+
+  async requestRefund(tenantId: string, depositId: string, reason: string, userId: string) {
+    await this.assertTenantAccess(userId, tenantId);
+
+    const deposit = await this.depositsRepo.findOne({
+      where: { depositId, tenantId },
+    });
+
+    if (!deposit) {
+      throw new NotFoundException('Payment record not found');
+    }
+
+    if (deposit.status !== 'COMPLETED') {
+      throw new BadRequestException('Can only request a refund for completed payments');
+    }
+
+    const existing = await this.refundRequestsRepo.findOne({
+      where: { depositId: deposit.id },
+    });
+
+    if (existing) {
+      throw new BadRequestException('A refund request already exists for this payment');
+    }
+
+    const request = this.refundRequestsRepo.create({
+      tenantId,
+      depositId: deposit.id,
+      amount: deposit.amount ?? '0',
+      reason,
+      status: 'PENDING',
+    });
+
+    await this.refundRequestsRepo.save(request);
+
+    return { success: true, message: 'Refund requested successfully' };
+  }
+
+  async processRefund(refundId: string, adminNotes?: string, approve: boolean = true) {
+    const refundReq = await this.refundRequestsRepo.findOne({
+      where: { id: refundId },
+      relations: ['deposit'],
+    });
+
+    if (!refundReq) throw new NotFoundException('Refund request not found');
+    if (refundReq.status !== 'PENDING') throw new BadRequestException('Refund request is not pending');
+
+    if (!approve) {
+      refundReq.status = 'REJECTED';
+      if (adminNotes) refundReq.adminNotes = adminNotes;
+      await this.refundRequestsRepo.save(refundReq);
+      return refundReq;
+    }
+
+    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    if (!token) throw new BadRequestException('PAWAPAY_API_TOKEN is not configured');
+    
+    const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
+    const baseUrl = isSandbox 
+      ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
+      : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
+
+    const pawapayRefundId = randomUUID();
+
+    try {
+      await axios.post(`${baseUrl}/refunds`, {
+        refundId: pawapayRefundId,
+        depositId: refundReq.deposit.depositId,
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      refundReq.status = 'APPROVED';
+      if (adminNotes) refundReq.adminNotes = adminNotes;
+      await this.refundRequestsRepo.save(refundReq);
+      
+      await this.depositsRepo.update(refundReq.deposit.id, { status: 'REFUNDED' });
+
+      if (refundReq.deposit.plan === 'ADS_TOPUP') {
+        const amount = Number(refundReq.deposit.amount) || 0;
+        await this.tenantsRepo.createQueryBuilder()
+          .update(Tenants)
+          .set({ adsBalance: () => `"ads_balance" - ${amount}` })
+          .where('id = :id', { id: refundReq.tenantId })
+          .execute();
+      }
+
+      return refundReq;
+    } catch (error) {
+      this.logger.error(`Failed to process refund with PawaPay for deposit ${refundReq.deposit.depositId}`, error);
+      throw new BadRequestException('Failed to process refund with PawaPay');
+    }
   }
 
   private async assertTenantAccess(userId: string, tenantId: string) {

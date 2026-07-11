@@ -46,7 +46,7 @@ function summarizePublishOutcome(
 export function toPublishMediaUrl(url: string): string {
   if (!url) return url;
   if (url.startsWith('/uploads/')) return url;
-  if (/supabase\.co\/storage\//i.test(url)) return url;
+  if (/supabase\.co\/storage\//i.test(url) || /s3\..*\.amazonaws\.com/i.test(url) || /s3\.tekreminnovations\.com/i.test(url)) return url;
   const match = url.match(/\/uploads\/[^?#]+/);
   if (match) return match[0];
   return url;

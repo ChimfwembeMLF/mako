@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
 import axios from 'axios';
-import { SupabaseStorageService } from '../../media/supabase-storage.service';
+import { S3StorageService } from '../../media/s3-storage.service';
 
 @Injectable()
 export class MistralAgentsService {
@@ -17,7 +17,7 @@ export class MistralAgentsService {
 
   constructor(
     private readonly config: ConfigService,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
   ) {}
 
   private getClient(): Mistral {

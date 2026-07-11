@@ -9,10 +9,11 @@ import { PaymentsService } from './payments.service';
 import { SubscriptionRenewalService } from './subscription-renewal.service';
 import { PaymentsController } from './payments.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { RefundRequests } from './entities/refund_requests.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Deposits, Tenants, TenantSubscriptions]),
+    TypeOrmModule.forFeature([Deposits, Tenants, TenantSubscriptions, RefundRequests]),
     SubscriptionsModule,
     TenantMembersModule,
     NotificationsModule,

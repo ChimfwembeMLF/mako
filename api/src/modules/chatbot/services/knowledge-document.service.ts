@@ -6,7 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KnowledgeDocument } from '../entities/knowledge-document.entity';
-import { SupabaseStorageService } from '../../media/supabase-storage.service';
+import { S3StorageService } from '../../media/s3-storage.service';
 import { VectorStoreService } from './vector-store.service';
 import { QueueDispatchService } from '../../queues/queue-dispatch.service';
 import { KnowledgeIngestService } from './knowledge-ingest.service';
@@ -28,7 +28,7 @@ export class KnowledgeDocumentService {
   constructor(
     @InjectRepository(KnowledgeDocument)
     private readonly docRepo: Repository<KnowledgeDocument>,
-    private readonly storage: SupabaseStorageService,
+    private readonly storage: S3StorageService,
     private readonly vectorStore: VectorStoreService,
     private readonly queueDispatch: QueueDispatchService,
     private readonly ingest: KnowledgeIngestService,
