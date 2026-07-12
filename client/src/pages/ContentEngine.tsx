@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Pen, Sparkles, Copy, Check, Trash2, Loader2, RefreshCw, Pencil,
-  ChevronDown, ChevronUp, Send, Eye, Search,
+  ChevronDown, ChevronUp, Send, Eye, Search, List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -182,6 +182,7 @@ const ContentEngine = () => {
   const { toast } = useToast();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
+  const [mobileView, setMobileView] = useState<'compose' | 'library'>('compose');
 
   const handleSelectChange = (id: string, selected: boolean) => {
     setSelectedIds((prev) =>
@@ -318,6 +319,7 @@ const ContentEngine = () => {
   const resetDraft = () => {
     setActiveItem(null);
     setSearchParams({}, { replace: true });
+    setMobileView('library');
   };
 
   const closePublish = () => {
@@ -338,6 +340,7 @@ const ContentEngine = () => {
   const openEdit = (item: ContentItem) => {
     setActiveItem(item);
     setSearchParams({ edit: item.id }, { replace: true });
+    setMobileView('compose');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -434,9 +437,31 @@ const ContentEngine = () => {
         </div>
       )}
 
+      {/* Mobile View Toggle */}
+      <div className="lg:hidden flex bg-muted p-1 rounded-lg">
+        <button
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
+            mobileView === 'compose' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setMobileView('compose')}
+        >
+          <Pen size={14} />
+          Compose
+        </button>
+        <button
+          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
+            mobileView === 'library' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
+          }`}
+          onClick={() => setMobileView('library')}
+        >
+          <List size={14} />
+          Library
+        </button>
+      </div>
+
       {/* Main layout: compose always visible + library */}
       <div className="grid gap-5 sm:gap-6 lg:grid-cols-5 lg:items-start">
-        <div className="lg:col-span-2 lg:sticky lg:top-4 min-w-0">
+        <div className={`lg:col-span-2 lg:sticky lg:top-4 min-w-0 ${mobileView === 'compose' ? 'block' : 'hidden lg:block'}`}>
           <ContentEditor
             item={activeItem}
             workspaceId={activeWorkspace}
@@ -445,7 +470,7 @@ const ContentEngine = () => {
           />
         </div>
 
-        <div className="lg:col-span-3 space-y-3 min-w-0">
+        <div className={`lg:col-span-3 space-y-3 min-w-0 ${mobileView === 'library' ? 'block' : 'hidden lg:block'}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold">Content library</h2>

@@ -725,15 +725,18 @@ const Scheduler = () => {
               </Button>
             </div>
 
-            {/* Day headers */}
-            <div className="grid grid-cols-7 gap-px mb-1">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
-              ))}
-            </div>
-
             {/* Calendar grid */}
-            <div className="grid grid-cols-7 gap-px bg-border/30 rounded-lg overflow-hidden">
+            <div className="overflow-x-auto w-full pb-2">
+              <div className="min-w-[700px]">
+                {/* Day headers */}
+                <div className="grid grid-cols-7 gap-px mb-1">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                    <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
+                  ))}
+                </div>
+
+                {/* Calendar grid */}
+                <div className="grid grid-cols-7 gap-px bg-border/30 rounded-lg overflow-hidden">
               {getCalendarDays().map((day, idx) => {
                 if (!day) {
                   return <div key={`empty-${idx}`} className="bg-background min-h-[110px] p-1" />;
@@ -826,9 +829,11 @@ const Scheduler = () => {
                   </div>
                 );
               })}
+                </div>
+              </div>
             </div>
 
-            <div className="flex items-center gap-4 mt-3 text-[10px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-4 mt-3 text-[10px] text-muted-foreground">
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground" /> Draft</span>
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Approved</span>
               <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> Published</span>
