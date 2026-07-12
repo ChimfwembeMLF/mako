@@ -13,6 +13,15 @@ import { socialAccountsApi, SocialAccount } from "@/lib/api";
 import { capabilityOf } from "@/lib/platform-capabilities";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp" | "tiktok";
 type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp";
@@ -130,6 +139,7 @@ const PublisherConnect = () => {
   const [saving, setSaving] = useState(false);
   const [loadingAccounts, setLoadingAccounts] = useState(false);
   const [connectingOAuth, setConnectingOAuth] = useState<string | null>(null);
+  const [showInstagramWarning, setShowInstagramWarning] = useState(false);
 
   const [whatsappSetupToken, setWhatsappSetupToken] = useState<string | null>(null);
   const [whatsappPhones, setWhatsappPhones] = useState<WhatsAppPhoneOption[]>([]);
@@ -604,11 +614,15 @@ const PublisherConnect = () => {
                         size="sm"
                         className="gradient-primary text-primary-foreground border-0"
                         disabled={!tenant || isConnecting || loadingAccounts}
-                        onClick={() =>
-                          platform.id === "whatsapp"
-                            ? startWhatsappConnect()
-                            : startOAuthConnect(platform.id as OAuthPlatform)
-                        }
+                        onClick={() => {
+                          if (platform.id === "instagram") {
+                            setShowInstagramWarning(true);
+                          } else if (platform.id === "whatsapp") {
+                            startWhatsappConnect();
+                          } else {
+                            startOAuthConnect(platform.id as OAuthPlatform);
+                          }
+                        }}
                       >
                         {isConnecting ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Link2 className="h-3.5 w-3.5 mr-1" />}
                         {isConnecting ? "Redirecting..." : "Connect"}
@@ -903,6 +917,42 @@ const PublisherConnect = () => {
           </div>
         </SheetContent>
       </Sheet>
+
+      <AlertDialog open={showInstagramWarning} onOpenChange={setShowInstagramWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Instagram Connection Requirements</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4 text-left">
+              <p>
+                To use this feature, you need to switch your Instagram account to a <strong>Creator</strong> or <strong>Business</strong> account and link it to a Facebook Page.
+              </p>
+              <div className="bg-amber-50 border border-amber-200 text-amber-900 p-3 rounded-md text-sm">
+                <strong>⚠️ Important:</strong> This will make your account public and automatically accept all pending follow requests. Your username, followers, and existing posts will remain the same.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <Button
+              variant="outline"
+              onClick={() => {
+                window.open("https://accountscenter.instagram.com/", "_blank");
+              }}
+            >
+              Take me to Settings
+            </Button>
+            <Button
+              className="gradient-primary text-primary-foreground border-0"
+              onClick={() => {
+                setShowInstagramWarning(false);
+                startOAuthConnect("instagram");
+              }}
+            >
+              I've done this, Connect
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
