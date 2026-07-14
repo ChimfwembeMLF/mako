@@ -1734,10 +1734,20 @@ export const mailApi = {
             email?: string | null;
             expiresAt?: string | null;
             smtpConfigured?: boolean;
+            inboxAutoReply?: boolean;
+            inboxScopeNote?: string | null;
         }>('/api/v1/mail/gmail/status'),
 
-    gmailConnect: (returnUrl?: string) => {
-        const qs = returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : '';
+    gmailConnect: (options?: {
+        returnUrl?: string;
+        tenantId?: string;
+        workspaceId?: string;
+    }) => {
+        const params = new URLSearchParams();
+        if (options?.returnUrl) params.set('returnUrl', options.returnUrl);
+        if (options?.tenantId) params.set('tenantId', options.tenantId);
+        if (options?.workspaceId) params.set('workspaceId', options.workspaceId);
+        const qs = params.toString() ? `?${params.toString()}` : '';
         return request<{ redirectUrl: string; redirectUri?: string }>(
             `/api/v1/mail/gmail/connect${qs}`,
         );
@@ -1745,6 +1755,14 @@ export const mailApi = {
 
     gmailDisconnect: () =>
         request<{ success: boolean }>('/api/v1/mail/gmail/disconnect', { method: 'DELETE' }),
+
+    gmailSync: (tenantId?: string) => {
+        const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : '';
+        return request<{ processed: number; replied: number }>(
+            `/api/v1/mail/gmail/sync${qs}`,
+            { method: 'POST' },
+        );
+    },
 };
 
 // ==================== Platform capabilities ====================

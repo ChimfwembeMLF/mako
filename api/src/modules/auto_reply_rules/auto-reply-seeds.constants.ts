@@ -90,4 +90,20 @@ export const DEFAULT_AUTO_REPLY_RULE_SEEDS: AutoReplyRuleSeed[] = [
     aiGenerate: true,
     isActive: false,
   },
+  {
+    platform: 'email',
+    name: 'Email — Pricing & support',
+    triggerKeywords: ['price', 'cost', 'quote', 'support', 'help', 'question'],
+    triggerSentiment: 'any',
+    aiGenerate: true,
+    isActive: false,
+  },
+  {
+    platform: 'email',
+    name: 'Email — Default auto-reply',
+    triggerKeywords: [],
+    triggerSentiment: 'any',
+    aiGenerate: true,
+    isActive: false,
+  },
 ];

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback, Profile } from 'passport-google-oauth20';
 import { createOAuthCookieStateStore } from '../../../common/oauth-cookie-state.store';
+import { GMAIL_OAUTH_SCOPES } from '../../mail/gmail-scopes';
 
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
@@ -11,12 +12,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       clientID: config.getOrThrow<string>('GOOGLE_CLIENT_ID'),
       clientSecret: config.getOrThrow<string>('GOOGLE_CLIENT_SECRET'),
       callbackURL: config.getOrThrow<string>('GOOGLE_CALLBACK_URL'),
-      scope: [
-        'openid',
-        'email',
-        'profile',
-        'https://www.googleapis.com/auth/gmail.send',
-      ],
+      scope: [...GMAIL_OAUTH_SCOPES],
       accessType: 'offline',
       prompt: 'consent',
       state: true,

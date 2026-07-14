@@ -2,6 +2,7 @@ import {
   Controller,
   Delete,
   Get,
+  Post,
   Query,
   Req,
   Res,
@@ -13,6 +14,7 @@ import { Request, Response } from 'express';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GmailConnectService } from './gmail-connect.service';
+import { GmailInboxSyncService } from './gmail-inbox-sync.service';
 import { MailService } from './mail.service';
 
 @ApiTags('Mail')
@@ -21,6 +23,7 @@ export class MailController {
   constructor(
     private readonly gmailConnectService: GmailConnectService,
     private readonly mailService: MailService,
+    private readonly inboxSync: GmailInboxSyncService,
   ) {}
 
   private getUserId(req: Request): string {
@@ -49,8 +52,14 @@ export class MailController {
   gmailConnect(
     @Req() req: Request,
     @Query('returnUrl') returnUrl?: string,
+    @Query('tenantId') tenantId?: string,
+    @Query('workspaceId') workspaceId?: string,
   ) {
-    return this.gmailConnectService.getConnectUrl(this.getUserId(req), returnUrl);
+    return this.gmailConnectService.getConnectUrl(this.getUserId(req), {
+      returnUrl,
+      tenantId,
+      workspaceId,
+    });
   }
 
   @Get('gmail/callback')
@@ -77,5 +86,20 @@ export class MailController {
   @ApiOperation({ summary: 'Disconnect Gmail OAuth for current user' })
   gmailDisconnect(@Req() req: Request) {
     return this.gmailConnectService.disconnect(this.getUserId(req));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('gmail/sync')
+  @ApiOperation({ summary: 'Poll Gmail inbox and run email auto-reply rules now' })
+  async gmailSync(
+    @Req() req: Request,
+    @Query('tenantId') tenantId: string,
+  ) {
+    const userId = this.getUserId(req);
+    if (!tenantId?.trim()) {
+      return this.inboxSync.syncAll();
+    }
+    return this.inboxSync.syncForUser(userId, tenantId.trim());
   }
 }

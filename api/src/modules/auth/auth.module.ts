@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -25,7 +25,7 @@ import { GmailService } from './gmail.service';
     UserModule,
     TenantsModule,
     TenantMembersModule,
-    MailModule,
+    forwardRef(() => MailModule),
     TypeOrmModule.forFeature([RefreshTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

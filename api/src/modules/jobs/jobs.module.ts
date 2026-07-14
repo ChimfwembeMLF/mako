@@ -5,6 +5,7 @@ import { ContentPublishingModule } from '../content-publishing/content-publishin
 import { PaymentsModule } from '../payments/payments.module';
 import { QueuesModule } from '../queues/queues.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
+import { MailModule } from '../mail/mail.module';
 import {
   AutoPublishCron,
   CommentSyncCron,
@@ -14,6 +15,7 @@ import {
 import { SubscriptionRenewalCron } from './subscription-renewal.cron';
 import { CheckPawapayDepositsCron } from './check-pawapay-deposits.cron';
 import { SyncInsightsCron } from './sync-insights.cron';
+import { SyncGmailInboxCron } from './sync-gmail-inbox.cron';
 
 @Module({
   imports: [
@@ -23,6 +25,7 @@ import { SyncInsightsCron } from './sync-insights.cron';
     PaymentsModule,
     QueuesModule,
     AnalyticsModule,
+    MailModule,
   ],
   providers: [
     AutoPublishCron,
@@ -32,6 +35,7 @@ import { SyncInsightsCron } from './sync-insights.cron';
     SubscriptionRenewalCron,
     CheckPawapayDepositsCron,
     SyncInsightsCron,
+    SyncGmailInboxCron,
   ],
 })
 export class JobsModule {}

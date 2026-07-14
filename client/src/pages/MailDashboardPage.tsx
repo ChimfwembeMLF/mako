@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { mailApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
+import { useTenant } from '@/hooks/useTenant';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { PageContainer } from '@/components/layout/PageContainer';
 import { AutoReplyRulesPanel } from '@/components/replies/AutoReplyRulesPanel';
 import { PermissionGate } from '@/components/PermissionGate';
@@ -18,15 +20,20 @@ interface GmailStatus {
   email?: string | null;
   expiresAt?: string | null;
   smtpConfigured?: boolean;
+  inboxAutoReply?: boolean;
+  inboxScopeNote?: string | null;
 }
 
 export default function MailDashboardPage() {
   const { toast } = useToast();
+  const { tenant } = useTenant();
+  const { activeWorkspace } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
   const [status, setStatus] = useState<GmailStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
+  const [syncing, setSyncing] = useState(false);
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
@@ -68,7 +75,11 @@ export default function MailDashboardPage() {
     setConnecting(true);
     try {
       const returnUrl = `${window.location.origin}/mail`;
-      const { redirectUrl } = await mailApi.gmailConnect(returnUrl);
+      const { redirectUrl } = await mailApi.gmailConnect({
+        returnUrl,
+        tenantId: tenant?.id,
+        workspaceId: activeWorkspace ?? undefined,
+      });
       window.location.href = redirectUrl;
     } catch (err: unknown) {
       toast({
@@ -97,6 +108,26 @@ export default function MailDashboardPage() {
     }
   }
 
+  async function syncInboxNow() {
+    if (!tenant?.id) return;
+    setSyncing(true);
+    try {
+      const result = await mailApi.gmailSync(tenant.id);
+      toast({
+        title: 'Inbox checked',
+        description: `Processed ${result.processed} message(s), sent ${result.replied} auto-reply(ies).`,
+      });
+    } catch (err: unknown) {
+      toast({
+        title: 'Inbox sync failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
   return (
     <PermissionGate require={P.leads.view} fallback={true}>
       <PageContainer>
@@ -105,7 +136,7 @@ export default function MailDashboardPage() {
           <div className="min-w-0">
             <h1 className="text-xl sm:text-2xl font-semibold">Mail</h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Connect Gmail to send lead emails from your account, and manage email auto-reply rules.
+              Connect Gmail to send lead emails and auto-reply to new inbox messages using your email rules.
             </p>
           </div>
         </div>
@@ -135,8 +166,8 @@ export default function MailDashboardPage() {
                       <p className="font-medium text-sm">Gmail connection</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {status?.connected
-                          ? 'Lead emails and outbound mail will be sent via your connected Gmail account.'
-                          : 'Connect Gmail to send emails as yourself. SMTP is used as a fallback when configured.'}
+                          ? 'Outbound mail and inbox auto-reply use your connected Gmail account.'
+                          : 'Connect Gmail to send emails and enable inbox auto-reply (requires inbox read permission).'}
                       </p>
                     </div>
                     <Badge variant={status?.connected ? 'default' : 'secondary'}>
@@ -162,6 +193,12 @@ export default function MailDashboardPage() {
                     </p>
                   )}
 
+                  {status?.inboxScopeNote && (
+                    <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-2">
+                      {status.inboxScopeNote}
+                    </p>
+                  )}
+
                   <div className="flex flex-col sm:flex-row gap-2 pt-2">
                     {!status?.connected ? (
                       <Button onClick={() => void connectGmail()} disabled={connecting} className="gap-2">
@@ -173,19 +210,34 @@ export default function MailDashboardPage() {
                         Connect Gmail
                       </Button>
                     ) : (
-                      <Button
-                        variant="outline"
-                        onClick={() => void disconnectGmail()}
-                        disabled={disconnecting}
-                        className="gap-2"
-                      >
-                        {disconnecting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Unlink className="h-4 w-4" />
-                        )}
-                        Disconnect Gmail
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => void syncInboxNow()}
+                          disabled={syncing || !tenant?.id}
+                          className="gap-2"
+                        >
+                          {syncing ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Bot className="h-4 w-4" />
+                          )}
+                          Check inbox now
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => void disconnectGmail()}
+                          disabled={disconnecting}
+                          className="gap-2"
+                        >
+                          {disconnecting ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Unlink className="h-4 w-4" />
+                          )}
+                          Disconnect Gmail
+                        </Button>
+                      </>
                     )}
                   </div>
 
@@ -203,7 +255,7 @@ export default function MailDashboardPage() {
               platformFilter="email"
               platformOptions={EMAIL_PLATFORM_OPTIONS}
               defaultPlatform="email"
-              description="Rules for inbound email auto-replies. The same rules also appear under Replies → Rules."
+              description="Rules match inbound Gmail messages by keyword. Enable a rule, then new unread inbox emails are auto-replied every few minutes."
             />
           </TabsContent>
         </Tabs>

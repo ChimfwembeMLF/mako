@@ -7,16 +7,13 @@ import {
   resolveFrontendUrl,
 } from '../../common/env-urls.util';
 import { UserService } from '../user/user.service';
-
-const GMAIL_SCOPES = [
-  'openid',
-  'email',
-  'profile',
-  'https://www.googleapis.com/auth/gmail.send',
-];
+import { GMAIL_OAUTH_SCOPES } from './gmail-scopes';
+import { GmailInboxSyncService } from './gmail-inbox-sync.service';
 
 type GmailLinkState = {
   userId: string;
+  tenantId?: string;
+  workspaceId?: string;
   returnUrl?: string;
 };
 
@@ -25,6 +22,7 @@ export class GmailConnectService {
   constructor(
     private readonly config: ConfigService,
     private readonly userService: UserService,
+    private readonly inboxSync: GmailInboxSyncService,
   ) {}
 
   private gmailCallbackUrl(): string {
@@ -70,10 +68,17 @@ export class GmailConnectService {
       email: user.email,
       expiresAt: tokens?.expiresAt?.toISOString() ?? null,
       smtpConfigured,
+      inboxAutoReply: !!tokens,
+      inboxScopeNote: tokens
+        ? 'Reconnect Gmail if auto-reply does not run (inbox read permission may be missing on older connections).'
+        : null,
     };
   }
 
-  getConnectUrl(userId: string, returnUrl?: string) {
+  getConnectUrl(
+    userId: string,
+    options?: { returnUrl?: string; tenantId?: string; workspaceId?: string },
+  ) {
     const clientId = this.config.get<string>('GOOGLE_CLIENT_ID')?.trim();
     const clientSecret = this.config.get<string>('GOOGLE_CLIENT_SECRET')?.trim();
     if (!clientId || !clientSecret) {
@@ -84,11 +89,16 @@ export class GmailConnectService {
 
     const redirectUri = this.gmailCallbackUrl();
     const oauth2 = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
-    const state = this.encodeLinkState({ userId, returnUrl });
+    const state = this.encodeLinkState({
+      userId,
+      tenantId: options?.tenantId,
+      workspaceId: options?.workspaceId,
+      returnUrl: options?.returnUrl,
+    });
     const redirectUrl = oauth2.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
-      scope: GMAIL_SCOPES,
+      scope: [...GMAIL_OAUTH_SCOPES],
       state,
     });
 
@@ -153,6 +163,14 @@ export class GmailConnectService {
         expiresAt,
       });
 
+      if (linkState.tenantId) {
+        await this.inboxSync.upsertConnection({
+          tenantId: linkState.tenantId,
+          userId: linkState.userId,
+          workspaceId: linkState.workspaceId,
+        });
+      }
+
       return { redirectUrl: this.appendQuery(returnUrl, 'connected', '1') };
     } catch (err) {
       const message =
@@ -163,6 +181,7 @@ export class GmailConnectService {
 
   async disconnect(userId: string) {
     await this.userService.clearGoogleOAuthTokens(userId);
+    await this.inboxSync.deactivateForUser(userId);
     return { success: true };
   }
 }
