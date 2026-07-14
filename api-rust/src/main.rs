@@ -30,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
         .init();
 
     let config = Arc::new(AppConfig::from_env()?);
+    log_oauth_config(&config);
     let state = AppState::new(config.clone()).await?;
     modules::jobs::spawn_cron_jobs(state.clone());
     if config.queues_enabled {
@@ -208,6 +209,22 @@ fn static_routes(config: &AppConfig) -> Router {
     }
 
     router
+}
+
+fn log_oauth_config(config: &AppConfig) {
+    let oauth = &config.oauth;
+    if oauth.google_client_id.is_empty() || oauth.google_client_secret.is_empty() {
+        tracing::warn!("GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET missing — Google login disabled");
+    }
+    if oauth.google_callback_url.is_empty() {
+        tracing::warn!(
+            "GOOGLE_CALLBACK_URL missing — set to {}/api/v1/auth/google/redirect",
+            oauth.frontend_url
+        );
+    } else {
+        tracing::info!(callback = %oauth.google_callback_url, "Google OAuth callback configured");
+    }
+    tracing::info!(frontend = %oauth.frontend_url, "OAuth redirect target (FRONTEND_URL)");
 }
 
 fn resolve_static_dir(explicit: Option<&str>, candidates: &[&str]) -> Option<PathBuf> {

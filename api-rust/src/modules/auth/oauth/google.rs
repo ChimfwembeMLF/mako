@@ -9,6 +9,7 @@ use crate::modules::users::service::{GoogleOAuthTokensInput, UsersService};
 
 #[derive(Deserialize)]
 struct GoogleUserInfo {
+    id: Option<String>,
     email: Option<String>,
     given_name: Option<String>,
     family_name: Option<String>,
@@ -122,7 +123,9 @@ impl GoogleAuthService {
                 state,
                 crate::modules::users::service::SocialUserInput {
                     provider: "google".to_string(),
-                    provider_id: Some(email.clone()),
+                    provider_id: user_data
+                        .id
+                        .or_else(|| Some(email.clone())),
                     email: Some(email),
                     first_name: user_data.given_name,
                     last_name: user_data.family_name,

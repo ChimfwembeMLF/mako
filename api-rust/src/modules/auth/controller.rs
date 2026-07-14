@@ -1,4 +1,4 @@
-use axum::http::StatusCode;
+use axum::http::{HeaderMap, StatusCode};
 use axum::{
     extract::{Query, State},
     response::{IntoResponse, Redirect, Response},
@@ -11,6 +11,7 @@ use uuid::Uuid;
 use validator::Validate;
 
 use crate::app_state::AppState;
+use crate::common::oauth_cookie_state::OAuthCookieState;
 use crate::common::guards::AuthUser;
 use crate::common::{ApiError, ApiResult};
 use crate::modules::mail::MailService;
@@ -243,27 +244,35 @@ async fn me(
     })))
 }
 
-async fn google_auth(
-    State(state): State<AppState>,
-    Query(query): Query<OAuthStateQuery>,
-) -> Redirect {
-    Redirect::temporary(&GoogleAuthService::authorization_url(
-        &state,
-        query.state.as_deref(),
-    ))
+async fn google_auth(State(state): State<AppState>) -> Response {
+    let (oauth_state, cookie_value) = OAuthCookieState::issue_pair(&state);
+    let url = GoogleAuthService::authorization_url(&state, Some(&oauth_state));
+    let mut response = Redirect::temporary(&url).into_response();
+    OAuthCookieState::append_set_cookie(&state, &mut response, &cookie_value);
+    response
 }
 
 async fn google_redirect(
     State(state): State<AppState>,
+    headers: HeaderMap,
     Query(query): Query<OAuthCallbackQuery>,
 ) -> Response {
     if let Some(error) = query.error {
         let message = query.error_description.unwrap_or(error);
         return oauth_error_redirect(&state, &message);
     }
+
     let Some(code) = query.code else {
         return oauth_error_redirect(&state, "Missing authorization code");
     };
+
+    let Some(oauth_state) = query.state.as_deref().filter(|s| !s.is_empty()) else {
+        return oauth_error_redirect(&state, "Missing OAuth state");
+    };
+
+    if !OAuthCookieState::verify(&headers, &state, oauth_state) {
+        return oauth_error_redirect(&state, "Unable to verify authorization request state.");
+    }
 
     let token_result: ApiResult<String> = async {
         let token_response = GoogleAuthService::exchange_code(&state, &code).await?;
@@ -285,10 +294,12 @@ async fn google_redirect(
     }
     .await;
 
-    match token_result {
+    let mut response = match token_result {
         Ok(token) => oauth_success_redirect(&state, &token),
         Err(err) => oauth_error_redirect(&state, &err.to_string()),
-    }
+    };
+    OAuthCookieState::clear_cookie(&state, &mut response);
+    response
 }
 
 async fn google_authenticate(
@@ -436,5 +447,7 @@ fn oauth_error_redirect(state: &AppState, message: &str) -> Response {
         state.config.oauth.frontend_url,
         urlencoding::encode(message)
     );
-    Redirect::temporary(&url).into_response()
+    let mut response = Redirect::temporary(&url).into_response();
+    OAuthCookieState::clear_cookie(state, &mut response);
+    response
 }
