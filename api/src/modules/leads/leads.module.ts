@@ -8,6 +8,7 @@ import { LeadClassifyService } from './services/lead-classify.service';
 import { LeadEmailService } from './services/lead-email.service';
 import { AiModule } from '../ai/ai.module';
 import { AuthModule } from '../auth/auth.module';
+import { MailModule } from '../mail/mail.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { QueuesModule } from '../queues/queues.module';
 

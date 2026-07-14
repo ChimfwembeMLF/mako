@@ -24,6 +24,8 @@ COPY . .
 # Build the application
 RUN yarn build
 
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 4000
 
-CMD ["yarn", "start:prod"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
