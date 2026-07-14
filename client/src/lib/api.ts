@@ -1325,6 +1325,26 @@ export const paymentsApi = {
             providers: Array<{ code: string; label: string }>;
         }>>('/api/v1/payments/mobile-money/options'),
 
+    fxQuoteFromZmw: (amountZmw: number, currency: string) =>
+        request<{
+            amountZmw: number;
+            currency: string;
+            amount: string;
+            rate: number;
+            asOf: string;
+            source: 'live' | 'fallback';
+        }>(`/api/v1/payments/fx/quote?amountZmw=${encodeURIComponent(amountZmw)}&currency=${encodeURIComponent(currency)}`),
+
+    fxQuoteToZmw: (amount: number, currency: string) =>
+        request<{
+            amount: number;
+            currency: string;
+            amountZmw: string;
+            rate: number;
+            asOf: string;
+            source: 'live' | 'fallback';
+        }>(`/api/v1/payments/fx/convert-to-zmw?amount=${encodeURIComponent(amount)}&currency=${encodeURIComponent(currency)}`),
+
     initiateDeposit: (data: {
         tenantId: string;
         plan: string;
@@ -1347,12 +1367,12 @@ export const paymentsApi = {
         currency?: string;
         countryCode?: string;
     }) =>
-        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; currency?: string; activated?: boolean }>(
+        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; currency?: string; amountZmw?: string; activated?: boolean }>(
             '/api/v1/payments/ads-deposit',
             { method: 'POST', body: JSON.stringify(data) },
         ),
     checkDepositStatus: (depositId: string) =>
-        request<{ status: string }>(`/api/v1/payments/deposits/${depositId}/check`, {
+        request<{ status: string; activated?: boolean }>(`/api/v1/payments/deposits/${depositId}/check`, {
             method: 'POST',
         }),
     listDeposits: (tenantId: string) =>

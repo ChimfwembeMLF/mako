@@ -18,8 +18,16 @@ export type PawaPayRefundInput = {
   currency: string;
 };
 
+export type ParsedPawaPayDepositStatus = {
+  depositId?: string;
+  depositStatus?: string;
+  lookupStatus?: string;
+};
+
 const PAWAPAY_V2_SANDBOX = 'https://api.sandbox.pawapay.io/v2';
 const PAWAPAY_V2_PROD = 'https://api.pawapay.io/v2';
+
+const PAWAPAY_LOOKUP_STATUSES = new Set(['FOUND', 'NOT_FOUND']);
 
 function firstNonEmpty(...values: Array<string | undefined>): string {
   for (const value of values) {
@@ -86,6 +94,66 @@ export function buildPawaPayRefundPayload(input: PawaPayRefundInput) {
   };
 }
 
+/**
+ * PawaPay v2 status checks wrap the transaction in { status: FOUND, data: { status: COMPLETED } }.
+ * Callbacks and v1 responses may expose deposit status at the top level.
+ */
+export function parsePawaPayDepositStatus(data: unknown): ParsedPawaPayDepositStatus | null {
+  if (!data || typeof data !== 'object') return null;
+
+  const record = data as Record<string, unknown>;
+
+  if (record.data && typeof record.data === 'object') {
+    const inner = record.data as Record<string, unknown>;
+    const lookupStatus =
+      typeof record.status === 'string' ? record.status.toUpperCase() : undefined;
+    const depositStatus =
+      typeof inner.status === 'string' ? inner.status.toUpperCase() : undefined;
+    const depositId =
+      typeof inner.depositId === 'string'
+        ? inner.depositId
+        : typeof record.depositId === 'string'
+          ? record.depositId
+          : undefined;
+
+    if (lookupStatus === 'NOT_FOUND') {
+      return { depositId, lookupStatus, depositStatus: undefined };
+    }
+
+    return { depositId, lookupStatus, depositStatus };
+  }
+
+  if (Array.isArray(data) && data.length > 0) {
+    const first = data[0];
+    if (!first || typeof first !== 'object') return null;
+    const legacy = first as Record<string, unknown>;
+    return {
+      depositId: typeof legacy.depositId === 'string' ? legacy.depositId : undefined,
+      depositStatus:
+        typeof legacy.status === 'string' ? legacy.status.toUpperCase() : undefined,
+    };
+  }
+
+  const topLevelStatus =
+    typeof record.status === 'string' ? record.status.toUpperCase() : undefined;
+  if (!topLevelStatus || PAWAPAY_LOOKUP_STATUSES.has(topLevelStatus)) {
+    return {
+      depositId: typeof record.depositId === 'string' ? record.depositId : undefined,
+      lookupStatus: topLevelStatus,
+      depositStatus: undefined,
+    };
+  }
+
+  return {
+    depositId: typeof record.depositId === 'string' ? record.depositId : undefined,
+    depositStatus: topLevelStatus,
+  };
+}
+
+export function isPawaPayDepositCompleted(status?: string | null): boolean {
+  return (status ?? '').toUpperCase() === 'COMPLETED';
+}
+
 export function formatPawaPayError(error: unknown): string {
   if (isAxiosError(error)) {
     const data = error.response?.data as
@@ -108,17 +176,18 @@ function pawaPayAuthHeaders(token: string) {
 export async function postPawaPayDeposit(
   config: ConfigService,
   input: PawaPayDepositInput,
-): Promise<void> {
+): Promise<ParsedPawaPayDepositStatus | null> {
   const token = config.get<string>('PAWAPAY_API_TOKEN')?.trim();
-  if (!token) return;
+  if (!token) return null;
 
   const baseUrl = resolvePawaPayBaseUrl(config);
   const payload = buildPawaPayDepositPayload(input);
 
   try {
-    await axios.post(`${baseUrl}/deposits`, payload, {
+    const response = await axios.post(`${baseUrl}/deposits`, payload, {
       headers: pawaPayAuthHeaders(token),
     });
+    return parsePawaPayDepositStatus(response.data);
   } catch (error) {
     throw new BadRequestException(formatPawaPayError(error));
   }

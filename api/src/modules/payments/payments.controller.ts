@@ -26,6 +26,26 @@ export class PaymentsController {
     return this.payments.listMobileMoneyOptions();
   }
 
+  @Get('fx/quote')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  fxQuoteFromZmw(
+    @Query('amountZmw') amountZmw: string,
+    @Query('currency') currency: string,
+  ) {
+    return this.payments.quoteFromZmw(Number(amountZmw), currency);
+  }
+
+  @Get('fx/convert-to-zmw')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  fxQuoteToZmw(
+    @Query('amount') amount: string,
+    @Query('currency') currency: string,
+  ) {
+    return this.payments.quoteToZmw(Number(amount), currency);
+  }
+
   @Post('deposits/initiate')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -65,11 +85,8 @@ export class PaymentsController {
 
   @Post('webhooks/deposit')
   @ApiExcludeEndpoint()
-  webhook(@Body() body: { depositId?: string; status?: string }) {
-    if (body.status === 'COMPLETED' && body.depositId) {
-      return this.payments.completeDeposit(body.depositId);
-    }
-    return { received: true };
+  webhook(@Body() body: unknown) {
+    return this.payments.handlePawaPayWebhook(body);
   }
 
   @Post('deposits/check-pending')

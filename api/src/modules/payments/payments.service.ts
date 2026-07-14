@@ -29,12 +29,19 @@ import {
   postPawaPayDeposit,
   postPawaPayRefund,
   getPawaPayDepositStatus,
+  parsePawaPayDepositStatus,
+  isPawaPayDepositCompleted,
 } from './pawapay.client';
 import {
   listPaymentCountryOptions,
   normalizeMobileMoneyPhone,
   resolvePaymentSelection,
 } from './payment-countries';
+import { FxService } from './fx.service';
+import {
+  buildPaymentFxPayload,
+  resolveAdsCreditZmw,
+} from './payment-fx.util';
 
 export interface ClientPaymentRecord {
   id: string;
@@ -66,6 +73,7 @@ export class PaymentsService {
     private readonly plans: PlansService,
     private readonly tenantMembers: TenantMembersService,
     private readonly config: ConfigService,
+    private readonly fx: FxService,
     @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
@@ -73,6 +81,14 @@ export class PaymentsService {
 
   listMobileMoneyOptions() {
     return listPaymentCountryOptions();
+  }
+
+  quoteFromZmw(amountZmw: number, currency: string) {
+    return this.fx.quoteFromZmw(amountZmw, currency);
+  }
+
+  quoteToZmw(amount: number, currency: string) {
+    return this.fx.quoteToZmw(amount, currency);
   }
 
   async initiateDeposit(params: {
@@ -97,7 +113,9 @@ export class PaymentsService {
     }
 
     const depositId = randomUUID();
-    const amount = String(this.plans.getPlanPriceZmw(plan));
+    const priceZmw = this.plans.getPlanPriceZmw(plan);
+    const quote = await this.fx.quoteFromZmw(priceZmw, selection.currency);
+    const amount = quote.amount;
 
     const deposit = await this.depositsRepo.save(
       this.depositsRepo.create({
@@ -112,17 +130,23 @@ export class PaymentsService {
         correspondent: selection.correspondent,
         provider: 'mobile_money',
         isRenewal: params.isRenewal ?? false,
-        rawPayload: JSON.stringify({
+        rawPayload: buildPaymentFxPayload({
           paymentCountryId: selection.paymentCountryId,
           countryCode: selection.countryCode,
+          amountZmw: String(priceZmw),
+          fxRate: String(quote.rate),
+          fxAsOf: quote.asOf,
+          fxSource: quote.source,
         }),
       }),
     );
 
+    const isRenewal = params.isRenewal ?? false;
+
     const token = this.config.get<string>('PAWAPAY_API_TOKEN');
     if (token) {
       try {
-        await postPawaPayDeposit(this.config, {
+        const pawapayResult = await postPawaPayDeposit(this.config, {
           depositId: deposit.depositId,
           amount: deposit.amount,
           currency: selection.currency,
@@ -130,6 +154,21 @@ export class PaymentsService {
           phone,
           customerMessage: `Mako ${plan} Plan`,
         });
+        if (isPawaPayDepositCompleted(pawapayResult?.depositStatus)) {
+          await this.completeDeposit(deposit.depositId);
+          return {
+            paymentId: deposit.depositId,
+            status: 'COMPLETED',
+            activated: true,
+            plan,
+            amount,
+            currency: selection.currency,
+            isRenewal,
+            message: isRenewal
+              ? 'Renewal payment completed — your plan is active'
+              : 'Payment completed — your plan is now active',
+          };
+        }
       } catch (error) {
         this.logger.error(
           `Failed to initiate deposit with PawaPay for ${deposit.depositId}`,
@@ -141,7 +180,6 @@ export class PaymentsService {
       this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
     }
 
-    const isRenewal = params.isRenewal ?? false;
     return {
       paymentId: deposit.depositId,
       status: deposit.status,
@@ -182,7 +220,9 @@ export class PaymentsService {
     }
 
     const depositId = randomUUID();
-    const amountStr = String(amount);
+    const chargeQuote = await this.fx.quoteToZmw(amount, selection.currency);
+    const amountStr = this.fx.formatChargeAmount(amount, selection.currency);
+    const amountZmw = chargeQuote.amountZmw;
 
     const deposit = await this.depositsRepo.save(
       this.depositsRepo.create({
@@ -197,9 +237,13 @@ export class PaymentsService {
         correspondent: selection.correspondent,
         provider: 'mobile_money',
         isRenewal: false,
-        rawPayload: JSON.stringify({
+        rawPayload: buildPaymentFxPayload({
           paymentCountryId: selection.paymentCountryId,
           countryCode: selection.countryCode,
+          amountZmw,
+          fxRate: String(chargeQuote.rate),
+          fxAsOf: chargeQuote.asOf,
+          fxSource: chargeQuote.source,
         }),
       }),
     );
@@ -207,7 +251,7 @@ export class PaymentsService {
     const token = this.config.get<string>('PAWAPAY_API_TOKEN');
     if (token) {
       try {
-        await postPawaPayDeposit(this.config, {
+        const pawapayResult = await postPawaPayDeposit(this.config, {
           depositId: deposit.depositId,
           amount: deposit.amount,
           currency: selection.currency,
@@ -215,6 +259,20 @@ export class PaymentsService {
           phone,
           customerMessage: 'Mako Ads Topup',
         });
+        if (isPawaPayDepositCompleted(pawapayResult?.depositStatus)) {
+          await this.completeDeposit(deposit.depositId);
+          return {
+            paymentId: deposit.depositId,
+            status: 'COMPLETED',
+            activated: true,
+            plan: 'ADS_TOPUP',
+            amount: amountStr,
+            currency: selection.currency,
+            amountZmw,
+            isRenewal: false,
+            message: 'Payment completed — ads balance updated',
+          };
+        }
       } catch (error) {
         this.logger.error(
           `Failed to initiate ads deposit with PawaPay for ${deposit.depositId}`,
@@ -233,6 +291,7 @@ export class PaymentsService {
       plan: 'ADS_TOPUP',
       amount: amountStr,
       currency: selection.currency,
+      amountZmw,
       isRenewal: false,
       message: 'Payment request sent — approve the prompt on your phone',
     };
@@ -270,22 +329,30 @@ export class PaymentsService {
     await this.depositsRepo.update(deposit.id, { status: 'COMPLETED' });
 
     if (deposit.plan === 'ADS_TOPUP') {
-      const amount = Number(deposit.amount) || 0;
+      const amountZmw = resolveAdsCreditZmw(
+        deposit.amount,
+        deposit.currency,
+        deposit.rawPayload,
+      );
+      if (amountZmw <= 0) {
+        throw new BadRequestException('Could not determine ZMW credit for ads top-up');
+      }
       await this.tenantsRepo
         .createQueryBuilder()
         .update(Tenants)
-        .set({ adsBalance: () => `"ads_balance" + ${amount}` })
+        .set({ adsBalance: () => `"ads_balance" + ${amountZmw}` })
         .where('id = :id', { id: deposit.tenantId })
         .execute();
 
       this.logger.log(
-        `Added ${amount} ZMW to ads balance for tenant ${deposit.tenantId} via deposit ${depositId}`,
+        `Added ${amountZmw} ZMW to ads balance for tenant ${deposit.tenantId} via deposit ${depositId}`,
       );
       return {
         tenantId: deposit.tenantId,
         plan: 'ADS_TOPUP',
         status: 'COMPLETED',
-        amount,
+        amount: amountZmw,
+        currency: 'ZMW',
       };
     }
 
@@ -318,9 +385,13 @@ export class PaymentsService {
   }
 
   async checkPendingDeposits(): Promise<{ completed: number }> {
-    const pending = await this.depositsRepo.find({
-      where: { status: 'ACCEPTED' },
-    });
+    const pending = await this.depositsRepo
+      .createQueryBuilder('deposit')
+      .where(
+        '(deposit.status IS NULL OR deposit.status NOT IN (:...finalStatuses))',
+        { finalStatuses: ['COMPLETED', 'FAILED', 'REFUNDED', 'CANCELLED'] },
+      )
+      .getMany();
     let completed = 0;
     for (const d of pending) {
       const result = await this.checkDepositStatus(d.depositId);
@@ -334,49 +405,78 @@ export class PaymentsService {
   async checkDepositStatus(depositId: string) {
     const deposit = await this.depositsRepo.findOne({ where: { depositId } });
     if (!deposit) throw new NotFoundException('Deposit not found');
-    
+
     if (deposit.status === 'COMPLETED') {
-      return { status: 'COMPLETED' };
+      return { status: 'COMPLETED', activated: true };
     }
 
     const token = this.config.get<string>('PAWAPAY_API_TOKEN');
     if (!token) {
       this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping status check');
-      return { status: deposit.status };
+      return { status: deposit.status, activated: false };
     }
 
     try {
       const data = await getPawaPayDepositStatus(this.config, depositId);
       if (!data) {
-        return { status: deposit.status };
+        return { status: deposit.status, activated: false };
       }
 
-      if (Array.isArray(data) && data.length > 0) {
-        const depositData = data[0] as { status?: string };
-        const newStatus = depositData.status;
-
-        if (newStatus === 'COMPLETED' && deposit.status !== 'COMPLETED') {
-          await this.completeDeposit(depositId);
-          return { status: 'COMPLETED' };
-        } else if (newStatus && newStatus !== deposit.status) {
-          await this.depositsRepo.update(deposit.id, { status: newStatus });
-          return { status: newStatus };
-        }
-      } else if (!Array.isArray(data) && (data as { status?: string }).status) {
-        const newStatus = (data as { status: string }).status;
-        if (newStatus === 'COMPLETED' && deposit.status !== 'COMPLETED') {
-          await this.completeDeposit(depositId);
-          return { status: 'COMPLETED' };
-        } else if (newStatus !== deposit.status) {
-          await this.depositsRepo.update(deposit.id, { status: newStatus });
-          return { status: newStatus };
-        }
-      }
-      return { status: deposit.status };
+      return this.applyPawaPayDepositStatus(deposit, parsePawaPayDepositStatus(data));
     } catch (error) {
       this.logger.error(`Failed to check PawaPay status for ${depositId}`, error);
-      return { status: deposit.status };
+      return { status: deposit.status, activated: false };
     }
+  }
+
+  async handlePawaPayWebhook(body: unknown) {
+    const parsed = parsePawaPayDepositStatus(body);
+    const depositId =
+      parsed?.depositId ??
+      (typeof body === 'object' &&
+      body &&
+      'depositId' in body &&
+      typeof (body as { depositId?: unknown }).depositId === 'string'
+        ? (body as { depositId: string }).depositId
+        : undefined);
+
+    if (!depositId) {
+      return { received: true };
+    }
+
+    if (isPawaPayDepositCompleted(parsed?.depositStatus)) {
+      await this.completeDeposit(depositId);
+      return { received: true, status: 'COMPLETED', activated: true };
+    }
+
+    const deposit = await this.depositsRepo.findOne({ where: { depositId } });
+    if (deposit && parsed?.depositStatus) {
+      return this.applyPawaPayDepositStatus(deposit, parsed);
+    }
+
+    return { received: true };
+  }
+
+  private async applyPawaPayDepositStatus(
+    deposit: Deposits,
+    parsed: ReturnType<typeof parsePawaPayDepositStatus>,
+  ) {
+    const depositStatus = parsed?.depositStatus;
+    if (!depositStatus) {
+      return { status: deposit.status, activated: false };
+    }
+
+    if (isPawaPayDepositCompleted(depositStatus)) {
+      await this.completeDeposit(deposit.depositId);
+      return { status: 'COMPLETED', activated: true };
+    }
+
+    if (depositStatus !== deposit.status?.toUpperCase()) {
+      await this.depositsRepo.update(deposit.id, { status: depositStatus });
+      return { status: depositStatus, activated: false };
+    }
+
+    return { status: deposit.status, activated: false };
   }
 
   async findByTenant(
@@ -508,12 +608,18 @@ export class PaymentsService {
       await this.depositsRepo.update(refundReq.deposit.id, { status: 'REFUNDED' });
 
       if (refundReq.deposit.plan === 'ADS_TOPUP') {
-        const amount = Number(refundReq.deposit.amount) || 0;
-        await this.tenantsRepo.createQueryBuilder()
-          .update(Tenants)
-          .set({ adsBalance: () => `"ads_balance" - ${amount}` })
-          .where('id = :id', { id: refundReq.tenantId })
-          .execute();
+        const amountZmw = resolveAdsCreditZmw(
+          refundReq.deposit.amount,
+          refundReq.deposit.currency,
+          refundReq.deposit.rawPayload,
+        );
+        if (amountZmw > 0) {
+          await this.tenantsRepo.createQueryBuilder()
+            .update(Tenants)
+            .set({ adsBalance: () => `"ads_balance" - ${amountZmw}` })
+            .where('id = :id', { id: refundReq.tenantId })
+            .execute();
+        }
       }
 
       return refundReq;

@@ -7,6 +7,7 @@ import { CreateCampaignSheet } from './CreateCampaignSheet';
 import { adsApi, paymentsApi } from '../lib/api';
 import { MobileMoneyPaymentForm } from '@/components/MobileMoneyPaymentForm';
 import { createDefaultMobileMoneyPayment } from '@/lib/payment-countries';
+import { useFxQuoteFromZmw, useFxQuoteToZmw } from '@/hooks/useFxQuote';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useTenant } from '../hooks/useTenant';
 import {
@@ -26,6 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+
+const DEFAULT_ADS_TOPUP_ZMW = 500;
 
 interface AdCreative {
   headline: string;
@@ -55,6 +58,22 @@ export default function AdsPage() {
   const [topUpAmount, setTopUpAmount] = useState<number>(500);
   const [topUpPayment, setTopUpPayment] = useState(createDefaultMobileMoneyPayment);
   const [isToppingUp, setIsToppingUp] = useState(false);
+  const { quote: topUpFxToZmw, loading: topUpFxLoading } = useFxQuoteToZmw(
+    topUpAmount,
+    topUpPayment.currency,
+  );
+
+  useEffect(() => {
+    if (!isTopUpOpen) return;
+    if (topUpPayment.currency === 'ZMW') {
+      setTopUpAmount(DEFAULT_ADS_TOPUP_ZMW);
+      return;
+    }
+    paymentsApi
+      .fxQuoteFromZmw(DEFAULT_ADS_TOPUP_ZMW, topUpPayment.currency)
+      .then((quote) => setTopUpAmount(Number(quote.amount)))
+      .catch(() => setTopUpAmount(DEFAULT_ADS_TOPUP_ZMW));
+  }, [isTopUpOpen, topUpPayment.currency]);
   const [actionId, setActionId] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
@@ -360,7 +379,7 @@ export default function AdsPage() {
           <div className="py-4 space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1">
-                Amount ({topUpPayment.currency})
+                Amount to pay ({topUpPayment.currency})
               </label>
               <input
                 type="number"
@@ -369,6 +388,14 @@ export default function AdsPage() {
                 onChange={(e) => setTopUpAmount(Number(e.target.value))}
                 className="w-full border rounded-md p-2"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Ads balance is kept in ZMW.{' '}
+                {topUpFxLoading
+                  ? 'Calculating ZMW credit…'
+                  : topUpFxToZmw
+                    ? `Adds ≈ ZMW ${Number(topUpFxToZmw.amountZmw).toLocaleString(undefined, { maximumFractionDigits: 2 })} to your balance.`
+                    : 'Enter an amount to see the ZMW credit.'}
+              </p>
             </div>
             <MobileMoneyPaymentForm
               value={topUpPayment}

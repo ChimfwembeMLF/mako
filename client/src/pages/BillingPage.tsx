@@ -12,6 +12,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { MobileMoneyPaymentForm } from '@/components/MobileMoneyPaymentForm';
 import { createDefaultMobileMoneyPayment, formatMoneyAmount } from '@/lib/payment-countries';
+import { useFxQuoteFromZmw } from '@/hooks/useFxQuote';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { CreditCard, Smartphone, Zap, Users, CheckCircle2, AlertTriangle, Loader2, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -75,13 +76,12 @@ export default function BillingPage() {
     async function poll() {
       if (cancelled || mmCompleted) return;
       try {
-        const deposits = await paymentsApi.listDeposits(tenant!.id);
-        const dep = deposits.find((d) => d.id === mmDepositId);
-        if (dep?.status?.toUpperCase() === 'COMPLETED') {
+        const result = await paymentsApi.checkDepositStatus(mmDepositId!);
+        if (result.status?.toUpperCase() === 'COMPLETED' || result.activated) {
           setMmCompleted(true);
           toast({
             title: 'Plan activated!',
-            description: `You're now on the ${dep.plan ?? mmPlan} plan.`,
+            description: `You're now on the ${mmPlan} plan.`,
           });
           setMmOpen(false);
           setMmDepositId(null);
@@ -227,6 +227,10 @@ export default function BillingPage() {
   const isAtAiLimit = aiLimit !== null && aiUsed >= aiLimit;
   const isAtSeatLimit = seatLimit !== null && seats >= seatLimit;
   const mmPlanConfig = plans.find(p => p.key === mmPlan);
+  const { quote: mmFxQuote, loading: mmFxLoading } = useFxQuoteFromZmw(
+    mmPlanConfig?.priceZmw,
+    mmPayment.currency,
+  );
 
   if (tenantLoading || permLoading) {
     return (
@@ -487,11 +491,22 @@ export default function BillingPage() {
               <p className="text-sm font-medium">
                 Amount:{' '}
                 <span className="text-primary">
-                  {mmPlanConfig
-                    ? `${formatMoneyAmount(mmPlanConfig.priceZmw, mmPayment.currency)}/month`
-                    : '—'}
+                  {mmFxQuote
+                    ? `${formatMoneyAmount(mmFxQuote.amount, mmFxQuote.currency)}/month`
+                    : mmPlanConfig
+                      ? `${formatPriceZmw(mmPlanConfig.priceZmw)}/month`
+                      : '—'}
                 </span>
               </p>
+              {mmPlanConfig && mmPayment.currency !== 'ZMW' && (
+                <p className="text-xs text-muted-foreground">
+                  {mmFxLoading
+                    ? 'Loading exchange rate…'
+                    : mmFxQuote
+                      ? `Plan price ZMW ${mmPlanConfig.priceZmw.toLocaleString()} · 1 ZMW = ${mmFxQuote.rate.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${mmPayment.currency}`
+                      : null}
+                </p>
+              )}
               <Button
                 className="w-full"
                 onClick={handleMobileMoneySubmit}
