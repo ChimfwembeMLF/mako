@@ -158,9 +158,12 @@ export async function invokeEdgeFunction(
       return runHandler(() =>
         runQueued(() =>
           leadsApi.sendEmail({
-            to: String(body.to ?? ''),
+            to: body.to as string | undefined,
+            leadId: body.leadId as string | undefined,
             subject: String(body.subject ?? 'Lead follow-up'),
-            body: String(body.body ?? body.message ?? ''),
+            body: body.body as string | undefined,
+            htmlBody: (body.htmlBody ?? body.html_body) as string | undefined,
+            message: body.message as string | undefined,
           }),
         ),
       );

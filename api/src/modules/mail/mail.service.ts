@@ -11,6 +11,10 @@ export class MailService {
     private readonly config: ConfigService,
   ) {}
 
+  isSmtpConfigured(): boolean {
+    return this.isConfigured();
+  }
+
   private isConfigured(): boolean {
     const host = this.config.get<string>('MAIL_HOST');
     const user = this.config.get<string>('MAIL_USERNAME');
@@ -105,6 +109,7 @@ export class MailService {
     to: string,
     subject: string,
     text: string,
+    html?: string,
   ): Promise<void> {
     if (!this.isConfigured()) {
       this.logger.warn(`Mail not configured — would send to ${to}: ${subject}`);
@@ -116,7 +121,7 @@ export class MailService {
       from,
       subject,
       text,
-      html: `<pre>${text}</pre>`,
+      html: html ?? `<pre>${text}</pre>`,
     });
     this.logger.log(`Email sent to ${to}: ${subject}`);
   }

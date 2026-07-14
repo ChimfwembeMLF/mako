@@ -24,6 +24,7 @@ export class GmailService {
     to: string,
     subject: string,
     body: string,
+    html?: string,
   ): Promise<{ id?: string | null }> {
     const user = await this.userService.findOne({ id: userId });
     if (!user?.email) {
@@ -72,7 +73,7 @@ export class GmailService {
     });
 
     const gmail = google.gmail({ version: 'v1', auth: oauth2Client });
-    const raw = this.createRawEmail(user.email, to, subject, body);
+    const raw = this.createRawEmail(user.email, to, subject, body, html);
 
     const response = await gmail.users.messages.send({
       userId: 'me',
@@ -88,7 +89,32 @@ export class GmailService {
     to: string,
     subject: string,
     body: string,
+    html?: string,
   ): string {
+    if (html) {
+      const boundary = `mako_${Date.now()}`;
+      const emailLines = [
+        `From: ${from}`,
+        `To: ${to}`,
+        `Subject: ${subject}`,
+        'MIME-Version: 1.0',
+        `Content-Type: multipart/alternative; boundary="${boundary}"`,
+        '',
+        `--${boundary}`,
+        'Content-Type: text/plain; charset=utf-8',
+        'Content-Transfer-Encoding: 7bit',
+        '',
+        body,
+        `--${boundary}`,
+        'Content-Type: text/html; charset=utf-8',
+        'Content-Transfer-Encoding: 7bit',
+        '',
+        html,
+        `--${boundary}--`,
+      ];
+      return Buffer.from(emailLines.join('\r\n')).toString('base64url');
+    }
+
     const emailLines = [
       `From: ${from}`,
       `To: ${to}`,
@@ -99,7 +125,6 @@ export class GmailService {
       '',
       body,
     ];
-    const email = emailLines.join('\r\n');
-    return Buffer.from(email).toString('base64url');
+    return Buffer.from(emailLines.join('\r\n')).toString('base64url');
   }
 }

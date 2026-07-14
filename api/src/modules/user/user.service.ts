@@ -109,6 +109,14 @@ export class UserService {
     await this.userRepository.update(userId, patch);
   }
 
+  async clearGoogleOAuthTokens(userId: string): Promise<void> {
+    await this.userRepository.update(userId, {
+      googleAccessTokenEnc: null,
+      googleRefreshTokenEnc: null,
+      googleTokenExpiresAt: null,
+    });
+  }
+
   async getGoogleOAuthTokens(userId: string): Promise<{
     accessToken: string;
     refreshToken?: string;

@@ -66,7 +66,12 @@ const BulkEmailSheet = ({ leads }: BulkEmailSheetProps) => {
       try {
         const personalizedBody = body.replace(/\{\{name\}\}/g, lead.name);
         const res = await invokeEdgeFunction("send-lead-email", {
-          body: { leadId: lead.id, subject, htmlBody: personalizedBody },
+          body: {
+            leadId: lead.id,
+            to: lead.email,
+            subject,
+            htmlBody: personalizedBody,
+          },
         });
         const result = res.data as { success?: boolean } | null;
         if (result?.success) {

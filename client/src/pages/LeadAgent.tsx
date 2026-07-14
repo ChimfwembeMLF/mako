@@ -431,7 +431,12 @@ const LeadAgent = () => {
     setSendingEmail(true);
     try {
       const res = await invokeEdgeFunction("send-lead-email", {
-        body: { leadId: lead.id, subject: emailSubject, htmlBody: emailBody },
+        body: {
+          leadId: lead.id,
+          to: lead.email,
+          subject: emailSubject,
+          htmlBody: emailBody,
+        },
       });
       const result = res.data as { success?: boolean; error?: string } | null;
       if (result?.success) {

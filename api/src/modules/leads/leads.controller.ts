@@ -19,6 +19,7 @@ import { LeadsCreateDto } from './dto/create-leads.dto';
 import { LeadsUpdateDto } from './dto/update-leads.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { LeadClassifyService } from './services/lead-classify.service';
+import { SendLeadEmailDto } from './dto/send-lead-email.dto';
 import { LeadEmailService } from './services/lead-email.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -97,19 +98,18 @@ export class LeadsController {
   @ApiBearerAuth()
   async sendEmail(
     @Req() req: { user: JwtUser },
-    @Body() body: { to: string; subject: string; body: string },
+    @Body() body: SendLeadEmailDto,
   ) {
+    const payload = await this.leadEmail.prepareSend(
+      body,
+      String(req.user.sub),
+    );
+
     if (this.queueDispatch.isEnabled()) {
-      const { jobId, queue } = await this.queueDispatch.enqueueEmail({
-        ...body,
-        userId: String(req.user.sub),
-      });
+      const { jobId, queue } = await this.queueDispatch.enqueueEmail(payload);
       return { queued: true, jobId, queue };
     }
-    return this.leadEmail.sendLeadEmail({
-      ...body,
-      userId: String(req.user.sub),
-    });
+    return this.leadEmail.sendLeadEmail(payload);
   }
 
   @Post()

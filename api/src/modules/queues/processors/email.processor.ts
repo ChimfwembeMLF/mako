@@ -21,8 +21,8 @@ export class EmailProcessor extends WorkerHost {
       this.logger.warn(`Unknown job: ${job.name}`);
       return null;
     }
-    const { to, subject, body, userId } = job.data;
+    const { to, subject, body, html, userId } = job.data;
     this.logger.log(`Sending email to ${to}`);
-    return this.leadEmail.sendLeadEmail({ to, subject, body, userId });
+    return this.leadEmail.sendLeadEmail({ to, subject, body, html, userId });
   }
 }

@@ -1531,11 +1531,21 @@ export const leadsApi = {
     remove: (id: string) =>
         request<any>(`/api/v1/leads/${id}`, { method: 'DELETE' }),
 
-    sendEmail: (data: { to: string; subject: string; body: string }) =>
-        request<{ sent: boolean }>('/api/v1/leads/send-email', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+    sendEmail: (data: {
+        to?: string;
+        leadId?: string;
+        subject?: string;
+        body?: string;
+        htmlBody?: string;
+        message?: string;
+    }) =>
+        request<{ success: boolean; via?: 'gmail' | 'smtp'; id?: string | null }>(
+            '/api/v1/leads/send-email',
+            {
+                method: 'POST',
+                body: JSON.stringify(data),
+            },
+        ),
 };
 
 // ==================== Lead Sources ====================

@@ -1,10 +1,14 @@
 import { Module } from '@nestjs/common';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { UserModule } from '../user/user.module';
+import { GmailConnectService } from './gmail-connect.service';
+import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
 
 @Module({
   imports: [
+    UserModule,
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -24,7 +28,8 @@ import { MailService } from './mail.service';
       }),
     }),
   ],
-  providers: [MailService],
+  controllers: [MailController],
+  providers: [MailService, GmailConnectService],
   exports: [MailService],
 })
 export class MailModule {}
