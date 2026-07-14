@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
+import { throttleOptionsFromConfig } from './common/throttle.config';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
 import { SpaNotFoundFilter } from './filters/spa-not-found.filter';
 import { typeOrmConfigFactory } from './database/ormconfig';
@@ -63,10 +65,11 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
     }),
 
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => [throttleOptionsFromConfig(config)],
+    }),
 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
@@ -126,7 +129,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
   providers: [
     {
       provide: APP_GUARD,
-      useClass: ThrottlerGuard,
+      useClass: AppThrottlerGuard,
     },
     {
       provide: APP_FILTER,
