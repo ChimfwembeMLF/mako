@@ -2,11 +2,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install required dependencies
+# Install required dependencies (curl for Docker healthcheck)
 RUN apk add --no-cache \
       nodejs \
       yarn \
-      bash
+      bash \
+      curl
 
 # Enable Corepack to use the correct Yarn version
 RUN corepack enable

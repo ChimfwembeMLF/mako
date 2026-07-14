@@ -1,11 +1,11 @@
 # Dokploy: set variables in Compose app → Environment. Dokploy writes them to `.env` next to
 # this file. You MUST use `env_file: .env` below — UI vars are NOT auto-injected into containers.
-# Local: docker compose --env-file api-rust/.env up --build  (copies/symlinks .env as needed)
+# Local: cp api/.env .env && docker compose up --build
 
 services:
   api:
     build:
-      context: ./api-rust
+      context: ./api
       dockerfile: Dockerfile
     ports:
       - "4000:4000"
@@ -21,7 +21,7 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 60s
+      start_period: 90s
 
   client:
     build:
