@@ -1,4 +1,5 @@
-version: '3.8'
+# Dokploy: set environment variables in the Compose app UI (api/.env is not in git).
+# Local: docker compose --env-file api/.env up --build
 
 services:
   api:
@@ -11,15 +12,13 @@ services:
       - NODE_ENV=production
       - PORT=4000
       - QUEUES_ENABLED=true
-    env_file:
-      - ./api/.env
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 20s
+      start_period: 60s
 
   client:
     build:
