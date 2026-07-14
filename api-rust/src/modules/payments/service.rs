@@ -115,13 +115,12 @@ pub async fn initiate_deposit(
                     .map(|value| value.to_string())
                     .unwrap_or_else(|| amount.to_string()),
                 currency: "ZMW".into(),
-                country: "ZMB".into(),
                 correspondent: deposit
                     .correspondent
                     .clone()
                     .unwrap_or_else(|| "MTN_MOMO_ZMB".into()),
                 phone: deposit.phone.clone().or(deposit.msisdn.clone()),
-                statement_description: format!("Mako {plan_key} Plan"),
+                customer_message: format!("Mako {plan_key} Plan"),
             })
             .await
             .map_err(|err| {
@@ -204,13 +203,12 @@ pub async fn initiate_ads_deposit(
                     .map(|value| value.to_string())
                     .unwrap_or_else(|| amount_str.clone()),
                 currency: "ZMW".into(),
-                country: "ZMB".into(),
                 correspondent: deposit
                     .correspondent
                     .clone()
                     .unwrap_or_else(|| "MTN_MOMO_ZMB".into()),
                 phone: deposit.phone.clone().or(deposit.msisdn.clone()),
-                statement_description: "Mako Ads Topup".into(),
+                customer_message: "Mako Ads Topup".into(),
             })
             .await
             .map_err(|err| {

@@ -4,15 +4,17 @@ use serde_json::Value;
 use crate::common::{ApiError, ApiResult};
 use crate::config::PawaPayConfig;
 
+const PAWAPAY_V2_SANDBOX: &str = "https://api.sandbox.pawapay.io/v2";
+const PAWAPAY_V2_PROD: &str = "https://api.pawapay.io/v2";
+
 #[derive(Clone, Debug)]
 pub struct InitiateDepositInput {
     pub deposit_id: String,
     pub amount: String,
     pub currency: String,
-    pub country: String,
     pub correspondent: String,
     pub phone: Option<String>,
-    pub statement_description: String,
+    pub customer_message: String,
 }
 
 #[derive(Clone)]
@@ -38,23 +40,22 @@ impl PawaPayService {
     }
 
     pub fn base_url(&self) -> String {
-        if self.config.env.eq_ignore_ascii_case("sandbox") {
-            return first_non_empty(&[
-                &self.config.sandbox_api_url,
+        let raw = if self.config.env.eq_ignore_ascii_case("sandbox") {
+            first_non_empty(&[
                 &self.config.base_url_sandbox,
-                "https://api.sandbox.pawapay.cloud/v1",
+                &self.config.sandbox_api_url,
             ])
-            .trim_end_matches('/')
-            .to_string();
-        }
+        } else {
+            first_non_empty(&[&self.config.base_url_prod, &self.config.api_url])
+        };
 
-        first_non_empty(&[
-            &self.config.api_url,
-            &self.config.base_url_prod,
-            "https://api.pawapay.io/v1",
-        ])
-        .trim_end_matches('/')
-        .to_string()
+        let fallback = if self.config.env.eq_ignore_ascii_case("sandbox") {
+            PAWAPAY_V2_SANDBOX
+        } else {
+            PAWAPAY_V2_PROD
+        };
+
+        normalize_pawapay_v2_base_url(if raw.is_empty() { fallback } else { raw })
     }
 
     pub async fn initiate_deposit(&self, input: InitiateDepositInput) -> ApiResult<()> {
@@ -66,15 +67,14 @@ impl PawaPayService {
             "depositId": input.deposit_id,
             "amount": input.amount,
             "currency": input.currency,
-            "country": input.country,
-            "correspondent": input.correspondent,
             "payer": {
-                "type": "MSISDN",
-                "address": {
-                    "value": input.phone,
+                "type": "MMO",
+                "accountDetails": {
+                    "provider": input.correspondent,
+                    "phoneNumber": input.phone,
                 }
             },
-            "statementDescription": input.statement_description,
+            "customerMessage": truncate_customer_message(&input.customer_message),
         });
 
         let response = self
@@ -158,6 +158,25 @@ impl PawaPayService {
             .and_then(Value::as_str)
             .map(str::to_string))
     }
+}
+
+fn normalize_pawapay_v2_base_url(url: &str) -> String {
+    let mut base = url.trim().trim_end_matches('/').to_string();
+    if base.ends_with("/v1") {
+        base = base.trim_end_matches("/v1").to_string();
+    }
+    if !base.ends_with("/v2") {
+        base.push_str("/v2");
+    }
+    base
+}
+
+fn truncate_customer_message(value: &str) -> String {
+    let trimmed = value.trim();
+    if trimmed.chars().count() <= 22 {
+        return trimmed.to_string();
+    }
+    trimmed.chars().take(22).collect()
 }
 
 fn first_non_empty<'a>(values: &'a [&'a str]) -> &'a str {

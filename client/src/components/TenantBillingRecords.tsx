@@ -2,6 +2,11 @@ import React from 'react';
 import { format } from 'date-fns';
 import { Download, ExternalLink, Loader2, Receipt, RefreshCw } from 'lucide-react';
 import { paymentsApi } from '@/lib/api';
+import {
+  FALLBACK_PAYMENT_COUNTRIES,
+  providerLabel,
+  type PaymentCountryOption,
+} from '@/lib/payment-countries';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,22 +45,21 @@ function statusLabel(status: string | null): string {
   return status ?? 'Unknown';
 }
 
-function networkLabel(network: string | null): string {
-  if (!network) return 'Mobile Money';
-  const map: Record<string, string> = {
-    MTN_MOMO_ZMB: 'MTN MoMo',
-    AIRTEL_OAPI_ZMB: 'Airtel Money',
-    ZAMTEL_ZMB: 'Zamtel Kwacha',
-  };
-  return map[network] ?? network;
+function networkLabel(network: string | null, countries: PaymentCountryOption[]): string {
+  return providerLabel(countries, network);
 }
 
 export function TenantBillingRecords({ tenantId }: { tenantId: string }) {
   const { toast } = useToast();
   const [records, setRecords] = React.useState<BillingRecord[]>([]);
+  const [countries, setCountries] = React.useState<PaymentCountryOption[]>(FALLBACK_PAYMENT_COUNTRIES);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    paymentsApi.mobileMoneyOptions().then(setCountries).catch(() => setCountries(FALLBACK_PAYMENT_COUNTRIES));
+  }, []);
 
   React.useEffect(() => {
     if (!tenantId) return;
@@ -141,7 +145,7 @@ export function TenantBillingRecords({ tenantId }: { tenantId: string }) {
                       {r.amount ? `${r.currency ?? 'ZMW'} ${r.amount}` : '—'}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
-                      {networkLabel(r.network)}
+                      {networkLabel(r.network, countries)}
                     </TableCell>
                     <TableCell className="text-right">
                       {r.status?.toUpperCase() === 'ACCEPTED' ? (

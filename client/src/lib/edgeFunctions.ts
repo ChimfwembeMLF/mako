@@ -135,6 +135,9 @@ export async function invokeEdgeFunction(
           plan: String(body.plan ?? 'starter'),
           phone: body.phone as string | undefined,
           correspondent: body.correspondent as string | undefined,
+          paymentCountryId: body.paymentCountryId as string | undefined,
+          currency: body.currency as string | undefined,
+          countryCode: body.countryCode as string | undefined,
         }),
       );
 

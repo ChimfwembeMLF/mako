@@ -19,6 +19,13 @@ import { PaymentsService } from './payments.service';
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
+  @Get('mobile-money/options')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  mobileMoneyOptions() {
+    return this.payments.listMobileMoneyOptions();
+  }
+
   @Post('deposits/initiate')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -29,6 +36,9 @@ export class PaymentsController {
       plan: string;
       phone?: string;
       correspondent?: string;
+      paymentCountryId?: string;
+      currency?: string;
+      countryCode?: string;
     },
   ) {
     return this.payments.initiateDeposit(body);
@@ -44,6 +54,9 @@ export class PaymentsController {
       amount: number;
       phone?: string;
       correspondent?: string;
+      paymentCountryId?: string;
+      currency?: string;
+      countryCode?: string;
     },
     @Req() req: Request,
   ) {

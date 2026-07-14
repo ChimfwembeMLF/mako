@@ -1315,13 +1315,39 @@ export const plansApi = {
 };
 
 export const paymentsApi = {
-    initiateDeposit: (data: { tenantId: string; plan: string; phone?: string; correspondent?: string }) =>
-        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; activated?: boolean }>(
+    mobileMoneyOptions: () =>
+        request<Array<{
+            id: string;
+            countryCode: string;
+            name: string;
+            dialCode: string;
+            currency: string;
+            providers: Array<{ code: string; label: string }>;
+        }>>('/api/v1/payments/mobile-money/options'),
+
+    initiateDeposit: (data: {
+        tenantId: string;
+        plan: string;
+        phone?: string;
+        correspondent?: string;
+        paymentCountryId?: string;
+        currency?: string;
+        countryCode?: string;
+    }) =>
+        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; currency?: string; activated?: boolean }>(
             '/api/v1/payments/deposits/initiate',
             { method: 'POST', body: JSON.stringify(data) },
         ),
-    initiateAdsDeposit: (data: { tenantId: string; amount: number; phone?: string; correspondent?: string }) =>
-        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; activated?: boolean }>(
+    initiateAdsDeposit: (data: {
+        tenantId: string;
+        amount: number;
+        phone?: string;
+        correspondent?: string;
+        paymentCountryId?: string;
+        currency?: string;
+        countryCode?: string;
+    }) =>
+        request<{ paymentId: string; status: string; message: string; plan?: string; amount?: string; currency?: string; activated?: boolean }>(
             '/api/v1/payments/ads-deposit',
             { method: 'POST', body: JSON.stringify(data) },
         ),

@@ -1,5 +1,6 @@
-import { normalizePlanKey, PlanKey } from '../subscriptions/plan.constants';
+import { formatPaymentProviderLabel } from './payment-countries';
 import { renderInvoiceLogoHtml } from './invoice-logo.util';
+import { normalizePlanKey, PlanKey } from '../subscriptions/plan.constants';
 
 export type InvoicePlanMeta = { label: string; priceZmw: number };
 
@@ -44,13 +45,7 @@ function formatStatus(status?: string): string {
 }
 
 function formatNetwork(correspondent?: string): string {
-  if (!correspondent) return 'Mobile Money';
-  const map: Record<string, string> = {
-    MTN_MOMO_ZMB: 'MTN MoMo (Zambia)',
-    AIRTEL_OAPI_ZMB: 'Airtel Money (Zambia)',
-    ZAMTEL_ZMB: 'Zamtel Kwacha (Zambia)',
-  };
-  return map[correspondent] ?? correspondent;
+  return formatPaymentProviderLabel(correspondent);
 }
 
 function formatMoney(value: number): string {

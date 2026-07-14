@@ -6,7 +6,6 @@ import {
   BadRequestException,
   Optional,
 } from '@nestjs/common';
-import axios from 'axios';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
@@ -26,6 +25,16 @@ import {
 } from './invoice.template';
 import { getInvoicePdfFilename, renderInvoicePdf } from './invoice.pdf';
 import { NotificationsService } from '../notifications/notifications.service';
+import {
+  postPawaPayDeposit,
+  postPawaPayRefund,
+  getPawaPayDepositStatus,
+} from './pawapay.client';
+import {
+  listPaymentCountryOptions,
+  normalizeMobileMoneyPhone,
+  resolvePaymentSelection,
+} from './payment-countries';
 
 export interface ClientPaymentRecord {
   id: string;
@@ -62,16 +71,29 @@ export class PaymentsService {
 
 
 
+  listMobileMoneyOptions() {
+    return listPaymentCountryOptions();
+  }
+
   async initiateDeposit(params: {
     tenantId: string;
     plan: string;
     phone?: string;
     correspondent?: string;
+    paymentCountryId?: string;
+    currency?: string;
+    countryCode?: string;
     isRenewal?: boolean;
   }) {
     const plan = normalizePlanKey(params.plan);
     if (plan === 'free') {
       throw new Error('Cannot purchase free plan');
+    }
+
+    const selection = resolvePaymentSelection(params);
+    const phone = normalizeMobileMoneyPhone(selection.dialCode, params.phone);
+    if (!phone) {
+      throw new BadRequestException('Phone number is required');
     }
 
     const depositId = randomUUID();
@@ -84,44 +106,36 @@ export class PaymentsService {
         plan,
         status: 'ACCEPTED',
         amount,
-        currency: 'ZMW',
-        phone: params.phone,
-        msisdn: params.phone,
-        correspondent: params.correspondent ?? 'MTN_MOMO_ZMB',
+        currency: selection.currency,
+        phone,
+        msisdn: phone,
+        correspondent: selection.correspondent,
         provider: 'mobile_money',
         isRenewal: params.isRenewal ?? false,
+        rawPayload: JSON.stringify({
+          paymentCountryId: selection.paymentCountryId,
+          countryCode: selection.countryCode,
+        }),
       }),
     );
 
     const token = this.config.get<string>('PAWAPAY_API_TOKEN');
     if (token) {
-      const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
-      const baseUrl = isSandbox 
-        ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
-        : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
-
       try {
-        await axios.post(
-          `${baseUrl}/deposits`,
-          {
-            depositId: deposit.depositId,
-            amount: deposit.amount,
-            currency: 'ZMW',
-            country: 'ZMB',
-            correspondent: deposit.correspondent,
-            payer: {
-              type: 'MSISDN',
-              address: { value: params.phone },
-            },
-            statementDescription: `Mako ${plan} Plan`,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        await postPawaPayDeposit(this.config, {
+          depositId: deposit.depositId,
+          amount: deposit.amount,
+          currency: selection.currency,
+          correspondent: deposit.correspondent,
+          phone,
+          customerMessage: `Mako ${plan} Plan`,
+        });
       } catch (error) {
-        this.logger.error(`Failed to initiate deposit with PawaPay for ${deposit.depositId}`, error);
-        throw new Error('Failed to communicate with payment gateway');
+        this.logger.error(
+          `Failed to initiate deposit with PawaPay for ${deposit.depositId}`,
+          error,
+        );
+        throw error;
       }
     } else {
       this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
@@ -134,6 +148,7 @@ export class PaymentsService {
       activated: false,
       plan,
       amount,
+      currency: selection.currency,
       isRenewal,
       message: isRenewal
         ? 'Renewal payment sent — approve the prompt on your phone'
@@ -147,6 +162,9 @@ export class PaymentsService {
       amount: number;
       phone?: string;
       correspondent?: string;
+      paymentCountryId?: string;
+      currency?: string;
+      countryCode?: string;
     },
     userId?: string,
   ) {
@@ -155,6 +173,12 @@ export class PaymentsService {
     const amount = Number(params.amount);
     if (!Number.isFinite(amount) || amount <= 0) {
       throw new BadRequestException('Amount must be a positive number');
+    }
+
+    const selection = resolvePaymentSelection(params);
+    const phone = normalizeMobileMoneyPhone(selection.dialCode, params.phone);
+    if (!phone) {
+      throw new BadRequestException('Phone number is required');
     }
 
     const depositId = randomUUID();
@@ -167,44 +191,36 @@ export class PaymentsService {
         plan: 'ADS_TOPUP',
         status: 'ACCEPTED',
         amount: amountStr,
-        currency: 'ZMW',
-        phone: params.phone,
-        msisdn: params.phone,
-        correspondent: params.correspondent ?? 'MTN_MOMO_ZMB',
+        currency: selection.currency,
+        phone,
+        msisdn: phone,
+        correspondent: selection.correspondent,
         provider: 'mobile_money',
         isRenewal: false,
+        rawPayload: JSON.stringify({
+          paymentCountryId: selection.paymentCountryId,
+          countryCode: selection.countryCode,
+        }),
       }),
     );
 
     const token = this.config.get<string>('PAWAPAY_API_TOKEN');
     if (token) {
-      const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
-      const baseUrl = isSandbox 
-        ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
-        : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
-
       try {
-        await axios.post(
-          `${baseUrl}/deposits`,
-          {
-            depositId: deposit.depositId,
-            amount: deposit.amount,
-            currency: 'ZMW',
-            country: 'ZMB',
-            correspondent: deposit.correspondent,
-            payer: {
-              type: 'MSISDN',
-              address: { value: params.phone },
-            },
-            statementDescription: `Mako Ads Topup`,
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        await postPawaPayDeposit(this.config, {
+          depositId: deposit.depositId,
+          amount: deposit.amount,
+          currency: selection.currency,
+          correspondent: deposit.correspondent,
+          phone,
+          customerMessage: 'Mako Ads Topup',
+        });
       } catch (error) {
-        this.logger.error(`Failed to initiate ads deposit with PawaPay for ${deposit.depositId}`, error);
-        throw new Error('Failed to communicate with payment gateway');
+        this.logger.error(
+          `Failed to initiate ads deposit with PawaPay for ${deposit.depositId}`,
+          error,
+        );
+        throw error;
       }
     } else {
       this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping PawaPay POST');
@@ -216,6 +232,7 @@ export class PaymentsService {
       activated: false,
       plan: 'ADS_TOPUP',
       amount: amountStr,
+      currency: selection.currency,
       isRenewal: false,
       message: 'Payment request sent — approve the prompt on your phone',
     };
@@ -328,32 +345,25 @@ export class PaymentsService {
       return { status: deposit.status };
     }
 
-    const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
-    const baseUrl = isSandbox 
-      ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
-      : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
-
     try {
-      const response = await axios.get(`${baseUrl}/deposits/${depositId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const data = await getPawaPayDepositStatus(this.config, depositId);
+      if (!data) {
+        return { status: deposit.status };
+      }
 
-      const data = response.data;
       if (Array.isArray(data) && data.length > 0) {
-        const depositData = data[0];
+        const depositData = data[0] as { status?: string };
         const newStatus = depositData.status;
 
         if (newStatus === 'COMPLETED' && deposit.status !== 'COMPLETED') {
           await this.completeDeposit(depositId);
           return { status: 'COMPLETED' };
-        } else if (newStatus !== deposit.status) {
+        } else if (newStatus && newStatus !== deposit.status) {
           await this.depositsRepo.update(deposit.id, { status: newStatus });
           return { status: newStatus };
         }
-      } else if (!Array.isArray(data) && data.status) {
-        const newStatus = data.status;
+      } else if (!Array.isArray(data) && (data as { status?: string }).status) {
+        const newStatus = (data as { status: string }).status;
         if (newStatus === 'COMPLETED' && deposit.status !== 'COMPLETED') {
           await this.completeDeposit(depositId);
           return { status: 'COMPLETED' };
@@ -481,19 +491,14 @@ export class PaymentsService {
     const token = this.config.get<string>('PAWAPAY_API_TOKEN');
     if (!token) throw new BadRequestException('PAWAPAY_API_TOKEN is not configured');
     
-    const isSandbox = this.config.get<string>('PAWAPAY_ENV') === 'sandbox';
-    const baseUrl = isSandbox 
-      ? this.config.get<string>('PAWAPAY_SANDBOX_API_URL') || 'https://api.sandbox.pawapay.cloud/v1' 
-      : this.config.get<string>('PAWAPAY_API_URL') || 'https://api.pawapay.io/v1';
-
     const pawapayRefundId = randomUUID();
 
     try {
-      await axios.post(`${baseUrl}/refunds`, {
+      await postPawaPayRefund(this.config, {
         refundId: pawapayRefundId,
         depositId: refundReq.deposit.depositId,
-      }, {
-        headers: { Authorization: `Bearer ${token}` },
+        amount: refundReq.deposit.amount,
+        currency: refundReq.deposit.currency ?? 'ZMW',
       });
       
       refundReq.status = 'APPROVED';
@@ -514,6 +519,7 @@ export class PaymentsService {
       return refundReq;
     } catch (error) {
       this.logger.error(`Failed to process refund with PawaPay for deposit ${refundReq.deposit.depositId}`, error);
+      if (error instanceof BadRequestException) throw error;
       throw new BadRequestException('Failed to process refund with PawaPay');
     }
   }

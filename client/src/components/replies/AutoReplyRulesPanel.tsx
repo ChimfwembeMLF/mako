@@ -75,6 +75,12 @@ function normalizePlatformFilter(filter?: string | string[] | null): string[] | 
   return [filter];
 }
 
+/** Stable string key so inline array props do not retrigger effects every render. */
+function platformListKey(value?: string | string[] | null): string {
+  const list = normalizePlatformFilter(value);
+  return list ? list.join(',') : '';
+}
+
 export interface AutoReplyRulesPanelProps {
   /** When set, only show/create rules for these platforms. */
   platformFilter?: string | string[] | null;
@@ -95,13 +101,21 @@ export function AutoReplyRulesPanel({
   const { can } = usePermissions();
   const { toast } = useToast();
 
-  const filterPlatforms = normalizePlatformFilter(platformFilter);
+  const tenantId = tenant?.id;
+  const platformFilterKey = platformListKey(platformFilter);
+  const platformOptionsKey = platformListKey(platformOptions);
+
+  const filterPlatforms = useMemo(() => {
+    if (!platformFilterKey) return null;
+    return platformFilterKey.split(',');
+  }, [platformFilterKey]);
+
   const availablePlatforms = useMemo(() => {
     const all = autoReplyPlatforms().map((p) => p.id);
-    if (platformOptions?.length) return platformOptions;
+    if (platformOptionsKey) return platformOptionsKey.split(',');
     if (filterPlatforms) return filterPlatforms;
     return all;
-  }, [platformOptions, filterPlatforms]);
+  }, [platformOptionsKey, filterPlatforms]);
 
   const blankRule = useMemo(
     () => ({
@@ -117,25 +131,25 @@ export function AutoReplyRulesPanel({
   const [saving, setSaving] = useState(false);
 
   const loadRules = useCallback(async () => {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenantId || !activeWorkspace) return;
+    const platforms = platformFilterKey ? platformFilterKey.split(',') : null;
     try {
-      const all = await autoReplyRulesApi.findAll(tenant.id, activeWorkspace);
+      const all = await autoReplyRulesApi.findAll(tenantId, activeWorkspace);
       const list = Array.isArray(all) ? all : [];
       let mapped = list.map(fromRule);
-      if (filterPlatforms) {
-        mapped = mapped.filter((r) => filterPlatforms.includes(r.platform));
+      if (platforms) {
+        mapped = mapped.filter((r) => platforms.includes(r.platform));
       }
       setRules(mapped);
     } catch {
       setRules([]);
     }
-  }, [tenant, activeWorkspace, filterPlatforms]);
+  }, [tenantId, activeWorkspace, platformFilterKey]);
 
   useEffect(() => {
-    if (tenant && activeWorkspace) {
-      void loadRules();
-    }
-  }, [tenant?.id, activeWorkspace, workspaceVersion, loadRules]);
+    if (!tenantId || !activeWorkspace) return;
+    void loadRules();
+  }, [tenantId, activeWorkspace, workspaceVersion, platformFilterKey, loadRules]);
 
   async function saveRule() {
     if (!editing?.name?.trim() || !tenant || !activeWorkspace) return;

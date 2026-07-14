@@ -10,9 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MobileMoneyPaymentForm } from '@/components/MobileMoneyPaymentForm';
+import { createDefaultMobileMoneyPayment, formatMoneyAmount } from '@/lib/payment-countries';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { CreditCard, Smartphone, Zap, Users, CheckCircle2, AlertTriangle, Loader2, Clock, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
@@ -54,8 +53,7 @@ export default function BillingPage() {
   // Mobile money dialog state
   const [mmOpen, setMmOpen]           = useState(false);
   const [mmPlan, setMmPlan]           = useState('');
-  const [mmPhone, setMmPhone]         = useState('');
-  const [mmNetwork, setMmNetwork]     = useState('MTN_MOMO_ZMB');
+  const [mmPayment, setMmPayment]     = useState(createDefaultMobileMoneyPayment);
   const [mmSubmitting, setMmSubmitting] = useState(false);
   const [mmDepositId, setMmDepositId] = useState<string | null>(null);
   const [mmCompleted, setMmCompleted] = useState(false);
@@ -167,22 +165,24 @@ export default function BillingPage() {
 
   function openMobileMoney(plan: string) {
     setMmPlan(plan);
-    setMmPhone('');
-    setMmNetwork('MTN_MOMO_ZMB');
+    setMmPayment(createDefaultMobileMoneyPayment());
     setMmDepositId(null);
     setMmCompleted(false);
     setMmOpen(true);
   }
 
   async function handleMobileMoneySubmit() {
-    if (!tenant || !mmPhone.trim()) return;
+    if (!tenant || !mmPayment.phone.trim() || !mmPayment.correspondent) return;
     setMmSubmitting(true);
     try {
       const result = await paymentsApi.initiateDeposit({
         tenantId: tenant.id,
         plan: mmPlan,
-        phone: mmPhone.trim(),
-        correspondent: mmNetwork,
+        phone: mmPayment.phone.trim(),
+        correspondent: mmPayment.correspondent,
+        paymentCountryId: mmPayment.paymentCountryId,
+        currency: mmPayment.currency,
+        countryCode: mmPayment.countryCode,
       });
       const completed =
         result.activated === true || result.status?.toUpperCase() === 'COMPLETED';
@@ -479,34 +479,23 @@ export default function BillingPage() {
             </div>
           ) : (
             <div className="space-y-4 py-2">
-              <div className="space-y-1.5">
-                <Label>Mobile Network</Label>
-                <Select value={mmNetwork} onValueChange={setMmNetwork}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MTN_MOMO_ZMB">MTN MoMo (Zambia)</SelectItem>
-                    <SelectItem value="AIRTEL_OAPI_ZMB">Airtel Money (Zambia)</SelectItem>
-                    <SelectItem value="ZAMTEL_ZMB">Zamtel Kwacha (Zambia)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Phone Number</Label>
-                <Input
-                  type="tel"
-                  placeholder="e.g. 260971234567"
-                  value={mmPhone}
-                  onChange={e => setMmPhone(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Include country code, no + (e.g. 260971234567)</p>
-              </div>
+              <MobileMoneyPaymentForm
+                value={mmPayment}
+                onChange={setMmPayment}
+                disabled={mmSubmitting}
+              />
               <p className="text-sm font-medium">
-                Amount: <span className="text-primary">{mmPlanConfig ? `${formatPriceZmw(mmPlanConfig.priceZmw)}/month` : '—'}</span>
+                Amount:{' '}
+                <span className="text-primary">
+                  {mmPlanConfig
+                    ? `${formatMoneyAmount(mmPlanConfig.priceZmw, mmPayment.currency)}/month`
+                    : '—'}
+                </span>
               </p>
               <Button
                 className="w-full"
                 onClick={handleMobileMoneySubmit}
-                disabled={mmSubmitting || !mmPhone.trim()}
+                disabled={mmSubmitting || !mmPayment.phone.trim() || !mmPayment.correspondent}
               >
                 {mmSubmitting
                   ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending…</>

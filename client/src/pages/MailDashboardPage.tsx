@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, Link2, Unlink, Loader2, Bot } from 'lucide-react';
 
+const EMAIL_PLATFORM_OPTIONS = ['email'];
+
 interface GmailStatus {
   connected: boolean;
   email?: string | null;
@@ -199,7 +201,7 @@ export default function MailDashboardPage() {
           <TabsContent value="rules" className="mt-4">
             <AutoReplyRulesPanel
               platformFilter="email"
-              platformOptions={['email']}
+              platformOptions={EMAIL_PLATFORM_OPTIONS}
               defaultPlatform="email"
               description="Rules for inbound email auto-replies. The same rules also appear under Replies → Rules."
             />

@@ -5,6 +5,8 @@ import { Button } from '../components/ui/button';
 import { Plus, Target, DollarSign, Activity, Pause, Play, BarChart3 } from 'lucide-react';
 import { CreateCampaignSheet } from './CreateCampaignSheet';
 import { adsApi, paymentsApi } from '../lib/api';
+import { MobileMoneyPaymentForm } from '@/components/MobileMoneyPaymentForm';
+import { createDefaultMobileMoneyPayment } from '@/lib/payment-countries';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useTenant } from '../hooks/useTenant';
 import {
@@ -51,7 +53,7 @@ export default function AdsPage() {
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState<number>(500);
-  const [topUpPhone, setTopUpPhone] = useState<string>('');
+  const [topUpPayment, setTopUpPayment] = useState(createDefaultMobileMoneyPayment);
   const [isToppingUp, setIsToppingUp] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
 
@@ -87,7 +89,7 @@ export default function AdsPage() {
       setAlertMessage('Please enter a valid amount greater than 0.');
       return;
     }
-    if (!topUpPhone) {
+    if (!topUpPayment.phone.trim()) {
       setAlertMessage('Please enter your Mobile Money Number.');
       return;
     }
@@ -96,7 +98,11 @@ export default function AdsPage() {
       const res = await paymentsApi.initiateAdsDeposit({
         tenantId: tenant!.id,
         amount: topUpAmount,
-        phone: topUpPhone || undefined,
+        phone: topUpPayment.phone.trim(),
+        correspondent: topUpPayment.correspondent,
+        paymentCountryId: topUpPayment.paymentCountryId,
+        currency: topUpPayment.currency,
+        countryCode: topUpPayment.countryCode,
       });
       setAlertMessage(res.message);
       if (res.activated) {
@@ -337,7 +343,13 @@ export default function AdsPage() {
         onSuccess={loadData}
       />
 
-      <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
+      <Dialog
+        open={isTopUpOpen}
+        onOpenChange={(open) => {
+          setIsTopUpOpen(open);
+          if (open) setTopUpPayment(createDefaultMobileMoneyPayment());
+        }}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Top Up Ads Balance</DialogTitle>
@@ -347,7 +359,9 @@ export default function AdsPage() {
           </DialogHeader>
           <div className="py-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium mb-1">Amount (ZMW)</label>
+              <label className="block text-sm font-medium mb-1">
+                Amount ({topUpPayment.currency})
+              </label>
               <input
                 type="number"
                 min="1"
@@ -356,16 +370,11 @@ export default function AdsPage() {
                 className="w-full border rounded-md p-2"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Mobile Money Number</label>
-              <input
-                type="tel"
-                placeholder="e.g. +260970000000"
-                value={topUpPhone}
-                onChange={(e) => setTopUpPhone(e.target.value)}
-                className="w-full border rounded-md p-2"
-              />
-            </div>
+            <MobileMoneyPaymentForm
+              value={topUpPayment}
+              onChange={setTopUpPayment}
+              disabled={isToppingUp}
+            />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsTopUpOpen(false)} disabled={isToppingUp}>
