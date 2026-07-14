@@ -107,13 +107,13 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
   {
     id: 'email',
     label: 'Email',
-    connect: false,
+    connect: true,
     publish: false,
     comments: false,
-    messaging: false,
-    oauth: false,
-    status: 'coming_soon',
-    notes: 'Copy generation only.',
+    messaging: true,
+    oauth: true,
+    status: 'available',
+    notes: 'Connect Gmail to send lead emails and configure email auto-replies.',
   },
   {
     id: 'ad_copy',

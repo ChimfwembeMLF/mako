@@ -810,6 +810,7 @@ export class NotificationsService {
         to: user.email,
         subject,
         body: text,
+        userId,
       });
     } else {
       await this.mail.sendGenericEmail(user.email, subject, text);

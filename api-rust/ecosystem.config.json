@@ -1,0 +1,32 @@
+{
+  "apps": [
+    {
+      "name": "Mako API Rust",
+      "script": "target/release/api-rust",
+      "cwd": ".",
+      "watch": false,
+      "error_file": "logs/mako-api-rust-error.log",
+      "out_file": "logs/mako-api-rust-output.log",
+      "log_date_format": "YYYY-MM-DD HH:mm:ss.SSS",
+      "merge_logs": true,
+      "autorestart": true,
+      "max_memory_restart": "2G",
+      "min_uptime": "10s",
+      "max_restarts": 10,
+      "restart_delay": 4000,
+      "kill_timeout": 10000,
+      "time": true,
+      "env": {
+        "NODE_ENV": "development",
+        "PORT": 4000,
+        "THROTTLE_ENABLED": "true"
+      },
+      "env_production": {
+        "NODE_ENV": "production",
+        "PORT": 4006,
+        "THROTTLE_ENABLED": "true",
+        "QUEUES_ENABLED": "true"
+      }
+    }
+  ]
+}

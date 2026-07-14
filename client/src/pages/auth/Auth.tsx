@@ -53,7 +53,7 @@ const SOCIAL_PROVIDERS = [
     label: "Google",
     Icon: GoogleIcon,
     theme:
-      "bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 shadow-sm",
+      "bg-slate-50 text-slate-900 border border-slate-300 hover:bg-slate-100 hover:text-slate-900 shadow-sm",
   },
   {
     id: "facebook" as const,
@@ -162,14 +162,14 @@ const Auth = () => {
         <Button
           key={`${variant}-${id}`}
           type="button"
-          variant="ghost"
+          variant="outline"
           size={variant === "mobile" ? "icon" : "sm"}
           className={cn(
             theme,
             variant === "mobile" &&
             "h-11 w-11 min-w-11 rounded-full p-0 [&_svg]:size-5",
             variant === "desktop" &&
-            "w-full h-9 rounded-full text-sm font-medium gap-2 justify-center border-transparent",
+            "w-full h-9 rounded-full text-sm font-medium gap-2 justify-center",
           )}
           onClick={() => handleSocialLogin(id)}
           aria-label={`Continue with ${label}`}

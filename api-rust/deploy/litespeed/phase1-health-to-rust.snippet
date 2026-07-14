@@ -1,0 +1,20 @@
+# Phase 1 — route only health checks to Rust (:4006)
+# Add to mako.tekreminnovations.com vhost ABOVE the broader `context /api` block.
+# NestJS stays primary for all other /api/* traffic on :4005.
+#
+# CyberPanel: Websites → mako.tekreminnovations.com → vHost Conf
+# File: /usr/local/lsws/conf/vhosts/mako.tekreminnovations.com/vhconf.conf
+#
+# After editing:
+#   sudo systemctl restart lsws
+#
+# Verify:
+#   curl -s https://mako.tekreminnovations.com/api/v1/health
+#   curl -s http://127.0.0.1:4006/api/v1/health
+#   curl -s http://127.0.0.1:4005/api/v1/health
+
+context /api/v1/health {
+  type                    proxy
+  handler                 127.0.0.1:4006
+  addDefaultCharset       off
+}

@@ -127,6 +127,53 @@ In the browser DevTools → Network, requests should go to `mako.tekreminnovatio
 
 ---
 
-## 5. Local development
+## 5. Rust API dual-run / cutover
+
+Run NestJS (`:4005`) and Rust (`:4006`) together, then shift LiteSpeed `context /api` to Rust.
+
+| Phase | LiteSpeed | Backends |
+|-------|-----------|----------|
+| Dual-run | `/api` → Nest; optional `/api/v1/health` → Rust | Both PM2 processes |
+| Cutover | `context /api` handler → `127.0.0.1:4006` | Rust primary |
+| Rollback | handler → `127.0.0.1:4005` | Nest primary |
+
+**Runbook:** [`RUST_CUTOVER.md`](./RUST_CUTOVER.md)  
+**Snippets:** `api-rust/deploy/litespeed/`  
+**Scripts:** `api-rust/scripts/dual-run-start.sh`, `api-rust/scripts/cutover-proxy-to-rust.sh`
+
+```bash
+# On server
+bash api-rust/scripts/dual-run-start.sh
+sudo bash api-rust/scripts/cutover-proxy-to-rust.sh phase1   # health → Rust
+sudo bash api-rust/scripts/cutover-proxy-to-rust.sh phase2   # full /api → Rust
+```
+
+Keep `context /uploads`, `/documentation`, and `/admin` on Nest until Rust serves those paths in production.
+
+---
+
+## 6. Full migration (one command)
+
+When smoke parity is clean locally on the server:
+
+```bash
+cd "$DEPLOY_PATH"
+sudo bash api-rust/scripts/migrate-everything.sh
+```
+
+This deploys Rust, runs smoke parity, cuts over LiteSpeed (`/api`, `/uploads`, `/documentation`, `/admin` → `:4006`), and verifies public health.
+
+Retire NestJS when stable:
+
+```bash
+bash api-rust/scripts/retire-nest-api.sh
+# or: RETIRE_NEST=true sudo bash api-rust/scripts/migrate-everything.sh
+```
+
+Snippet reference: `api-rust/deploy/litespeed/phase3-full-cutover.snippet`
+
+---
+
+## 7. Local development
 
 `vite.config.ts` proxies `/api` to `http://localhost:4000`. Leave `VITE_API_BASE_URL` empty in `.env` so the client uses `http://localhost:3000` (same origin as the Vite dev server).

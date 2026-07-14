@@ -1,0 +1,28 @@
+# Phase 3 — migrate all API proxy contexts to Rust (:4006)
+# Apply on mako.tekreminnovations.com vhost. SPA static files stay on docRoot.
+#
+# Or run: sudo bash api-rust/scripts/cutover-proxy-to-rust.sh full
+
+context /api {
+  type                    proxy
+  handler                 127.0.0.1:4006
+  addDefaultCharset       off
+}
+
+context /uploads {
+  type                    proxy
+  handler                 127.0.0.1:4006
+  addDefaultCharset       off
+}
+
+context /documentation {
+  type                    proxy
+  handler                 127.0.0.1:4006
+  addDefaultCharset       off
+}
+
+context /admin {
+  type                    proxy
+  handler                 127.0.0.1:4006
+  addDefaultCharset       off
+}

@@ -61,4 +61,15 @@ export class UserEntity {
 
   @Column({ nullable: true })
   isRegisteredWithInstagram?: boolean;
+
+  /** AES-256-GCM encrypted Google OAuth access token (Gmail API). */
+  @Column({ type: 'text', nullable: true, select: false })
+  googleAccessTokenEnc?: string;
+
+  /** AES-256-GCM encrypted Google OAuth refresh token. */
+  @Column({ type: 'text', nullable: true, select: false })
+  googleRefreshTokenEnc?: string;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  googleTokenExpiresAt?: Date;
 }

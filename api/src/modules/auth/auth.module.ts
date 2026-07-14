@@ -18,6 +18,7 @@ import { RefreshTokenEntity } from './entities/refresh-token.entity';
 import { RefreshTokenService } from './refresh-token.service';
 import { MailModule } from '../mail/mail.module';
 import { TenantMembersModule } from '../tenant_members/tenant_members.module';
+import { GmailService } from './gmail.service';
 
 @Module({
   imports: [
@@ -47,7 +48,8 @@ import { TenantMembersModule } from '../tenant_members/tenant_members.module';
     FacebookAuthService,
     LinkedInAuthService,
     InstagramAuthService,
+    GmailService,
   ],
-  exports: [AuthService, RefreshTokenService],
+  exports: [AuthService, RefreshTokenService, GmailService, GoogleAuthService],
 })
 export class AuthModule {}

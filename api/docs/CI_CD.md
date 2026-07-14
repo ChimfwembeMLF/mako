@@ -60,6 +60,50 @@ The server must already have:
 
 Deploy user SSH key should be authorized in `~/.ssh/authorized_keys`. The server's deploy key or HTTPS credentials must allow `git pull` from GitHub.
 
+## API Rust CI (`api-rust-ci.yml`)
+
+Runs on pull requests and pushes to `main` when files under `api-rust/` change.
+
+| Job | Required | What it does |
+|-----|----------|--------------|
+| **Build & test (api-rust)** | Yes | `cargo fmt --check`, `cargo test`, `cargo build --release`, validate `routes.json` + smoke script |
+| **Clippy (advisory)** | No | `cargo clippy -D warnings` |
+
+Local equivalent:
+
+```bash
+cd api-rust && ./scripts/ci-check.sh
+```
+
+### Branch protection (recommended)
+
+Add required status check **Build & test (api-rust)** when Rust is on the critical path.
+
+## API Rust CD (`deploy-api-rust.yml`)
+
+Deploys the Rust API when `main` changes under `api-rust/`, or manually via **Actions → Deploy API Rust → Run workflow**.
+
+On the server it runs `api-rust/scripts/deploy-production.sh`:
+
+1. `cargo build --release`
+2. PM2 restart **Mako API Rust** (`ecosystem.config.json`, port **4006** by default)
+3. Health check on `/api/v1/health`
+
+Optional manual input **Run smoke parity** compares Rust (`:4006`) vs NestJS (`:4005`) after deploy.
+
+Uses the same secrets as NestJS deploy (`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_PATH`).
+
+See **`api/docs/RUST_CUTOVER.md`** (runbook) and **`api-rust/docs/DUAL_RUN.md`** (LiteSpeed snippets).
+
+### First-time Rust server setup
+
+```bash
+cd api-rust
+ln -sf ../api/.env .env    # or copy production template
+./scripts/dual-run-start.sh   # deploy Rust + smoke vs Nest on :4005
+pm2 save
+```
+
 ### First-time server setup
 
 ```bash

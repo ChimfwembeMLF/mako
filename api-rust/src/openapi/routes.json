@@ -1,0 +1,1118 @@
+[
+  {
+    "method": "GET",
+    "path": "/",
+    "tag": "Root",
+    "module": "main.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ads/ai-assist",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ads/balance",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ads/campaigns",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ads/campaigns/{id}/embed-script",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ads/campaigns/{id}/metrics",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ads/campaigns/{id}/pause",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ads/campaigns/{id}/publish",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ads/dashboard-stats",
+    "tag": "Ads",
+    "module": "modules/ads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ai-usage/",
+    "tag": "Ai Usage",
+    "module": "modules/ai_usage/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai-usage/{id}",
+    "tag": "Ai Usage",
+    "module": "modules/ai_usage/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/ai/form-suggestions",
+    "tag": "Ai",
+    "module": "modules/ai/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai/health",
+    "tag": "Ai",
+    "module": "modules/ai/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/ai/models",
+    "tag": "Ai",
+    "module": "modules/ai/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analytics/ai-report",
+    "tag": "Analytics",
+    "module": "modules/analytics/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/analytics/insights",
+    "tag": "Analytics",
+    "module": "modules/analytics/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/audit-logs/",
+    "tag": "Audit Logs",
+    "module": "modules/audit_logs/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/audit-logs/{id}",
+    "tag": "Audit Logs",
+    "module": "modules/audit_logs/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/facebook",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/facebook-auth",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/facebook/redirect",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/forgot-password",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/google",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/google-auth",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/google/redirect",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/instagram",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/instagram-auth",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/instagram/redirect",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/linkedin",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/linkedin-auth",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/linkedin/redirect",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/login",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/logout",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/auth/me",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/refresh",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/register",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/auth/reset-password",
+    "tag": "Auth",
+    "module": "auth/controller.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backoffice/overview",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backoffice/plans",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backoffice/refunds",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/backoffice/refunds/{id}/approve",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/backoffice/refunds/{id}/reject",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backoffice/tenants",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/backoffice/tenants/{id}",
+    "tag": "Backoffice",
+    "module": "modules/backoffice/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/brand-profiles/",
+    "tag": "Brand Profiles",
+    "module": "modules/brand_profiles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/brand-profiles/mine",
+    "tag": "Brand Profiles",
+    "module": "modules/brand_profiles/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/brand-profiles/parse-document",
+    "tag": "Brand Profiles",
+    "module": "modules/brand_profiles/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/brand-profiles/scrape-website",
+    "tag": "Brand Profiles",
+    "module": "modules/brand_profiles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/brand-profiles/{id}",
+    "tag": "Brand Profiles",
+    "module": "modules/brand_profiles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chatbot/config",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chatbot/config/avatar",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chatbot/config/avatar-model",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chatbot/config/keys",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chatbot/config/keys/{id}",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chatbot/sessions",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chatbot/sessions/{id}",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chatbot/sessions/{id}/escalate",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chatbot/sessions/{id}/messages",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chatbot/sessions/{session_id}/messages/{message_id}/speech",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/chatbot/tts/preview",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/chatbot/tts/voices",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/chatbot/tts/voices/{id}",
+    "tag": "Chatbot",
+    "module": "modules/chatbot/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/adapt-platforms",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/auto-publish",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/daily-workflow",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/generate",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/generate-image",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/generate-slideshow",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/repurpose",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-ai/{content_id}/publish",
+    "tag": "Content Ai",
+    "module": "modules/content_ai/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-items/",
+    "tag": "Content Items",
+    "module": "modules/content_items/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-items/bulk-delete",
+    "tag": "Content Items",
+    "module": "modules/content_items/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/content-items/{id}",
+    "tag": "Content Items",
+    "module": "modules/content_items/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/content-items/{id}/details",
+    "tag": "Content Items",
+    "module": "modules/content_items/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/content-items/{id}/media",
+    "tag": "Content Items",
+    "module": "modules/content_items/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/deposits/",
+    "tag": "Deposits",
+    "module": "modules/deposits/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/deposits/{id}",
+    "tag": "Deposits",
+    "module": "modules/deposits/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/health/",
+    "tag": "Health",
+    "module": "modules/health/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/inbox/conversations",
+    "tag": "Inbox",
+    "module": "modules/social_inbox/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/inbox/messages",
+    "tag": "Inbox",
+    "module": "modules/social_inbox/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/inbox/messages/reply",
+    "tag": "Inbox",
+    "module": "modules/social_inbox/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/inbox/sync",
+    "tag": "Inbox",
+    "module": "modules/social_inbox/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/knowledge/documents",
+    "tag": "Knowledge",
+    "module": "modules/knowledge/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge/documents/sync-mistral",
+    "tag": "Knowledge",
+    "module": "modules/knowledge/mod.rs"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/knowledge/documents/{id}",
+    "tag": "Knowledge",
+    "module": "modules/knowledge/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/knowledge/documents/{id}/reindex",
+    "tag": "Knowledge",
+    "module": "modules/knowledge/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/lead-source/",
+    "tag": "Lead Source",
+    "module": "modules/lead_sources/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/lead-source/{id}",
+    "tag": "Lead Source",
+    "module": "modules/lead_sources/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/leads/",
+    "tag": "Leads",
+    "module": "modules/leads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/leads/send-email",
+    "tag": "Leads",
+    "module": "modules/leads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/leads/webhook",
+    "tag": "Leads",
+    "module": "modules/leads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/leads/{id}",
+    "tag": "Leads",
+    "module": "modules/leads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/data-deletion",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/legal/data-deletion",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/legal/data-deletion-request",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/data-deletion.html",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/data-protection/consent",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/legal/deauthorize",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/deletion-status",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/privacy",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/privacy.html",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/terms",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/terms.html",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/legal/urls",
+    "tag": "Legal",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/media/",
+    "tag": "Media",
+    "module": "modules/media/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/media/upload",
+    "tag": "Media",
+    "module": "modules/media/mod.rs"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/media/{id}",
+    "tag": "Media",
+    "module": "modules/media/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/notifications/mark-all-read",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/preferences",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/reports/catalog",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/reports/{report_id}",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/reports/{report_id}/export",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/notifications/unread-count",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/notifications/{id}/read",
+    "tag": "Notifications",
+    "module": "modules/notifications/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/ads-deposit",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/deposits/check-pending",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/deposits/initiate",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments/deposits/tenant/{tenant_id}",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/deposits/{deposit_id}/check",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/payments/deposits/{deposit_id}/invoice",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/deposits/{deposit_id}/refund-request",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/payments/webhooks/deposit",
+    "tag": "Payments",
+    "module": "modules/payments/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/permissions/",
+    "tag": "Permissions",
+    "module": "modules/permissions/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/permissions/{id}",
+    "tag": "Permissions",
+    "module": "modules/permissions/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/plans/",
+    "tag": "Plans",
+    "module": "modules/plans/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/platforms/capabilities",
+    "tag": "Platforms",
+    "module": "modules/platforms/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/profiles/",
+    "tag": "Profiles",
+    "module": "modules/profiles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/profiles/{id}",
+    "tag": "Profiles",
+    "module": "modules/profiles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/queues/queues",
+    "tag": "Queues",
+    "module": "modules/queues/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/queues/{queue}/jobs",
+    "tag": "Queues",
+    "module": "modules/queues/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/queues/{queue}/jobs/{job_id}",
+    "tag": "Queues",
+    "module": "modules/queues/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/queues/{queue}/jobs/{job_id}/retry",
+    "tag": "Queues",
+    "module": "modules/queues/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/queues/{queue}/retry-failed",
+    "tag": "Queues",
+    "module": "modules/queues/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/queues/{queue}/stats",
+    "tag": "Queues",
+    "module": "modules/queues/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/effective-permissions/{tenant_id}/{user_id}",
+    "tag": "Rbac",
+    "module": "modules/rbac/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/permissions/check/{tenant_id}/{user_id}",
+    "tag": "Rbac",
+    "module": "modules/rbac/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/rbac/roles/check/{tenant_id}/{user_id}",
+    "tag": "Rbac",
+    "module": "modules/rbac/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/roles/",
+    "tag": "Roles",
+    "module": "modules/roles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/roles/{id}",
+    "tag": "Roles",
+    "module": "modules/roles/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/search/",
+    "tag": "Search",
+    "module": "modules/search/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/search/ask",
+    "tag": "Search",
+    "module": "modules/search/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/subscriptions/tenant/{tenant_id}",
+    "tag": "Subscriptions",
+    "module": "modules/subscriptions/mod.rs"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/subscriptions/tenant/{tenant_id}/auto-renew",
+    "tag": "Subscriptions",
+    "module": "modules/subscriptions/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/templates/",
+    "tag": "Templates",
+    "module": "modules/templates/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/templates/{id}",
+    "tag": "Templates",
+    "module": "modules/templates/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tenant-members/",
+    "tag": "Tenant Members",
+    "module": "modules/tenant_members/mod.rs"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/tenant-members/invitations/{id}",
+    "tag": "Tenant Members",
+    "module": "modules/tenant_members/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tenant-members/invite",
+    "tag": "Tenant Members",
+    "module": "modules/tenant_members/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenant-members/me",
+    "tag": "Tenant Members",
+    "module": "modules/tenant_members/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenant-members/{id}",
+    "tag": "Tenant Members",
+    "module": "modules/tenant_members/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/tenants/",
+    "tag": "Tenants",
+    "module": "modules/tenants/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenants/mine",
+    "tag": "Tenants",
+    "module": "modules/tenants/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/tenants/{id}",
+    "tag": "Tenants",
+    "module": "modules/tenants/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/users/",
+    "tag": "Users",
+    "module": "modules/users/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/data-deletion",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/meta/data-deletion",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/meta/data-deletion-request",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/data-deletion.html",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/data-protection/consent",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/webhooks/meta/deauthorize",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/deletion-status",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/privacy",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/privacy.html",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/terms",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/terms.html",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/webhooks/meta/urls",
+    "tag": "Meta",
+    "module": "modules/legal/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/whatsapp/connection-status",
+    "tag": "Whatsapp",
+    "module": "modules/whatsapp/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/whatsapp/conversations",
+    "tag": "Whatsapp",
+    "module": "modules/whatsapp/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/whatsapp/flows/config",
+    "tag": "Whatsapp",
+    "module": "modules/whatsapp/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/whatsapp/flows/sessions",
+    "tag": "Whatsapp",
+    "module": "modules/whatsapp/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/whatsapp/messages",
+    "tag": "Whatsapp",
+    "module": "modules/whatsapp/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/whatsapp/messages/reply",
+    "tag": "Whatsapp",
+    "module": "modules/whatsapp/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/widget/config",
+    "tag": "Widget",
+    "module": "modules/widget/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/widget/sessions",
+    "tag": "Widget",
+    "module": "modules/widget/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/widget/sessions/{id}/messages",
+    "tag": "Widget",
+    "module": "modules/widget/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/widget/sessions/{id}/suggestions",
+    "tag": "Widget",
+    "module": "modules/widget/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/widget/sessions/{session_id}/messages/{message_id}/speech",
+    "tag": "Widget",
+    "module": "modules/widget/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/workspaces/",
+    "tag": "Workspaces",
+    "module": "modules/workspaces/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/workspaces/{id}",
+    "tag": "Workspaces",
+    "module": "modules/workspaces/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/embed-ads/click/{id}",
+    "tag": "Embed Ads",
+    "module": "modules/embed_ads/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/embed-ads/widget/{*rest}",
+    "tag": "Embed Ads",
+    "module": "modules/embed_ads/mod.rs"
+  },
+  {
+    "method": "POST",
+    "path": "/payment-failures/",
+    "tag": "Payment Failures",
+    "module": "modules/payment_failures/mod.rs"
+  },
+  {
+    "method": "GET",
+    "path": "/payment-failures/{id}",
+    "tag": "Payment Failures",
+    "module": "modules/payment_failures/mod.rs"
+  }
+]

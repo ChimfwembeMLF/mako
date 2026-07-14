@@ -1,0 +1,20 @@
+# Phase 2 — full /api cutover to Rust (:4006)
+# Replace the existing `context /api` block in mako.tekreminnovations.com vhost.
+# Remove the Phase 1 `context /api/v1/health` block (redundant once /api points to Rust).
+#
+# Keep /uploads, /documentation, /admin on Nest (:4005) until Rust serves those paths
+# in production (Nest still hosts SPA static assets via SERVE_CLIENT).
+#
+# After editing:
+#   sudo systemctl restart lsws
+#
+# Verify:
+#   curl -s https://mako.tekreminnovations.com/api/v1/health
+#   RUST_BASE=http://127.0.0.1:4006 NEST_BASE=http://127.0.0.1:4005 \
+#     api-rust/scripts/smoke-parity.sh
+
+context /api {
+  type                    proxy
+  handler                 127.0.0.1:4006
+  addDefaultCharset       off
+}

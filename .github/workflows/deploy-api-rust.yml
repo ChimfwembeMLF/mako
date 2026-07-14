@@ -1,0 +1,57 @@
+name: Deploy API Rust
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_smoke:
+        description: "Run smoke parity against NestJS after deploy"
+        type: boolean
+        default: false
+  push:
+    branches: [main]
+    paths:
+      - "api-rust/**"
+      - ".github/workflows/deploy-api-rust.yml"
+
+concurrency:
+  group: api-rust-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy Rust API to production
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          RUN_SMOKE: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_smoke == true && 'true' || 'false' }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          envs: DEPLOY_PATH,RUN_SMOKE
+          script_stop: true
+          script: |
+            set -euo pipefail
+
+            if [ -z "${DEPLOY_PATH:-}" ]; then
+              echo "DEPLOY_PATH secret is not set."
+              exit 1
+            fi
+
+            cd "$DEPLOY_PATH"
+            git fetch origin main
+            git checkout -f main
+            git reset --hard origin/main
+
+            bash api-rust/scripts/deploy-production.sh
+
+            if [ "$RUN_SMOKE" = "true" ]; then
+              RUST_BASE="http://127.0.0.1:${RUST_PORT:-4006}"
+              NEST_BASE="http://127.0.0.1:${NEST_PORT:-4005}"
+              api-rust/scripts/smoke-parity.sh || echo "Smoke parity reported mismatches (non-fatal on deploy)"
+            fi

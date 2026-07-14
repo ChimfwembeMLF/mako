@@ -7,7 +7,7 @@ import { LeadsController } from './leads.controller';
 import { LeadClassifyService } from './services/lead-classify.service';
 import { LeadEmailService } from './services/lead-email.service';
 import { AiModule } from '../ai/ai.module';
-import { MailModule } from '../mail/mail.module';
+import { AuthModule } from '../auth/auth.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { QueuesModule } from '../queues/queues.module';
 
@@ -16,6 +16,7 @@ import { QueuesModule } from '../queues/queues.module';
     TypeOrmModule.forFeature([Leads, LeadSources]),
     AiModule,
     MailModule,
+    AuthModule,
     SubscriptionsModule,
     forwardRef(() => QueuesModule),
   ],

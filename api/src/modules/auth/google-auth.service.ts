@@ -13,6 +13,12 @@ type GoogleUserData = {
   picture?: string | null;
 };
 
+export type GoogleOAuthTokens = {
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt?: Date;
+};
+
 @Injectable()
 export class GoogleAuthService {
   private readonly oauthClient: Auth.OAuth2Client;
@@ -37,7 +43,10 @@ export class GoogleAuthService {
     };
   }
 
-  async authenticate(token: string): Promise<UserEntity> {
+  async authenticate(
+    token: string,
+    oauthTokens?: GoogleOAuthTokens,
+  ): Promise<UserEntity> {
     try {
       const userData = await this.getUserData(token);
 
@@ -46,22 +55,35 @@ export class GoogleAuthService {
         throw new BadRequestException('Invalid token');
       }
 
-      const user = await this.userService.findOne({ email });
-      if (user) return user;
+      let user = await this.userService.findOne({ email });
+      if (!user) {
+        const newUser: SocialAuthRegisterDto = {
+          provider: 'google',
+          providerId: userData?.email ?? undefined,
+          firstName: userData.given_name ?? undefined,
+          lastName: userData.family_name ?? undefined,
+          email,
+          isRegisteredWithGoogle: true,
+          avatar: userData.picture ?? undefined,
+        };
 
-      const newUser: SocialAuthRegisterDto = {
-        provider: 'google',
-        providerId: userData?.email ?? undefined,
-        firstName: userData.given_name ?? undefined,
-        lastName: userData.family_name ?? undefined,
-        email,
-        isRegisteredWithGoogle: true,
-        avatar: userData.picture ?? undefined,
-      };
+        user = await this.userService.createSociallAuthUser(newUser);
+      }
 
-      return await this.userService.createSociallAuthUser(newUser);
+      const tokens: GoogleOAuthTokens = oauthTokens ?? { accessToken: token };
+      await this.userService.updateGoogleOAuthTokens(user.id, {
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
+        expiresAt:
+          tokens.expiresAt ??
+          new Date(Date.now() + 55 * 60 * 1000),
+      });
+
+      return user;
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(
+        error instanceof Error ? error.message : 'Google auth failed',
+      );
       throw new BadRequestException('Invalid token');
     }
   }
@@ -76,5 +98,24 @@ export class GoogleAuthService {
     });
 
     return data;
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<{
+    accessToken: string;
+    expiresAt?: Date;
+    refreshToken?: string;
+  }> {
+    this.oauthClient.setCredentials({ refresh_token: refreshToken });
+    const { credentials } = await this.oauthClient.refreshAccessToken();
+    if (!credentials.access_token) {
+      throw new BadRequestException('Failed to refresh Google access token');
+    }
+    return {
+      accessToken: credentials.access_token,
+      refreshToken: credentials.refresh_token ?? undefined,
+      expiresAt: credentials.expiry_date
+        ? new Date(credentials.expiry_date)
+        : undefined,
+    };
   }
 }

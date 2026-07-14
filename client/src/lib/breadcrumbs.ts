@@ -36,6 +36,7 @@ const ROUTE_PATTERNS: RoutePattern[] = [
   { path: '/campaigns', crumbs: [DASH, { label: 'Campaigns' }] },
   { path: '/scheduler', crumbs: [DASH, { label: 'Scheduler' }] },
   { path: '/leads', crumbs: [DASH, { label: 'Lead Agent' }] },
+  { path: '/mail', crumbs: [DASH, { label: 'Mail' }] },
   { path: '/analytics', crumbs: [DASH, { label: 'Analytics' }] },
   { path: '/reports', crumbs: [DASH, { label: 'Reports' }] },
   { path: '/publisher', crumbs: [DASH, { label: 'Publisher Connect' }] },

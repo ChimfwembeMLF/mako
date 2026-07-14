@@ -2,7 +2,7 @@ import {
   Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings, Bot,
   Link2, Image, LayoutTemplate, MessageSquareReply,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck,
-  Building2, CreditCard, Download, Activity, History,
+  Building2, CreditCard, Download, Activity, History, Mail,
 } from "lucide-react";
 import { P, type PermissionKey } from "@/lib/permissions";
 
@@ -32,6 +32,7 @@ export const NAV_GROUPS: NavGroup[] = [
     label: "Engage",
     items: [
       { title: "Lead Agent", url: "/leads", icon: MessageSquare, description: "Qualify & reply to leads", keywords: "leads inbox qualify contacts" },
+      { title: "Mail", url: "/mail", icon: Mail, description: "Gmail & email auto-replies", keywords: "gmail email connect send mail" },
       { title: "Replies", url: "/replies", icon: MessageSquareReply, description: "Auto-reply rules", keywords: "comments auto reply rules" },
       { title: "Chatbot", url: "/chatbot", icon: Bot, description: "AI assistant & widget", permission: P.chatbot.view, keywords: "chatbot widget assistant rag" },
       { title: "Conversation Log", url: "/chatbot/sessions", icon: History, description: "Widget & playground transcripts", permission: P.chatbot.view, keywords: "chat sessions transcripts history" },

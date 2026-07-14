@@ -95,12 +95,21 @@ export class LeadsController {
   @Post('send-email')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async sendEmail(@Body() body: { to: string; subject: string; body: string }) {
+  async sendEmail(
+    @Req() req: { user: JwtUser },
+    @Body() body: { to: string; subject: string; body: string },
+  ) {
     if (this.queueDispatch.isEnabled()) {
-      const { jobId, queue } = await this.queueDispatch.enqueueEmail(body);
+      const { jobId, queue } = await this.queueDispatch.enqueueEmail({
+        ...body,
+        userId: String(req.user.sub),
+      });
       return { queued: true, jobId, queue };
     }
-    return this.leadEmail.sendLeadEmail(body);
+    return this.leadEmail.sendLeadEmail({
+      ...body,
+      userId: String(req.user.sub),
+    });
   }
 
   @Post()

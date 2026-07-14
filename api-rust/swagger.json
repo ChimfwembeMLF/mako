@@ -1,0 +1,6291 @@
+{
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "description": "JWT access token from POST /api/v1/auth/login",
+        "scheme": "bearer",
+        "type": "http"
+      },
+      "widget-api-key": {
+        "bearerFormat": "API Key",
+        "description": "Widget API key for /api/v1/widget/* routes",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "description": "### REST\n\nRoutes follow REST conventions (Richardson level 3).\n\n**Auth:** Most `/api/v1/*` routes require `Authorization: Bearer <access_token>`.\n\n**Widget:** `/api/v1/widget/*` routes accept a widget API key as Bearer token.\n\nThis is the Rust port of the Mako API — parity with NestJS at `/documentation`.",
+    "title": "Mako API (Rust)",
+    "version": "0.0.1"
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "get_",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /",
+        "tags": [
+          "Root"
+        ]
+      }
+    },
+    "/api/v1/ads/ai-assist": {
+      "post": {
+        "operationId": "post_api_v1_ads_ai_assist",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/ads/ai-assist",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/balance": {
+      "get": {
+        "operationId": "get_api_v1_ads_balance",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ads/balance",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns": {
+      "post": {
+        "operationId": "post_api_v1_ads_campaigns",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/ads/campaigns",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/embed-script": {
+      "get": {
+        "operationId": "get_api_v1_ads_campaigns__id__embed_script",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ads/campaigns/{id}/embed-script",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/metrics": {
+      "get": {
+        "operationId": "get_api_v1_ads_campaigns__id__metrics",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ads/campaigns/{id}/metrics",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/pause": {
+      "post": {
+        "operationId": "post_api_v1_ads_campaigns__id__pause",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/ads/campaigns/{id}/pause",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/campaigns/{id}/publish": {
+      "post": {
+        "operationId": "post_api_v1_ads_campaigns__id__publish",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/ads/campaigns/{id}/publish",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ads/dashboard-stats": {
+      "get": {
+        "operationId": "get_api_v1_ads_dashboard_stats",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ads/dashboard-stats",
+        "tags": [
+          "Ads"
+        ]
+      }
+    },
+    "/api/v1/ai-usage/": {
+      "post": {
+        "operationId": "post_api_v1_ai_usage",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/ai-usage/",
+        "tags": [
+          "Ai Usage"
+        ]
+      }
+    },
+    "/api/v1/ai-usage/{id}": {
+      "get": {
+        "operationId": "get_api_v1_ai_usage__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ai-usage/{id}",
+        "tags": [
+          "Ai Usage"
+        ]
+      }
+    },
+    "/api/v1/ai/form-suggestions": {
+      "post": {
+        "operationId": "post_api_v1_ai_form_suggestions",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/ai/form-suggestions",
+        "tags": [
+          "Ai"
+        ]
+      }
+    },
+    "/api/v1/ai/health": {
+      "get": {
+        "operationId": "get_api_v1_ai_health",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ai/health",
+        "tags": [
+          "Ai"
+        ]
+      }
+    },
+    "/api/v1/ai/models": {
+      "get": {
+        "operationId": "get_api_v1_ai_models",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/ai/models",
+        "tags": [
+          "Ai"
+        ]
+      }
+    },
+    "/api/v1/analytics/ai-report": {
+      "get": {
+        "operationId": "get_api_v1_analytics_ai_report",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/analytics/ai-report",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/insights": {
+      "get": {
+        "operationId": "get_api_v1_analytics_insights",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/analytics/insights",
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/v1/audit-logs/": {
+      "post": {
+        "operationId": "post_api_v1_audit_logs",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/audit-logs/",
+        "tags": [
+          "Audit Logs"
+        ]
+      }
+    },
+    "/api/v1/audit-logs/{id}": {
+      "get": {
+        "operationId": "get_api_v1_audit_logs__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/audit-logs/{id}",
+        "tags": [
+          "Audit Logs"
+        ]
+      }
+    },
+    "/api/v1/auth/facebook": {
+      "get": {
+        "operationId": "get_api_v1_auth_facebook",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/facebook",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/facebook-auth": {
+      "post": {
+        "operationId": "post_api_v1_auth_facebook_auth",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/facebook-auth",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/facebook/redirect": {
+      "get": {
+        "operationId": "get_api_v1_auth_facebook_redirect",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/facebook/redirect",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/forgot-password": {
+      "post": {
+        "operationId": "post_api_v1_auth_forgot_password",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/forgot-password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google": {
+      "get": {
+        "operationId": "get_api_v1_auth_google",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/google",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google-auth": {
+      "post": {
+        "operationId": "post_api_v1_auth_google_auth",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/google-auth",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/google/redirect": {
+      "get": {
+        "operationId": "get_api_v1_auth_google_redirect",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/google/redirect",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/instagram": {
+      "get": {
+        "operationId": "get_api_v1_auth_instagram",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/instagram",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/instagram-auth": {
+      "post": {
+        "operationId": "post_api_v1_auth_instagram_auth",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/instagram-auth",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/instagram/redirect": {
+      "get": {
+        "operationId": "get_api_v1_auth_instagram_redirect",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/instagram/redirect",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/linkedin": {
+      "get": {
+        "operationId": "get_api_v1_auth_linkedin",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/linkedin",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/linkedin-auth": {
+      "post": {
+        "operationId": "post_api_v1_auth_linkedin_auth",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/linkedin-auth",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/linkedin/redirect": {
+      "get": {
+        "operationId": "get_api_v1_auth_linkedin_redirect",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/auth/linkedin/redirect",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "operationId": "post_api_v1_auth_login",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/login",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "operationId": "post_api_v1_auth_logout",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/auth/logout",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "operationId": "get_api_v1_auth_me",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/auth/me",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/refresh": {
+      "post": {
+        "operationId": "post_api_v1_auth_refresh",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/refresh",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "operationId": "post_api_v1_auth_register",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/register",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "operationId": "post_api_v1_auth_reset_password",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/auth/reset-password",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/backoffice/overview": {
+      "get": {
+        "operationId": "get_api_v1_backoffice_overview",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/backoffice/overview",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/plans": {
+      "get": {
+        "operationId": "get_api_v1_backoffice_plans",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/backoffice/plans",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds": {
+      "get": {
+        "operationId": "get_api_v1_backoffice_refunds",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/backoffice/refunds",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds/{id}/approve": {
+      "post": {
+        "operationId": "post_api_v1_backoffice_refunds__id__approve",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/backoffice/refunds/{id}/approve",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds/{id}/reject": {
+      "post": {
+        "operationId": "post_api_v1_backoffice_refunds__id__reject",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/backoffice/refunds/{id}/reject",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/tenants": {
+      "get": {
+        "operationId": "get_api_v1_backoffice_tenants",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/backoffice/tenants",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/tenants/{id}": {
+      "get": {
+        "operationId": "get_api_v1_backoffice_tenants__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/backoffice/tenants/{id}",
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/brand-profiles/": {
+      "post": {
+        "operationId": "post_api_v1_brand_profiles",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/brand-profiles/",
+        "tags": [
+          "Brand Profiles"
+        ]
+      }
+    },
+    "/api/v1/brand-profiles/mine": {
+      "get": {
+        "operationId": "get_api_v1_brand_profiles_mine",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/brand-profiles/mine",
+        "tags": [
+          "Brand Profiles"
+        ]
+      }
+    },
+    "/api/v1/brand-profiles/parse-document": {
+      "post": {
+        "operationId": "post_api_v1_brand_profiles_parse_document",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/brand-profiles/parse-document",
+        "tags": [
+          "Brand Profiles"
+        ]
+      }
+    },
+    "/api/v1/brand-profiles/scrape-website": {
+      "post": {
+        "operationId": "post_api_v1_brand_profiles_scrape_website",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/brand-profiles/scrape-website",
+        "tags": [
+          "Brand Profiles"
+        ]
+      }
+    },
+    "/api/v1/brand-profiles/{id}": {
+      "get": {
+        "operationId": "get_api_v1_brand_profiles__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/brand-profiles/{id}",
+        "tags": [
+          "Brand Profiles"
+        ]
+      }
+    },
+    "/api/v1/chatbot/config": {
+      "get": {
+        "operationId": "get_api_v1_chatbot_config",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/chatbot/config",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/config/avatar": {
+      "post": {
+        "operationId": "post_api_v1_chatbot_config_avatar",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/chatbot/config/avatar",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/config/avatar-model": {
+      "post": {
+        "operationId": "post_api_v1_chatbot_config_avatar_model",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/chatbot/config/avatar-model",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/config/keys": {
+      "post": {
+        "operationId": "post_api_v1_chatbot_config_keys",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/chatbot/config/keys",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/config/keys/{id}": {
+      "delete": {
+        "operationId": "delete_api_v1_chatbot_config_keys__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "DELETE /api/v1/chatbot/config/keys/{id}",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/sessions": {
+      "get": {
+        "operationId": "get_api_v1_chatbot_sessions",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/chatbot/sessions",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/sessions/{id}": {
+      "delete": {
+        "operationId": "delete_api_v1_chatbot_sessions__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "DELETE /api/v1/chatbot/sessions/{id}",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/sessions/{id}/escalate": {
+      "post": {
+        "operationId": "post_api_v1_chatbot_sessions__id__escalate",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/chatbot/sessions/{id}/escalate",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/sessions/{id}/messages": {
+      "get": {
+        "operationId": "get_api_v1_chatbot_sessions__id__messages",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/chatbot/sessions/{id}/messages",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/sessions/{session_id}/messages/{message_id}/speech": {
+      "post": {
+        "operationId": "post_api_v1_chatbot_sessions__session_id__messages__message_id__speech",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/chatbot/sessions/{session_id}/messages/{message_id}/speech",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/tts/preview": {
+      "post": {
+        "operationId": "post_api_v1_chatbot_tts_preview",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/chatbot/tts/preview",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/tts/voices": {
+      "get": {
+        "operationId": "get_api_v1_chatbot_tts_voices",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/chatbot/tts/voices",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/tts/voices/{id}": {
+      "delete": {
+        "operationId": "delete_api_v1_chatbot_tts_voices__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "DELETE /api/v1/chatbot/tts/voices/{id}",
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/content-ai/adapt-platforms": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_adapt_platforms",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/adapt-platforms",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/auto-publish": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_auto_publish",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/auto-publish",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/daily-workflow": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_daily_workflow",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/daily-workflow",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/generate": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_generate",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/generate",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/generate-image": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_generate_image",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/generate-image",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/generate-slideshow": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_generate_slideshow",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/generate-slideshow",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/repurpose": {
+      "post": {
+        "operationId": "post_api_v1_content_ai_repurpose",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/repurpose",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-ai/{content_id}/publish": {
+      "post": {
+        "operationId": "post_api_v1_content_ai__content_id__publish",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-ai/{content_id}/publish",
+        "tags": [
+          "Content Ai"
+        ]
+      }
+    },
+    "/api/v1/content-items/": {
+      "post": {
+        "operationId": "post_api_v1_content_items",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-items/",
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
+    "/api/v1/content-items/bulk-delete": {
+      "post": {
+        "operationId": "post_api_v1_content_items_bulk_delete",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-items/bulk-delete",
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
+    "/api/v1/content-items/{id}": {
+      "get": {
+        "operationId": "get_api_v1_content_items__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/content-items/{id}",
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
+    "/api/v1/content-items/{id}/details": {
+      "get": {
+        "operationId": "get_api_v1_content_items__id__details",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/content-items/{id}/details",
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
+    "/api/v1/content-items/{id}/media": {
+      "post": {
+        "operationId": "post_api_v1_content_items__id__media",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/content-items/{id}/media",
+        "tags": [
+          "Content Items"
+        ]
+      }
+    },
+    "/api/v1/deposits/": {
+      "post": {
+        "operationId": "post_api_v1_deposits",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/deposits/",
+        "tags": [
+          "Deposits"
+        ]
+      }
+    },
+    "/api/v1/deposits/{id}": {
+      "get": {
+        "operationId": "get_api_v1_deposits__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/deposits/{id}",
+        "tags": [
+          "Deposits"
+        ]
+      }
+    },
+    "/api/v1/health/": {
+      "get": {
+        "operationId": "get_api_v1_health",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/health/",
+        "tags": [
+          "Health"
+        ]
+      }
+    },
+    "/api/v1/inbox/conversations": {
+      "get": {
+        "operationId": "get_api_v1_inbox_conversations",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/inbox/conversations",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/messages": {
+      "get": {
+        "operationId": "get_api_v1_inbox_messages",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/inbox/messages",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/messages/reply": {
+      "post": {
+        "operationId": "post_api_v1_inbox_messages_reply",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/inbox/messages/reply",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/inbox/sync": {
+      "post": {
+        "operationId": "post_api_v1_inbox_sync",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/inbox/sync",
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
+    "/api/v1/knowledge/documents": {
+      "get": {
+        "operationId": "get_api_v1_knowledge_documents",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/knowledge/documents",
+        "tags": [
+          "Knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/documents/sync-mistral": {
+      "post": {
+        "operationId": "post_api_v1_knowledge_documents_sync_mistral",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/knowledge/documents/sync-mistral",
+        "tags": [
+          "Knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/documents/{id}": {
+      "patch": {
+        "operationId": "patch_api_v1_knowledge_documents__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "PATCH /api/v1/knowledge/documents/{id}",
+        "tags": [
+          "Knowledge"
+        ]
+      }
+    },
+    "/api/v1/knowledge/documents/{id}/reindex": {
+      "post": {
+        "operationId": "post_api_v1_knowledge_documents__id__reindex",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/knowledge/documents/{id}/reindex",
+        "tags": [
+          "Knowledge"
+        ]
+      }
+    },
+    "/api/v1/lead-source/": {
+      "post": {
+        "operationId": "post_api_v1_lead_source",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/lead-source/",
+        "tags": [
+          "Lead Source"
+        ]
+      }
+    },
+    "/api/v1/lead-source/{id}": {
+      "get": {
+        "operationId": "get_api_v1_lead_source__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/lead-source/{id}",
+        "tags": [
+          "Lead Source"
+        ]
+      }
+    },
+    "/api/v1/leads/": {
+      "post": {
+        "operationId": "post_api_v1_leads",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/leads/",
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/leads/send-email": {
+      "post": {
+        "operationId": "post_api_v1_leads_send_email",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/leads/send-email",
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/leads/webhook": {
+      "post": {
+        "operationId": "post_api_v1_leads_webhook",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/leads/webhook",
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/leads/{id}": {
+      "get": {
+        "operationId": "get_api_v1_leads__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/leads/{id}",
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
+    "/api/v1/legal/": {
+      "get": {
+        "operationId": "get_api_v1_legal",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/data-deletion": {
+      "get": {
+        "operationId": "get_api_v1_legal_data_deletion",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/data-deletion",
+        "tags": [
+          "Legal"
+        ]
+      },
+      "post": {
+        "operationId": "post_api_v1_legal_data_deletion",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/legal/data-deletion",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/data-deletion-request": {
+      "post": {
+        "operationId": "post_api_v1_legal_data_deletion_request",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/legal/data-deletion-request",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/data-deletion.html": {
+      "get": {
+        "operationId": "get_api_v1_legal_data_deletion.html",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/data-deletion.html",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/data-protection/consent": {
+      "get": {
+        "operationId": "get_api_v1_legal_data_protection_consent",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/data-protection/consent",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/deauthorize": {
+      "post": {
+        "operationId": "post_api_v1_legal_deauthorize",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /api/v1/legal/deauthorize",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/deletion-status": {
+      "get": {
+        "operationId": "get_api_v1_legal_deletion_status",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/deletion-status",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/privacy": {
+      "get": {
+        "operationId": "get_api_v1_legal_privacy",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/privacy",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/privacy.html": {
+      "get": {
+        "operationId": "get_api_v1_legal_privacy.html",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/privacy.html",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/terms": {
+      "get": {
+        "operationId": "get_api_v1_legal_terms",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/terms",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/terms.html": {
+      "get": {
+        "operationId": "get_api_v1_legal_terms.html",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/terms.html",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/legal/urls": {
+      "get": {
+        "operationId": "get_api_v1_legal_urls",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /api/v1/legal/urls",
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/media/": {
+      "get": {
+        "operationId": "get_api_v1_media",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/media/",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/media/upload": {
+      "post": {
+        "operationId": "post_api_v1_media_upload",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/media/upload",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/media/{id}": {
+      "delete": {
+        "operationId": "delete_api_v1_media__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "DELETE /api/v1/media/{id}",
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/notifications/": {
+      "get": {
+        "operationId": "get_api_v1_notifications",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/notifications/",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/mark-all-read": {
+      "post": {
+        "operationId": "post_api_v1_notifications_mark_all_read",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/notifications/mark-all-read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/preferences": {
+      "get": {
+        "operationId": "get_api_v1_notifications_preferences",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/notifications/preferences",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/reports/catalog": {
+      "get": {
+        "operationId": "get_api_v1_notifications_reports_catalog",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/notifications/reports/catalog",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/reports/{report_id}": {
+      "get": {
+        "operationId": "get_api_v1_notifications_reports__report_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/notifications/reports/{report_id}",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/reports/{report_id}/export": {
+      "get": {
+        "operationId": "get_api_v1_notifications_reports__report_id__export",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/notifications/reports/{report_id}/export",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/unread-count": {
+      "get": {
+        "operationId": "get_api_v1_notifications_unread_count",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/notifications/unread-count",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "operationId": "patch_api_v1_notifications__id__read",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "PATCH /api/v1/notifications/{id}/read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/v1/payments/ads-deposit": {
+      "post": {
+        "operationId": "post_api_v1_payments_ads_deposit",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/payments/ads-deposit",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/check-pending": {
+      "post": {
+        "operationId": "post_api_v1_payments_deposits_check_pending",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/payments/deposits/check-pending",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/initiate": {
+      "post": {
+        "operationId": "post_api_v1_payments_deposits_initiate",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/payments/deposits/initiate",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/tenant/{tenant_id}": {
+      "get": {
+        "operationId": "get_api_v1_payments_deposits_tenant__tenant_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/payments/deposits/tenant/{tenant_id}",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/{deposit_id}/check": {
+      "post": {
+        "operationId": "post_api_v1_payments_deposits__deposit_id__check",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/payments/deposits/{deposit_id}/check",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/{deposit_id}/invoice": {
+      "get": {
+        "operationId": "get_api_v1_payments_deposits__deposit_id__invoice",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/payments/deposits/{deposit_id}/invoice",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/{deposit_id}/refund-request": {
+      "post": {
+        "operationId": "post_api_v1_payments_deposits__deposit_id__refund_request",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/payments/deposits/{deposit_id}/refund-request",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/webhooks/deposit": {
+      "post": {
+        "operationId": "post_api_v1_payments_webhooks_deposit",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/payments/webhooks/deposit",
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/permissions/": {
+      "post": {
+        "operationId": "post_api_v1_permissions",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/permissions/",
+        "tags": [
+          "Permissions"
+        ]
+      }
+    },
+    "/api/v1/permissions/{id}": {
+      "get": {
+        "operationId": "get_api_v1_permissions__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/permissions/{id}",
+        "tags": [
+          "Permissions"
+        ]
+      }
+    },
+    "/api/v1/plans/": {
+      "get": {
+        "operationId": "get_api_v1_plans",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/plans/",
+        "tags": [
+          "Plans"
+        ]
+      }
+    },
+    "/api/v1/platforms/capabilities": {
+      "get": {
+        "operationId": "get_api_v1_platforms_capabilities",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/platforms/capabilities",
+        "tags": [
+          "Platforms"
+        ]
+      }
+    },
+    "/api/v1/profiles/": {
+      "post": {
+        "operationId": "post_api_v1_profiles",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/profiles/",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/api/v1/profiles/{id}": {
+      "get": {
+        "operationId": "get_api_v1_profiles__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/profiles/{id}",
+        "tags": [
+          "Profiles"
+        ]
+      }
+    },
+    "/api/v1/queues/queues": {
+      "get": {
+        "operationId": "get_api_v1_queues_queues",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/queues/queues",
+        "tags": [
+          "Queues"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/jobs": {
+      "get": {
+        "operationId": "get_api_v1_queues__queue__jobs",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/queues/{queue}/jobs",
+        "tags": [
+          "Queues"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/jobs/{job_id}": {
+      "get": {
+        "operationId": "get_api_v1_queues__queue__jobs__job_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/queues/{queue}/jobs/{job_id}",
+        "tags": [
+          "Queues"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/jobs/{job_id}/retry": {
+      "post": {
+        "operationId": "post_api_v1_queues__queue__jobs__job_id__retry",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/queues/{queue}/jobs/{job_id}/retry",
+        "tags": [
+          "Queues"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/retry-failed": {
+      "post": {
+        "operationId": "post_api_v1_queues__queue__retry_failed",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/queues/{queue}/retry-failed",
+        "tags": [
+          "Queues"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/stats": {
+      "get": {
+        "operationId": "get_api_v1_queues__queue__stats",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/queues/{queue}/stats",
+        "tags": [
+          "Queues"
+        ]
+      }
+    },
+    "/api/v1/rbac/effective-permissions/{tenant_id}/{user_id}": {
+      "get": {
+        "operationId": "get_api_v1_rbac_effective_permissions__tenant_id___user_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/rbac/effective-permissions/{tenant_id}/{user_id}",
+        "tags": [
+          "Rbac"
+        ]
+      }
+    },
+    "/api/v1/rbac/permissions/check/{tenant_id}/{user_id}": {
+      "get": {
+        "operationId": "get_api_v1_rbac_permissions_check__tenant_id___user_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/rbac/permissions/check/{tenant_id}/{user_id}",
+        "tags": [
+          "Rbac"
+        ]
+      }
+    },
+    "/api/v1/rbac/roles/check/{tenant_id}/{user_id}": {
+      "get": {
+        "operationId": "get_api_v1_rbac_roles_check__tenant_id___user_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/rbac/roles/check/{tenant_id}/{user_id}",
+        "tags": [
+          "Rbac"
+        ]
+      }
+    },
+    "/api/v1/roles/": {
+      "post": {
+        "operationId": "post_api_v1_roles",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/roles/",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/api/v1/roles/{id}": {
+      "get": {
+        "operationId": "get_api_v1_roles__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/roles/{id}",
+        "tags": [
+          "Roles"
+        ]
+      }
+    },
+    "/api/v1/search/": {
+      "get": {
+        "operationId": "get_api_v1_search",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/search/",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/v1/search/ask": {
+      "post": {
+        "operationId": "post_api_v1_search_ask",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/search/ask",
+        "tags": [
+          "Search"
+        ]
+      }
+    },
+    "/api/v1/subscriptions/tenant/{tenant_id}": {
+      "get": {
+        "operationId": "get_api_v1_subscriptions_tenant__tenant_id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/subscriptions/tenant/{tenant_id}",
+        "tags": [
+          "Subscriptions"
+        ]
+      }
+    },
+    "/api/v1/subscriptions/tenant/{tenant_id}/auto-renew": {
+      "patch": {
+        "operationId": "patch_api_v1_subscriptions_tenant__tenant_id__auto_renew",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "PATCH /api/v1/subscriptions/tenant/{tenant_id}/auto-renew",
+        "tags": [
+          "Subscriptions"
+        ]
+      }
+    },
+    "/api/v1/templates/": {
+      "post": {
+        "operationId": "post_api_v1_templates",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/templates/",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/templates/{id}": {
+      "get": {
+        "operationId": "get_api_v1_templates__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/templates/{id}",
+        "tags": [
+          "Templates"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/": {
+      "post": {
+        "operationId": "post_api_v1_tenant_members",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/tenant-members/",
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/invitations/{id}": {
+      "delete": {
+        "operationId": "delete_api_v1_tenant_members_invitations__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "DELETE /api/v1/tenant-members/invitations/{id}",
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/invite": {
+      "post": {
+        "operationId": "post_api_v1_tenant_members_invite",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/tenant-members/invite",
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/me": {
+      "get": {
+        "operationId": "get_api_v1_tenant_members_me",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/tenant-members/me",
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/{id}": {
+      "get": {
+        "operationId": "get_api_v1_tenant_members__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/tenant-members/{id}",
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenants/": {
+      "post": {
+        "operationId": "post_api_v1_tenants",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/tenants/",
+        "tags": [
+          "Tenants"
+        ]
+      }
+    },
+    "/api/v1/tenants/mine": {
+      "get": {
+        "operationId": "get_api_v1_tenants_mine",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/tenants/mine",
+        "tags": [
+          "Tenants"
+        ]
+      }
+    },
+    "/api/v1/tenants/{id}": {
+      "get": {
+        "operationId": "get_api_v1_tenants__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/tenants/{id}",
+        "tags": [
+          "Tenants"
+        ]
+      }
+    },
+    "/api/v1/users/": {
+      "get": {
+        "operationId": "get_api_v1_users",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/users/",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/data-deletion": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_data_deletion",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/data-deletion",
+        "tags": [
+          "Meta"
+        ]
+      },
+      "post": {
+        "operationId": "post_api_v1_webhooks_meta_data_deletion",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/webhooks/meta/data-deletion",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/data-deletion-request": {
+      "post": {
+        "operationId": "post_api_v1_webhooks_meta_data_deletion_request",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/webhooks/meta/data-deletion-request",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/data-deletion.html": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_data_deletion.html",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/data-deletion.html",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/data-protection/consent": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_data_protection_consent",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/data-protection/consent",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/deauthorize": {
+      "post": {
+        "operationId": "post_api_v1_webhooks_meta_deauthorize",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/webhooks/meta/deauthorize",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/deletion-status": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_deletion_status",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/deletion-status",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/privacy": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_privacy",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/privacy",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/privacy.html": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_privacy.html",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/privacy.html",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/terms": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_terms",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/terms",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/terms.html": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_terms.html",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/terms.html",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/webhooks/meta/urls": {
+      "get": {
+        "operationId": "get_api_v1_webhooks_meta_urls",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/webhooks/meta/urls",
+        "tags": [
+          "Meta"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/connection-status": {
+      "get": {
+        "operationId": "get_api_v1_whatsapp_connection_status",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/whatsapp/connection-status",
+        "tags": [
+          "Whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/conversations": {
+      "get": {
+        "operationId": "get_api_v1_whatsapp_conversations",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/whatsapp/conversations",
+        "tags": [
+          "Whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/flows/config": {
+      "get": {
+        "operationId": "get_api_v1_whatsapp_flows_config",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/whatsapp/flows/config",
+        "tags": [
+          "Whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/flows/sessions": {
+      "get": {
+        "operationId": "get_api_v1_whatsapp_flows_sessions",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/whatsapp/flows/sessions",
+        "tags": [
+          "Whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/messages": {
+      "get": {
+        "operationId": "get_api_v1_whatsapp_messages",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/whatsapp/messages",
+        "tags": [
+          "Whatsapp"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/messages/reply": {
+      "post": {
+        "operationId": "post_api_v1_whatsapp_messages_reply",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/whatsapp/messages/reply",
+        "tags": [
+          "Whatsapp"
+        ]
+      }
+    },
+    "/api/v1/widget/config": {
+      "get": {
+        "operationId": "get_api_v1_widget_config",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/widget/config",
+        "tags": [
+          "Widget"
+        ]
+      }
+    },
+    "/api/v1/widget/sessions": {
+      "post": {
+        "operationId": "post_api_v1_widget_sessions",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/widget/sessions",
+        "tags": [
+          "Widget"
+        ]
+      }
+    },
+    "/api/v1/widget/sessions/{id}/messages": {
+      "post": {
+        "operationId": "post_api_v1_widget_sessions__id__messages",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/widget/sessions/{id}/messages",
+        "tags": [
+          "Widget"
+        ]
+      }
+    },
+    "/api/v1/widget/sessions/{id}/suggestions": {
+      "post": {
+        "operationId": "post_api_v1_widget_sessions__id__suggestions",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/widget/sessions/{id}/suggestions",
+        "tags": [
+          "Widget"
+        ]
+      }
+    },
+    "/api/v1/widget/sessions/{session_id}/messages/{message_id}/speech": {
+      "post": {
+        "operationId": "post_api_v1_widget_sessions__session_id__messages__message_id__speech",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/widget/sessions/{session_id}/messages/{message_id}/speech",
+        "tags": [
+          "Widget"
+        ]
+      }
+    },
+    "/api/v1/workspaces/": {
+      "post": {
+        "operationId": "post_api_v1_workspaces",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "POST /api/v1/workspaces/",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/api/v1/workspaces/{id}": {
+      "get": {
+        "operationId": "get_api_v1_workspaces__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "summary": "GET /api/v1/workspaces/{id}",
+        "tags": [
+          "Workspaces"
+        ]
+      }
+    },
+    "/embed-ads/click/{id}": {
+      "get": {
+        "operationId": "get_embed_ads_click__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /embed-ads/click/{id}",
+        "tags": [
+          "Embed Ads"
+        ]
+      }
+    },
+    "/embed-ads/widget/{*rest}": {
+      "get": {
+        "operationId": "get_embed_ads_widget__*rest",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /embed-ads/widget/{*rest}",
+        "tags": [
+          "Embed Ads"
+        ]
+      }
+    },
+    "/payment-failures/": {
+      "post": {
+        "operationId": "post_payment_failures",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "POST /payment-failures/",
+        "tags": [
+          "Payment Failures"
+        ]
+      }
+    },
+    "/payment-failures/{id}": {
+      "get": {
+        "operationId": "get_payment_failures__id",
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "summary": "GET /payment-failures/{id}",
+        "tags": [
+          "Payment Failures"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Ads"
+    },
+    {
+      "name": "Ai"
+    },
+    {
+      "name": "Ai Usage"
+    },
+    {
+      "name": "Analytics"
+    },
+    {
+      "name": "Audit Logs"
+    },
+    {
+      "name": "Auth"
+    },
+    {
+      "name": "Backoffice"
+    },
+    {
+      "name": "Brand Profiles"
+    },
+    {
+      "name": "Chatbot"
+    },
+    {
+      "name": "Content Ai"
+    },
+    {
+      "name": "Content Items"
+    },
+    {
+      "name": "Deposits"
+    },
+    {
+      "name": "Embed Ads"
+    },
+    {
+      "name": "Health"
+    },
+    {
+      "name": "Inbox"
+    },
+    {
+      "name": "Knowledge"
+    },
+    {
+      "name": "Lead Source"
+    },
+    {
+      "name": "Leads"
+    },
+    {
+      "name": "Legal"
+    },
+    {
+      "name": "Media"
+    },
+    {
+      "name": "Meta"
+    },
+    {
+      "name": "Notifications"
+    },
+    {
+      "name": "Payment Failures"
+    },
+    {
+      "name": "Payments"
+    },
+    {
+      "name": "Permissions"
+    },
+    {
+      "name": "Plans"
+    },
+    {
+      "name": "Platforms"
+    },
+    {
+      "name": "Profiles"
+    },
+    {
+      "name": "Queues"
+    },
+    {
+      "name": "Rbac"
+    },
+    {
+      "name": "Roles"
+    },
+    {
+      "name": "Root"
+    },
+    {
+      "name": "Search"
+    },
+    {
+      "name": "Subscriptions"
+    },
+    {
+      "name": "Templates"
+    },
+    {
+      "name": "Tenant Members"
+    },
+    {
+      "name": "Tenants"
+    },
+    {
+      "name": "Users"
+    },
+    {
+      "name": "Whatsapp"
+    },
+    {
+      "name": "Widget"
+    },
+    {
+      "name": "Workspaces"
+    }
+  ]
+}

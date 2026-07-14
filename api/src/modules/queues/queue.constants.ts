@@ -83,6 +83,7 @@ export type SendEmailJobData = {
   to: string;
   subject: string;
   body: string;
+  userId?: string;
 };
 
 export type AiTaskJobData = {

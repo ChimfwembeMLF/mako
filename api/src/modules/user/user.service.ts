@@ -13,6 +13,7 @@ import { SocialAuthRegisterDto } from '../auth/dtos/social-auth.dto';
 import { UserRegisterDto } from '../auth/dtos/user-register.dto';
 import { UserDto } from './dtos/user.dto';
 import { UserEntity } from './user.entity';
+import { decryptToken, encryptToken } from '../../common/utils/token-crypto.util';
 
 @Injectable()
 export class UserService {
@@ -84,6 +85,51 @@ export class UserService {
       lastName: 'User',
       phone: null,
       providerId: null,
+      googleAccessTokenEnc: null,
+      googleRefreshTokenEnc: null,
+      googleTokenExpiresAt: null,
     } as Partial<UserEntity>);
+  }
+
+  async updateGoogleOAuthTokens(
+    userId: string,
+    tokens: {
+      accessToken: string;
+      refreshToken?: string;
+      expiresAt?: Date;
+    },
+  ): Promise<void> {
+    const patch: Partial<UserEntity> = {
+      googleAccessTokenEnc: encryptToken(tokens.accessToken),
+      googleTokenExpiresAt: tokens.expiresAt,
+    };
+    if (tokens.refreshToken) {
+      patch.googleRefreshTokenEnc = encryptToken(tokens.refreshToken);
+    }
+    await this.userRepository.update(userId, patch);
+  }
+
+  async getGoogleOAuthTokens(userId: string): Promise<{
+    accessToken: string;
+    refreshToken?: string;
+    expiresAt?: Date;
+  } | null> {
+    const row = await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect('user.googleAccessTokenEnc')
+      .addSelect('user.googleRefreshTokenEnc')
+      .addSelect('user.googleTokenExpiresAt')
+      .where('user.id = :userId', { userId })
+      .getOne();
+
+    if (!row?.googleAccessTokenEnc) return null;
+
+    return {
+      accessToken: decryptToken(row.googleAccessTokenEnc),
+      refreshToken: row.googleRefreshTokenEnc
+        ? decryptToken(row.googleRefreshTokenEnc)
+        : undefined,
+      expiresAt: row.googleTokenExpiresAt ?? undefined,
+    };
   }
 }

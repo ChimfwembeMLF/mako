@@ -126,6 +126,10 @@ export class AuthController {
       const profile = req.user as SocialOAuthUser & { refreshToken?: string };
       const user = await this.googleAuthService.authenticate(
         profile.accessToken!,
+        {
+          accessToken: profile.accessToken!,
+          refreshToken: profile.refreshToken,
+        },
       );
       const tokens = await this.authService.completeAuthentication(user);
       return res.redirect(
@@ -145,7 +149,10 @@ export class AuthController {
   @Post('google-auth')
   @ApiOperation({ summary: 'Authenticate with Google access token' })
   async googleAuthenticate(@Body() dto: TokenVerificationDto) {
-    const user = await this.googleAuthService.authenticate(dto.token);
+    const user = await this.googleAuthService.authenticate(dto.token, {
+      accessToken: dto.token,
+      refreshToken: dto.refreshToken,
+    });
     return this.authService.completeAuthentication(user);
   }
 

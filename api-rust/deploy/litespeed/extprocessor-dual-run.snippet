@@ -1,0 +1,27 @@
+# Optional: named backends for cleaner cutover (extprocessor + context handler)
+# Add extprocessors once; switch context `handler` between mako_api_rust / mako_api_nest.
+
+extprocessor mako_api_nest {
+  type                    proxy
+  address                 127.0.0.1:4005
+  maxConns                100
+  initTimeout             60
+  retryTimeout            0
+  respBuffer              0
+}
+
+extprocessor mako_api_rust {
+  type                    proxy
+  address                 127.0.0.1:4006
+  maxConns                100
+  initTimeout             60
+  retryTimeout            0
+  respBuffer              0
+}
+
+# Phase 1 (health only):
+# context /api/v1/health { type proxy; handler mako_api_rust; addDefaultCharset off; }
+# context /api           { type proxy; handler mako_api_nest;  addDefaultCharset off; }
+
+# Phase 2 (full API):
+# context /api { type proxy; handler mako_api_rust; addDefaultCharset off; }

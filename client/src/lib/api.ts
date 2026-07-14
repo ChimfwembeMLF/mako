@@ -1670,6 +1670,27 @@ export const autoReplyRulesApi = {
         request<any>(`/api/v1/auto-reply-rules/${id}`, { method: 'DELETE' }),
 };
 
+// ==================== Mail / Gmail ====================
+export const mailApi = {
+    gmailStatus: () =>
+        request<{
+            connected: boolean;
+            email?: string | null;
+            expiresAt?: string | null;
+            smtpConfigured?: boolean;
+        }>('/api/v1/mail/gmail/status'),
+
+    gmailConnect: (returnUrl?: string) => {
+        const qs = returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : '';
+        return request<{ redirectUrl: string; redirectUri?: string }>(
+            `/api/v1/mail/gmail/connect${qs}`,
+        );
+    },
+
+    gmailDisconnect: () =>
+        request<{ success: boolean }>('/api/v1/mail/gmail/disconnect', { method: 'DELETE' }),
+};
+
 // ==================== Platform capabilities ====================
 export const platformsApi = {
     capabilities: () =>

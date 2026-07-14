@@ -1,0 +1,8 @@
+# Rollback — point /api back to NestJS (:4005)
+# Use if Rust cutover causes regressions. Remove Phase 1 health context if present.
+
+context /api {
+  type                    proxy
+  handler                 127.0.0.1:4005
+  addDefaultCharset       off
+}

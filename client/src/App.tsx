@@ -46,6 +46,7 @@ const AdsPage = lazy(() => import('./pages/AdsPage'));
 const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
 const TemplateEditPage = lazy(() => import("./pages/TemplateEditPage"));
 const RepliesPage = lazy(() => import("./pages/RepliesPage"));
+const MailDashboardPage = lazy(() => import("./pages/MailDashboardPage"));
 const AuditLogsPage = lazy(() => import("./pages/AuditLogsPage"));
 const BillingPage = lazy(() => import("./pages/BillingPage"));
 const ExportPage = lazy(() => import("./pages/ExportPage"));
@@ -174,6 +175,7 @@ const App = () => (
 
                   {/* Replies */}
                   <Route path="/replies" element={<LazyPage><RepliesPage /></LazyPage>} />
+                  <Route path="/mail" element={<LazyPage><MailDashboardPage /></LazyPage>} />
                   <Route path="/chatbot/knowledge" element={<LazyPage><ChatbotKnowledgePage /></LazyPage>} />
                   <Route path="/chatbot/sessions" element={<LazyPage><ChatbotSessionsPage /></LazyPage>} />
                   <Route path="/chatbot" element={<LazyPage><ChatbotPage /></LazyPage>} />
