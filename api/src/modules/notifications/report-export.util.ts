@@ -1,4 +1,4 @@
-import PDFDocument from 'pdfkit';
+import { createPdfDocument } from '../../common/pdfkit.util';
 import ExcelJS from 'exceljs';
 import { REPORT_CATALOG } from './report-catalog';
 import {
@@ -165,7 +165,7 @@ export async function renderReportPdf(
   title: string,
 ): Promise<Buffer> {
   const MARGIN = 40;
-  const doc = new PDFDocument({ size: 'A4', margin: MARGIN });
+  const doc = createPdfDocument({ size: 'A4', margin: MARGIN });
   const done = collectPdf(doc);
   const pageWidth = 595.28 - MARGIN * 2;
 

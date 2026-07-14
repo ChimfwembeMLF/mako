@@ -1,4 +1,4 @@
-import PDFDocument from 'pdfkit';
+import { createPdfDocument } from '../../common/pdfkit.util';
 import { InvoiceData, buildInvoiceNumber } from './invoice.template';
 import { drawMakoLogoPdf, INVOICE_LOGO_HEIGHT_PX } from './invoice-logo.util';
 
@@ -30,7 +30,7 @@ export function getInvoicePdfFilename(depositId: string): string {
 }
 
 export async function renderInvoicePdf(data: InvoiceData): Promise<Buffer> {
-  const doc = new PDFDocument({ size: 'A4', margin: MARGIN });
+  const doc = createPdfDocument({ size: 'A4', margin: MARGIN });
   const done = collectPdf(doc);
 
   const dateStr = new Date(data.paidAt ?? data.issuedAt).toLocaleDateString(
