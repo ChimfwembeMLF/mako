@@ -1,5 +1,6 @@
-# Dokploy: set environment variables in the Compose app UI (api/.env is not in git).
-# Local: docker compose --env-file api/.env up --build
+# Dokploy: set variables in Compose app → Environment. Dokploy writes them to `.env` next to
+# this file. You MUST use `env_file: .env` below — UI vars are NOT auto-injected into containers.
+# Local: docker compose --env-file api-rust/.env up --build  (copies/symlinks .env as needed)
 
 services:
   api:
@@ -8,10 +9,12 @@ services:
       dockerfile: Dockerfile
     ports:
       - "4000:4000"
+    env_file:
+      - .env
     environment:
-      - NODE_ENV=production
-      - PORT=4000
-      - QUEUES_ENABLED=true
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-4000}
+      - QUEUES_ENABLED=${QUEUES_ENABLED:-true}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/api/v1/health"]
