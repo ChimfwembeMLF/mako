@@ -1,27 +1,21 @@
+# Build from repo root: docker compose build api (context: .)
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Install required dependencies (curl for Docker healthcheck)
-RUN apk add --no-cache \
-      nodejs \
-      yarn \
-      bash \
-      curl
+RUN apk add --no-cache bash curl && corepack enable
 
-# Enable Corepack to use the correct Yarn version
-RUN corepack enable
-
-# Copy dependency files
+# Yarn 4 monorepo — lockfile lives at repository root
 COPY package.json yarn.lock .yarnrc.yml ./
+COPY api/package.json ./api/package.json
+COPY client/package.json ./client/package.json
 
-# Install dependencies
 RUN yarn install --immutable
 
-# Copy source code
-COPY . .
+COPY api ./api
 
-# Build the application
+WORKDIR /app/api
+
 RUN yarn build
 
 RUN chmod +x docker-entrypoint.sh

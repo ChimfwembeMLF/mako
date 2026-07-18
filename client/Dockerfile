@@ -1,29 +1,29 @@
+# Build from repo root: docker compose build client (context: .)
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Accept build arguments
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
-# Copy dependency files
-COPY package.json package-lock.json ./
+RUN corepack enable
 
-# Install dependencies
-RUN npm ci
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY api/package.json ./api/package.json
+COPY client/package.json ./client/package.json
 
-# Copy source code
-COPY . .
+RUN yarn install --immutable
 
-# Build the Vite application
-RUN npm run build
+COPY client ./client
 
-# Serve the application using Nginx
+WORKDIR /app/client
+
+RUN yarn build
+
 FROM nginx:alpine
-COPY --from=build /app/dist /usr/share/nginx/html
 
-# Copy custom Nginx configuration to handle API proxying and SPA routing
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /app/client/dist /usr/share/nginx/html
+COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 5173
 
