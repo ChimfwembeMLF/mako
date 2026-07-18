@@ -1,6 +1,9 @@
 # Dokploy: set variables in Compose app → Environment. Dokploy writes them to `.env` next to
 # this file. You MUST use `env_file: .env` below — UI vars are NOT auto-injected into containers.
-# Local: cp api/.env .env && docker compose up --build
+# Local: cp api/.env.production .env && docker compose up --build
+#
+# Docker .env rules: one KEY=value per line, quote values that contain spaces,
+# no multi-line PEM blocks (JWT_PRIVATE_KEY). Mako auth uses JWT_SECRET only.
 
 services:
   api:
