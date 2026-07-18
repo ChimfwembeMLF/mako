@@ -471,39 +471,68 @@ export default function WhatsappTemplatesPage() {
   const [deleting, setDeleting] = useState<string | null>(null);
   const [importing, setImporting] = useState<string | null>(null);
 
+  const [importingAll, setImportingAll] = useState(false);
+
+  const ws = activeWorkspace ?? undefined;
+
   const load = useCallback(async () => {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenant) return;
     setLoading(true);
     try {
-      const rows = await whatsappTemplatesApi.list(tenant.id, activeWorkspace);
+      const rows = await whatsappTemplatesApi.list(tenant.id, ws);
       setTemplates(Array.isArray(rows) ? rows : []);
     } catch (e: unknown) {
       toast({ title: 'Failed to load templates', description: e instanceof Error ? e.message : 'Unknown error', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [tenant?.id, activeWorkspace]);
+  }, [tenant?.id, ws, toast]);
 
   useEffect(() => { load(); }, [load]);
 
   async function loadMetaTemplates() {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenant) return;
     setLoadingMeta(true);
     try {
-      const rows = await whatsappTemplatesApi.listFromMeta(tenant.id, activeWorkspace);
+      const rows = await whatsappTemplatesApi.listFromMeta(tenant.id, ws);
       setMetaTemplates(Array.isArray(rows) ? rows : []);
+      if (!rows?.length) {
+        toast({
+          title: 'No templates on Meta',
+          description: 'Your WABA has no message templates yet, or Meta returned an empty list.',
+        });
+      }
     } catch (e: unknown) {
+      setMetaTemplates([]);
       toast({ title: 'Failed to load Meta templates', description: e instanceof Error ? e.message : 'Unknown error', variant: 'destructive' });
     } finally {
       setLoadingMeta(false);
     }
   }
 
+  async function handleImportAll() {
+    if (!tenant) return;
+    setImportingAll(true);
+    try {
+      const res = await whatsappTemplatesApi.importAll(tenant.id, ws);
+      toast({
+        title: 'Import complete',
+        description: `${res.imported} imported, ${res.skipped} skipped.`,
+      });
+      load();
+      if (metaTemplates.length === 0) void loadMetaTemplates();
+    } catch (e: unknown) {
+      toast({ title: 'Import failed', description: e instanceof Error ? e.message : 'Unknown error', variant: 'destructive' });
+    } finally {
+      setImportingAll(false);
+    }
+  }
+
   async function handleSyncAll() {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenant) return;
     setSyncing('all');
     try {
-      const res = await whatsappTemplatesApi.syncAll(tenant.id, activeWorkspace);
+      const res = await whatsappTemplatesApi.syncAll(tenant.id, ws);
       toast({ title: 'Sync complete', description: `${res.synced} synced, ${res.errors} errors.` });
       load();
     } catch (e: unknown) {
@@ -514,10 +543,10 @@ export default function WhatsappTemplatesPage() {
   }
 
   async function handleSync(tpl: WaTemplate) {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenant) return;
     setSyncing(tpl.id);
     try {
-      await whatsappTemplatesApi.sync(tpl.id, tenant.id, activeWorkspace);
+      await whatsappTemplatesApi.sync(tpl.id, tenant.id, ws);
       toast({ title: 'Synced', description: `Status updated for "${tpl.name}".` });
       load();
     } catch (e: unknown) {
@@ -528,10 +557,10 @@ export default function WhatsappTemplatesPage() {
   }
 
   async function handleSubmit(tpl: WaTemplate) {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenant) return;
     setSubmitting(tpl.id);
     try {
-      await whatsappTemplatesApi.submit(tpl.id, tenant.id, activeWorkspace);
+      await whatsappTemplatesApi.submit(tpl.id, tenant.id, ws);
       toast({ title: 'Submitted!', description: `"${tpl.name}" sent to Meta for approval. Status is now PENDING.` });
       load();
     } catch (e: unknown) {
@@ -542,10 +571,10 @@ export default function WhatsappTemplatesPage() {
   }
 
   async function handleDelete(tpl: WaTemplate) {
-    if (!tenant || !activeWorkspace) return;
+    if (!tenant) return;
     setDeleting(tpl.id);
     try {
-      await whatsappTemplatesApi.remove(tpl.id, tenant.id, activeWorkspace);
+      await whatsappTemplatesApi.remove(tpl.id, tenant.id, ws);
       toast({ title: 'Deleted', description: `"${tpl.name}" removed.` });
       load();
     } catch (e: unknown) {
@@ -559,7 +588,7 @@ export default function WhatsappTemplatesPage() {
     if (!tenant) return;
     setImporting(metaTpl.metaId);
     try {
-      await whatsappTemplatesApi.importFromMeta(tenant.id, activeWorkspace, metaTpl);
+      await whatsappTemplatesApi.importFromMeta(tenant.id, ws, metaTpl);
       toast({ title: 'Imported', description: `"${metaTpl.name}" added to your local templates.` });
       load();
     } catch (e: unknown) {
@@ -585,17 +614,26 @@ export default function WhatsappTemplatesPage() {
             <p className="text-sm text-muted-foreground">Create, submit, and track Meta-approved message templates</p>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             variant="outline"
             size="sm"
-            onClick={handleSyncAll}
+            onClick={() => void handleImportAll()}
+            disabled={importingAll || !tenant}
+          >
+            {importingAll ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+            Import all from Meta
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void handleSyncAll()}
             disabled={syncing === 'all' || !tenant}
           >
             {syncing === 'all' ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
-            Sync All
+            Sync status
           </Button>
-          <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => { setEditingTemplate(null); setBuilderOpen(true); }}>
+          <Button size="sm" className="" onClick={() => { setEditingTemplate(null); setBuilderOpen(true); }}>
             <Plus className="h-3.5 w-3.5 mr-1" /> New Template
           </Button>
         </div>
@@ -619,10 +657,16 @@ export default function WhatsappTemplatesPage() {
             <Card className="border-dashed">
               <CardContent className="py-16 text-center space-y-3">
                 <MessageCircle className="h-8 w-8 text-muted-foreground mx-auto" />
-                <p className="text-sm text-muted-foreground">No templates yet. Create one or import from Meta.</p>
-                <Button size="sm" onClick={() => { setEditingTemplate(null); setBuilderOpen(true); }}>
-                  <Plus className="h-3.5 w-3.5 mr-1" /> New Template
-                </Button>
+                <p className="text-sm text-muted-foreground">No templates in Mako yet. Pull approved templates from Meta or create a new one.</p>
+                <div className="flex justify-center gap-2 flex-wrap">
+                  <Button size="sm" variant="outline" onClick={() => void handleImportAll()} disabled={importingAll}>
+                    {importingAll ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+                    Import all from Meta
+                  </Button>
+                  <Button size="sm" onClick={() => { setEditingTemplate(null); setBuilderOpen(true); }}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> New Template
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           ) : (
@@ -666,7 +710,7 @@ export default function WhatsappTemplatesPage() {
                           {canSubmit && (
                             <Button
                               size="sm"
-                              className="gradient-primary text-primary-foreground border-0"
+                              className=""
                               onClick={() => handleSubmit(tpl)}
                               disabled={submitting === tpl.id}
                             >
@@ -696,8 +740,12 @@ export default function WhatsappTemplatesPage() {
 
         {/* ── From Meta tab ── */}
         <TabsContent value="meta">
-          <div className="flex justify-end mb-4">
-            <Button variant="outline" size="sm" onClick={loadMetaTemplates} disabled={loadingMeta}>
+          <div className="flex justify-end mb-4 gap-2">
+            <Button variant="outline" size="sm" onClick={() => void handleImportAll()} disabled={importingAll || !tenant}>
+              {importingAll ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Download className="h-3.5 w-3.5 mr-1" />}
+              Import all
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => void loadMetaTemplates()} disabled={loadingMeta}>
               {loadingMeta ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
               Refresh from Meta
             </Button>
@@ -709,7 +757,11 @@ export default function WhatsappTemplatesPage() {
           ) : metaTemplates.length === 0 ? (
             <Card className="border-dashed">
               <CardContent className="py-16 text-center space-y-2">
-                <p className="text-sm text-muted-foreground">No Meta templates found. Connect WhatsApp first or click Refresh.</p>
+                <p className="text-sm text-muted-foreground">Could not load Meta templates or your WABA has none yet.</p>
+                <p className="text-xs text-muted-foreground">Connect WhatsApp in Connections, then click Refresh. Errors usually mean missing WABA permissions or an expired token.</p>
+                <Button size="sm" variant="outline" onClick={() => void loadMetaTemplates()} disabled={loadingMeta}>
+                  <RefreshCw className="h-3.5 w-3.5 mr-1" /> Try again
+                </Button>
               </CardContent>
             </Card>
           ) : (

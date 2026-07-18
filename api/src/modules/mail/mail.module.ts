@@ -16,6 +16,7 @@ import { GmailAutoReplyService } from './gmail-auto-reply.service';
 import { GmailClientService } from './gmail-client.service';
 import { GmailConnectService } from './gmail-connect.service';
 import { GmailInboxSyncService } from './gmail-inbox-sync.service';
+import { MailInboxMessagesService } from './mail-inbox-messages.service';
 import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
 
@@ -59,6 +60,7 @@ import { MailService } from './mail.service';
     GmailClientService,
     GmailAutoReplyService,
     GmailInboxSyncService,
+    MailInboxMessagesService,
   ],
   exports: [MailService, GmailInboxSyncService, GmailClientService],
 })

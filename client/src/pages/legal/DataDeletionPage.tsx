@@ -124,7 +124,7 @@ export default function DataDeletionPage() {
             </div>
             <Button
               type="button"
-              className="w-full gradient-primary border-0 text-primary-foreground"
+              className="w-full"
               onClick={requestDeletion}
               disabled={loading || !email.trim()}
             >

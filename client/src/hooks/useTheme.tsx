@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { systemSettingsApi } from '@/lib/api';
 import { useTenant } from '@/hooks/useTenant';
+import { useAuth } from '@/hooks/useAuth';
+import { MAKO_THEME } from '@/lib/mako-brand';
 
 export interface ThemeConfig {
   primary?: string;
@@ -8,6 +10,37 @@ export interface ThemeConfig {
   accent?: string;
   radius?: string;
   mode?: 'light' | 'dark' | 'system';
+}
+
+const GLOBAL_THEME_CACHE_KEY = 'mako_global_theme';
+
+export function readCachedGlobalTheme(): ThemeConfig | null {
+  try {
+    const raw = localStorage.getItem(GLOBAL_THEME_CACHE_KEY);
+    return raw ? (JSON.parse(raw) as ThemeConfig) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function cacheGlobalTheme(theme: ThemeConfig) {
+  try {
+    localStorage.setItem(GLOBAL_THEME_CACHE_KEY, JSON.stringify(theme));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function mergeTheme(
+  global: ThemeConfig = {},
+  tenantTheme?: ThemeConfig | null,
+): ThemeConfig {
+  return {
+    ...MAKO_THEME,
+    mode: 'light',
+    ...global,
+    ...(tenantTheme ?? {}),
+  };
 }
 
 export function applyTheme(theme: ThemeConfig) {
@@ -32,23 +65,34 @@ export function applyTheme(theme: ThemeConfig) {
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { tenant } = useTenant();
+  const { user } = useAuth();
 
   useEffect(() => {
+    const cached = readCachedGlobalTheme();
+    if (cached) {
+      applyTheme(mergeTheme(cached, user ? tenant?.themeConfig : null));
+    }
+
     let cancelled = false;
     (async () => {
       try {
-        const global = await systemSettingsApi.getTheme();
+        const global = (await systemSettingsApi.getTheme()) as ThemeConfig;
         if (cancelled) return;
-        const tenantTheme = (tenant as { themeConfig?: ThemeConfig } | null)?.themeConfig;
-        applyTheme({ ...global, ...tenantTheme });
+        cacheGlobalTheme(global);
+        const tenantTheme = user
+          ? ((tenant as { themeConfig?: ThemeConfig } | null)?.themeConfig ?? null)
+          : null;
+        applyTheme(mergeTheme(global, tenantTheme));
       } catch {
-        /* keep CSS defaults */
+        if (!cancelled) {
+          applyTheme(mergeTheme(readCachedGlobalTheme() ?? undefined));
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [tenant]);
+  }, [tenant, user]);
 
   return <>{children}</>;
 }

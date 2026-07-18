@@ -100,7 +100,7 @@ export function MediaUpload({ onUpload, label, disabled, contentId, workspaceId 
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold text-muted-foreground">Media Library</span>
+          <span className="text-xs font-semibold text-muted-foreground">Media</span>
           {selected.size > 0 && (
             <Button size="sm" className="h-7 text-xs" onClick={handleAddSelected}>
               Add Selected ({selected.size})

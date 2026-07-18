@@ -158,7 +158,7 @@ const BulkEmailSheet = ({ leads }: BulkEmailSheetProps) => {
           <Button
             onClick={handleSend}
             disabled={sending || eligible.length === 0}
-            className="w-full gradient-primary text-primary-foreground border-0"
+            className="w-full"
           >
             <Send className="mr-2 h-4 w-4" />
             {sending

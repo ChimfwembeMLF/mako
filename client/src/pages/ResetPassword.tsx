@@ -61,7 +61,7 @@ const ResetPassword = () => {
       <div className="w-full max-w-md space-y-6">
         <AppBreadcrumbs />
         <div className="text-center space-y-2">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary shadow-glow">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-elevated">
             <Rocket className="h-7 w-7 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-bold font-display">Set New Password</h1>
@@ -77,7 +77,7 @@ const ResetPassword = () => {
               <Field label="Confirm password" htmlFor="confirm" required>
                 <FormInput id="confirm" type="password" icon={Lock} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} />
               </Field>
-              <Button type="submit" disabled={loading} className="w-full h-11 rounded-lg gradient-primary border-0">
+              <Button type="submit" disabled={loading} className="w-full h-11 rounded-lg bg-primary border-0">
                 {loading ? "Updating…" : "Update Password"}
               </Button>
             </form>

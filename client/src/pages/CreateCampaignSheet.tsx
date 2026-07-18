@@ -350,7 +350,7 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
 
               {formData.platform !== 'EMBED' && (
                 <p className="text-sm text-gray-500">
-                  Connect the matching account in Publisher Connect before launching. Balance is charged when the campaign goes live.
+                  Connect the matching account in Connections before launching. Balance is charged when the campaign goes live.
                 </p>
               )}
 

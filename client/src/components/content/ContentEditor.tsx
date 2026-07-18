@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import RichTextEditor from '@/components/RichTextEditor';
-import { plainToHtml, normalizeRichContent } from '@/lib/rich-text';
+import { plainToHtml, normalizeRichContent, htmlToPlainText } from '@/lib/rich-text';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
-import { useFormSuggestions } from '@/hooks/useFormSuggestions';
+import { useFieldEnhance } from '@/hooks/useFieldEnhance';
 import { SuggestedField } from '@/components/form/SuggestedField';
 import { contentItemsApi, templatesApi } from '@/lib/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -61,13 +60,9 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   const [templates, setTemplates] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
   const [templateId, setTemplateId] = useState<string>('');
 
-  const contentFieldKeys = useMemo(() => ['theme', 'title'], []);
-  const contentValues = useMemo(() => ({ theme, title }), [theme, title]);
-  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive, fetchSuggestions } = useFormSuggestions({
+  const { enhanceField, enhancingKey } = useFieldEnhance({
     form: 'content',
     tenantId: tenant?.id,
-    fieldKeys: contentFieldKeys,
-    values: contentValues,
   });
 
   useEffect(() => {
@@ -250,10 +245,6 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
               Write or generate content — publish to platforms when ready.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => fetchSuggestions()}>
-            <Sparkles className="mr-2 h-3.5 w-3.5 text-primary" />
-            Suggestions
-          </Button>
           {item?.id && onReset && (
             <Button type="button" variant="outline" size="sm" onClick={onReset} className="shrink-0 w-full sm:w-auto">
               <FilePlus className="h-3.5 w-3.5 mr-1.5" />
@@ -289,13 +280,9 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
                 type="input"
                 value={theme}
                 onChange={setTheme}
-                fallbackPlaceholder="e.g. Summer sale, product launch, weekly tip…"
-                placeholder={getPlaceholder('theme', 'e.g. Summer sale, product launch, weekly tip…')}
-                suggestions={getSuggestionsForField('theme')}
-                selectedIndex={getSelectedIndex('theme')}
-                onSelectIndex={(index) => setFieldIndex('theme', index)}
-                onPauseRotation={() => pauseField('theme')}
-                isLive={isFieldActive('theme')}
+                placeholder="e.g. Summer sale, product launch, weekly tip…"
+                onEnhance={() => enhanceField('theme', theme, setTheme)}
+                enhancing={enhancingKey === 'theme'}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -305,24 +292,22 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
                 type="input"
                 value={title}
                 onChange={setTitle}
-                fallbackPlaceholder="Post headline"
-                placeholder={getPlaceholder('title', 'Post headline')}
-                suggestions={getSuggestionsForField('title')}
-                selectedIndex={getSelectedIndex('title')}
-                onSelectIndex={(index) => setFieldIndex('title', index)}
-                onPauseRotation={() => pauseField('title')}
-                isLive={isFieldActive('title')}
+                placeholder="Post headline"
+                onEnhance={() => enhanceField('title', title, setTitle)}
+                enhancing={enhancingKey === 'title'}
               />
             </div>
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="content-body">Content</Label>
-            <RichTextEditor
-              value={content}
-              onChange={setContent}
+            <Textarea
+              id="content-body"
+              value={htmlToPlainText(content)}
+              onChange={(e) => setContent(plainToHtml(e.target.value))}
               placeholder="Write your content…"
-              minHeight="180px"
+              rows={8}
+              className="min-h-[180px] resize-y"
             />
           </div>
 
@@ -403,7 +388,7 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 px-4 sm:px-5 py-4 border-t bg-muted/20">
           <Button
             type="button"
-            className="gradient-primary text-primary-foreground border-0 w-full sm:w-auto sm:min-w-[140px]"
+            className=" w-full sm:w-auto sm:min-w-[140px]"
             onClick={handleSave}
             disabled={saving}
           >

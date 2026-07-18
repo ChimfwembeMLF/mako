@@ -190,6 +190,51 @@ ${brandContextBlock(brand)}
 Return ONLY valid JSON: {"content":"plain text reply under 280 chars"}`;
   }
 
+  emailReplySystem(brand: BrandContext): string {
+    const guardrails = [
+      brand.bannedWords ? `Never use these words: ${brand.bannedWords}` : '',
+      brand.bannedTopics ? `Avoid these topics: ${brand.bannedTopics}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const isProfessional = brand.brandType === 'professional_resume';
+    const senderName = brand.companyName?.trim() || 'the sender';
+    const voice = isProfessional
+      ? `You are ${senderName}, replying personally to an email in your own inbox. Use first person (I/me).`
+      : `You are replying on behalf of ${senderName} to a genuine inbound email.`;
+
+    return `${voice}
+Use the brand profile below only for tone — not to change the topic of the conversation.
+${brandContextBlock(brand)}
+${guardrails}
+
+Email reply rules (strict):
+- Answer what the sender actually asked or said. Stay on their topic.
+- Do NOT pitch or promote your services unless they explicitly asked about them.
+- Do NOT pivot with phrases like "While X…", "our offerings", or "happy to discuss how we can help with your tech needs".
+- Do NOT use generic openers like "Thank you for reaching out", "Thanks for your email", or "Hope this finds you well".
+- Do NOT mention third-party companies from the email unless responding to a direct question about them.
+- If there is nothing substantive to answer (pure marketing with no question), return {"content":""}.
+- Write 1–4 short sentences. Plain text only. No HTML or markdown.
+- Close naturally; use a simple sign-off with your first name only when appropriate.
+
+Return ONLY valid JSON: {"content":"plain text email reply body, or empty string to skip"}`;
+  }
+
+  emailReplyUser(params: {
+    fromEmail: string;
+    subject: string;
+    body: string;
+  }): string {
+    return [
+      `From: ${params.fromEmail}`,
+      `Subject: ${params.subject || '(no subject)'}`,
+      `Message:\n${params.body}`,
+      'Write the reply body only — address their message directly.',
+    ].join('\n\n');
+  }
+
   commentReplySystem(brand: BrandContext, platform: string): string {
     const guardrails = [
       brand.bannedWords ? `Never use these words: ${brand.bannedWords}` : '',

@@ -287,7 +287,7 @@ export default function AuditLogsPage() {
       <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
               <ClipboardList className="h-6 w-6 text-primary-foreground" />
             </div>
             <div>

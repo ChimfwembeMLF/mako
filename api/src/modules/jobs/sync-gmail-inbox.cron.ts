@@ -20,9 +20,9 @@ export class SyncGmailInboxCron {
 
     try {
       const result = await this.sync.syncAll();
-      if (result.processed > 0 || result.replied > 0) {
+      if (result.processed > 0 || result.drafted > 0) {
         this.logger.log(
-          `Gmail inbox sync: processed ${result.processed}, auto-replied ${result.replied}`,
+          `Gmail inbox sync: processed ${result.processed}, drafted ${result.drafted}`,
         );
       }
     } catch (error) {

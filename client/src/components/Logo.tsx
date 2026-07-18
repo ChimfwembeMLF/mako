@@ -1,6 +1,6 @@
 import React from 'react'
 
-function Logo({ className = 'h-10' }: { className?: string }) {
+function Logo({ className = 'h-12' }: { className?: string }) {
     return (
         <img src="/mako-logo.png" alt="Mako" className={`w-auto ${className}`} />
     )

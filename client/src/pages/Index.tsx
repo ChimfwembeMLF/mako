@@ -1,8 +1,10 @@
-import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target } from "lucide-react";
+import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target, Link2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
+import { PlatformDashboard } from "@/components/dashboard/PlatformDashboard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { P, type PermissionKey } from "@/lib/permissions";
+import { cn } from "@/lib/utils";
 
 type DashboardModule = {
   title: string;
@@ -20,7 +22,7 @@ const modules: DashboardModule[] = [
     description: "Define your company identity, audience, and voice",
     icon: Brain,
     href: "/brand-brain",
-    gradient: "gradient-primary",
+    gradient: "bg-primary",
     status: "Setup required",
   },
   {
@@ -28,7 +30,7 @@ const modules: DashboardModule[] = [
     description: "Auto-generate posts, emails, and ad copy",
     icon: Pen,
     href: "/content",
-    gradient: "gradient-secondary",
+    gradient: "bg-surface-strong text-foreground",
     status: "Ready",
   },
   {
@@ -36,49 +38,57 @@ const modules: DashboardModule[] = [
     description: "Plan and publish across all channels",
     icon: CalendarClock,
     href: "/scheduler",
-    gradient: "gradient-accent",
+    gradient: "bg-primary",
     status: "Ready",
   },
   {
-    title: "Ad Campaigns",
-    description: "Launch AI-generated ads on Meta, Google, TikTok, LinkedIn, Pinterest, Taboola, and X",
+    title: "Connections",
+    description: "Link social and ad accounts via OAuth",
+    icon: Link2,
+    href: "/publisher",
+    gradient: "bg-surface-strong text-foreground",
+    status: "Ready",
+  },
+  {
+    title: "Ads",
+    description: "Launch paid campaigns on Meta, Google, TikTok, LinkedIn, and more",
     icon: Target,
     href: "/ads",
-    gradient: "gradient-primary",
+    gradient: "bg-primary",
     status: "Ready",
   },
   {
-    title: "Lead Agent",
+    title: "Leads",
     description: "Qualify, reply, and book meetings automatically",
     icon: MessageSquare,
     href: "/leads",
-    gradient: "gradient-secondary",
+    gradient: "bg-surface-strong text-foreground",
     status: "Ready",
   },
   {
-    title: "AI Chatbot",
+    title: "Chatbot",
     description: "Brand Brain–powered assistant with document knowledge",
     icon: Bot,
     href: "/chatbot",
-    gradient: "gradient-accent",
+    gradient: "bg-primary",
     status: "Ready",
     permission: P.chatbot.view,
   },
   {
-    title: "Knowledge Library",
+    title: "Knowledge",
     description: "Upload PDFs and docs for chatbot retrieval",
     icon: BookOpen,
     href: "/chatbot/knowledge",
-    gradient: "gradient-primary",
+    gradient: "bg-primary",
     status: "Ready",
     permission: P.chatbot.view,
   },
   {
-    title: "Conversation Log",
+    title: "Chat History",
     description: "Review widget and playground chat transcripts",
     icon: History,
     href: "/chatbot/sessions",
-    gradient: "gradient-secondary",
+    gradient: "bg-surface-strong text-foreground",
     status: "Ready",
     permission: P.chatbot.view,
   },
@@ -87,7 +97,7 @@ const modules: DashboardModule[] = [
     description: "Track performance and optimize automatically",
     icon: BarChart3,
     href: "/analytics",
-    gradient: "gradient-primary",
+    gradient: "bg-primary",
     status: "Ready",
   },
 ];
@@ -101,7 +111,7 @@ const Dashboard = () => {
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-2xl gradient-primary p-6 sm:p-8 shadow-glow">
+      <div className="relative overflow-hidden rounded-md bg-primary p-6 sm:p-8 shadow-elevated">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="h-5 w-5 text-primary-foreground" />
@@ -109,7 +119,7 @@ const Dashboard = () => {
               AI Marketing Mako
             </span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold font-display text-primary-foreground mb-2">
+          <h1 className="text-display-xl text-primary-foreground mb-2">
             Welcome to Mako 
           </h1>
           <p className="text-primary-foreground/70 max-w-lg">
@@ -120,14 +130,18 @@ const Dashboard = () => {
         <div className="absolute -right-5 -bottom-10 h-32 w-32 rounded-full bg-primary-foreground/5 blur-xl" />
       </div>
 
+      <PlatformDashboard />
+
       {/* Module cards */}
+      <div>
+        <h2 className="text-lg font-semibold font-display mb-3">Quick links</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {visibleModules.map((mod) => (
           <Link key={mod.title} to={mod.href}>
             <Card className="group hover:shadow-card transition-all duration-200 border-border/50 hover:border-primary/30 h-full">
               <CardContent className="p-5 space-y-3">
-                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${mod.gradient}`}>
-                  <mod.icon className="h-5 w-5 text-primary-foreground" />
+                <div className={`inline-flex h-10 w-10 items-center justify-center rounded-md ${mod.gradient}`}>
+                  <mod.icon className={cn("h-5 w-5", mod.gradient.includes("surface-strong") ? "text-foreground" : "text-primary-foreground")} />
                 </div>
                 <div>
                   <h3 className="font-display font-semibold text-card-foreground flex items-center gap-2">
@@ -147,6 +161,7 @@ const Dashboard = () => {
             </Card>
           </Link>
         ))}
+      </div>
       </div>
     </div>
   );

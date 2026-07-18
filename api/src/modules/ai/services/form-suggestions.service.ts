@@ -155,6 +155,88 @@ export class FormSuggestionsService {
     private readonly brandRepo: Repository<BrandProfiles>,
   ) {}
 
+  async enhanceField(params: {
+    tenantId: string;
+    workspaceId?: string;
+    userId: string;
+    form: FormSuggestionType;
+    fieldKey: string;
+    currentValue?: string;
+  }): Promise<{ text: string }> {
+    const allowed = FORM_SUGGESTION_FIELDS[params.form];
+    if (!allowed.includes(params.fieldKey)) {
+      return { text: params.currentValue?.trim() ?? '' };
+    }
+
+    await this.usage.assertWithinLimit(params.tenantId, params.userId);
+
+    const brand = params.workspaceId
+      ? await this.brandRepo.findOne({
+          where: { workspaceId: params.workspaceId, tenantId: params.tenantId },
+        }) || await this.brandRepo.findOne({
+          where: { tenantId: params.tenantId, userId: params.userId },
+        })
+      : await this.brandRepo.findOne({
+          where: { tenantId: params.tenantId, userId: params.userId },
+        });
+
+    const brandCtx = this.prompts.brandFromEntity(brand);
+    const label = formFieldLabel(params.form, params.fieldKey);
+    const hint = formFieldHint(params.form, params.fieldKey);
+    const formBrief = FORM_SUGGESTION_FORM_BRIEFS[params.form];
+    const maxLen = INPUT_STYLE_FIELDS.has(params.fieldKey)
+      ? MAX_SUGGESTION_LENGTH.input
+      : MAX_SUGGESTION_LENGTH.textarea;
+    const draft = params.currentValue?.trim() ?? '';
+    const isEnhance = draft.length > 0;
+
+    try {
+      const { data, tokensUsed } = await this.mistral.completeJson<{ text?: string }>(
+        [
+          {
+            role: 'system',
+            content: `You help users fill marketing form fields.
+Return ONLY JSON: { "text": "..." }
+
+Form context: ${formBrief}
+Field: ${params.fieldKey} (${label})${hint ? `\nFormat hint: ${hint}` : ''}
+
+Rules:
+- ${isEnhance ? 'Improve and expand the user\'s draft — clearer, more specific, on-brand. Keep their intent.' : 'Write one strong starter value tailored to the brand.'}
+- Plain text only — no markdown headers, code fences, or HTML.
+- Use literal newlines for lists or paragraphs when appropriate.
+- Maximum ${maxLen} characters.`,
+          },
+          {
+            role: 'user',
+            content: [
+              brand
+                ? `Brand profile:\n${brandContextBlock(brandCtx)}`
+                : 'No brand profile yet — use neutral professional examples.',
+              isEnhance
+                ? `Current draft:\n${draft}`
+                : `Generate a starter value for "${label}".`,
+            ].join('\n\n'),
+          },
+        ],
+        { model: this.mistral.defaultModel },
+      );
+
+      await this.usage.record({
+        tenantId: params.tenantId,
+        userId: params.userId,
+        functionName: 'enhance-field',
+        tokensUsed,
+      });
+
+      const text = this.trimSuggestion(String(data.text ?? ''), maxLen);
+      return { text: text || draft || this.fallbackFor(params.form, params.fieldKey)[0]! };
+    } catch {
+      const fallback = this.fallbackFor(params.form, params.fieldKey)[0] ?? '';
+      return { text: isEnhance ? draft : fallback };
+    }
+  }
+
   async getSuggestions(params: {
     tenantId: string;
     workspaceId?: string;

@@ -35,6 +35,15 @@ export class MailMessages {
   fromEmail: string;
 
   @Column({ type: 'text', nullable: true })
+  toEmail?: string;
+
+  @Column({ type: 'text', nullable: true })
+  gmailDraftId?: string;
+
+  @Column({ type: 'text', nullable: true })
+  inReplyToGmailMessageId?: string;
+
+  @Column({ type: 'text', nullable: true })
   subject?: string;
 
   @Column({ type: 'text' })

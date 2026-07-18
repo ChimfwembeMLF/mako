@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { permissionsApi, systemSettingsApi, tenantsApi } from '@/lib/api';
 import { useTenant } from '@/hooks/useTenant';
 import { usePermissions } from '@/hooks/usePermissions';
-import { applyTheme, ThemeConfig } from '@/hooks/useTheme';
+import { applyTheme, cacheGlobalTheme, ThemeConfig } from '@/hooks/useTheme';
 import { PermissionGate } from '@/components/PermissionGate';
 import { ThemePalettePicker } from '@/components/admin/ThemePalettePicker';
 import { paletteSwatchHsl } from '@/lib/themePalettes';
@@ -82,6 +82,7 @@ export default function SystemSettingsPage() {
         description: 'Global UI theme',
       });
       applyTheme(globalTheme);
+      cacheGlobalTheme(globalTheme);
       toast({ title: 'Global theme saved' });
     } catch (err: unknown) {
       toast({ title: 'Error', description: err instanceof Error ? err.message : 'Save failed', variant: 'destructive' });

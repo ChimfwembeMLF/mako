@@ -6,6 +6,10 @@ import { TenantMembers } from '../tenant_members/entities/tenant_members.entity'
 import { UserEntity } from '../user/user.entity';
 import { GmailAutoReplyService } from './gmail-auto-reply.service';
 import { GmailClientService } from './gmail-client.service';
+import {
+  isMarketingOrBulkEmail,
+  sanitizeInboundEmailBody,
+} from './email-reply.util';
 import { GmailInboxConnection } from './entities/gmail_inbox_connection.entity';
 import { MailMessages } from './entities/mail_messages.entity';
 
@@ -27,61 +31,57 @@ export class GmailInboxSyncService {
     private readonly membersRepo: Repository<TenantMembers>,
   ) {}
 
-  async syncAll(): Promise<{ processed: number; replied: number }> {
+  async syncAll(): Promise<{ processed: number; drafted: number }> {
     await this.ensureConnections();
     const connections = await this.connectionsRepo.find({
       where: { isActive: true },
     });
 
     let processed = 0;
-    let replied = 0;
+    let drafted = 0;
 
     for (const connection of connections) {
       const result = await this.syncConnection(connection);
       processed += result.processed;
-      replied += result.replied;
+      drafted += result.drafted;
     }
 
-    return { processed, replied };
+    return { processed, drafted };
   }
 
   async syncForUser(
     userId: string,
     tenantId: string,
-  ): Promise<{ processed: number; replied: number }> {
+  ): Promise<{ processed: number; drafted: number }> {
     const connection = await this.connectionsRepo.findOne({
       where: { userId, tenantId, isActive: true },
     });
     if (!connection) {
-      return { processed: 0, replied: 0 };
+      return { processed: 0, drafted: 0 };
     }
     return this.syncConnection(connection);
   }
 
   private async syncConnection(
     connection: GmailInboxConnection,
-  ): Promise<{ processed: number; replied: number }> {
-    const activeRules = await this.rules.findActiveForPlatform(
-      connection.tenantId,
-      'email',
-      connection.workspaceId,
-    );
-    if (!activeRules.length) {
-      return { processed: 0, replied: 0 };
-    }
-
+  ): Promise<{ processed: number; drafted: number }> {
     let processed = 0;
-    let replied = 0;
+    let drafted = 0;
 
     try {
-      const messageIds = await this.gmailClient.listUnreadInboxMessageIds(
+      const messageIds = await this.gmailClient.listInboxMessageIds(
         connection.userId,
-        25,
+        50,
+      );
+      const activeRules = await this.rules.findActiveForPlatform(
+        connection.tenantId,
+        'email',
+        connection.workspaceId,
       );
 
       for (const messageId of messageIds) {
         const already = await this.mailMessagesRepo.findOne({
-          where: { gmailMessageId: messageId },
+          where: { gmailMessageId: messageId, direction: 'inbound' },
         });
         if (already) continue;
 
@@ -89,40 +89,55 @@ export class GmailInboxSyncService {
           connection.userId,
           messageId,
         );
-        if (!message || !message.isUnread || !message.fromEmail) continue;
+        if (!message || !message.fromEmail) continue;
 
-        if (this.shouldSkipSender(message.fromEmail)) {
-          await this.mailMessagesRepo.save(
-            this.mailMessagesRepo.create({
-              tenantId: connection.tenantId,
-              userId: connection.userId,
-              workspaceId: connection.workspaceId,
-              gmailMessageId: message.id,
-              threadId: message.threadId,
-              fromEmail: message.fromEmail,
-              subject: message.subject,
-              body: message.body,
-              direction: 'inbound',
-              status: 'skipped',
-            }),
-          );
-          processed += 1;
-          continue;
+        const cleanBody = sanitizeInboundEmailBody(message.body);
+        let status = 'received';
+        const skipSender = this.shouldSkipSender(message.fromEmail);
+        const skipMarketing = isMarketingOrBulkEmail({
+          subject: message.subject,
+          body: cleanBody,
+          listUnsubscribe: message.listUnsubscribe,
+          autoSubmitted: message.autoSubmitted,
+        });
+        if (skipSender || skipMarketing) {
+          status = 'skipped';
         }
 
-        const sent = await this.autoReply.tryReply({
-          tenantId: connection.tenantId,
-          userId: connection.userId,
-          workspaceId: connection.workspaceId,
-          fromEmail: message.fromEmail,
-          subject: message.subject,
-          body: message.body,
-          gmailMessageId: message.id,
-          threadId: message.threadId,
-          messageIdHeader: message.messageIdHeader,
-        });
+        await this.mailMessagesRepo.save(
+          this.mailMessagesRepo.create({
+            tenantId: connection.tenantId,
+            userId: connection.userId,
+            workspaceId: connection.workspaceId,
+            gmailMessageId: message.id,
+            threadId: message.threadId,
+            fromEmail: message.fromEmail,
+            subject: message.subject,
+            body: cleanBody || message.body,
+            direction: 'inbound',
+            status,
+          }),
+        );
         processed += 1;
-        if (sent) replied += 1;
+
+        if (
+          message.isUnread &&
+          status === 'received' &&
+          activeRules.length > 0
+        ) {
+          const draftedOk = await this.autoReply.tryReply({
+            tenantId: connection.tenantId,
+            userId: connection.userId,
+            workspaceId: connection.workspaceId,
+            fromEmail: message.fromEmail,
+            subject: message.subject,
+            body: cleanBody,
+            gmailMessageId: message.id,
+            threadId: message.threadId,
+            messageIdHeader: message.messageIdHeader,
+          });
+          if (draftedOk) drafted += 1;
+        }
       }
 
       const historyId = await this.gmailClient.getProfileHistoryId(
@@ -145,7 +160,7 @@ export class GmailInboxSyncService {
       }
     }
 
-    return { processed, replied };
+    return { processed, drafted };
   }
 
   async upsertConnection(params: {
@@ -190,12 +205,6 @@ export class GmailInboxSyncService {
         where: { userId: user.id, isActive: true },
       });
       for (const membership of memberships) {
-        const activeRules = await this.rules.findActiveForPlatform(
-          membership.tenantId,
-          'email',
-        );
-        if (!activeRules.length) continue;
-
         await this.upsertConnection({
           tenantId: membership.tenantId,
           userId: user.id,

@@ -1,6 +1,7 @@
 import {
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Post,
   Query,
@@ -11,10 +12,14 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
 import { GmailConnectService } from './gmail-connect.service';
 import { GmailInboxSyncService } from './gmail-inbox-sync.service';
+import { MailInboxMessagesService } from './mail-inbox-messages.service';
 import { MailService } from './mail.service';
 
 @ApiTags('Mail')
@@ -24,6 +29,9 @@ export class MailController {
     private readonly gmailConnectService: GmailConnectService,
     private readonly mailService: MailService,
     private readonly inboxSync: GmailInboxSyncService,
+    private readonly inboxMessages: MailInboxMessagesService,
+    @InjectRepository(TenantMembers)
+    private readonly membersRepo: Repository<TenantMembers>,
   ) {}
 
   private getUserId(req: Request): string {
@@ -32,6 +40,15 @@ export class MailController {
       throw new UnauthorizedException('Unable to resolve authenticated user');
     }
     return userId;
+  }
+
+  private async assertTenantMembership(userId: string, tenantId: string) {
+    const member = await this.membersRepo.findOne({
+      where: { userId, tenantId, isActive: true },
+    });
+    if (!member) {
+      throw new ForbiddenException('You do not have access to this tenant');
+    }
   }
 
   @UseGuards(JwtAuthGuard)
@@ -91,7 +108,7 @@ export class MailController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Post('gmail/sync')
-  @ApiOperation({ summary: 'Poll Gmail inbox and run email auto-reply rules now' })
+  @ApiOperation({ summary: 'Poll Gmail inbox and draft email replies now' })
   async gmailSync(
     @Req() req: Request,
     @Query('tenantId') tenantId: string,
@@ -100,6 +117,59 @@ export class MailController {
     if (!tenantId?.trim()) {
       return this.inboxSync.syncAll();
     }
+    await this.assertTenantMembership(userId, tenantId.trim());
     return this.inboxSync.syncForUser(userId, tenantId.trim());
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('drafts')
+  @ApiOperation({ summary: 'List AI-generated Gmail draft replies' })
+  async listDrafts(
+    @Req() req: Request,
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const userId = this.getUserId(req);
+    if (!tenantId?.trim()) {
+      throw new ForbiddenException('tenantId is required');
+    }
+    await this.assertTenantMembership(userId, tenantId.trim());
+
+    const items = await this.inboxMessages.listDraftReplies({
+      tenantId: tenantId.trim(),
+      userId,
+      workspaceId: workspaceId?.trim() || undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+
+    return { items };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('inbox')
+  @ApiOperation({ summary: 'List received Gmail inbox messages' })
+  async listInbox(
+    @Req() req: Request,
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
+    @Query('limit') limit?: string,
+  ) {
+    const userId = this.getUserId(req);
+    if (!tenantId?.trim()) {
+      throw new ForbiddenException('tenantId is required');
+    }
+    await this.assertTenantMembership(userId, tenantId.trim());
+
+    const items = await this.inboxMessages.listInboundMessages({
+      tenantId: tenantId.trim(),
+      userId,
+      workspaceId: workspaceId?.trim() || undefined,
+      limit: limit ? Number(limit) : undefined,
+    });
+
+    return { items };
   }
 }

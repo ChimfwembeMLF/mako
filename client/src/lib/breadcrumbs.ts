@@ -11,7 +11,8 @@ const ADMIN: BreadcrumbItem = { label: 'Admin', href: '/admin/roles' };
 const CHATBOT: BreadcrumbItem = { label: 'Chatbot', href: '/chatbot' };
 const CONTENT: BreadcrumbItem = { label: 'Content Engine', href: '/content' };
 const TEAM: BreadcrumbItem = { label: 'Team', href: '/team' };
-const TEMPLATES: BreadcrumbItem = { label: 'Templates', href: '/templates' };
+const TEMPLATES: BreadcrumbItem = { label: 'Post Templates', href: '/templates' };
+const WHATSAPP: BreadcrumbItem = { label: 'WhatsApp', href: '/whatsapp' };
 
 /** Paths where breadcrumbs are hidden (marketing / full-bleed landing). */
 export const BREADCRUMB_HIDDEN_PATHS = new Set(['/', '/home']);
@@ -29,21 +30,23 @@ const ROUTE_PATTERNS: RoutePattern[] = [
   { path: '/team/:userId/permissions', crumbs: [DASH, TEAM, { label: 'Permissions' }] },
   { path: '/contact/:sourceId', crumbs: [HOME, { label: 'Contact' }] },
   { path: '/chatbot/knowledge', crumbs: [DASH, CHATBOT, { label: 'Knowledge' }] },
-  { path: '/chatbot/sessions', crumbs: [DASH, CHATBOT, { label: 'Sessions' }] },
+  { path: '/chatbot/sessions', crumbs: [DASH, CHATBOT, { label: 'Chat History' }] },
+  { path: '/whatsapp/templates', crumbs: [DASH, WHATSAPP, { label: 'Templates' }] },
+  { path: '/whatsapp', crumbs: [DASH, WHATSAPP] },
   { path: '/dashboard', crumbs: [DASH] },
   { path: '/brand-brain', crumbs: [DASH, { label: 'Brand Brain' }] },
   { path: '/content', crumbs: [DASH, CONTENT] },
   { path: '/campaigns', crumbs: [DASH, { label: 'Campaigns' }] },
   { path: '/scheduler', crumbs: [DASH, { label: 'Scheduler' }] },
-  { path: '/leads', crumbs: [DASH, { label: 'Lead Agent' }] },
-  { path: '/mail', crumbs: [DASH, { label: 'Mail' }] },
+  { path: '/leads', crumbs: [DASH, { label: 'Leads' }] },
+  { path: '/mail', crumbs: [DASH, { label: 'Email' }] },
   { path: '/analytics', crumbs: [DASH, { label: 'Analytics' }] },
   { path: '/reports', crumbs: [DASH, { label: 'Reports' }] },
-  { path: '/publisher', crumbs: [DASH, { label: 'Publisher Connect' }] },
+  { path: '/publisher', crumbs: [DASH, { label: 'Connections' }] },
   { path: '/settings', crumbs: [DASH, { label: 'Settings' }] },
-  { path: '/media', crumbs: [DASH, { label: 'Media Library' }] },
+  { path: '/media', crumbs: [DASH, { label: 'Media' }] },
   { path: '/templates', crumbs: [DASH, TEMPLATES] },
-  { path: '/replies', crumbs: [DASH, { label: 'Replies' }] },
+  { path: '/replies', crumbs: [DASH, { label: 'Social Inbox' }] },
   { path: '/chatbot', crumbs: [DASH, CHATBOT] },
   { path: '/approvals', crumbs: [DASH, { label: 'Approvals' }] },
   { path: '/team', crumbs: [DASH, TEAM] },

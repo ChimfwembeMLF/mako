@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2 } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -19,9 +20,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useFormSuggestions } from "@/hooks/useFormSuggestions";
+import { useFieldEnhance } from "@/hooks/useFieldEnhance";
 import { SuggestedField } from "@/components/form/SuggestedField";
-import { FORM_SUGGESTION_FIELDS } from "@/lib/formSuggestionForms";
 import { whatsappPhoneFromLead, isWhatsappLead, formatWhatsappPhoneDisplay } from "@/lib/whatsappLead";
 
 interface Lead {
@@ -70,6 +70,8 @@ type WaMenuItem = {
 const emptyMenuItem = (): WaMenuItem => ({ title: "", description: "", response: "" });
 
 const LeadAgent = () => {
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'whatsapp' ? 'whatsapp' : 'leads';
   const [leads, setLeads] = useState<Lead[]>([]);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [replyText, setReplyText] = useState("");
@@ -99,41 +101,17 @@ const LeadAgent = () => {
   const [waFlowWelcomeMessage, setWaFlowWelcomeMessage] = useState("");
   const [waFlowMenuItems, setWaFlowMenuItems] = useState<WaMenuItem[]>([emptyMenuItem()]);
   const [waFlowAiFallback, setWaFlowAiFallback] = useState(true);
-  const [activeMenuItemIndex, setActiveMenuItemIndex] = useState(0);
   const [waFlowSaving, setWaFlowSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState('leads');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const fileRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
 
-  const waMenuSuggestionValues = useMemo(
-    () => ({
-      serviceName: waFlowServiceName,
-      welcomeMessage: waFlowWelcomeMessage,
-      menuTitle: waFlowMenuItems[activeMenuItemIndex]?.title ?? "",
-      menuDescription: waFlowMenuItems[activeMenuItemIndex]?.description ?? "",
-      menuResponse: waFlowMenuItems[activeMenuItemIndex]?.response ?? "",
-    }),
-    [waFlowServiceName, waFlowWelcomeMessage, waFlowMenuItems, activeMenuItemIndex],
-  );
-
-  const {
-    getPlaceholder: getWaMenuPlaceholder,
-    getSuggestionsForField: getWaMenuSuggestions,
-    getSelectedIndex: getWaMenuSelectedIndex,
-    setFieldIndex: setWaMenuFieldIndex,
-    pauseField: pauseWaMenuField,
-    isFieldActive: isWaMenuFieldActive,
-    loading: waMenuSuggestionsLoading,
-    fetchSuggestions: fetchWaMenuSuggestions,
-  } = useFormSuggestions({
+  const { enhanceField, enhancingKey } = useFieldEnhance({
     form: "whatsapp-menu",
     tenantId: tenant?.id,
-    fieldKeys: FORM_SUGGESTION_FIELDS["whatsapp-menu"],
-    values: waMenuSuggestionValues,
-    enabled: activeTab === "whatsapp",
   });
 
   useEffect(() => {
@@ -504,11 +482,11 @@ const LeadAgent = () => {
   return (
     <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-secondary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-strong text-foreground">
           <MessageSquare className="h-5 w-5 text-secondary-foreground" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold font-display">Lead Agent</h1>
+          <h1 className="text-2xl font-bold font-display">Leads</h1>
           <p className="text-muted-foreground text-sm">Auto-classify, reply, qualify, and book meetings</p>
         </div>
       </div>
@@ -587,7 +565,7 @@ const LeadAgent = () => {
         <BulkEmailSheet leads={leads} />
         {["all", "hot", "warm", "cold"].map((f) => (
           <Button key={f} size="sm" variant={filterClass === f ? "default" : "outline"} onClick={() => setFilterClass(f)}
-            className={filterClass === f ? "gradient-primary text-primary-foreground border-0" : ""}>
+            className={filterClass === f ? "" : ""}>
             {f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
           </Button>
         ))}
@@ -719,7 +697,7 @@ const LeadAgent = () => {
                 </li>
                 <li>
                   You do <strong>not</strong> send messages as the lead — you reply <strong>to their phone</strong> from
-                  your business number (Lead Agent → WhatsApp tab, or the WhatsApp button on a lead).
+                  your business number (Leads → WhatsApp tab, or the WhatsApp button on a lead).
                 </li>
                 <li>
                   Replies must be within Meta&apos;s 24-hour session window after their last message (unless using approved templates).
@@ -731,15 +709,9 @@ const LeadAgent = () => {
           <Card className="border-border/50 border-green-200/50 bg-green-50/30 dark:bg-green-950/10">
             <CardContent className="p-4 space-y-4">
               <div>
-                <p className="font-medium text-sm flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Bot className="h-4 w-4 text-green-600" />
-                    WhatsApp menu bot
-                  </span>
-                  <Button variant="outline" size="sm" onClick={() => fetchWaMenuSuggestions()}>
-                    <Sparkles className="mr-2 h-3.5 w-3.5 text-primary" />
-                    Suggestions
-                  </Button>
+                <p className="font-medium text-sm flex items-center gap-2">
+                  <Bot className="h-4 w-4 text-green-600" />
+                  WhatsApp menu bot
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   Build your own menu — customers tap an option or reply with a number (1, 2, 3…).
@@ -777,13 +749,11 @@ const LeadAgent = () => {
                   type="input"
                   value={waFlowServiceName}
                   onChange={setWaFlowServiceName}
-                  fallbackPlaceholder="e.g. Tekrem Solutions"
-                  placeholder={getWaMenuPlaceholder("serviceName", "e.g. Tekrem Solutions")}
-                  suggestions={getWaMenuSuggestions("serviceName")}
-                  selectedIndex={getWaMenuSelectedIndex("serviceName")}
-                  onSelectIndex={(index) => setWaMenuFieldIndex("serviceName", index)}
-                  onPauseRotation={() => pauseWaMenuField("serviceName")}
-                  isLive={isWaMenuFieldActive("serviceName")}
+                  placeholder="e.g. Tekrem Solutions"
+                  onEnhance={() =>
+                    enhanceField("serviceName", waFlowServiceName, setWaFlowServiceName)
+                  }
+                  enhancing={enhancingKey === "serviceName"}
                   className="h-9"
                 />
                 <p className="text-[11px] text-muted-foreground">
@@ -797,13 +767,11 @@ const LeadAgent = () => {
                   type="input"
                   value={waFlowWelcomeMessage}
                   onChange={setWaFlowWelcomeMessage}
-                  fallbackPlaceholder="Welcome to {serviceName}! How can we help?"
-                  placeholder={getWaMenuPlaceholder("welcomeMessage", "Welcome to {serviceName}! How can we help?")}
-                  suggestions={getWaMenuSuggestions("welcomeMessage")}
-                  selectedIndex={getWaMenuSelectedIndex("welcomeMessage")}
-                  onSelectIndex={(index) => setWaMenuFieldIndex("welcomeMessage", index)}
-                  onPauseRotation={() => pauseWaMenuField("welcomeMessage")}
-                  isLive={isWaMenuFieldActive("welcomeMessage")}
+                  placeholder="Welcome to {serviceName}! How can we help?"
+                  onEnhance={() =>
+                    enhanceField("welcomeMessage", waFlowWelcomeMessage, setWaFlowWelcomeMessage)
+                  }
+                  enhancing={enhancingKey === "welcomeMessage"}
                   className="h-9"
                 />
                 <p className="text-[11px] text-muted-foreground">
@@ -844,32 +812,32 @@ const LeadAgent = () => {
                       type="input"
                       value={item.title}
                       onChange={(value) => updateWaMenuItem(index, { title: value })}
-                      fallbackPlaceholder="Menu label — e.g. Pricing, Book a demo, Support"
-                      placeholder={getWaMenuPlaceholder("menuTitle", "Menu label — e.g. Pricing, Book a demo, Support")}
-                      suggestions={activeMenuItemIndex === index ? getWaMenuSuggestions("menuTitle") : []}
-                      selectedIndex={getWaMenuSelectedIndex("menuTitle")}
-                      onSelectIndex={(i) => setWaMenuFieldIndex("menuTitle", i)}
-                      onPauseRotation={() => {
-                        setActiveMenuItemIndex(index);
-                        pauseWaMenuField("menuTitle");
-                      }}
-                      isLive={activeMenuItemIndex === index && isWaMenuFieldActive("menuTitle")}
+                      placeholder="Menu label — e.g. Pricing, Book a demo, Support"
+                      onEnhance={() =>
+                        enhanceField(
+                          "menuTitle",
+                          item.title,
+                          (value) => updateWaMenuItem(index, { title: value }),
+                          `menuTitle-${index}`,
+                        )
+                      }
+                      enhancing={enhancingKey === `menuTitle-${index}`}
                       className="h-9"
                     />
                     <SuggestedField
                       type="input"
                       value={item.description ?? ""}
                       onChange={(value) => updateWaMenuItem(index, { description: value })}
-                      fallbackPlaceholder="Short hint (optional) — shown under the label in the list"
-                      placeholder={getWaMenuPlaceholder("menuDescription", "Short hint (optional) — shown under the label in the list")}
-                      suggestions={activeMenuItemIndex === index ? getWaMenuSuggestions("menuDescription") : []}
-                      selectedIndex={getWaMenuSelectedIndex("menuDescription")}
-                      onSelectIndex={(i) => setWaMenuFieldIndex("menuDescription", i)}
-                      onPauseRotation={() => {
-                        setActiveMenuItemIndex(index);
-                        pauseWaMenuField("menuDescription");
-                      }}
-                      isLive={activeMenuItemIndex === index && isWaMenuFieldActive("menuDescription")}
+                      placeholder="Short hint (optional) — shown under the label in the list"
+                      onEnhance={() =>
+                        enhanceField(
+                          "menuDescription",
+                          item.description ?? "",
+                          (value) => updateWaMenuItem(index, { description: value }),
+                          `menuDescription-${index}`,
+                        )
+                      }
+                      enhancing={enhancingKey === `menuDescription-${index}`}
                       className="h-9"
                     />
                     <div className="flex items-center gap-2">
@@ -889,25 +857,20 @@ const LeadAgent = () => {
                       type="textarea"
                       value={item.response}
                       onChange={(value) => updateWaMenuItem(index, { response: value })}
-                      fallbackPlaceholder={
+                      placeholder={
                         item.aiGenerate
                           ? "Guidance for AI — e.g. share pricing tiers and link to book a call"
                           : "Reply when selected — what the customer receives on WhatsApp"
                       }
-                      placeholder={getWaMenuPlaceholder(
-                        "menuResponse",
-                        item.aiGenerate
-                          ? "Guidance for AI — e.g. share pricing tiers and link to book a call"
-                          : "Reply when selected — what the customer receives on WhatsApp",
-                      )}
-                      suggestions={activeMenuItemIndex === index ? getWaMenuSuggestions("menuResponse") : []}
-                      selectedIndex={getWaMenuSelectedIndex("menuResponse")}
-                      onSelectIndex={(i) => setWaMenuFieldIndex("menuResponse", i)}
-                      onPauseRotation={() => {
-                        setActiveMenuItemIndex(index);
-                        pauseWaMenuField("menuResponse");
-                      }}
-                      isLive={activeMenuItemIndex === index && isWaMenuFieldActive("menuResponse")}
+                      onEnhance={() =>
+                        enhanceField(
+                          "menuResponse",
+                          item.response,
+                          (value) => updateWaMenuItem(index, { response: value }),
+                          `menuResponse-${index}`,
+                        )
+                      }
+                      enhancing={enhancingKey === `menuResponse-${index}`}
                       rows={3}
                     />
                   </div>
@@ -1067,7 +1030,7 @@ const LeadAgent = () => {
                 await handleReply();
                 setReplySheetOpen(false);
               }}
-              className="w-full gradient-primary text-primary-foreground border-0"
+              className="w-full"
             >
               <Send className="mr-2 h-4 w-4" /> Save Reply
             </Button>
@@ -1104,7 +1067,7 @@ const LeadAgent = () => {
                 setEmailSheetOpen(false);
               }}
               disabled={sendingEmail}
-              className="w-full gradient-primary text-primary-foreground border-0"
+              className="w-full"
             >
               <Mail className="mr-2 h-4 w-4" /> {sendingEmail ? "Sending..." : "Send Email"}
             </Button>
@@ -1164,7 +1127,7 @@ const LeadAgent = () => {
             <Button
               onClick={handleEditLead}
               disabled={savingEdit}
-              className="w-full gradient-primary text-primary-foreground border-0 mt-2"
+              className="w-full mt-2"
             >
               {savingEdit ? "Saving..." : "Save Changes"}
             </Button>

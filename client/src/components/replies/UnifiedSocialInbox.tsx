@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
-import { Bot, Inbox, Loader2, RefreshCw, Send } from 'lucide-react';
+import { Bot, Inbox, Loader2, MessageSquare, MessagesSquare, RefreshCw, Send } from 'lucide-react';
 import {
   commentRepliesApi,
   inboxApi,
@@ -272,42 +272,49 @@ export function UnifiedSocialInbox() {
                 Select a conversation
               </Card>
             ) : selected.channel === 'post_comment' && postGroup ? (
-              <PostCommentCard
-                post={postGroup}
-                canReply={canReply}
-                sendingId={sending}
-                manualText={manualText}
-                onDraftChange={(id, text) => setManualText((p) => ({ ...p, [id]: text }))}
-                onSend={(node) => void sendCommentReply(node)}
-                onAiDraft={async (node) => {
-                  setSending(node.id);
-                  try {
-                    const raw = await commentRepliesApi.suggest(node.id);
-                    const data = (await resolveQueued(raw)) as { content?: string };
-                    if (data?.content) {
-                      setManualText((p) => ({ ...p, [node.id]: data.content! }));
+              <div className="space-y-3 min-h-0 flex flex-col h-full">
+                <div className="flex items-center gap-2 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">
+                  <MessageSquare className="h-3.5 w-3.5 text-primary" />
+                  Post comments
+                </div>
+                <PostCommentCard
+                  post={postGroup}
+                  canReply={canReply}
+                  sendingId={sending}
+                  manualText={manualText}
+                  onDraftChange={(id, text) => setManualText((p) => ({ ...p, [id]: text }))}
+                  onSend={(node) => void sendCommentReply(node)}
+                  onAiDraft={async (node) => {
+                    setSending(node.id);
+                    try {
+                      const raw = await commentRepliesApi.suggest(node.id);
+                      const data = (await resolveQueued(raw)) as { content?: string };
+                      if (data?.content) {
+                        setManualText((p) => ({ ...p, [node.id]: data.content! }));
+                      }
+                    } finally {
+                      setSending(null);
                     }
-                  } finally {
-                    setSending(null);
-                  }
-                }}
-                onDismiss={async (node) => {
-                  await commentRepliesApi.update(node.id, { status: 'dismissed' } as never);
-                  await loadDetail();
-                }}
-                hideViewLink
-                fullMedia
-              />
+                  }}
+                  onDismiss={async (node) => {
+                    await commentRepliesApi.update(node.id, { status: 'dismissed' } as never);
+                    await loadDetail();
+                  }}
+                  hideViewLink
+                />
+              </div>
             ) : (
-              <Card className="flex flex-col overflow-hidden flex-1 min-h-0">
+              <Card className="flex flex-col overflow-hidden flex-1 min-h-0 h-full">
                 <CardContent className="p-0 flex flex-col flex-1 min-h-0">
-                  <div className="p-3 border-b flex items-center gap-2 min-w-0">
+                  <div className="p-3 border-b flex items-center gap-2 min-w-0 bg-muted/20">
+                    <MessagesSquare className="h-4 w-4 text-primary shrink-0" />
                     <Badge variant="outline" className="text-[10px] capitalize shrink-0">
                       {selected.platform}
                     </Badge>
                     <span className="text-sm font-medium truncate">
                       {selected.participantName ?? selected.title}
                     </span>
+                    <span className="text-[10px] text-muted-foreground ml-auto shrink-0">Direct message</span>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[200px]">

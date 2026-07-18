@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
+import { applyWorkspaceScope } from '../../common/workspace-scope.util';
 import {
   WhatsappTemplate,
   TemplateComponent,
@@ -48,9 +49,12 @@ export class WhatsappTemplatesService {
     tenantId: string,
     workspaceId?: string,
   ): Promise<WhatsappTemplate[]> {
-    const where: Record<string, unknown> = { tenantId };
-    if (workspaceId) where.workspaceId = workspaceId;
-    return this.repo.find({ where, order: { createdAt: 'DESC' } });
+    const qb = this.repo
+      .createQueryBuilder('t')
+      .where('t.tenantId = :tenantId', { tenantId })
+      .orderBy('t.createdAt', 'DESC');
+    applyWorkspaceScope(qb, 't', workspaceId);
+    return qb.getMany();
   }
 
   async findOne(id: string, tenantId: string): Promise<WhatsappTemplate> {
@@ -195,7 +199,11 @@ export class WhatsappTemplatesService {
     }>
   > {
     const wabaId = await this.resolveWabaId(creds);
-    if (!wabaId) return [];
+    if (!wabaId) {
+      throw new BadRequestException(
+        'Could not resolve WhatsApp Business Account ID. Reconnect WhatsApp in Publisher Connect.',
+      );
+    }
     try {
       const { data } = await axios.get<{
         data?: Array<{
@@ -211,7 +219,7 @@ export class WhatsappTemplatesService {
         {
           params: {
             access_token: creds.accessToken,
-            limit: 100,
+            limit: 250,
             fields: 'id,name,language,status,category,components',
           },
         },
@@ -227,9 +235,30 @@ export class WhatsappTemplatesService {
           components: (t.components ?? []) as TemplateComponent[],
         }));
     } catch (err) {
-      this.logger.warn(`listFromMeta failed: ${this.formatGraphError(err)}`);
-      return [];
+      const msg = this.formatGraphError(err);
+      this.logger.warn(`listFromMeta failed: ${msg}`);
+      throw new BadRequestException(`Could not fetch templates from Meta: ${msg}`);
     }
+  }
+
+  /** Import every approved (or pending) Meta template into the local registry. */
+  async importAllFromMeta(
+    tenantId: string,
+    workspaceId: string | undefined,
+    creds: WhatsappCredentials,
+  ): Promise<{ imported: number; skipped: number }> {
+    const metaTemplates = await this.listFromMeta(creds);
+    let imported = 0;
+    let skipped = 0;
+    for (const tpl of metaTemplates) {
+      if (!['APPROVED', 'PENDING'].includes(tpl.status)) {
+        skipped++;
+        continue;
+      }
+      await this.importFromMeta(tenantId, workspaceId, tpl);
+      imported++;
+    }
+    return { imported, skipped };
   }
 
   /** Import a Meta template into local registry as APPROVED */

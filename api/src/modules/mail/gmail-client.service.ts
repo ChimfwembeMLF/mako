@@ -13,6 +13,8 @@ export type ParsedGmailMessage = {
   body: string;
   messageIdHeader?: string;
   isUnread: boolean;
+  listUnsubscribe?: string;
+  autoSubmitted?: boolean;
 };
 
 @Injectable()
@@ -79,10 +81,18 @@ export class GmailClientService {
     userId: string,
     maxResults = 20,
   ): Promise<string[]> {
+    return this.listInboxMessageIds(userId, maxResults, { unreadOnly: true });
+  }
+
+  async listInboxMessageIds(
+    userId: string,
+    maxResults = 50,
+    options?: { unreadOnly?: boolean },
+  ): Promise<string[]> {
     const gmail = await this.getGmailClient(userId);
     const response = await gmail.users.messages.list({
       userId: 'me',
-      labelIds: ['INBOX', 'UNREAD'],
+      labelIds: options?.unreadOnly ? ['INBOX', 'UNREAD'] : ['INBOX'],
       maxResults,
       q: '-from:me',
     });
@@ -109,6 +119,12 @@ export class GmailClientService {
     const fromEmail = extractEmailAddress(fromRaw);
     const subject = headerValue(headers, 'Subject') ?? '';
     const messageIdHeader = headerValue(headers, 'Message-ID') ?? undefined;
+    const listUnsubscribe =
+      headerValue(headers, 'List-Unsubscribe') ??
+      headerValue(headers, 'List-Unsubscribe-Post');
+    const autoSubmitted =
+      headerValue(headers, 'Auto-Submitted')?.toLowerCase().includes('auto') ??
+      false;
     const body = extractBodyText(data.payload);
     const isUnread = (data.labelIds ?? []).includes('UNREAD');
 
@@ -120,6 +136,8 @@ export class GmailClientService {
       body,
       messageIdHeader,
       isUnread,
+      listUnsubscribe,
+      autoSubmitted,
     };
   }
 
@@ -142,6 +160,32 @@ export class GmailClientService {
       },
     });
     return { id: response.data.id };
+  }
+
+  async createDraft(params: {
+    userId: string;
+    fromEmail: string;
+    toEmail: string;
+    subject: string;
+    body: string;
+    threadId?: string;
+    inReplyTo?: string;
+  }): Promise<{ draftId?: string | null; messageId?: string | null }> {
+    const gmail = await this.getGmailClient(params.userId);
+    const raw = this.createRawReplyEmail(params);
+    const response = await gmail.users.drafts.create({
+      userId: 'me',
+      requestBody: {
+        message: {
+          raw,
+          threadId: params.threadId,
+        },
+      },
+    });
+    return {
+      draftId: response.data.id ?? null,
+      messageId: response.data.message?.id ?? null,
+    };
   }
 
   isInsufficientScopeError(error: unknown): boolean {

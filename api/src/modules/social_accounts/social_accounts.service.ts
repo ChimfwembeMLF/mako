@@ -23,6 +23,7 @@ import {
   logOnce,
 } from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
+import { scopeWhereIncludingTenantWide } from '../../common/workspace-scope.util';
 import {
   SocialAccountsOAuthService,
   WhatsAppPhoneOption,
@@ -386,10 +387,9 @@ export class SocialAccountsService {
   async findByTenant(tenantId: string, userId: string, workspaceId?: string) {
     await this.assertTenantAccess(userId, tenantId);
     const accounts = await this.repo.find({
-      where: {
-        ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
+      where: scopeWhereIncludingTenantWide<SocialAccounts>(tenantId, workspaceId, {
         connected: true,
-      },
+      }),
       order: { created_at: 'DESC' },
     });
     const refreshed = await Promise.all(

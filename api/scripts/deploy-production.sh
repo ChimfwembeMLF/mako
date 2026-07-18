@@ -4,7 +4,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CLIENT="$ROOT/resources/client"
+REPO_ROOT="$(cd "$ROOT/.." && pwd)"
+CLIENT="$REPO_ROOT/client"
 WITH_MIGRATIONS=false
 
 for arg in "$@"; do
@@ -21,10 +22,7 @@ if [[ ! -f .env ]]; then
 fi
 
 echo "==> Installing dependencies"
-corepack yarn install --immutable 2>/dev/null || corepack yarn install
-if [[ -f "$CLIENT/package.json" ]]; then
-  (cd "$CLIENT" && npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts)
-fi
+(cd "$REPO_ROOT" && corepack yarn install --immutable 2>/dev/null || corepack yarn install)
 
 echo "==> Building client + API (output: client/dist + dist/)"
 corepack yarn build

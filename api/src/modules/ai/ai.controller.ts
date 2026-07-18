@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MistralChatService } from './services/mistral-chat.service';
 import { FormSuggestionsService } from './services/form-suggestions.service';
 import { FormSuggestionsDto } from './dto/form-suggestions.dto';
+import { EnhanceFieldDto } from './dto/enhance-field.dto';
 
 interface JwtUser {
   sub: string;
@@ -35,6 +36,20 @@ export class AiController {
       userId: String(req.user.sub),
       form: dto.form,
       fields: dto.fields,
+    });
+  }
+
+  @Post('enhance-field')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  enhanceField(@Req() req: { user: JwtUser }, @Body() dto: EnhanceFieldDto) {
+    return this.formSuggestions.enhanceField({
+      tenantId: dto.tenantId,
+      workspaceId: dto.workspaceId,
+      userId: String(req.user.sub),
+      form: dto.form,
+      fieldKey: dto.fieldKey,
+      currentValue: dto.currentValue,
     });
   }
 }

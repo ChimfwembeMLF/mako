@@ -11,7 +11,9 @@ import { P } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Link2, Unlink, Loader2, Bot } from 'lucide-react';
+import { Mail, Link2, Unlink, Loader2, Bot, FileText, Inbox } from 'lucide-react';
+import { EmailDraftsList } from '@/components/mail/EmailDraftsList';
+import { EmailInboxList } from '@/components/mail/EmailInboxList';
 
 const EMAIL_PLATFORM_OPTIONS = ['email'];
 
@@ -34,6 +36,8 @@ export default function MailDashboardPage() {
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
+  const [draftRefreshKey, setDraftRefreshKey] = useState(0);
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
@@ -115,8 +119,10 @@ export default function MailDashboardPage() {
       const result = await mailApi.gmailSync(tenant.id);
       toast({
         title: 'Inbox checked',
-        description: `Processed ${result.processed} message(s), sent ${result.replied} auto-reply(ies).`,
+        description: `Synced ${result.processed} message(s), created ${result.drafted} draft(s).`,
       });
+      setInboxRefreshKey((k) => k + 1);
+      setDraftRefreshKey((k) => k + 1);
     } catch (err: unknown) {
       toast({
         title: 'Inbox sync failed',
@@ -134,24 +140,36 @@ export default function MailDashboardPage() {
         <div className="flex items-start gap-3 mb-6">
           <Mail className="h-6 w-6 text-primary shrink-0 mt-0.5" />
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-semibold">Mail</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold">Email</h1>
             <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Connect Gmail to send lead emails and auto-reply to new inbox messages using your email rules.
+              Connect Gmail to send lead emails. Inbox rules create draft replies you review before sending.
             </p>
           </div>
         </div>
 
-        <Tabs defaultValue="gmail" className="min-w-0">
+        <Tabs defaultValue="inbox" className="min-w-0">
           <TabsList className="h-auto flex-wrap justify-start gap-1 p-1">
+            <TabsTrigger value="inbox" className="text-xs sm:text-sm">
+              <Inbox className="h-3.5 w-3.5 mr-1.5" />
+              Inbox
+            </TabsTrigger>
             <TabsTrigger value="gmail" className="text-xs sm:text-sm">
               <Link2 className="h-3.5 w-3.5 mr-1.5" />
               Gmail
+            </TabsTrigger>
+            <TabsTrigger value="drafts" className="text-xs sm:text-sm">
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              Draft replies
             </TabsTrigger>
             <TabsTrigger value="rules" className="text-xs sm:text-sm">
               <Bot className="h-3.5 w-3.5 mr-1.5" />
               Reply rules
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="inbox" className="mt-4">
+            <EmailInboxList refreshKey={inboxRefreshKey} />
+          </TabsContent>
 
           <TabsContent value="gmail" className="mt-4 space-y-4">
             <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
@@ -166,8 +184,8 @@ export default function MailDashboardPage() {
                       <p className="font-medium text-sm">Gmail connection</p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {status?.connected
-                          ? 'Outbound mail and inbox auto-reply use your connected Gmail account.'
-                          : 'Connect Gmail to send emails and enable inbox auto-reply (requires inbox read permission).'}
+                          ? 'Outbound mail and inbox rules create Gmail draft replies for your review.'
+                          : 'Connect Gmail to send emails and draft inbox replies (requires read + compose permissions).'}
                       </p>
                     </div>
                     <Badge variant={status?.connected ? 'default' : 'secondary'}>
@@ -250,12 +268,16 @@ export default function MailDashboardPage() {
             </div>
           </TabsContent>
 
+          <TabsContent value="drafts" className="mt-4">
+            <EmailDraftsList refreshKey={draftRefreshKey} />
+          </TabsContent>
+
           <TabsContent value="rules" className="mt-4">
             <AutoReplyRulesPanel
               platformFilter="email"
               platformOptions={EMAIL_PLATFORM_OPTIONS}
               defaultPlatform="email"
-              description="Rules match inbound Gmail messages by keyword. Enable a rule, then new unread inbox emails are auto-replied every few minutes."
+              description="Rules match inbound Gmail messages by keyword. New unread emails get draft replies in Gmail every few minutes — nothing is sent until you approve."
             />
           </TabsContent>
         </Tabs>

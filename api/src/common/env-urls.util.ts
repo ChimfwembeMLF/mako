@@ -1,9 +1,70 @@
 import type { ConfigService } from '@nestjs/config';
+import { existsSync } from 'fs';
+import { join } from 'path';
 
-/** Default browser origin in development (Nest serves SPA on PORT). */
+/** Vite dev server port (client/vite.config.ts). */
+export function defaultViteDevPort(): string {
+  return process.env.CLIENT_DEV_PORT?.trim() || '5173';
+}
+
+/** True when Nest serves the built React app from client/dist on PORT. */
+export function isServeClientMode(): boolean {
+  return process.env.SERVE_CLIENT === 'true';
+}
+
+/** Default browser origin in development. */
 export function defaultDevFrontendUrl(): string {
+  const explicit = process.env.CLIENT_DEV_URL?.trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+
+  if (isServeClientMode()) {
+    const port = process.env.PORT || '4000';
+    return `http://localhost:${port}`;
+  }
+
+  const vitePort = defaultViteDevPort();
+  return `http://localhost:${vitePort}`;
+}
+
+/** API origin in development (Nest on PORT). */
+export function defaultDevApiOrigin(): string {
   const port = process.env.PORT || '4000';
   return `http://localhost:${port}`;
+}
+
+/** When API-only dev, FRONTEND_URL must not point at Nest (no SPA there). */
+export function normalizeDevFrontendUrl(): void {
+  if (process.env.NODE_ENV === 'production') return;
+
+  const apiOrigin = defaultDevApiOrigin();
+  const frontend = (
+    process.env.FRONTEND_URL?.trim() ||
+    process.env.CLIENT_URL?.trim() ||
+    process.env.APP_URL?.trim() ||
+    ''
+  ).replace(/\/$/, '');
+
+  const clientDist = join(process.cwd(), 'client/dist/index.html');
+  const hasBuiltClient = existsSync(clientDist);
+  const shouldUseVite =
+    !isServeClientMode() &&
+    (!frontend || frontend === apiOrigin) &&
+    !hasBuiltClient;
+
+  if (shouldUseVite) {
+    const viteOrigin = defaultDevFrontendUrl();
+    if (frontend && frontend !== viteOrigin) {
+      console.warn(
+        `[urls] FRONTEND_URL=${frontend} points at the API, but SERVE_CLIENT is not enabled — using Vite dev server ${viteOrigin} for OAuth redirects`,
+      );
+    }
+    process.env.FRONTEND_URL = viteOrigin;
+    if (!process.env.CLIENT_URL?.trim()) {
+      process.env.CLIENT_URL = viteOrigin;
+    }
+  } else if (!process.env.FRONTEND_URL?.trim()) {
+    process.env.FRONTEND_URL = defaultDevFrontendUrl();
+  }
 }
 
 function firstNonEmpty(...values: Array<string | undefined>): string {

@@ -114,11 +114,11 @@ export default function ChatbotKnowledgePage() {
     <div className="w-full py-6 space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-3">
-          <div className="p-2.5 rounded-xl gradient-primary text-white shrink-0">
+          <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shrink-0">
             <BookOpen className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-display font-semibold">Knowledge Library</h1>
+            <h1 className="text-2xl font-display font-semibold">Knowledge</h1>
             <p className="text-sm text-muted-foreground mt-1 max-w-xl">
               Manage all documents that ground your chatbot. Files are chunked and embedded for
               retrieval at query time — not model fine-tuning.

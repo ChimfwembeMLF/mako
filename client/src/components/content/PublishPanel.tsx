@@ -574,7 +574,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
                 to="/publisher"
                 className="inline-flex items-center gap-1 text-xs text-primary mt-1 hover:underline"
               >
-                <Link2 className="h-3 w-3" /> Connect accounts in Publisher Connect
+                <Link2 className="h-3 w-3" /> Connect accounts in Connections
               </Link>
             </div>
           </div>
@@ -601,7 +601,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
         </Button>
         <Button
           type="button"
-          className="w-full sm:flex-1 gradient-primary text-primary-foreground border-0"
+          className="w-full sm:flex-1"
           onClick={handlePublish}
           disabled={publishing || generating || !selectedPlatforms.length || validationIssues.length > 0}
         >

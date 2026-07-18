@@ -20,7 +20,7 @@ import { CreateWhatsappTemplateDto } from './dto/create-whatsapp-template.dto';
 import { UpdateWhatsappTemplateDto } from './dto/update-whatsapp-template.dto';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { WhatsappMessagingService } from '../whatsapp/whatsapp-messaging.service';
-import { scopeWhere } from '../../common/workspace-scope.util';
+import { applyWorkspaceScope } from '../../common/workspace-scope.util';
 
 interface JwtUser {
   sub: string;
@@ -38,33 +38,24 @@ export class WhatsappTemplatesController {
     private readonly socialRepo: Repository<SocialAccounts>,
   ) {}
 
-  // ─── Resolve credentials helper ───────────────────────────────────────────
-
   private async resolveCreds(
     tenantId: string,
     userId: string,
     workspaceId?: string,
   ) {
+    const qb = this.socialRepo
+      .createQueryBuilder('a')
+      .where('a.tenantId = :tenantId', { tenantId })
+      .andWhere('a.platform = :platform', { platform: 'whatsapp' })
+      .andWhere('a.connected = true');
+    applyWorkspaceScope(qb, 'a', workspaceId);
+    const accounts = await qb.getMany();
     const account =
-      (await this.socialRepo.findOne({
-        where: {
-          ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
-          userId,
-          platform: 'whatsapp',
-          connected: true,
-        },
-      })) ??
-      (await this.socialRepo.findOne({
-        where: {
-          ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
-          platform: 'whatsapp',
-          connected: true,
-        },
-      }));
+      accounts.find((a) => a.userId === userId) ?? accounts[0] ?? null;
 
     if (!account) {
       throw new BadRequestException(
-        'No connected WhatsApp account found for this workspace.',
+        'No connected WhatsApp account found. Connect WhatsApp in Publisher Connect first.',
       );
     }
     const creds = this.messaging.credentialsFromAccount(account);
@@ -74,6 +65,64 @@ export class WhatsappTemplatesController {
       );
     }
     return creds;
+  }
+
+  // ─── Static Meta routes (must be before :id routes) ─────────────────────
+
+  @Get('meta')
+  @ApiOperation({ summary: 'Fetch templates directly from Meta WABA (for import)' })
+  async listFromMeta(
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId: string | undefined,
+    @Req() req: { user: JwtUser },
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    const creds = await this.resolveCreds(tenantId, String(req.user.sub), workspaceId);
+    return this.templates.listFromMeta(creds);
+  }
+
+  @Post('sync-all')
+  @ApiOperation({ summary: 'Sync all PENDING/APPROVED local templates from Meta' })
+  async syncAll(
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId: string | undefined,
+    @Req() req: { user: JwtUser },
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    const creds = await this.resolveCreds(tenantId, String(req.user.sub), workspaceId);
+    return this.templates.syncAll(tenantId, creds, workspaceId);
+  }
+
+  @Post('import-all')
+  @ApiOperation({ summary: 'Import all approved Meta templates into Mako' })
+  async importAll(
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId: string | undefined,
+    @Req() req: { user: JwtUser },
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    const creds = await this.resolveCreds(tenantId, String(req.user.sub), workspaceId);
+    return this.templates.importAllFromMeta(tenantId, workspaceId, creds);
+  }
+
+  @Post('import')
+  @ApiOperation({ summary: 'Import an already-approved Meta template into local registry' })
+  async importFromMeta(
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId: string | undefined,
+    @Req() req: { user: JwtUser },
+    @Body()
+    body: {
+      metaId: string;
+      name: string;
+      language: string;
+      status: string;
+      category?: string;
+      components: any[];
+    },
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    return this.templates.importFromMeta(tenantId, workspaceId, body);
   }
 
   // ─── CRUD ─────────────────────────────────────────────────────────────────
@@ -115,7 +164,7 @@ export class WhatsappTemplatesController {
     return this.templates.remove(id, tenantId);
   }
 
-  // ─── Meta Actions ─────────────────────────────────────────────────────────
+  // ─── Per-template Meta actions ────────────────────────────────────────────
 
   @Post(':id/submit')
   @ApiOperation({ summary: 'Submit a DRAFT template to Meta for approval' })
@@ -141,49 +190,5 @@ export class WhatsappTemplatesController {
     if (!tenantId) throw new BadRequestException('tenantId is required');
     const creds = await this.resolveCreds(tenantId, String(req.user.sub), workspaceId);
     return this.templates.syncStatus(id, tenantId, creds);
-  }
-
-  @Post('sync-all')
-  @ApiOperation({ summary: 'Sync all PENDING/APPROVED templates from Meta' })
-  async syncAll(
-    @Query('tenantId') tenantId: string,
-    @Query('workspaceId') workspaceId: string | undefined,
-    @Req() req: { user: JwtUser },
-  ) {
-    if (!tenantId) throw new BadRequestException('tenantId is required');
-    const creds = await this.resolveCreds(tenantId, String(req.user.sub), workspaceId);
-    return this.templates.syncAll(tenantId, creds, workspaceId);
-  }
-
-  @Get('meta')
-  @ApiOperation({ summary: 'Fetch templates directly from Meta WABA (for import)' })
-  async listFromMeta(
-    @Query('tenantId') tenantId: string,
-    @Query('workspaceId') workspaceId: string | undefined,
-    @Req() req: { user: JwtUser },
-  ) {
-    if (!tenantId) throw new BadRequestException('tenantId is required');
-    const creds = await this.resolveCreds(tenantId, String(req.user.sub), workspaceId);
-    return this.templates.listFromMeta(creds);
-  }
-
-  @Post('import')
-  @ApiOperation({ summary: 'Import an already-approved Meta template into local registry' })
-  async importFromMeta(
-    @Query('tenantId') tenantId: string,
-    @Query('workspaceId') workspaceId: string | undefined,
-    @Req() req: { user: JwtUser },
-    @Body()
-    body: {
-      metaId: string;
-      name: string;
-      language: string;
-      status: string;
-      category?: string;
-      components: any[];
-    },
-  ) {
-    if (!tenantId) throw new BadRequestException('tenantId is required');
-    return this.templates.importFromMeta(tenantId, workspaceId, body);
   }
 }

@@ -263,7 +263,7 @@ For production, replace `localhost:4000` with your deployed API URL (e.g. `https
 4. Open **APIs & Services → Credentials → + Create Credentials → OAuth client ID**:
    - Application type: **Web application**
    - Name: e.g. `SocialOS API`
-   - **Authorized JavaScript origins** (optional for server-side flow): `http://localhost:4000`
+   - **Authorized JavaScript origins** (optional for server-side flow): `http://localhost:5173` and `http://localhost:4000`
    - **Authorized redirect URIs** — add exactly:
      ```
      http://localhost:4000/api/v1/auth/google/redirect

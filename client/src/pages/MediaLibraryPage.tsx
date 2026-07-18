@@ -101,7 +101,7 @@ export default function MediaLibraryPage() {
           <div className="flex items-center gap-3">
             <Image className="h-6 w-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-semibold">Media Library</h1>
+              <h1 className="text-2xl font-semibold">Media</h1>
               <p className="text-sm text-muted-foreground">
                 All brand assets for {tenant?.name} — stored in cloud storage.
               </p>

@@ -140,8 +140,23 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
+      <div className="flex items-center gap-3 border-b bg-muted/30 px-4 py-3">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Search className="h-4 w-4 text-primary" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold leading-tight">Search workspace</p>
+          <p className="text-[11px] text-muted-foreground truncate">
+            Pages, content, leads — or ask AI a question
+          </p>
+        </div>
+        <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] font-normal shrink-0">
+          ⌘K
+        </Badge>
+      </div>
+
       <CommandInput
-        placeholder="Search pages, content, leads… or ask a question"
+        placeholder="Type to search or ask a question…"
         value={query}
         onValueChange={(v) => {
           setQuery(v);
@@ -301,21 +316,23 @@ export function GlobalSearchTrigger({
   onClick: () => void;
 }) {
   return (
-    <Button
-      variant="outline"
-      size="sm"
+    <button
+      type="button"
+      onClick={onClick}
       className={cn(
-        "hidden md:inline-flex h-9 w-full max-w-[220px] justify-start gap-2 text-muted-foreground font-normal",
+        "group hidden md:flex h-10 w-full items-center gap-2.5 rounded-full border border-border/80",
+        "bg-muted/40 px-4 text-sm text-muted-foreground shadow-sm transition-all",
+        "hover:border-border hover:bg-muted/60 hover:text-foreground hover:shadow-md",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         className,
       )}
-      onClick={onClick}
     >
-      <Search className="h-4 w-4 shrink-0 opacity-60" />
-      <span className="truncate flex-1 text-left">Search…</span>
-      <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded border bg-muted px-1.5 font-mono text-[10px] opacity-80">
+      <Search className="h-4 w-4 shrink-0 opacity-50 group-hover:opacity-70" />
+      <span className="truncate flex-1 text-left">Search pages, content, leads…</span>
+      <kbd className="pointer-events-none hidden lg:inline-flex h-5 select-none items-center gap-0.5 rounded-md border bg-background/80 px-1.5 font-mono text-[10px] opacity-70">
         ⌘K
       </kbd>
-    </Button>
+    </button>
   );
 }
 

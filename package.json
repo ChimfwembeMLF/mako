@@ -1,15 +1,23 @@
 {
   "name": "mako",
   "private": true,
-  "scripts": {
-    "dev": "cd api && yarn dev",
-    "dev:ui": "cd client && npm run dev",
-    "build": "cd api && yarn build",
-    "build:ui": "cd client && npm run build",
-    "deploy:prod": "cd api && yarn deploy:prod",
-    "install:all": "cd api && yarn install && cd ../client && npm install"
-  },
+  "packageManager": "yarn@4.17.1",
+  "workspaces": [
+    "api",
+    "client"
+  ],
   "engines": {
     "node": ">=20"
+  },
+  "resolutions": {
+    "hls.js": "1.5.20"
+  },
+  "scripts": {
+    "dev": "bash scripts/run-with-node.sh yarn workspace custom-template-api dev",
+    "dev:ui": "bash scripts/run-with-node.sh yarn workspace @mako/client dev",
+    "build": "bash scripts/run-with-node.sh yarn workspace custom-template-api build",
+    "build:ui": "bash scripts/run-with-node.sh yarn workspace @mako/client build",
+    "deploy:prod": "bash scripts/run-with-node.sh yarn workspace custom-template-api deploy:prod",
+    "install:all": "bash scripts/run-with-node.sh yarn install"
   }
 }

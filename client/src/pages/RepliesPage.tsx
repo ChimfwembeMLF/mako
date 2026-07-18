@@ -160,7 +160,7 @@ export default function RepliesPage() {
           <div className="flex items-start gap-3 min-w-0">
             <MessageSquareReply className="h-6 w-6 text-primary shrink-0 mt-0.5" />
             <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-semibold">Replies</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold">Social Inbox</h1>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                 Unified inbox for all platforms — comments, DMs, attachments, and auto-replies.
               </p>

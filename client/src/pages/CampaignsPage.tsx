@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useAuth } from '@/hooks/useAuth';
-import { useFormSuggestions } from '@/hooks/useFormSuggestions';
+import { useFieldEnhance } from '@/hooks/useFieldEnhance';
 import { SuggestedField } from '@/components/form/SuggestedField';
 import { contentCampaignsApi } from '@/lib/api';
 import { MultiPlatformPicker } from '@/components/content/MultiPlatformPicker';
@@ -179,13 +179,9 @@ export default function CampaignsPage() {
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [platforms, setPlatforms] = useState<string[]>(['linkedin', 'facebook', 'instagram']);
 
-  const campaignFieldKeys = useMemo(() => ['name', 'theme', 'goal'], []);
-  const campaignValues = useMemo(() => ({ name, theme, goal }), [name, theme, goal]);
-  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive, fetchSuggestions } = useFormSuggestions({
+  const { enhanceField, enhancingKey } = useFieldEnhance({
     form: 'campaign',
     tenantId: tenant?.id,
-    fieldKeys: campaignFieldKeys,
-    values: campaignValues,
   });
 
   useEffect(() => {
@@ -277,17 +273,11 @@ export default function CampaignsPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Generator */}
         <div className="rounded-xl border bg-card shadow-sm overflow-hidden lg:col-span-1">
-          <div className="px-5 py-4 border-b bg-muted/30 flex items-center justify-between">
-            <div>
-              <h2 className="font-semibold text-sm">Create campaign</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                AI plans posts across days and platforms using your Brand Brain
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => fetchSuggestions()}>
-              <Sparkles className="mr-2 h-3.5 w-3.5 text-primary" />
-              Suggestions
-            </Button>
+          <div className="px-5 py-4 border-b bg-muted/30">
+            <h2 className="font-semibold text-sm">Create campaign</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              AI plans posts across days and platforms using your Brand Brain
+            </p>
           </div>
           <div className="p-5 space-y-4">
             <div className="space-y-2">
@@ -296,13 +286,9 @@ export default function CampaignsPage() {
                 type="input"
                 value={name}
                 onChange={setName}
-                fallbackPlaceholder="e.g. Summer Product Launch"
-                placeholder={getPlaceholder('name', 'e.g. Summer Product Launch')}
-                suggestions={getSuggestionsForField('name')}
-                selectedIndex={getSelectedIndex('name')}
-                onSelectIndex={(index) => setFieldIndex('name', index)}
-                onPauseRotation={() => pauseField('name')}
-                isLive={isFieldActive('name')}
+                placeholder="e.g. Summer Product Launch"
+                onEnhance={() => enhanceField('name', name, setName)}
+                enhancing={enhancingKey === 'name'}
               />
             </div>
             <div className="space-y-2">
@@ -311,16 +297,9 @@ export default function CampaignsPage() {
                 type="textarea"
                 value={theme}
                 onChange={setTheme}
-                fallbackPlaceholder="What is this campaign about? e.g. Launching our new delivery app for farmers in Zambia"
-                placeholder={getPlaceholder(
-                  'theme',
-                  'What is this campaign about? e.g. Launching our new delivery app for farmers in Zambia',
-                )}
-                suggestions={getSuggestionsForField('theme')}
-                selectedIndex={getSelectedIndex('theme')}
-                onSelectIndex={(index) => setFieldIndex('theme', index)}
-                onPauseRotation={() => pauseField('theme')}
-                isLive={isFieldActive('theme')}
+                placeholder="What is this campaign about? e.g. Launching our new delivery app for farmers in Zambia"
+                onEnhance={() => enhanceField('theme', theme, setTheme)}
+                enhancing={enhancingKey === 'theme'}
                 rows={3}
               />
             </div>
@@ -330,13 +309,9 @@ export default function CampaignsPage() {
                 type="input"
                 value={goal}
                 onChange={setGoal}
-                fallbackPlaceholder="e.g. Drive sign-ups, build awareness, promote offer"
-                placeholder={getPlaceholder('goal', 'e.g. Drive sign-ups, build awareness, promote offer')}
-                suggestions={getSuggestionsForField('goal')}
-                selectedIndex={getSelectedIndex('goal')}
-                onSelectIndex={(index) => setFieldIndex('goal', index)}
-                onPauseRotation={() => pauseField('goal')}
-                isLive={isFieldActive('goal')}
+                placeholder="e.g. Drive sign-ups, build awareness, promote offer"
+                onEnhance={() => enhanceField('goal', goal, setGoal)}
+                enhancing={enhancingKey === 'goal'}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -361,7 +336,7 @@ export default function CampaignsPage() {
               <MultiPlatformPicker values={platforms} onChange={setPlatforms} />
             </div>
             <Button
-              className="w-full gradient-primary text-primary-foreground border-0"
+              className="w-full"
               onClick={handleGenerate}
               disabled={generating || !theme.trim()}
             >

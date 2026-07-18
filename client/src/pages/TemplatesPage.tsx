@@ -129,7 +129,7 @@ export default function TemplatesPage() {
           <div className="flex items-center gap-3">
             <LayoutTemplate className="h-6 w-6 text-primary" />
             <div>
-              <h1 className="text-2xl font-semibold">Content Templates</h1>
+              <h1 className="text-2xl font-semibold">Post Templates</h1>
               <p className="text-sm text-muted-foreground">Platform-specific templates that govern how AI generates content.</p>
             </div>
           </div>

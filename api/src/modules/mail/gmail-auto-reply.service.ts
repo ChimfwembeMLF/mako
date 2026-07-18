@@ -10,6 +10,7 @@ import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { UserService } from '../user/user.service';
 import { GmailClientService } from './gmail-client.service';
 import { MailMessages } from './entities/mail_messages.entity';
+import { sanitizeInboundEmailBody } from './email-reply.util';
 
 @Injectable()
 export class GmailAutoReplyService {
@@ -40,10 +41,14 @@ export class GmailAutoReplyService {
     threadId?: string;
     messageIdHeader?: string;
   }): Promise<boolean> {
-    const existing = await this.mailMessagesRepo.findOne({
-      where: { gmailMessageId: params.gmailMessageId },
+    const existingDraft = await this.mailMessagesRepo.findOne({
+      where: {
+        inReplyToGmailMessageId: params.gmailMessageId,
+        direction: 'outbound',
+        status: 'draft',
+      },
     });
-    if (existing) return false;
+    if (existingDraft) return false;
 
     const activeRules = await this.rules.findActiveForPlatform(
       params.tenantId,
@@ -55,28 +60,21 @@ export class GmailAutoReplyService {
     const matchText = `${params.subject}\n${params.body}`.trim();
     const rule = this.rules.matchKeywordRule(activeRules, matchText);
     if (!rule) {
-      await this.recordMessage({
-        ...params,
-        direction: 'inbound',
-        status: 'skipped',
-      });
+      await this.updateInboundStatus(params.gmailMessageId, 'skipped');
       return false;
     }
 
     const replyText = await this.buildReplyText(
       params.tenantId,
+      params.userId,
       rule,
+      params.fromEmail,
       params.subject,
       params.body,
       params.workspaceId,
     );
     if (!replyText?.trim()) {
-      await this.recordMessage({
-        ...params,
-        direction: 'inbound',
-        status: 'skipped',
-        ruleId: rule.id,
-      });
+      await this.updateInboundStatus(params.gmailMessageId, 'skipped', rule.id);
       return false;
     }
 
@@ -87,7 +85,7 @@ export class GmailAutoReplyService {
     if (params.fromEmail === ownEmail) return false;
 
     try {
-      const sent = await this.gmailClient.sendReply({
+      const draft = await this.gmailClient.createDraft({
         userId: params.userId,
         fromEmail: user.email,
         toEmail: params.fromEmail,
@@ -97,34 +95,35 @@ export class GmailAutoReplyService {
         inReplyTo: params.messageIdHeader,
       });
 
-      await this.recordMessage({
-        ...params,
-        direction: 'inbound',
-        status: 'inbound',
-        ruleId: rule.id,
-      });
-      if (sent.id) {
+      const replySubject = params.subject.startsWith('Re:')
+        ? params.subject
+        : `Re: ${params.subject}`;
+
+      await this.updateInboundStatus(params.gmailMessageId, 'processed', rule.id);
+
+      if (draft.draftId) {
         await this.mailMessagesRepo.save(
           this.mailMessagesRepo.create({
             tenantId: params.tenantId,
             userId: params.userId,
             workspaceId: params.workspaceId,
-            gmailMessageId: `out:${sent.id}`,
+            gmailMessageId: `draft:${draft.draftId}`,
+            gmailDraftId: draft.draftId,
+            inReplyToGmailMessageId: params.gmailMessageId,
             threadId: params.threadId,
             fromEmail: ownEmail,
-            subject: params.subject.startsWith('Re:')
-              ? params.subject
-              : `Re: ${params.subject}`,
+            toEmail: params.fromEmail,
+            subject: replySubject,
             body: replyText.trim(),
             direction: 'outbound',
-            status: 'auto_reply',
+            status: 'draft',
             ruleId: rule.id,
           }),
         );
       }
 
       this.logger.log(
-        `Gmail auto-reply sent to ${params.fromEmail} (rule: ${rule.name})`,
+        `Gmail draft reply created for ${params.fromEmail} (rule: ${rule.name})`,
       );
       return true;
     } catch (error) {
@@ -133,82 +132,60 @@ export class GmailAutoReplyService {
           error instanceof Error ? error.message : error
         }`,
       );
-      await this.recordMessage({
-        ...params,
-        direction: 'inbound',
-        status: 'failed',
-        ruleId: rule.id,
-      });
+      await this.updateInboundStatus(params.gmailMessageId, 'failed', rule.id);
       return false;
     }
   }
 
-  private async recordMessage(params: {
-    tenantId: string;
-    userId: string;
-    workspaceId?: string;
-    gmailMessageId: string;
-    threadId?: string;
-    fromEmail: string;
-    subject: string;
-    body: string;
-    direction: 'inbound' | 'outbound';
-    status: string;
-    ruleId?: string;
-  }) {
-    const existing = await this.mailMessagesRepo.findOne({
-      where: { gmailMessageId: params.gmailMessageId },
-    });
-    if (existing) return;
-
-    await this.mailMessagesRepo.save(
-      this.mailMessagesRepo.create({
-        tenantId: params.tenantId,
-        userId: params.userId,
-        workspaceId: params.workspaceId,
-        gmailMessageId: params.gmailMessageId,
-        threadId: params.threadId,
-        fromEmail: params.fromEmail,
-        subject: params.subject,
-        body: params.body,
-        direction: params.direction,
-        status: params.status,
-        ruleId: params.ruleId,
-      }),
+  private async updateInboundStatus(
+    gmailMessageId: string,
+    status: string,
+    ruleId?: string,
+  ) {
+    await this.mailMessagesRepo.update(
+      { gmailMessageId, direction: 'inbound' },
+      { status, ...(ruleId ? { ruleId } : {}) },
     );
   }
 
   private async buildReplyText(
     tenantId: string,
+    userId: string,
     rule: AutoReplyRules,
+    fromEmail: string,
     subject: string,
     body: string,
     workspaceId?: string,
   ): Promise<string> {
+    const cleanBody = sanitizeInboundEmailBody(body);
+
     if (rule.aiGenerate) {
       const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } });
       const brand = tenant
         ? workspaceId
           ? await this.brandRepo.findOne({ where: { tenantId, workspaceId } })
-          : await this.brandRepo.findOne({
+          : (await this.brandRepo.findOne({
+              where: { tenantId, userId, workspaceId: IsNull() },
+            })) ??
+            (await this.brandRepo.findOne({
               where: {
                 tenantId,
                 userId: tenant.ownerId,
                 workspaceId: IsNull(),
               },
-            })
+            }))
         : null;
       const brandCtx = this.prompts.brandFromEntity(brand);
       const { data } = await this.mistral.completeJson<{ content?: string }>(
         [
-          { role: 'system', content: this.prompts.replySystem(brandCtx) },
+          { role: 'system', content: this.prompts.emailReplySystem(brandCtx) },
           {
             role: 'user',
-            content: [
-              `Inbound email subject: ${subject || '(no subject)'}`,
-              `Inbound email body:\n${body}`,
-              'Write a helpful, concise email reply in plain text.',
-            ].join('\n\n'),
+            content: this.prompts.emailReplyUser({
+              fromEmail,
+              subject,
+              body: cleanBody,
+            }),
           },
         ],
         { model: this.mistral.defaultModel },
@@ -219,8 +196,8 @@ export class GmailAutoReplyService {
     const template = rule.responseTemplate?.trim();
     if (!template) return '';
     return template
-      .replace(/\{message\}/gi, body)
-      .replace(/\{customer_message\}/gi, body)
+      .replace(/\{message\}/gi, cleanBody)
+      .replace(/\{customer_message\}/gi, cleanBody)
       .replace(/\{subject\}/gi, subject);
   }
 }

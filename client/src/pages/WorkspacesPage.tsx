@@ -197,7 +197,7 @@ export default function WorkspacesPage() {
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
             <Layers className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
@@ -258,7 +258,7 @@ export default function WorkspacesPage() {
                         className={cn(
                           'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-semibold overflow-hidden',
                           isActive
-                            ? 'gradient-primary text-primary-foreground'
+                            ? 'bg-primary text-primary-foreground'
                             : 'bg-muted text-muted-foreground',
                         )}
                       >
@@ -288,7 +288,7 @@ export default function WorkspacesPage() {
                         </div>
                         <p className="text-xs text-muted-foreground font-mono mt-0.5">{ws.slug}</p>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Brand Brain · Content · Publisher · Chatbot
+                          Brand Brain · Content · Connections · Chatbot
                         </p>
                       </div>
 

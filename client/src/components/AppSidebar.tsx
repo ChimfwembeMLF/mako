@@ -3,7 +3,7 @@ import {
   Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply, Megaphone,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity,
-  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target, FileText, Mail
+  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target, Mail, MessageCircle
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +61,7 @@ export function AppSidebar() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-2 w-full rounded-md hover:bg-sidebar-accent px-1 py-1.5 transition-colors">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md gradient-primary">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary">
                 <Rocket className="h-4 w-4 text-primary-foreground" />
               </div>
               {!collapsed && (
@@ -152,9 +152,9 @@ export function AppSidebar() {
               <NavItem title="Dashboard" url="/dashboard" icon={Zap} exact />
               <NavItem title="Brand Brain" url="/brand-brain" icon={Brain} />
               <NavItem title="Content Engine" url="/content" icon={Pen} />
-              <NavItem title="AI Campaigns" url="/campaigns" icon={Megaphone} />
+              <NavItem title="Campaigns" url="/campaigns" icon={Megaphone} />
               <NavItem title="Scheduler" url="/scheduler" icon={CalendarClock} />
-              <NavItem title="Publisher" url="/publisher" icon={Link2} />
+              <NavItem title="Connections" url="/publisher" icon={Link2} />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -164,10 +164,10 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Engagement</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <NavItem title="Lead Agent" url="/leads" icon={MessageSquare} />
-              <NavItem title="Mail" url="/mail" icon={Mail} />
-              <NavItem title="WA Templates" url="/whatsapp/templates" icon={FileText} />
-              <NavItem title="Replies" url="/replies" icon={MessageSquareReply} />
+              <NavItem title="Leads" url="/leads" icon={MessageSquare} />
+              <NavItem title="Email" url="/mail" icon={Mail} />
+              <NavItem title="WhatsApp" url="/whatsapp" icon={MessageCircle} />
+              <NavItem title="Social Inbox" url="/replies" icon={MessageSquareReply} />
               <NavItem title="Analytics" url="/analytics" icon={BarChart3} />
             </SidebarMenu>
           </SidebarGroupContent>
@@ -178,9 +178,9 @@ export function AppSidebar() {
           <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Assets</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <NavItem title="Media Library" url="/media" icon={Image} />
-              <NavItem title="Templates" url="/templates" icon={LayoutTemplate} />
-              <NavItem title="Ad Campaigns" url="/ads" icon={Target} />
+              <NavItem title="Media" url="/media" icon={Image} />
+              <NavItem title="Post Templates" url="/templates" icon={LayoutTemplate} />
+              <NavItem title="Ads" url="/ads" icon={Target} />
               <NavItem title="Workspaces" url="/workspaces" icon={Building2} />
             </SidebarMenu>
           </SidebarGroupContent>

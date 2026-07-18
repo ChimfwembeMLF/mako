@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Patch,
   Post,
@@ -18,7 +19,9 @@ import { WhatsappAccountAuthService } from './whatsapp-account-auth.service';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { WhatsappFlowSessionService } from './whatsapp-flow-session.service';
 import { UpdateWhatsappFlowConfigDto } from './dto/update-whatsapp-flow-config.dto';
-import { scopeWhere } from '../../common/workspace-scope.util';
+import {
+  applyWorkspaceScope,
+} from '../../common/workspace-scope.util';
 
 interface JwtUser {
   sub: string;
@@ -44,23 +47,14 @@ export class WhatsappController {
     userId: string,
     workspaceId?: string,
   ) {
-    return (
-      (await this.socialRepo.findOne({
-        where: {
-          ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
-          userId,
-          platform: 'whatsapp',
-          connected: true,
-        },
-      })) ??
-      (await this.socialRepo.findOne({
-        where: {
-          ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
-          platform: 'whatsapp',
-          connected: true,
-        },
-      }))
-    );
+    const qb = this.socialRepo
+      .createQueryBuilder('a')
+      .where('a.tenantId = :tenantId', { tenantId })
+      .andWhere('a.platform = :platform', { platform: 'whatsapp' })
+      .andWhere('a.connected = true');
+    applyWorkspaceScope(qb, 'a', workspaceId);
+    const accounts = await qb.getMany();
+    return accounts.find((a) => a.userId === userId) ?? accounts[0] ?? null;
   }
 
   @Get('flows/sessions')
@@ -79,6 +73,7 @@ export class WhatsappController {
     }));
   }
 
+  @Delete('flows/sessions')
   @ApiOperation({ summary: 'Reset (clear) a flow session for a specific phone' })
   async resetFlowSession(
     @Query('tenantId') tenantId: string,
@@ -88,6 +83,7 @@ export class WhatsappController {
     return { cleared: true };
   }
 
+  @Get('flows/config')
   @ApiOperation({
     summary: 'Get WhatsApp USSD-style menu flow config for a workspace',
   })
@@ -125,9 +121,7 @@ export class WhatsappController {
       .orderBy('m.created_at', 'ASC')
       .take(limit);
 
-    if (workspaceId) {
-      qb.andWhere('m.workspaceId = :workspaceId', { workspaceId });
-    }
+    applyWorkspaceScope(qb, 'm', workspaceId);
 
     if (contactId?.trim()) {
       qb.andWhere('m.contactId = :contactId', { contactId: contactId.trim() });
@@ -159,10 +153,12 @@ export class WhatsappController {
   async connectionStatus(
     @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
   ) {
     const account = await this.findWhatsappAccount(
       tenantId,
       String(req.user.sub),
+      workspaceId,
     );
     if (!account) {
       return { connected: false, message: 'WhatsApp not connected' };
@@ -194,13 +190,19 @@ export class WhatsappController {
       };
     }
 
+    const apiBase = (process.env.PUBLIC_API_URL ?? process.env.API_PUBLIC_URL ?? '')
+      .replace(/\/$/, '');
     return {
       connected: true,
       tokenValid: true,
       phoneNumberId: creds.phoneNumberId,
       displayPhoneNumber: validation.displayPhoneNumber,
       accountName: account.accountName,
+      workspaceId: account.workspaceId ?? null,
       platformManaged,
+      webhookUrl: apiBase
+        ? `${apiBase}/api/v1/webhooks/meta`
+        : '/api/v1/webhooks/meta',
     };
   }
 
@@ -273,15 +275,14 @@ export class WhatsappController {
   async listTemplates(
     @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
   ) {
     const userId = String(req.user.sub);
-    const account =
-      (await this.socialRepo.findOne({
-        where: { tenantId, userId, platform: 'whatsapp', connected: true },
-      })) ??
-      (await this.socialRepo.findOne({
-        where: { tenantId, platform: 'whatsapp', connected: true },
-      }));
+    const account = await this.findWhatsappAccount(
+      tenantId,
+      userId,
+      workspaceId,
+    );
     const creds = account
       ? this.messaging.credentialsFromAccount(account)
       : null;
@@ -305,9 +306,7 @@ export class WhatsappController {
       .where('m.tenantId = :tenantId', { tenantId })
       .orderBy('m.created_at', 'DESC');
 
-    if (workspaceId) {
-      qb.andWhere('m.workspaceId = :workspaceId', { workspaceId });
-    }
+    applyWorkspaceScope(qb, 'm', workspaceId);
 
     const rows = await qb.getMany();
 

@@ -612,6 +612,14 @@ export const whatsappTemplatesApi = {
             body: JSON.stringify(template),
         });
     },
+
+    importAll: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<{ imported: number; skipped: number }>(
+            `/api/v1/whatsapp/templates/import-all?${qs}`,
+            { method: 'POST' },
+        );
+    },
 };
 
 
@@ -852,7 +860,8 @@ export const permissionsApi = {
 };
 
 export const systemSettingsApi = {
-    getTheme: () => request<Record<string, string>>('/api/v1/system-settings/theme'),
+    getTheme: () =>
+        request<Record<string, string>>('/api/v1/system-settings/theme', { requireAuth: false }),
     findAll: () => request<any[]>('/api/v1/system-settings'),
     findOne: (key: string) => request<any>(`/api/v1/system-settings/${encodeURIComponent(key)}`),
     upsert: (key: string, data: { value: Record<string, unknown>; description?: string }) =>
@@ -1505,7 +1514,7 @@ export const contentItemsApi = {
             body: JSON.stringify(data),
         }),
 
-    findAll: (tenantId?: string, params?: Omit<ContentItemsListParams, 'tenantId'>) => {
+    findAll: (tenantId?: string, params?: Omit<ContentItemsListParams, 'tenantId'> & { includeMedia?: boolean }) => {
         const qs = new URLSearchParams();
         if (tenantId) qs.set('tenantId', tenantId);
         if (params?.workspaceId) qs.set('workspaceId', params.workspaceId);
@@ -1513,6 +1522,7 @@ export const contentItemsApi = {
         if (params?.limit != null) qs.set('limit', String(params.limit));
         if (params?.search?.trim()) qs.set('search', params.search.trim());
         if (params?.platform?.trim()) qs.set('platform', params.platform.trim());
+        if (params?.includeMedia) qs.set('includeMedia', 'true');
         const query = qs.toString();
         return request<any>(query ? `/api/v1/content-items?${query}` : '/api/v1/content-items');
     },
@@ -1758,10 +1768,62 @@ export const mailApi = {
 
     gmailSync: (tenantId?: string) => {
         const qs = tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : '';
-        return request<{ processed: number; replied: number }>(
+        return request<{ processed: number; drafted: number }>(
             `/api/v1/mail/gmail/sync${qs}`,
             { method: 'POST' },
         );
+    },
+
+    listDrafts: (params: {
+        tenantId: string;
+        workspaceId?: string;
+        limit?: number;
+    }) => {
+        const search = new URLSearchParams({ tenantId: params.tenantId });
+        if (params.workspaceId) search.set('workspaceId', params.workspaceId);
+        if (params.limit) search.set('limit', String(params.limit));
+        return request<{
+            items: Array<{
+                id: string;
+                toEmail: string;
+                subject: string | null;
+                body: string;
+                status: string;
+                threadId: string | null;
+                gmailDraftId: string | null;
+                inReplyToGmailMessageId: string | null;
+                ruleId: string | null;
+                createdAt: string;
+                gmailThreadUrl: string | null;
+                gmailDraftsUrl: string;
+            }>;
+        }>(`/api/v1/mail/drafts?${search.toString()}`);
+    },
+
+    listInbox: (params: {
+        tenantId: string;
+        workspaceId?: string;
+        limit?: number;
+    }) => {
+        const search = new URLSearchParams({ tenantId: params.tenantId });
+        if (params.workspaceId) search.set('workspaceId', params.workspaceId);
+        if (params.limit) search.set('limit', String(params.limit));
+        return request<{
+            items: Array<{
+                id: string;
+                gmailMessageId: string;
+                fromEmail: string;
+                subject: string | null;
+                body: string;
+                status: string;
+                threadId: string | null;
+                ruleId: string | null;
+                createdAt: string;
+                gmailThreadUrl: string | null;
+                hasDraft: boolean;
+                draftId: string | null;
+            }>;
+        }>(`/api/v1/mail/inbox?${search.toString()}`);
     },
 };
 
@@ -1863,6 +1925,22 @@ export const whatsappApi = {
             aiFallbackEnabled: boolean;
             menuItems: Array<{ id: string; title: string; description?: string; response: string; aiGenerate?: boolean }>;
         }>(`/api/v1/whatsapp/flows/config?${qs}`);
+    },
+
+    connectionStatus: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<{
+            connected: boolean;
+            tokenValid?: boolean;
+            phoneNumberId?: string;
+            displayPhoneNumber?: string;
+            accountName?: string;
+            workspaceId?: string | null;
+            platformManaged?: boolean;
+            webhookUrl?: string;
+            graphError?: string;
+            message?: string;
+        }>(`/api/v1/whatsapp/connection-status?${qs}`);
     },
 
     updateFlowConfig: (
@@ -2136,6 +2214,18 @@ export const aiApi = {
         fields?: string[];
     }) =>
         request<{ suggestions: Record<string, string[]> }>('/api/v1/ai/form-suggestions', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+
+    enhanceField: (data: {
+        tenantId: string;
+        workspaceId?: string;
+        form: FormSuggestionForm;
+        fieldKey: string;
+        currentValue?: string;
+    }) =>
+        request<{ text: string }>('/api/v1/ai/enhance-field', {
             method: 'POST',
             body: JSON.stringify(data),
         }),
@@ -2665,7 +2755,51 @@ export const adsApi = {
 };
 
 // ==================== Analytics ====================
+export type PlatformDashboardRow = {
+    platform: string;
+    label: string;
+    connected: boolean;
+    accountCount: number;
+    accountName?: string;
+    username?: string;
+    publishedPosts: number;
+    scheduledPosts: number;
+    likes: number;
+    comments: number;
+    shares: number;
+    views: number;
+    engagementScore: number;
+    followers: number;
+    reach: number;
+    impressions: number;
+    pendingReplies: number;
+    lastPublishedAt?: string;
+    lastEngagementSync?: string;
+};
+
+export type PlatformDashboardResponse = {
+    platforms: PlatformDashboardRow[];
+    totals: {
+        connectedPlatforms: number;
+        publishedPosts: number;
+        scheduledPosts: number;
+        likes: number;
+        comments: number;
+        shares: number;
+        views: number;
+        engagementScore: number;
+        pendingReplies: number;
+        followers: number;
+        reach: number;
+        impressions: number;
+    };
+};
+
 export const analyticsApi = {
+    getPlatformDashboard: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<PlatformDashboardResponse>(`/api/v1/analytics/platform-dashboard?${qs}`);
+    },
     getInsights: (days: number, tenantId: string, workspaceId?: string) => {
         const qs = withWorkspace(new URLSearchParams({ days: String(days), tenantId }), workspaceId);
         return request<any[]>(`/api/v1/analytics/insights?${qs}`);

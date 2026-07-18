@@ -640,11 +640,11 @@ function BackofficeContent() {
                 <ul className="list-disc pl-5 space-y-1">
                   <li><strong>Brand Brain</strong> — company identity, tone, audience, guardrails</li>
                   <li><strong>Content Engine</strong> — AI copy, campaigns, media library</li>
-                  <li><strong>Publisher & Scheduler</strong> — OAuth connect, per-platform publish, calendar</li>
-                  <li><strong>Lead Agent</strong> — capture, score, and follow up on leads</li>
-                  <li><strong>Replies</strong> — comment sync + AI auto-reply rules</li>
+                  <li><strong>Connections & Scheduler</strong> — OAuth connect, per-platform publish, calendar</li>
+                  <li><strong>Leads</strong> — capture, score, and follow up on leads</li>
+                  <li><strong>Social Inbox</strong> — comment sync + AI auto-reply rules</li>
                   <li><strong>AI Chatbot</strong> — RAG-powered assistant with playground, 3D avatar, and TTS</li>
-                  <li><strong>Knowledge Library</strong> — document upload, chunking, and vector search for chatbot context</li>
+                  <li><strong>Knowledge</strong> — document upload, chunking, and vector search for chatbot context</li>
                   <li><strong>Embeddable Widget</strong> — gradient-themed chat widget with API keys and OpenAPI integration docs</li>
                   <li><strong>Billing</strong> — PawaPay mobile money subscriptions (ZMW)</li>
                 </ul>

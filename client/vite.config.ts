@@ -20,6 +20,14 @@ export default defineConfig(({ mode }) => ({
         target: "http://localhost:4000",
         changeOrigin: true,
       },
+      "/documentation": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+      },
+      "/docs": {
+        target: "http://localhost:4000",
+        changeOrigin: true,
+      },
     },
   },
   // Standalone `npm run dev` in resources/client is optional — default dev is `yarn dev` on Nest (:4000).
@@ -66,8 +74,8 @@ export default defineConfig(({ mode }) => ({
         name: "Mako",
         short_name: "Mako",
         description: "AI-powered social media content generation, publishing, and lead management.",
-        theme_color: "#E5A024",
-        background_color: "#220044",
+        theme_color: "#ff385c",
+        background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait-primary",
         start_url: "/",

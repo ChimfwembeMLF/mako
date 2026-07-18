@@ -192,7 +192,7 @@ export default function ChatbotPage() {
   return (
     <div className="w-full space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl gradient-primary text-white">
+        <div className="p-2.5 rounded-xl bg-primary text-primary-foreground">
           <Bot className="h-6 w-6" />
         </div>
         <div>
@@ -265,7 +265,7 @@ export default function ChatbotPage() {
                 <Button asChild variant="outline" className="w-full" size="sm">
                   <Link to="/chatbot/knowledge" className="gap-2">
                     <BookOpen className="h-4 w-4" />
-                    Manage in Knowledge Library
+                    Manage in Knowledge
                   </Link>
                 </Button>
               </CardContent>

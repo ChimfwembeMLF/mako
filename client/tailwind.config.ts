@@ -14,15 +14,48 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1280px",
       },
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        display: ["Space Grotesk", "sans-serif"],
+        sans: [
+          "Inter",
+          "Circular",
+          "-apple-system",
+          "system-ui",
+          "Roboto",
+          "Helvetica Neue",
+          "sans-serif",
+        ],
+        display: [
+          "Inter",
+          "Circular",
+          "-apple-system",
+          "system-ui",
+          "Roboto",
+          "Helvetica Neue",
+          "sans-serif",
+        ],
+      },
+      fontSize: {
+        "display-xl": ["28px", { lineHeight: "1.43", fontWeight: "700", letterSpacing: "0" }],
+        "display-lg": ["22px", { lineHeight: "1.18", fontWeight: "500", letterSpacing: "-0.44px" }],
+        "display-md": ["21px", { lineHeight: "1.43", fontWeight: "700", letterSpacing: "0" }],
+        "display-sm": ["20px", { lineHeight: "1.2", fontWeight: "600", letterSpacing: "-0.18px" }],
+        "title-md": ["16px", { lineHeight: "1.25", fontWeight: "600", letterSpacing: "0" }],
+        "title-sm": ["16px", { lineHeight: "1.25", fontWeight: "500", letterSpacing: "0" }],
+        "body-md": ["16px", { lineHeight: "1.5", fontWeight: "400", letterSpacing: "0" }],
+        "body-sm": ["14px", { lineHeight: "1.43", fontWeight: "400", letterSpacing: "0" }],
+        caption: ["14px", { lineHeight: "1.29", fontWeight: "500", letterSpacing: "0" }],
+        "caption-sm": ["13px", { lineHeight: "1.23", fontWeight: "400", letterSpacing: "0" }],
+        badge: ["11px", { lineHeight: "1.18", fontWeight: "600", letterSpacing: "0" }],
+        "micro-label": ["12px", { lineHeight: "1.33", fontWeight: "700", letterSpacing: "0" }],
+        "button-md": ["16px", { lineHeight: "1.25", fontWeight: "500", letterSpacing: "0" }],
+        "button-sm": ["14px", { lineHeight: "1.29", fontWeight: "500", letterSpacing: "0" }],
+        "nav-link": ["16px", { lineHeight: "1.25", fontWeight: "600", letterSpacing: "0" }],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -30,20 +63,20 @@ export default {
         ring: "hsl(var(--ring))",
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
-        mako: {
-          purple: {
-            DEFAULT: "#5D0096",
-            deep: "#220044",
-          },
-          orange: {
-            DEFAULT: "#E5A024",
-            dark: "#C47F17",
-          },
-          teal: "#00A372",
-        },
+        body: "hsl(var(--body))",
+        "muted-soft": "hsl(var(--muted-soft))",
+        "hairline-soft": "hsl(var(--hairline-soft))",
+        "border-strong": "hsl(var(--border-strong))",
+        "surface-soft": "hsl(var(--surface-soft))",
+        "surface-strong": "hsl(var(--surface-strong))",
+        "legal-link": "hsl(var(--legal-link))",
+        luxe: "hsl(var(--luxe))",
+        plus: "hsl(var(--plus))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
+          active: "hsl(var(--primary-active))",
+          disabled: "hsl(var(--primary-disabled))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
@@ -81,9 +114,20 @@ export default {
         },
       },
       borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        xs: "4px",
+        sm: "8px",
+        md: "14px",
+        lg: "20px",
+        xl: "32px",
+        full: "9999px",
+      },
+      spacing: {
+        xxs: "2px",
+        section: "64px",
+      },
+      boxShadow: {
+        elevated:
+          "rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0",
       },
       keyframes: {
         "accordion-down": {
@@ -94,15 +138,10 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        "pulse-glow": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.7" },
-        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "pulse-glow": "pulse-glow 2s ease-in-out infinite",
       },
     },
   },

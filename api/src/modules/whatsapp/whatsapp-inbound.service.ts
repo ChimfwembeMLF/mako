@@ -227,6 +227,7 @@ export class WhatsappInboundService {
     }
 
     const phone = this.messaging.normalizePhone(params.fromPhone);
+    const workspaceId = params.account?.workspaceId ?? undefined;
     let contact = await this.contactsRepo.findOne({
       where: { tenantId: params.tenantId, phone },
     });
@@ -234,17 +235,22 @@ export class WhatsappInboundService {
       contact = await this.contactsRepo.save(
         this.contactsRepo.create({
           tenantId: params.tenantId,
+          workspaceId,
           phone,
           optedIn: true,
           optedInAt: new Date(),
           tags: ['inbound'],
         }),
       );
+    } else if (workspaceId && !contact.workspaceId) {
+      contact.workspaceId = workspaceId;
+      await this.contactsRepo.save(contact);
     }
 
     const savedMessage = await this.messagesRepo.save(
       this.messagesRepo.create({
         tenantId: params.tenantId,
+        workspaceId,
         contactId: contact.id,
         phone,
         direction: 'inbound',
@@ -278,6 +284,7 @@ export class WhatsappInboundService {
     if (creds) {
       const handledByFlow = await this.flowEngine.tryHandleInbound({
         tenantId: params.tenantId,
+        workspaceId,
         phone,
         text: params.body,
         interactiveId: params.interactiveId,

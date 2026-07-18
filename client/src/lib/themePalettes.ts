@@ -1,5 +1,6 @@
 import type { ThemeConfig } from '@/hooks/useTheme';
 import { MAKO_THEME } from '@/lib/mako-brand';
+import { DESIGN_THEME } from '@/lib/design-tokens';
 
 export type ThemePalette = {
   id: string;
@@ -12,8 +13,8 @@ export type ThemePalette = {
 export const THEME_PALETTES: ThemePalette[] = [
   {
     id: 'mako',
-    name: 'Mako Market ',
-    description: 'Logo palette — golden orange, vibrant purple, teal accent',
+    name: 'Mako',
+    description: 'Clean white canvas with Rausch accent — see DESIGN.md',
     theme: {
       primary: MAKO_THEME.primary,
       secondary: MAKO_THEME.secondary,
@@ -23,8 +24,8 @@ export const THEME_PALETTES: ThemePalette[] = [
   },
   {
     id: 'autopilot',
-    name: 'Mako  Orange',
-    description: 'Legacy alias — same as Mako Market ',
+    name: 'Mako (legacy alias)',
+    description: 'Same as default Mako theme',
     theme: {
       primary: MAKO_THEME.primary,
       secondary: MAKO_THEME.secondary,
@@ -33,14 +34,20 @@ export const THEME_PALETTES: ThemePalette[] = [
     },
   },
   {
+    id: 'rausch',
+    name: 'Rausch',
+    description: 'Airbnb-inspired marketplace palette',
+    theme: DESIGN_THEME,
+  },
+  {
     id: 'ocean',
     name: 'Ocean Blue',
     description: 'Calm, trustworthy SaaS blue',
     theme: {
       primary: '210 85% 48%',
-      secondary: '195 70% 42%',
-      accent: '170 55% 45%',
-      radius: '0.75rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
   {
@@ -49,9 +56,9 @@ export const THEME_PALETTES: ThemePalette[] = [
     description: 'Natural, agri & sustainability',
     theme: {
       primary: '142 55% 38%',
-      secondary: '158 45% 32%',
-      accent: '85 45% 42%',
-      radius: '0.75rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
   {
@@ -60,9 +67,9 @@ export const THEME_PALETTES: ThemePalette[] = [
     description: 'Premium creative & marketing',
     theme: {
       primary: '262 72% 55%',
-      secondary: '290 55% 48%',
-      accent: '320 65% 52%',
-      radius: '0.75rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
   {
@@ -71,9 +78,9 @@ export const THEME_PALETTES: ThemePalette[] = [
     description: 'Neutral enterprise, minimal color',
     theme: {
       primary: '220 15% 35%',
-      secondary: '215 20% 45%',
-      accent: '200 25% 50%',
-      radius: '0.5rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
   {
@@ -82,20 +89,20 @@ export const THEME_PALETTES: ThemePalette[] = [
     description: 'Bold, energetic consumer brand',
     theme: {
       primary: '8 85% 58%',
-      secondary: '25 90% 55%',
-      accent: '340 75% 55%',
-      radius: '0.875rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
   {
     id: 'midnight',
     name: 'Midnight Indigo',
-    description: 'Deep tech, dark-mode friendly accents',
+    description: 'Deep tech accents',
     theme: {
       primary: '235 65% 55%',
-      secondary: '250 45% 45%',
-      accent: '190 70% 48%',
-      radius: '0.75rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
   {
@@ -104,9 +111,9 @@ export const THEME_PALETTES: ThemePalette[] = [
     description: 'Warm gold — retail & agribusiness',
     theme: {
       primary: '38 92% 50%',
-      secondary: '28 75% 45%',
-      accent: '142 40% 40%',
-      radius: '0.75rem',
+      secondary: '0 0% 13%',
+      accent: '0 0% 95%',
+      radius: '8px',
     },
   },
 ];

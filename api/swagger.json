@@ -1423,6 +1423,35 @@
         ]
       }
     },
+    "/api/v1/ai/enhance-field": {
+      "post": {
+        "operationId": "AiController_enhanceField",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnhanceFieldDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "AI"
+        ]
+      }
+    },
     "/api/v1/ai-usage": {
       "post": {
         "operationId": "AiUsageController_create",
@@ -1768,6 +1797,258 @@
         ],
         "tags": [
           "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/mail/gmail/status": {
+      "get": {
+        "operationId": "MailController_gmailStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Gmail OAuth connection status for current user",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/api/v1/mail/gmail/connect": {
+      "get": {
+        "operationId": "MailController_gmailConnect",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Start Gmail OAuth link flow",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/api/v1/mail/gmail/callback": {
+      "get": {
+        "operationId": "MailController_gmailCallback",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error_description",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Gmail OAuth callback (redirects to frontend)",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/api/v1/mail/gmail/disconnect": {
+      "delete": {
+        "operationId": "MailController_gmailDisconnect",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Disconnect Gmail OAuth for current user",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/api/v1/mail/gmail/sync": {
+      "post": {
+        "operationId": "MailController_gmailSync",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Poll Gmail inbox and draft email replies now",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/api/v1/mail/drafts": {
+      "get": {
+        "operationId": "MailController_listDrafts",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List AI-generated Gmail draft replies",
+        "tags": [
+          "Mail"
+        ]
+      }
+    },
+    "/api/v1/mail/inbox": {
+      "get": {
+        "operationId": "MailController_listInbox",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "List received Gmail inbox messages",
+        "tags": [
+          "Mail"
         ]
       }
     },
@@ -3650,9 +3931,79 @@
         "tags": [
           "WhatsApp"
         ]
+      },
+      "delete": {
+        "operationId": "WhatsappController_resetFlowSession",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "phone",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Reset (clear) a flow session for a specific phone",
+        "tags": [
+          "WhatsApp"
+        ]
       }
     },
     "/api/v1/whatsapp/flows/config": {
+      "get": {
+        "operationId": "WhatsappController_getFlowConfig",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Get WhatsApp USSD-style menu flow config for a workspace",
+        "tags": [
+          "WhatsApp"
+        ]
+      },
       "patch": {
         "operationId": "WhatsappController_updateFlowConfig",
         "parameters": [
@@ -3765,6 +4116,14 @@
         "parameters": [
           {
             "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
             "required": true,
             "in": "query",
             "schema": {
@@ -3935,6 +4294,16 @@
       "post": {
         "operationId": "LeadsController_sendEmail",
         "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendLeadEmailDto"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
             "description": ""
@@ -6390,6 +6759,97 @@
         ]
       }
     },
+    "/api/v1/payments/mobile-money/options": {
+      "get": {
+        "operationId": "PaymentsController_mobileMoneyOptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/fx/quote": {
+      "get": {
+        "operationId": "PaymentsController_fxQuoteFromZmw",
+        "parameters": [
+          {
+            "name": "amountZmw",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/fx/convert-to-zmw": {
+      "get": {
+        "operationId": "PaymentsController_fxQuoteToZmw",
+        "parameters": [
+          {
+            "name": "amount",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "currency",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
     "/api/v1/payments/deposits/initiate": {
       "post": {
         "operationId": "PaymentsController_initiate",
@@ -6432,6 +6892,34 @@
       "post": {
         "operationId": "PaymentsController_checkPending",
         "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/{depositId}/check": {
+      "post": {
+        "operationId": "PaymentsController_checkDepositStatus",
+        "parameters": [
+          {
+            "name": "depositId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "201": {
             "description": ""
@@ -6498,6 +6986,34 @@
         ],
         "responses": {
           "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Payments"
+        ]
+      }
+    },
+    "/api/v1/payments/deposits/{depositId}/refund-request": {
+      "post": {
+        "operationId": "PaymentsController_requestRefund",
+        "parameters": [
+          {
+            "name": "depositId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
             "description": ""
           }
         },
@@ -7191,6 +7707,154 @@
         ]
       }
     },
+    "/api/v1/whatsapp/templates/meta": {
+      "get": {
+        "operationId": "WhatsappTemplatesController_listFromMeta",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Fetch templates directly from Meta WABA (for import)",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/sync-all": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_syncAll",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Sync all PENDING/APPROVED local templates from Meta",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/import-all": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_importAll",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import all approved Meta templates into Mako",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/templates/import": {
+      "post": {
+        "operationId": "WhatsappTemplatesController_importFromMeta",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Import an already-approved Meta template into local registry",
+        "tags": [
+          "WhatsApp Templates"
+        ]
+      }
+    },
     "/api/v1/whatsapp/templates/{id}": {
       "patch": {
         "operationId": "WhatsappTemplatesController_update",
@@ -7358,117 +8022,6 @@
           }
         ],
         "summary": "Pull latest approval status from Meta for one template",
-        "tags": [
-          "WhatsApp Templates"
-        ]
-      }
-    },
-    "/api/v1/whatsapp/templates/sync-all": {
-      "post": {
-        "operationId": "WhatsappTemplatesController_syncAll",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Sync all PENDING/APPROVED templates from Meta",
-        "tags": [
-          "WhatsApp Templates"
-        ]
-      }
-    },
-    "/api/v1/whatsapp/templates/meta": {
-      "get": {
-        "operationId": "WhatsappTemplatesController_listFromMeta",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Fetch templates directly from Meta WABA (for import)",
-        "tags": [
-          "WhatsApp Templates"
-        ]
-      }
-    },
-    "/api/v1/whatsapp/templates/import": {
-      "post": {
-        "operationId": "WhatsappTemplatesController_importFromMeta",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "summary": "Import an already-approved Meta template into local registry",
         "tags": [
           "WhatsApp Templates"
         ]
@@ -7907,6 +8460,65 @@
         },
         "tags": [
           "AuditLogs"
+        ]
+      }
+    },
+    "/api/v1/analytics/platform-dashboard": {
+      "get": {
+        "operationId": "AnalyticsController_getPlatformDashboard",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/insights": {
+      "get": {
+        "operationId": "AnalyticsController_getInsights",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/api/v1/analytics/ai-report": {
+      "get": {
+        "operationId": "AnalyticsController_getAiReport",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
         ]
       }
     },
@@ -8425,6 +9037,81 @@
         ]
       }
     },
+    "/api/v1/backoffice/refunds": {
+      "get": {
+        "operationId": "BackofficeController_listRefunds",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds/{id}/approve": {
+      "post": {
+        "operationId": "BackofficeController_approveRefund",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds/{id}/reject": {
+      "post": {
+        "operationId": "BackofficeController_rejectRefund",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
     "/api/v1/platforms/capabilities": {
       "get": {
         "operationId": "PlatformsController_capabilities",
@@ -8598,6 +9285,9 @@
         "properties": {
           "token": {
             "type": "string"
+          },
+          "refreshToken": {
+            "type": "string"
           }
         },
         "required": [
@@ -8641,6 +9331,10 @@
         "properties": {}
       },
       "FormSuggestionsDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "EnhanceFieldDto": {
         "type": "object",
         "properties": {}
       },
@@ -8864,6 +9558,10 @@
             }
           }
         }
+      },
+      "SendLeadEmailDto": {
+        "type": "object",
+        "properties": {}
       },
       "LeadsCreateDto": {
         "type": "object",

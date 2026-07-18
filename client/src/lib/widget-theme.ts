@@ -24,7 +24,7 @@ export function resolveWidgetColors(theme: WidgetThemeColors = {}) {
 }
 
 export const GRADIENT_PRESETS: { label: string; from: string; to: string; angle?: number }[] = [
-  { label: "Mako", from: MAKO_BRAND.purple.hex, to: MAKO_BRAND.orange.hex },
+  { label: "Mako", from: MAKO_BRAND.rausch.hex, to: MAKO_BRAND.rauschActive.hex },
   { label: "Indigo", from: "#6366f1", to: "#a855f7" },
   { label: "Sunset", from: "#f97316", to: "#ec4899" },
   { label: "Ocean", from: "#0ea5e9", to: "#6366f1" },

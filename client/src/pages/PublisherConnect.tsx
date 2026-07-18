@@ -541,14 +541,14 @@ const PublisherConnect = () => {
   return (
     <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-secondary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-strong text-foreground">
           <Link2 className="h-5 w-5 text-secondary-foreground" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold font-display">Publisher Connect</h1>
+          <h1 className="text-2xl font-bold font-display">Connections</h1>
           <p className="text-muted-foreground text-sm">
             {activeWorkspaceName
-              ? `Publisher connections for “${activeWorkspaceName}”. Switch workspace in the top navbar.`
+              ? `Social and ad accounts for “${activeWorkspaceName}”. Switch workspace in the top navbar.`
               : "Select a workspace to connect social accounts."}
           </p>
         </div>
@@ -557,7 +557,7 @@ const PublisherConnect = () => {
       {!tenant && (
         <Card className="border-amber-200 bg-amber-50/50">
           <CardContent className="p-4 text-sm text-amber-800">
-            No workspace selected. Create or select a workspace before connecting publisher accounts.
+            No workspace selected. Create or select a workspace before connecting accounts.
           </CardContent>
         </Card>
       )}
@@ -620,7 +620,7 @@ const PublisherConnect = () => {
                     <div className="flex flex-col items-end gap-1.5">
                       <Button
                         size="sm"
-                        className="gradient-primary text-primary-foreground border-0"
+                        className=""
                         disabled={!tenant || isConnecting || loadingAccounts}
                         onClick={() => {
                           if (platform.id === "instagram") {
@@ -646,7 +646,7 @@ const PublisherConnect = () => {
                       )}
                     </div>
                   ) : (
-                    <Button size="sm" className="gradient-primary text-primary-foreground border-0" onClick={() => setConnectDialog(platform.id)}>
+                    <Button size="sm" className="" onClick={() => setConnectDialog(platform.id)}>
                       <Link2 className="h-3.5 w-3.5 mr-1" /> Connect
                     </Button>
                   )}
@@ -714,7 +714,7 @@ const PublisherConnect = () => {
               <Button
                 onClick={() => handleManualConnect(connectDialog as ManualPlatform | "whatsapp")}
                 disabled={saving || !tenant}
-                className="w-full gradient-primary text-primary-foreground border-0"
+                className="w-full"
               >
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
                 {saving ? "Connecting..." : "Connect Account"}
@@ -780,7 +780,7 @@ const PublisherConnect = () => {
             <Button
               onClick={handleFinalizeFacebook}
               disabled={finalizingFacebook || loadingFacebookSetup || !selectedFacebookPage}
-              className="w-full gradient-primary text-primary-foreground border-0"
+              className="w-full"
             >
               {finalizingFacebook ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
               {finalizingFacebook ? "Connecting..." : "Connect Page"}
@@ -849,7 +849,7 @@ const PublisherConnect = () => {
             <Button
               onClick={handleFinalizeYoutube}
               disabled={finalizingYoutube || loadingYoutubeSetup || !selectedYoutubeChannel}
-              className="w-full gradient-primary text-primary-foreground border-0"
+              className="w-full"
             >
               {finalizingYoutube ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
               {finalizingYoutube ? "Connecting..." : "Connect channel"}
@@ -917,7 +917,7 @@ const PublisherConnect = () => {
             <Button
               onClick={handleFinalizeWhatsapp}
               disabled={finalizingWhatsapp || loadingWhatsappSetup || !selectedWhatsappPhone}
-              className="w-full gradient-primary text-primary-foreground border-0"
+              className="w-full"
             >
               {finalizingWhatsapp ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Link2 className="mr-2 h-4 w-4" />}
               {finalizingWhatsapp ? "Connecting..." : "Connect WhatsApp"}
@@ -950,7 +950,7 @@ const PublisherConnect = () => {
               Take me to Settings
             </Button>
             <Button
-              className="gradient-primary text-primary-foreground border-0"
+              className=""
               onClick={() => {
                 setShowInstagramWarning(false);
                 startOAuthConnect("instagram");

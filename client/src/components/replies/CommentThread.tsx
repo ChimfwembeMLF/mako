@@ -73,10 +73,7 @@ function CommentRow({
     Boolean(node.replyText?.trim()) &&
     !hasSyncedBrandReply(node);
   const attachments = node.attachments ?? [];
-  const reactions = [
-    ...(node.reactions ?? []),
-    ...(node.likeCount > 0 ? [{ type: 'like', count: node.likeCount }] : []),
-  ];
+  const reactions = node.reactions ?? [];
   const avatarSize = depth > 0 ? 'h-7 w-7' : 'h-9 w-9';
 
   return (
@@ -127,6 +124,11 @@ function CommentRow({
           </p>
           <MessageAttachments items={attachments} className="mt-2" />
           <MessageReactions items={reactions} />
+          {!isAuthor && node.likeCount > 0 && reactions.length === 0 && (
+            <p className="text-[11px] text-muted-foreground mt-1.5">
+              {node.likeCount.toLocaleString()} like{node.likeCount === 1 ? '' : 's'}
+            </p>
+          )}
         </div>
 
         {showInlineReply && (

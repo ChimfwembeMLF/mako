@@ -70,7 +70,7 @@ export class GmailConnectService {
       smtpConfigured,
       inboxAutoReply: !!tokens,
       inboxScopeNote: tokens
-        ? 'Reconnect Gmail if auto-reply does not run (inbox read permission may be missing on older connections).'
+        ? 'Reconnect Gmail if inbox sync or draft replies fail (compose/read permissions may be missing on older connections).'
         : null,
     };
   }

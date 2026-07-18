@@ -24,6 +24,7 @@ const EditContent = lazy(() => import("./pages/EditContent"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
 const Scheduler = lazy(() => import("./pages/Scheduler"));
 const LeadAgent = lazy(() => import("./pages/LeadAgent"));
+const WhatsappHubPage = lazy(() => import("./pages/WhatsappHubPage"));
 const WhatsappTemplatesPage = lazy(() => import("./pages/WhatsappTemplatesPage"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
@@ -60,6 +61,7 @@ const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
 const DataDeletionPage = lazy(() => import("./pages/legal/DataDeletionPage"));
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
+import { ThemeProvider } from "@/hooks/useTheme";
 import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
 import { DataProtectionBanner } from "@/components/DataProtectionBanner";
 import { OfflineGate } from "@/components/OfflineGate";
@@ -125,6 +127,7 @@ const App = () => (
       <BackendStatusProvider>
         <AuthProvider>
           <TenantProvider>
+            <ThemeProvider>
             <WorkspaceProvider>
             <ErrorBoundary label="Application">
             <Toaster />
@@ -157,6 +160,7 @@ const App = () => (
                   <Route path="/content/:id" element={<LazyPage><ContentDetailPage /></LazyPage>} />
                   <Route path="/scheduler" element={<LazyPage><Scheduler /></LazyPage>} />
                   <Route path="/leads" element={<LazyPage><LeadAgent /></LazyPage>} />
+                  <Route path="/whatsapp" element={<LazyPage><WhatsappHubPage /></LazyPage>} />
                   <Route path="/whatsapp/templates" element={<LazyPage><WhatsappTemplatesPage /></LazyPage>} />
                   <Route path="/analytics" element={<LazyPage><Analytics /></LazyPage>} />
                   <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
@@ -215,6 +219,7 @@ const App = () => (
             </BrowserRouter>
           </ErrorBoundary>
             </WorkspaceProvider>
+            </ThemeProvider>
         </TenantProvider>
       </AuthProvider>
       </BackendStatusProvider>

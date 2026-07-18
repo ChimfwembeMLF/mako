@@ -212,11 +212,11 @@ const ImageEditor = ({ imageUrl, open, onClose, onSave }: ImageEditorProps) => {
           <div className="flex items-center justify-between">
             <div className="flex gap-2">
               <Button size="sm" variant={cropMode ? "default" : "outline"} onClick={() => setCropMode(!cropMode)}
-                className={cropMode ? "gradient-primary text-primary-foreground border-0" : ""}>
+                className={cropMode ? "" : ""}>
                 {cropMode ? "Cancel Crop" : "Crop"}
               </Button>
               {cropMode && cropStart && cropEnd && (
-                <Button size="sm" onClick={applyCrop} className="gradient-primary text-primary-foreground border-0">
+                <Button size="sm" onClick={applyCrop} className="">
                   <Check className="mr-1 h-3 w-3" /> Apply Crop
                 </Button>
               )}
@@ -224,7 +224,7 @@ const ImageEditor = ({ imageUrl, open, onClose, onSave }: ImageEditorProps) => {
                 <RotateCcw className="mr-1 h-3 w-3" /> Reset
               </Button>
             </div>
-            <Button onClick={handleSave} className="gradient-primary text-primary-foreground border-0 shadow-glow">
+            <Button onClick={handleSave} className="">
               Save Changes
             </Button>
           </div>

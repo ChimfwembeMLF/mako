@@ -22,7 +22,7 @@ import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 import { cn } from "@/lib/utils";
 
 const primaryBtnClass =
-  "w-full h-9 rounded-full text-sm font-medium gradient-primary border-0 shadow-sm";
+  "w-full h-9 rounded-full text-sm font-medium bg-primary border-0 shadow-sm";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (

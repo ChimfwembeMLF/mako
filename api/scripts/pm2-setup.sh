@@ -20,7 +20,7 @@ fi
 
 mkdir -p logs /var/log/pm2 2>/dev/null || sudo mkdir -p /var/log/pm2
 
-if [[ -f resources/client/package.json ]]; then
+if [[ -f ../client/package.json ]]; then
   echo "==> Full deploy (install + build client + API + PM2)"
   bash scripts/deploy-production.sh --with-migrations
 else

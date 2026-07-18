@@ -181,19 +181,19 @@ function Nav() {
   }, []);
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${scrolled ? 'bg-background/85 backdrop-blur-xl border-b shadow-sm' : ''}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background border-b border-border shadow-elevated' : 'bg-background'}`}>
+      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
         <Link to="/" className="flex items-center">
           <Logo className="h-9" />
         </Link>
-        <nav className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
+        <nav className="hidden md:flex items-center gap-8 text-nav-link text-muted-foreground">
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
             <a key={href} href={href} className="hover:text-foreground transition-colors">{label}</a>
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign in</Link></Button>
-          <Button size="sm" asChild className="gradient-primary border-0 text-white rounded-lg shadow-card">
+          <Button size="sm" asChild className=" rounded-lg shadow-card">
             <Link to="/auth?mode=signup">Get started <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
           </Button>
         </div>
@@ -206,7 +206,7 @@ function Nav() {
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
             <a key={href} href={href} className="block py-2 text-sm" onClick={() => setOpen(false)}>{label}</a>
           ))}
-          <Button className="w-full gradient-primary border-0 text-white mt-2 rounded-lg" asChild>
+          <Button className="w-full mt-2 rounded-lg" asChild>
             <Link to="/auth?mode=signup">Get started</Link>
           </Button>
         </div>
@@ -219,13 +219,8 @@ function Hero() {
   const platforms = ['Facebook', 'Instagram', 'LinkedIn', 'WhatsApp', 'Email'];
 
   return (
-    <section className="relative min-h-[92svh] flex items-center pt-20 pb-20 overflow-hidden border-b border-border/50">
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute -top-32 right-[-10%] w-[min(50vw,480px)] h-[min(50vw,480px)] rounded-full bg-primary/[0.07] blur-3xl" />
-        <div className="absolute bottom-[-20%] left-[-5%] w-[min(42vw,400px)] h-[min(42vw,400px)] rounded-full bg-secondary/[0.05] blur-3xl" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+    <section className="relative min-h-[92svh] flex items-center pt-20 pb-20 overflow-hidden border-b border-border bg-background">
+      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
         <div className="space-y-7 text-center lg:text-left">
           <Reveal>
             <p className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -236,7 +231,7 @@ function Hero() {
           </Reveal>
 
           <Reveal delay={80} variant="up">
-            <h1 className="text-[2.35rem] sm:text-5xl lg:text-[3.2rem] font-bold font-display leading-[1.06] tracking-[-0.025em]">
+            <h1 className="text-display-xl sm:text-[2rem] lg:text-display-xl font-semibold leading-[1.18] tracking-[-0.44px]">
               Your brand voice.
               <br />
               <span className="text-primary">Every channel.</span>
@@ -270,14 +265,14 @@ function Hero() {
               <Button
                 size="lg"
                 asChild
-                className="gradient-primary border-0 text-white h-12 px-8 rounded-xl shadow-card hover:opacity-95"
+                className="h-12 px-8 rounded-sm shadow-card hover:opacity-95"
               >
                 <Link to="/auth?mode=signup">
                   Get started free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-xl bg-background/80">
+              <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-sm">
                 <a href="#product">See how it works</a>
               </Button>
             </div>
@@ -286,15 +281,15 @@ function Hero() {
           <Reveal delay={360} variant="up">
             <ul className="flex flex-col sm:flex-row flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-muted-foreground">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                 No credit card required
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                 Mobile money billing
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
                 Built in Zambia
               </li>
             </ul>
@@ -374,8 +369,8 @@ function ProductShowcase() {
 
 const FEATURES = [
   { icon: Shield, title: 'Roles & approvals', desc: 'Control who can publish with role-based access and sign-off workflows.' },
-  { icon: TrendingUp, title: 'Lead Agent', desc: 'Capture leads from forms and WhatsApp, then track follow-ups in one place.' },
-  { icon: Link2, title: 'Publisher Connect', desc: 'Link Facebook, Instagram, LinkedIn, and WhatsApp with secure OAuth.' },
+  { icon: TrendingUp, title: 'Leads', desc: 'Capture leads from forms and WhatsApp, then track follow-ups in one place.' },
+  { icon: Link2, title: 'Connections', desc: 'Link Facebook, Instagram, LinkedIn, and WhatsApp with secure OAuth.' },
   { icon: Users, title: 'Workspaces & teams', desc: 'Separate brands or clients with workspaces, seats, and permissions.' },
 ];
 
@@ -452,12 +447,12 @@ function Pricing() {
                   <ul className="space-y-2.5 mt-6 flex-1">
                     {planFeatureBullets(p).map((f) => (
                       <li key={f} className="flex gap-2 text-sm text-muted-foreground leading-snug">
-                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         {f}
                       </li>
                     ))}
                   </ul>
-                  <Button className={`mt-6 w-full rounded-lg ${p.highlight ? 'gradient-primary border-0 text-white' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
+                  <Button className={`mt-6 w-full rounded-lg ${p.highlight ? '' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
                     <Link to="/auth?mode=signup">Get started</Link>
                   </Button>
                 </div>
@@ -477,13 +472,13 @@ function FinalCTA() {
   return (
     <section className="py-24 px-4 border-t border-border/50">
       <Reveal variant="scale">
-        <div className="w-full rounded-2xl border border-border/80 bg-card p-10 sm:p-12 text-center shadow-card transition-shadow duration-500 hover:shadow-glow">
+        <div className="w-full rounded-2xl border border-border/80 bg-card p-10 sm:p-12 text-center shadow-card transition-shadow duration-500 hover:shadow-elevated">
           <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">Start with a free account</h2>
           <p className="text-muted-foreground mt-4 text-lg max-w-lg mx-auto leading-relaxed">
             Set up your brand, connect a channel, and publish your first post. Most teams are up and running the same day.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <Button size="lg" asChild className="gradient-primary border-0 text-white h-12 px-8 rounded-xl shadow-card">
+            <Button size="lg" asChild className=" h-12 px-8 rounded-xl shadow-card">
               <Link to="/auth?mode=signup">
                 Create free account
                 <ArrowRight className="ml-2 h-4 w-4" />

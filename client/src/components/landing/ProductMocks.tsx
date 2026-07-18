@@ -112,7 +112,7 @@ export function MockBrandBrain() {
       <div className="flex items-center gap-2 border-b border-border/60 pb-3">
         <Brain className="h-4 w-4 text-primary" />
         <span className="font-semibold text-sm">Brand profile</span>
-        <span className="ml-auto text-[10px] font-medium text-accent px-2 py-0.5 rounded-full bg-accent/10">Complete</span>
+        <span className="ml-auto text-[10px] font-medium text-primary px-2 py-0.5 rounded-full bg-primary/10">Complete</span>
       </div>
       {[
         ['Company', 'Tekrem Innovation Solutions'],
@@ -250,7 +250,7 @@ export function MockReplies() {
         <div key={c.user} className="rounded-lg border border-border/80 bg-card/50 p-3 text-xs">
           <div className="flex justify-between gap-2">
             <span className="font-medium text-foreground">{c.user}</span>
-            <span className={c.status === 'Replied' ? 'text-accent' : 'text-muted-foreground'}>{c.status}</span>
+            <span className={c.status === 'Replied' ? 'text-primary' : 'text-muted-foreground'}>{c.status}</span>
           </div>
           <p className="text-muted-foreground mt-1 leading-relaxed">{c.text}</p>
         </div>
@@ -269,7 +269,7 @@ export function MockPublisher() {
       {['Facebook Page', 'Instagram Business', 'LinkedIn'].map((name) => (
         <div key={name} className="flex items-center justify-between rounded-lg border border-border/80 bg-card/50 px-3 py-2 text-xs">
           <span className="text-foreground">{name}</span>
-          <span className="text-accent font-medium">Connected</span>
+          <span className="text-primary font-medium">Connected</span>
         </div>
       ))}
     </div>

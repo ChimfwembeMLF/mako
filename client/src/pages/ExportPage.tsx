@@ -40,7 +40,7 @@ const EXPORTS: ExportCard[] = [
   },
   {
     key: 'media',
-    label: 'Media Library',
+    label: 'Media',
     description: 'Asset index with name, URL, type, file size, and upload date.',
     icon: Image,
     permission: P.media.view,
@@ -64,7 +64,7 @@ const EXPORTS: ExportCard[] = [
   },
   {
     key: 'chatbot-knowledge',
-    label: 'Knowledge Library',
+    label: 'Knowledge',
     description: 'Uploaded documents with indexing status, chunk counts, and errors.',
     icon: BookOpen,
     permission: P.chatbot.view,

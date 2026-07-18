@@ -38,11 +38,11 @@ export default function ChatbotSessionsPage() {
   return (
     <div className="w-full py-6 space-y-6">
       <div className="flex items-center gap-3">
-        <div className="p-2.5 rounded-xl gradient-primary text-white">
+        <div className="p-2.5 rounded-xl bg-primary text-primary-foreground">
           <History className="h-6 w-6" />
         </div>
         <div>
-          <h1 className="text-2xl font-display font-semibold">Conversation log</h1>
+          <h1 className="text-2xl font-display font-semibold">Chat History</h1>
           <p className="text-sm text-muted-foreground">Admin and widget chat history</p>
         </div>
       </div>

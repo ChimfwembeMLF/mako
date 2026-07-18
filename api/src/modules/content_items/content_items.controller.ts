@@ -76,7 +76,9 @@ export class ContentItemsController {
         platform: query.platform,
       });
     }
-    return this.service.findAll(query.tenantId, query.workspaceId);
+    return this.service.findAll(query.tenantId, query.workspaceId, {
+      includeMedia: query.includeMedia === 'true' || query.includeMedia === '1',
+    });
   }
 
   @Get(':id/details')

@@ -28,6 +28,7 @@ export class WhatsappFlowEngineService {
 
   async tryHandleInbound(params: {
     tenantId: string;
+    workspaceId?: string;
     phone: string;
     text: string;
     interactiveId?: string;
@@ -35,7 +36,10 @@ export class WhatsappFlowEngineService {
     contactId?: string;
     leadId?: string;
   }): Promise<boolean> {
-    const config = await this.sessions.getConfig(params.tenantId);
+    const config = await this.sessions.getConfig(
+      params.tenantId,
+      params.workspaceId,
+    );
     const globallyEnabled =
       this.config.get<string>('WHATSAPP_FLOW_ENABLED') === 'true';
     if (!config.enabled && !globallyEnabled) return false;
@@ -96,6 +100,7 @@ export class WhatsappFlowEngineService {
         await this.messagesRepo.save(
           this.messagesRepo.create({
             tenantId: params.tenantId,
+            workspaceId: params.workspaceId,
             contactId: params.contactId,
             leadId: params.leadId,
             phone: params.phone,

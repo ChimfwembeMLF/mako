@@ -87,14 +87,23 @@ Based on the generated Supabase types, the primary public tables are:
 
 ### Prerequisites
 
-- Node.js 18+
-- npm (or Bun, but npm is the documented default)
+- Node.js 20+ (see `.nvmrc` at repo root)
+- Yarn 4 via Corepack (`corepack enable`)
 - Supabase CLI
 
 ### 1) Install dependencies
 
+From the **repo root** (recommended — installs both API and client):
+
 ```bash
-npm install
+corepack enable
+yarn install
+```
+
+Or from this directory only (requires root install first):
+
+```bash
+yarn install
 ```
 
 ### 2) Create frontend environment file
@@ -112,7 +121,7 @@ Do not commit real keys.
 ### 3) Run frontend
 
 ```bash
-npm run dev
+yarn dev
 ```
 
 Vite is configured for host :: on port 8080.
@@ -120,9 +129,9 @@ Vite is configured for host :: on port 8080.
 ### 4) Optional checks
 
 ```bash
-npm run lint
-npm run test
-npm run build
+yarn lint
+yarn test
+yarn build
 ```
 
 ## Supabase setup and deployment
@@ -173,13 +182,13 @@ supabase functions deploy unsubscribe
 
 ## NPM scripts
 
-- npm run dev: Start Vite dev server
-- npm run build: Production build
-- npm run build:dev: Development-mode build
-- npm run preview: Preview production build locally
-- npm run lint: Run ESLint
-- npm run test: Run Vitest once
-- npm run test:watch: Run Vitest in watch mode
+- yarn dev: Start Vite dev server
+- yarn build: Production build
+- yarn build:prod: Production build with empty API base URL
+- yarn preview: Preview production build locally
+- yarn lint: Run ESLint
+- yarn test: Run Vitest once
+- yarn test:watch: Run Vitest in watch mode
 
 ## Authentication behavior
 

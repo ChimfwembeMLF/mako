@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ContentItems } from './entities/content_items.entity';
 import { MediaAssets } from './entities/media_assets.entity';
 import { ContentItemsCreateDto } from './dto/create-content_items.dto';
@@ -11,6 +11,11 @@ import {
 } from './dto/list-content-items.dto';
 import { ContentPublicationsService } from '../content_publications/content-publications.service';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
+import { applyWorkspaceScope } from '../../common/workspace-scope.util';
+
+export type ContentItemWithPreviewMedia = ContentItems & {
+  previewMedia?: MediaAssets | null;
+};
 
 export type ContentItemDetails = {
   item: ContentItems;
@@ -51,11 +56,47 @@ export class ContentItemsService {
   async findAll(
     tenantId?: string,
     workspaceId?: string,
-  ): Promise<ContentItems[]> {
-    const where: { tenantId?: string; workspaceId?: string } = {};
-    if (tenantId) where.tenantId = tenantId;
-    if (workspaceId) where.workspaceId = workspaceId;
-    return this.repo.find({ where, order: { created_at: 'DESC' } });
+    options?: { includeMedia?: boolean },
+  ): Promise<ContentItemWithPreviewMedia[]> {
+    const qb = this.repo.createQueryBuilder('item');
+
+    if (tenantId) {
+      qb.andWhere('item.tenantId = :tenantId', { tenantId });
+    }
+    applyWorkspaceScope(qb, 'item', workspaceId);
+
+    qb.orderBy('item.created_at', 'DESC').take(500);
+
+    const items = (await qb.getMany()).map((item) =>
+      this.normalizePlatformPayloads(item),
+    );
+
+    if (!options?.includeMedia || items.length === 0) {
+      return items;
+    }
+
+    return this.attachPreviewMedia(items);
+  }
+
+  private async attachPreviewMedia(
+    items: ContentItems[],
+  ): Promise<ContentItemWithPreviewMedia[]> {
+    const ids = items.map((item) => item.id);
+    const mediaRows = await this.mediaRepo.find({
+      where: { contentId: In(ids) },
+      order: { created_at: 'ASC' },
+    });
+
+    const firstByContent = new Map<string, MediaAssets>();
+    for (const row of mediaRows) {
+      if (!row.contentId || firstByContent.has(row.contentId)) continue;
+      firstByContent.set(row.contentId, row);
+    }
+
+    return items.map((item) => ({
+      ...item,
+      previewMedia: firstByContent.get(item.id) ?? null,
+    }));
   }
 
   async findPaginated(params: {
@@ -80,9 +121,7 @@ export class ContentItemsService {
       qb.andWhere('item.userId = :userId', { userId: params.userId });
     }
     if (params.workspaceId) {
-      qb.andWhere('item.workspaceId = :workspaceId', {
-        workspaceId: params.workspaceId,
-      });
+      applyWorkspaceScope(qb, 'item', params.workspaceId);
     }
     if (params.search?.trim()) {
       qb.andWhere('item.title ILIKE :search', {

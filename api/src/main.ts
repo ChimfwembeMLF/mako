@@ -8,9 +8,12 @@ import { AppModule } from './app.module';
 import { ValidationPipe, LogLevel } from '@nestjs/common';
 import { setupSwagger } from './setup-swagger';
 import {
+  normalizeProductionUrls,
+  normalizeDevFrontendUrl,
   resolveApiPublicUrl,
   assertProductionUrls,
-  normalizeProductionUrls,
+  defaultDevApiOrigin,
+  resolveFrontendUrl,
 } from './common/env-urls.util';
 import { buildNestCorsOptions, describeCorsMode } from './common/cors.util';
 import { warnProductionOAuthEnv } from './common/oauth-env.util';
@@ -52,16 +55,10 @@ function normalizeLegacyEnv(): void {
   normalizeProductionUrls();
 
   if (process.env.NODE_ENV !== 'production') {
-    const port = process.env.PORT || '4000';
-    const devOrigin = `http://localhost:${port}`;
-    if (!process.env.FRONTEND_URL?.trim()) {
-      process.env.FRONTEND_URL = devOrigin;
-    }
+    const devOrigin = defaultDevApiOrigin();
+    normalizeDevFrontendUrl();
     if (!process.env.API_PUBLIC_URL?.trim()) {
       process.env.API_PUBLIC_URL = devOrigin;
-    }
-    if (!process.env.CLIENT_URL?.trim()) {
-      process.env.CLIENT_URL = devOrigin;
     }
     for (const key of [
       'FRONTEND_URL',
@@ -160,6 +157,9 @@ async function bootstrap() {
 
   console.log('[boot] Mako API starting (API-only mode)');
   console.log('[cors]', describeCorsMode());
+  if (!isProduction) {
+    console.log('[urls] OAuth redirect target (FRONTEND_URL):', resolveFrontendUrl());
+  }
 
   const logLevels = (process.env.LOG_LEVEL?.split(',') ?? [
     'error',

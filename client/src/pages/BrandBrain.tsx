@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { Brain, Building2, Users, Megaphone, MessageCircle, ShieldCheck, Save, Globe, Loader2, FileText, Sparkles } from "lucide-react";
+import { Brain, Building2, Users, Megaphone, MessageCircle, ShieldCheck, Save, Globe, Loader2, FileText } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useFormSuggestions } from "@/hooks/useFormSuggestions";
+import { useFieldEnhance } from "@/hooks/useFieldEnhance";
 import { SuggestedField } from "@/components/form/SuggestedField";
 import { brandProfilesApi } from "@/lib/api";
 import { DocumentUpload } from "@/components/DocumentUpload";
@@ -186,29 +186,9 @@ const BrandBrainInner = () => {
 
   const [loading, setLoading] = useState(true);
 
-  const visibleFieldKeys = useMemo(
-    () =>
-      sections
-        .find((s) => s.id === activeTab)
-        ?.fields.filter((f) => f.key !== "websiteUrl")
-        .map((f) => f.key) ?? [],
-    [activeTab],
-  );
-
-  const suggestionValues = useMemo(
-    () =>
-      Object.fromEntries(
-        visibleFieldKeys.map((key) => [key, data[key as keyof BrandData] ?? ""]),
-      ),
-    [visibleFieldKeys, data],
-  );
-
-  const { getPlaceholder, getSuggestionsForField, getSelectedIndex, setFieldIndex, pauseField, isFieldActive, fetchSuggestions } = useFormSuggestions({
+  const { enhanceField, enhancingKey } = useFieldEnhance({
     form: "brand-brain",
     tenantId: tenant?.id,
-    fieldKeys: visibleFieldKeys,
-    values: suggestionValues,
-    enabled: !loading && !tenantLoading,
   });
 
   useEffect(() => {
@@ -340,7 +320,7 @@ const BrandBrainInner = () => {
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl gradient-primary">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
             <Brain className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
@@ -353,10 +333,6 @@ const BrandBrainInner = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" onClick={() => fetchSuggestions()}>
-            <Sparkles className="mr-2 h-4 w-4 text-primary" />
-            Get AI Suggestions
-          </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
             {saving ? "Saving..." : "Save Brand Brain"}
@@ -371,7 +347,7 @@ const BrandBrainInner = () => {
             <span className="text-sm font-bold text-primary">{completionPercent}%</span>
           </div>
           <div className="h-2 rounded-full bg-muted overflow-hidden">
-            <div className="h-full rounded-full gradient-primary transition-all duration-500" style={{ width: `${completionPercent}%` }} />
+            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${completionPercent}%` }} />
           </div>
         </CardContent>
       </Card>
@@ -454,13 +430,13 @@ const BrandBrainInner = () => {
                     type={field.type}
                     value={data[field.key]}
                     onChange={(value) => updateField(field.key, value)}
-                    fallbackPlaceholder={field.placeholder}
-                    placeholder={getPlaceholder(field.key, field.placeholder ?? "")}
-                    suggestions={getSuggestionsForField(field.key)}
-                    selectedIndex={getSelectedIndex(field.key)}
-                    onSelectIndex={(index) => setFieldIndex(field.key, index)}
-                    onPauseRotation={() => pauseField(field.key)}
-                    isLive={isFieldActive(field.key)}
+                    placeholder={field.placeholder}
+                    onEnhance={() =>
+                      enhanceField(field.key, data[field.key], (value) =>
+                        updateField(field.key, value),
+                      )
+                    }
+                    enhancing={enhancingKey === field.key}
                     rows={field.rows ?? 4}
                   />
                 </CardContent>
