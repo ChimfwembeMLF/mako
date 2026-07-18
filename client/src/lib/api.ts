@@ -196,7 +196,7 @@ export function getRefreshToken(): string | null {
     return localStorage.getItem('refresh_token');
 }
 
-export function getSocialLoginUrl(provider: 'google' | 'facebook' | 'linkedin' | 'instagram') {
+export function getSocialLoginUrl(provider: 'google' | 'facebook' | 'linkedin' | 'instagram' | 'twitter') {
     const base = resolveApiBaseUrl().replace(/\/$/, '');
     return base ? `${base}/api/v1/auth/${provider}` : `/api/v1/auth/${provider}`;
 }
@@ -529,6 +529,14 @@ export const socialAccountsApi = {
             method: 'POST',
             body: JSON.stringify(data),
         }),
+
+    getTwitterWebhookConfig: () =>
+        request<{
+            webhookUrl: string;
+            webhookEnv: string;
+            subscriptions: string[];
+            notes?: string;
+        }>('/api/v1/social-accounts/twitter/webhook-config'),
 
     getMyAccounts: () => request<any>('/api/v1/social-accounts/me'),
 

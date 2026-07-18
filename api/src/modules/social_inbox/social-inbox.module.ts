@@ -9,11 +9,13 @@ import { CommentRepliesModule } from '../comment_replies/comment_replies.module'
 import { AutoReplyRulesModule } from '../auto_reply_rules/auto_reply_rules.module';
 import { AiModule } from '../ai/ai.module';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
+import { XWebhookModule } from './x-webhook.module';
 import { UnifiedInboxService } from './unified-inbox.service';
 import { SocialMessagingSyncService } from './social-messaging-sync.service';
 import { SocialMessagingInboundService } from './social-messaging-inbound.service';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 import { SocialDmReplyService } from './social-dm-reply.service';
+import { XAccountActivityInboundService } from './x-account-activity-inbound.service';
 import { SocialInboxController } from './social-inbox.controller';
 
 @Module({
@@ -29,6 +31,7 @@ import { SocialInboxController } from './social-inbox.controller';
     AutoReplyRulesModule,
     AiModule,
     WhatsappModule,
+    XWebhookModule,
   ],
   controllers: [SocialInboxController],
   providers: [
@@ -37,11 +40,14 @@ import { SocialInboxController } from './social-inbox.controller';
     SocialMessagingInboundService,
     SocialDmAutoReplyService,
     SocialDmReplyService,
+    XAccountActivityInboundService,
   ],
   exports: [
     UnifiedInboxService,
     SocialMessagingInboundService,
     SocialMessagingSyncService,
+    XAccountActivityInboundService,
+    XWebhookModule,
   ],
 })
 export class SocialInboxModule {}

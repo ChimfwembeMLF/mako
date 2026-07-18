@@ -19,6 +19,8 @@ import { DataProtectionConsentService } from './data-protection-consent.service'
 import { resolveLegalUrls } from './legal-urls.util';
 import { WhatsappInboundService } from '../whatsapp/whatsapp-inbound.service';
 import { SocialMessagingInboundService } from '../social_inbox/social-messaging-inbound.service';
+import { XAccountActivityInboundService } from '../social_inbox/x-account-activity-inbound.service';
+import { XWebhookAdminService } from '../social_inbox/x-webhook-admin.service';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 
@@ -46,6 +48,8 @@ export class LegalController {
     private readonly config: ConfigService,
     private readonly whatsappInbound: WhatsappInboundService,
     private readonly socialMessagingInbound: SocialMessagingInboundService,
+    private readonly xInbound: XAccountActivityInboundService,
+    private readonly xWebhook: XWebhookAdminService,
     private readonly queueDispatch: QueueDispatchService,
   ) {}
 
@@ -156,6 +160,30 @@ export class LegalController {
       return this.deletion.handleMetaSignedRequest(body.signed_request);
     }
     return { received: true };
+  }
+
+  /** X Account Activity — CRC challenge */
+  @Get('api/v1/webhooks/x')
+  xWebhookCrc(
+    @Res() res: Response,
+    @Query('crc_token') crcToken?: string,
+  ) {
+    if (!crcToken?.trim()) {
+      return res.status(400).json({ error: 'crc_token required' });
+    }
+    try {
+      const responseToken = this.xWebhook.buildCrcResponse(crcToken.trim());
+      return res.status(200).json({ response_token: responseToken });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'CRC failed';
+      return res.status(500).json({ error: message });
+    }
+  }
+
+  /** X Account Activity — real-time events (DMs, mentions, posts) */
+  @Post('api/v1/webhooks/x')
+  xWebhookEvents(@Body() body: unknown) {
+    return this.xInbound.handleWebhook(body);
   }
 
   private sendPublicHtml(res: Response, filename: string) {

@@ -17,6 +17,7 @@ import {
   googleScopesToParam,
   twitterScopesToParam,
 } from './social_accounts-oauth.scopes';
+import { resolveTwitterPublisherScopes } from '../../common/twitter-config.util';
 
 export type SocialOAuthPlatform =
   | 'facebook'
@@ -1244,7 +1245,9 @@ export class SocialAccountsOAuthService {
       response_type: 'code',
       client_id: this.config.getOrThrow<string>('TWITTER_CLIENT_ID'),
       redirect_uri: redirectUri,
-      scope: twitterScopesToParam(TWITTER_PUBLISHER_SCOPES),
+      scope: twitterScopesToParam(
+        resolveTwitterPublisherScopes(this.config) as readonly string[],
+      ),
       state,
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
@@ -1283,6 +1286,8 @@ export class SocialAccountsOAuthService {
       metadata: {
         auth_type: 'oauth2',
         username: profile.username,
+        x_user_id: profile.id,
+        user_id: profile.id,
         profile_image_url: profile.profile_image_url,
         scope: tokens.scope,
       },

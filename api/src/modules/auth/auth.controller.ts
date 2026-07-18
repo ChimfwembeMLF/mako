@@ -23,6 +23,7 @@ import { GoogleAuthService } from './google-auth.service';
 import { FacebookAuthService } from './facebook-auth.service';
 import { LinkedInAuthService } from './linkedin-auth.service';
 import { InstagramAuthService } from './instagram-auth.service';
+import { TwitterAuthService } from './twitter-auth.service';
 import { ConfigService } from '@nestjs/config';
 import { resolveFrontendUrl } from '../../common/env-urls.util';
 import { RegisterDto } from './dto/register.dto';
@@ -53,6 +54,7 @@ export class AuthController {
     private readonly facebookAuthService: FacebookAuthService,
     private readonly linkedInAuthService: LinkedInAuthService,
     private readonly instagramAuthService: InstagramAuthService,
+    private readonly twitterAuthService: TwitterAuthService,
     private readonly config: ConfigService,
   ) {}
 
@@ -287,6 +289,61 @@ export class AuthController {
   @ApiOperation({ summary: 'Authenticate with Instagram access token' })
   async instagramAuthenticate(@Body() dto: TokenVerificationDto) {
     const user = await this.instagramAuthService.authenticate(dto.token);
+    return this.authService.completeAuthentication(user);
+  }
+
+  @Get('twitter')
+  @ApiOperation({ summary: 'Start X / Twitter OAuth login' })
+  twitterLogin(@Res() res: Response, @Query('state') state?: string) {
+    return res.redirect(this.twitterAuthService.getAuthorizationUrl(state));
+  }
+
+  @Get('twitter/redirect')
+  @ApiOperation({ summary: 'X / Twitter OAuth login callback' })
+  async twitterLoginRedirect(
+    @Res() res: Response,
+    @Query('code') code?: string,
+    @Query('state') state?: string,
+    @Query('error') error?: string,
+    @Query('error_description') errorDescription?: string,
+  ) {
+    if (error) {
+      const message = errorDescription || error;
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`,
+      );
+    }
+    if (!code) throw new BadRequestException('Missing authorization code');
+
+    try {
+      const tokenResult = await this.twitterAuthService.exchangeCodeForTokens(
+        code,
+        state,
+      );
+      const user = await this.twitterAuthService.authenticate(
+        tokenResult.accessToken,
+      );
+      const tokens = await this.authService.completeAuthentication(user);
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+      );
+    } catch (err) {
+      const message =
+        err instanceof BadRequestException
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : 'X authentication failed';
+      return res.redirect(
+        `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(message)}`,
+      );
+    }
+  }
+
+  @Post('twitter-auth')
+  @ApiOperation({ summary: 'Authenticate with X / Twitter access token' })
+  async twitterAuthenticate(@Body() dto: TokenVerificationDto) {
+    const user = await this.twitterAuthService.authenticate(dto.token);
     return this.authService.completeAuthentication(user);
   }
 }

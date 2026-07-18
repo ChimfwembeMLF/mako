@@ -91,6 +91,22 @@ export const DEFAULT_AUTO_REPLY_RULE_SEEDS: AutoReplyRuleSeed[] = [
     isActive: false,
   },
   {
+    platform: 'twitter',
+    name: 'X — DM greeting',
+    triggerKeywords: ['hi', 'hello', 'hey', 'dm', 'question'],
+    triggerSentiment: 'any',
+    aiGenerate: true,
+    isActive: false,
+  },
+  {
+    platform: 'twitter',
+    name: 'X — Default DM reply',
+    triggerKeywords: [],
+    triggerSentiment: 'any',
+    aiGenerate: true,
+    isActive: false,
+  },
+  {
     platform: 'email',
     name: 'Email — Pricing & support',
     triggerKeywords: ['price', 'cost', 'quote', 'support', 'help', 'question'],

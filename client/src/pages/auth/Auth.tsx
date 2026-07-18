@@ -15,6 +15,7 @@ import {
   Facebook,
   Linkedin,
   Instagram,
+  Twitter,
   ArrowLeft,
 } from "lucide-react";
 import Logo from "@/components/Logo";
@@ -74,6 +75,12 @@ const SOCIAL_PROVIDERS = [
     theme:
       "bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] text-white border-0 hover:opacity-90 shadow-sm",
   },
+  {
+    id: "twitter" as const,
+    label: "X",
+    Icon: Twitter,
+    theme: "bg-black text-white border-0 hover:bg-neutral-800 shadow-sm",
+  },
 ];
 
 const Auth = () => {
@@ -97,7 +104,7 @@ const Auth = () => {
     }
   }, [searchParams]);
 
-  const handleSocialLogin = (provider: "google" | "facebook" | "linkedin" | "instagram") => {
+  const handleSocialLogin = (provider: "google" | "facebook" | "linkedin" | "instagram" | "twitter") => {
     window.location.href = getSocialLoginUrl(provider);
   };
 

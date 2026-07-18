@@ -6,7 +6,7 @@ export class SocialAuthDto {
 }
 
 export class SocialAuthRegisterDto {
-  provider: 'facebook' | 'google' | 'linkedin' | 'instagram';
+  provider: 'facebook' | 'google' | 'linkedin' | 'instagram' | 'twitter';
 
   providerId: string;
 
@@ -18,6 +18,7 @@ export class SocialAuthRegisterDto {
   isRegisteredWithFacebook?: boolean;
   isRegisteredWithLinkedIn?: boolean;
   isRegisteredWithInstagram?: boolean;
+  isRegisteredWithTwitter?: boolean;
 
   avatar?: string;
   phone?: string;

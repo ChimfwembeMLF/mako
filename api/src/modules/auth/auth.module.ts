@@ -12,6 +12,7 @@ import { GoogleAuthService } from './google-auth.service';
 import { FacebookAuthService } from './facebook-auth.service';
 import { LinkedInAuthService } from './linkedin-auth.service';
 import { InstagramAuthService } from './instagram-auth.service';
+import { TwitterAuthService } from './twitter-auth.service';
 import { UserModule } from '../user/user.module';
 import { TenantsModule } from '../tenants/tenants.module';
 import { RefreshTokenEntity } from './entities/refresh-token.entity';
@@ -48,6 +49,7 @@ import { GmailService } from './gmail.service';
     FacebookAuthService,
     LinkedInAuthService,
     InstagramAuthService,
+    TwitterAuthService,
     GmailService,
   ],
   exports: [AuthService, RefreshTokenService, GmailService, GoogleAuthService],

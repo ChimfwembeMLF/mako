@@ -61,12 +61,21 @@ export const TIKTOK_PUBLISHER_SCOPES = [
   'video.publish',
 ] as const;
 
-/** X (Twitter) OAuth 2.0 — post tweets + read engagement metrics */
-export const TWITTER_PUBLISHER_SCOPES = [
+/** X (Twitter) OAuth 2.0 — always safe on standard developer apps */
+export const TWITTER_PUBLISHER_BASE_SCOPES = [
   'tweet.read',
   'tweet.write',
   'users.read',
   'offline.access',
+] as const;
+
+/** Requires X API DM access — enable with TWITTER_OAUTH_DM_SCOPES=true */
+export const TWITTER_PUBLISHER_DM_SCOPES = ['dm.read', 'dm.write'] as const;
+
+/** Full publisher scopes (base + DM). Prefer resolveTwitterPublisherScopes() at runtime. */
+export const TWITTER_PUBLISHER_SCOPES = [
+  ...TWITTER_PUBLISHER_BASE_SCOPES,
+  ...TWITTER_PUBLISHER_DM_SCOPES,
 ] as const;
 
 /** WhatsApp Business — list WABAs / phone numbers and send messages */

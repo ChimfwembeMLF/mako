@@ -106,6 +106,11 @@ export class SocialDmReplyService {
       },
       order: { created_at: 'DESC' },
     });
+
+    if (platform === 'twitter' || platform === 'x') {
+      return this.sendTwitterDm(account, threadId, text, lastInbound);
+    }
+
     const recipientId = lastInbound?.participantId;
     if (!recipientId) return { sent: false, message: 'No recipient found' };
 
@@ -124,6 +129,57 @@ export class SocialDmReplyService {
         threadId,
         participantId: recipientId,
         participantName: lastInbound.participantName,
+        direction: 'outbound',
+        body: text,
+        attachments: [],
+        reactions: [],
+        status: 'sent',
+      }),
+    );
+
+    return { sent: true };
+  }
+
+  private async sendTwitterDm(
+    account: SocialAccounts,
+    threadId: string,
+    text: string,
+    lastInbound: SocialMessages | null,
+  ) {
+    const token = account.accessToken?.trim();
+    if (!token) return { sent: false, message: 'X account token missing' };
+
+    const recipientId = lastInbound?.participantId ?? threadId;
+    if (!recipientId) return { sent: false, message: 'No recipient found' };
+
+    const platform = account.platform === 'x' ? 'x' : 'twitter';
+
+    try {
+      await axios.post(
+        `https://api.twitter.com/2/dm_conversations/with/${encodeURIComponent(recipientId)}/messages`,
+        { text },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+    } catch (err) {
+      const message = axios.isAxiosError(err)
+        ? JSON.stringify(err.response?.data ?? err.message)
+        : String(err);
+      return { sent: false, message: `X DM failed: ${message}` };
+    }
+
+    await this.socialMessagesRepo.save(
+      this.socialMessagesRepo.create({
+        tenantId: account.tenantId,
+        workspaceId: account.workspaceId,
+        platform,
+        threadId,
+        participantId: recipientId,
+        participantName: lastInbound?.participantName,
         direction: 'outbound',
         body: text,
         attachments: [],

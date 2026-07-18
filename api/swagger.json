@@ -470,6 +470,103 @@
         ]
       }
     },
+    "/api/v1/auth/twitter": {
+      "get": {
+        "operationId": "AuthController_twitterLogin",
+        "parameters": [
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Start X / Twitter OAuth login",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/twitter/redirect": {
+      "get": {
+        "operationId": "AuthController_twitterLoginRedirect",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error_description",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "X / Twitter OAuth login callback",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/twitter-auth": {
+      "post": {
+        "operationId": "AuthController_twitterAuthenticate",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TokenVerificationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Authenticate with X / Twitter access token",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/api/v1/users": {
       "get": {
         "operationId": "UserController_getUsers",
@@ -3474,6 +3571,26 @@
           }
         ],
         "summary": "Get connected social accounts for the current user",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/twitter/webhook-config": {
+      "get": {
+        "operationId": "SocialAccountsController_getTwitterWebhookConfig",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "X Account Activity webhook URL and subscription info",
         "tags": [
           "Social Accounts"
         ]
@@ -8788,6 +8905,41 @@
     "/api/v1/webhooks/meta/deauthorize": {
       "post": {
         "operationId": "LegalController_metaDeauthorize",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      }
+    },
+    "/api/v1/webhooks/x": {
+      "get": {
+        "operationId": "LegalController_xWebhookCrc",
+        "parameters": [
+          {
+            "name": "crc_token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Legal"
+        ]
+      },
+      "post": {
+        "operationId": "LegalController_xWebhookEvents",
         "parameters": [],
         "responses": {
           "201": {

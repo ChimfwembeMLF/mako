@@ -19,6 +19,7 @@ import { Request, Response } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { resolveFrontendUrl } from '../../common/env-urls.util';
+import { getTwitterConfig, resolveTwitterPublisherScopes } from '../../common/twitter-config.util';
 import { SocialAccountsService } from './social_accounts.service';
 import {
   SocialAccountsOAuthService,
@@ -30,6 +31,7 @@ import { WhatsappFinalizeDto } from './dto/whatsapp-finalize.dto';
 import { FacebookFinalizeDto } from './dto/facebook-finalize.dto';
 import { YoutubeFinalizeDto } from './dto/youtube-finalize.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { XWebhookAdminService } from '../social_inbox/x-webhook-admin.service';
 
 const OAUTH_PLATFORMS: SocialOAuthPlatform[] = [
   'facebook',
@@ -51,6 +53,7 @@ export class SocialAccountsController {
     private readonly service: SocialAccountsService,
     private readonly oauth: SocialAccountsOAuthService,
     private readonly config: ConfigService,
+    private readonly xWebhook: XWebhookAdminService,
   ) {}
 
   private getUserId(req: Request): string {
@@ -68,24 +71,57 @@ export class SocialAccountsController {
     );
   }
 
+  private async ensureXWebhookAfterConnect(
+    req: Request,
+    tenantId: string,
+    workspaceId: string | undefined,
+    platform: string,
+  ) {
+    if (platform !== 'twitter' && platform !== 'x') return;
+
+    const account = await this.service.findConnectedByPlatform(
+      tenantId,
+      'twitter',
+      workspaceId,
+    );
+    if (!account) return;
+
+    const result = await this.xWebhook.ensureSubscriptionForAccount(
+      account,
+      this.getApiBaseUrl(req),
+    );
+    if (!result.ok) {
+      this.logger.warn(
+        `X Account Activity subscription skipped: ${result.message ?? 'unknown'}`,
+      );
+    }
+  }
+
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Connect a social account manually (tokens/credentials)',
   })
   @Post('connect')
-  connect(@Req() req: Request, @Body() dto: SocialAccountsCreateDto) {
+  async connect(@Req() req: Request, @Body() dto: SocialAccountsCreateDto) {
     const userId = this.getUserId(req);
     if (dto.userId && dto.userId !== userId) {
       throw new UnauthorizedException(
         'Cannot connect social account for another user',
       );
     }
-    return this.service.connectAccount({
+    const result = await this.service.connectAccount({
       ...dto,
       userId,
       connected: true,
     });
+    await this.ensureXWebhookAfterConnect(
+      req,
+      dto.tenantId,
+      dto.workspaceId,
+      dto.platform,
+    );
+    return result;
   }
 
   @UseGuards(JwtAuthGuard)
@@ -112,6 +148,34 @@ export class SocialAccountsController {
   @Get('me')
   getMyAccounts(@Req() req: Request) {
     return this.service.findByUser(this.getUserId(req));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'X Account Activity webhook URL and subscription info',
+  })
+  @Get('twitter/webhook-config')
+  getTwitterWebhookConfig(@Req() req: Request) {
+    const apiBase = this.getApiBaseUrl(req);
+    return {
+      webhookUrl: this.xWebhook.getWebhookUrl(apiBase),
+      webhookEnv: getTwitterConfig(this.config).webhookEnv,
+      oauthScopes: resolveTwitterPublisherScopes(this.config),
+      dmScopesEnabled: getTwitterConfig(this.config).oauthDmScopes,
+      subscriptions: [
+        'post.create',
+        'post.delete',
+        'post.mention.create',
+        'dm.sent',
+        'dm.read',
+        'chat.received',
+        'chat.sent',
+        'chat.conversation_join',
+      ],
+      notes:
+        'Register the webhook URL in the X Developer Portal (Account Activity API). OAuth 1.0a user tokens (manual connect or TWITTER_OAUTH1_* env) are required to subscribe.',
+    };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -296,6 +360,13 @@ export class SocialAccountsController {
         metadata: result.metadata,
         connected: true,
       });
+
+      await this.ensureXWebhookAfterConnect(
+        req,
+        decoded.tenantId,
+        decoded.workspaceId,
+        result.platform,
+      );
 
       return res.redirect(`${returnUrl}${separator}connected=${platform}`);
     } catch (err) {

@@ -7,11 +7,13 @@ import { SocialAccountsService } from './social_accounts.service';
 import { SocialAccountsController } from './social_accounts.controller';
 import { SocialAccountsOAuthService } from './social_accounts-oauth.service';
 import { TenantMembersModule } from '../tenant_members/tenant_members.module';
+import { XWebhookModule } from '../social_inbox/x-webhook.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([SocialAccounts]),
     TenantMembersModule,
+    XWebhookModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -54,12 +54,12 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
     label: 'X / Twitter',
     connect: true,
     publish: true,
-    comments: false,
-    messaging: false,
+    comments: true,
+    messaging: true,
     oauth: true,
     status: 'available',
     notes:
-      'Connect with X OAuth 2.0 to post tweets. Media upload works with OAuth connect; advanced manual OAuth 1.0a also supported.',
+      'Connect with X OAuth 2.0 to post tweets and receive DMs/mentions in Social Inbox. Account Activity webhooks need OAuth 1.0a subscription tokens (manual connect or env TWITTER_OAUTH1_*).',
   },
   {
     id: 'whatsapp',

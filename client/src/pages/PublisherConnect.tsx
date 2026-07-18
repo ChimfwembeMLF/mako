@@ -103,7 +103,7 @@ const platforms: {
     icon: Twitter,
     color: "text-foreground",
     bgColor: "bg-muted",
-    description: "Post tweets from Mako via X OAuth 2.0",
+    description: "Post tweets, receive DMs & mentions in Social Inbox (X OAuth 2.0 + webhooks)",
     oauth: true,
     manualFallback: true,
     fields: [
@@ -169,9 +169,12 @@ const PublisherConnect = () => {
   const [loadingYoutubeSetup, setLoadingYoutubeSetup] = useState(false);
   const [finalizingYoutube, setFinalizingYoutube] = useState(false);
 
-
-
-  const { toast } = useToast();
+  const [twitterWebhook, setTwitterWebhook] = useState<{
+    webhookUrl: string;
+    webhookEnv: string;
+    subscriptions: string[];
+    notes?: string;
+  } | null>(null);
   const { tenant } = useTenant();
   const { activeWorkspace, workspaces, workspaceVersion } = useWorkspace();
   const activeWorkspaceName =
@@ -196,6 +199,21 @@ const PublisherConnect = () => {
   useEffect(() => {
     if (tenant && activeWorkspace) loadAccounts();
   }, [tenant?.id, activeWorkspace, workspaceVersion]);
+
+  useEffect(() => {
+    let cancelled = false;
+    socialAccountsApi
+      .getTwitterWebhookConfig()
+      .then((cfg) => {
+        if (!cancelled) setTwitterWebhook(cfg);
+      })
+      .catch(() => {
+        if (!cancelled) setTwitterWebhook(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const connected = searchParams.get("connected");
@@ -651,6 +669,19 @@ const PublisherConnect = () => {
                         <p className="text-[11px] text-muted-foreground mt-1.5">
                           Facebook connected — will reuse if WhatsApp permissions are already granted.
                         </p>
+                      )}
+                      {platform.id === "twitter" && account && twitterWebhook && (
+                        <div className="mt-2 space-y-1 rounded-md border border-border/60 bg-muted/40 p-2">
+                          <p className="text-[10px] font-medium text-foreground">
+                            Account Activity webhook ({twitterWebhook.webhookEnv})
+                          </p>
+                          <code className="block text-[10px] break-all text-muted-foreground">
+                            {twitterWebhook.webhookUrl}
+                          </code>
+                          <p className="text-[10px] text-muted-foreground">
+                            Register in X Developer Portal. OAuth 1.0a tokens (manual connect or env) subscribe on connect.
+                          </p>
+                        </div>
                       )}
                     </div>
                   </div>

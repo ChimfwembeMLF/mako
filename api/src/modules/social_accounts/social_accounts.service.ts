@@ -116,6 +116,21 @@ export class SocialAccountsService {
     return this.toPublicAccount(saved);
   }
 
+  async findConnectedByPlatform(
+    tenantId: string,
+    platform: string,
+    workspaceId?: string,
+  ): Promise<SocialAccounts | null> {
+    return this.repo.findOne({
+      where: {
+        ...scopeWhere<SocialAccounts>(tenantId, workspaceId),
+        platform,
+        connected: true,
+      },
+      order: { updated_at: 'DESC' },
+    });
+  }
+
   async refreshAccessTokenIfNeeded(account: SocialAccounts) {
     if (!account.connected) return account;
     if (this.hasRecentAuthFailure(account)) return account;

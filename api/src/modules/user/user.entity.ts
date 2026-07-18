@@ -21,7 +21,7 @@ export class UserEntity {
 
   @Column({
     type: 'enum',
-    enum: ['local', 'facebook', 'google', 'linkedin', 'instagram'],
+    enum: ['local', 'facebook', 'google', 'linkedin', 'instagram', 'twitter'],
     default: 'local',
   })
   provider: string;
@@ -61,6 +61,9 @@ export class UserEntity {
 
   @Column({ nullable: true })
   isRegisteredWithInstagram?: boolean;
+
+  @Column({ nullable: true })
+  isRegisteredWithTwitter?: boolean;
 
   /** AES-256-GCM encrypted Google OAuth access token (Gmail API). */
   @Column({ type: 'text', nullable: true, select: false })

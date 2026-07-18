@@ -92,6 +92,12 @@ export class UnifiedInboxService {
       conversations.push(
         ...(await this.dmConversations(tenantId, 'instagram', workspaceId)),
       );
+      conversations.push(
+        ...(await this.dmConversations(tenantId, 'twitter', workspaceId)),
+      );
+      conversations.push(
+        ...(await this.dmConversations(tenantId, 'x', workspaceId)),
+      );
     }
 
     conversations.sort(
