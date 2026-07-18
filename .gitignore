@@ -9,6 +9,7 @@ node_modules
 .pnp.*
 
 .env
+deploy/dokploy.env
 
 # Rust build output
 api-rust/target/
