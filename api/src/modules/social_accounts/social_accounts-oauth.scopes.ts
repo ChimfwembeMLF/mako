@@ -61,6 +61,14 @@ export const TIKTOK_PUBLISHER_SCOPES = [
   'video.publish',
 ] as const;
 
+/** X (Twitter) OAuth 2.0 — post tweets + read engagement metrics */
+export const TWITTER_PUBLISHER_SCOPES = [
+  'tweet.read',
+  'tweet.write',
+  'users.read',
+  'offline.access',
+] as const;
+
 /** WhatsApp Business — list WABAs / phone numbers and send messages */
 export const WHATSAPP_PUBLISHER_SCOPES = [
   'business_management',
@@ -74,5 +82,10 @@ export function scopesToParam(scopes: readonly string[]): string {
 
 /** Google OAuth requires space-delimited scopes (commas cause invalid_scope). */
 export function googleScopesToParam(scopes: readonly string[]): string {
+  return scopes.join(' ');
+}
+
+/** X OAuth 2.0 requires space-delimited scopes. */
+export function twitterScopesToParam(scopes: readonly string[]): string {
   return scopes.join(' ');
 }

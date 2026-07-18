@@ -42,3 +42,15 @@ export function writeSuggestionCache(
     /* quota or private mode */
   }
 }
+
+export function clearSuggestionCache(
+  tenantId: string,
+  form: FormSuggestionForm,
+  workspaceId?: string | null,
+) {
+  try {
+    sessionStorage.removeItem(cacheKey(tenantId, form, workspaceId));
+  } catch {
+    /* ignore */
+  }
+}

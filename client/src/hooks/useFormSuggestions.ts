@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { aiApi } from '@/lib/api';
 import {
+  clearSuggestionCache,
   readSuggestionCache,
   writeSuggestionCache,
   type SuggestionMap,
@@ -14,6 +15,10 @@ import {
 import { useWorkspace } from '@/hooks/useWorkspace';
 
 const PAUSE_MS = 60_000;
+
+function newVariationSeed() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
 
 interface UseFormSuggestionsOptions {
   form: FormSuggestionForm;
@@ -37,41 +42,73 @@ export function useFormSuggestions({
   const [loading, setLoading] = useState(false);
   const rotationRef = useRef(0);
   const pausedUntilRef = useRef<Record<string, number>>({});
+  const suggestionsRef = useRef<SuggestionMap>({});
+
+  useEffect(() => {
+    suggestionsRef.current = suggestions;
+  }, [suggestions]);
 
   const emptyFieldKeys = useMemo(
     () => fieldKeys.filter((key) => !values[key]?.trim()),
     [fieldKeys, values],
   );
 
+  const loadFromApi = useCallback(
+    (opts?: { refresh?: boolean; useCache?: boolean }) => {
+      if (!tenantId || fieldKeys.length === 0) return Promise.resolve();
+
+      if (opts?.useCache !== false && !opts?.refresh) {
+        const cached = readSuggestionCache(tenantId, form, activeWorkspace);
+        if (cached) {
+          setSuggestions(cached);
+          return Promise.resolve();
+        }
+      } else if (opts?.refresh) {
+        clearSuggestionCache(tenantId, form, activeWorkspace);
+      }
+
+      setLoading(true);
+      const avoidTexts = opts?.refresh
+        ? Object.values(suggestionsRef.current)
+            .flat()
+            .map((t) => t.trim())
+            .filter(Boolean)
+            .slice(-20)
+        : undefined;
+
+      return aiApi
+        .getFormSuggestions({
+          tenantId,
+          workspaceId: activeWorkspace || undefined,
+          form,
+          fields: FORM_SUGGESTION_FIELDS[form],
+          variationSeed: newVariationSeed(),
+          refresh: opts?.refresh,
+          avoidTexts,
+        })
+        .then((res) => {
+          const next = res.suggestions ?? {};
+          setSuggestions(next);
+          writeSuggestionCache(tenantId, form, next, activeWorkspace);
+          setSelectedIndex({});
+        })
+        .catch(() => {
+          setSuggestions({});
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    },
+    [tenantId, form, fieldKeys.length, activeWorkspace],
+  );
+
   const fetchSuggestions = useCallback(() => {
-    if (!tenantId || fieldKeys.length === 0) return;
+    void loadFromApi({ useCache: true });
+  }, [loadFromApi]);
 
-    const cached = readSuggestionCache(tenantId, form, activeWorkspace);
-    if (cached) {
-      setSuggestions(cached);
-      return;
-    }
-
-    setLoading(true);
-    aiApi
-      .getFormSuggestions({
-        tenantId,
-        workspaceId: activeWorkspace || undefined,
-        form,
-        fields: FORM_SUGGESTION_FIELDS[form],
-      })
-      .then((res) => {
-        const next = res.suggestions ?? {};
-        setSuggestions(next);
-        writeSuggestionCache(tenantId, form, next, activeWorkspace);
-      })
-      .catch(() => {
-        setSuggestions({});
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, [tenantId, form, fieldKeys.length, activeWorkspace]);
+  const refreshSuggestions = useCallback(() => {
+    return loadFromApi({ refresh: true, useCache: false });
+  }, [loadFromApi]);
 
   const isFieldPaused = useCallback((fieldKey: string) => {
     const until = pausedUntilRef.current[fieldKey] ?? 0;
@@ -165,5 +202,6 @@ export function useFormSuggestions({
     isFieldActive,
     activeFieldKey,
     fetchSuggestions,
+    refreshSuggestions,
   };
 }

@@ -56,7 +56,10 @@ export class SocialPublishAccountService {
       account,
     );
 
-    if (prepared.platform === 'linkedin' && prepared.refreshToken) {
+    if (
+      (prepared.platform === 'linkedin' || prepared.platform === 'twitter') &&
+      prepared.refreshToken
+    ) {
       prepared = await this.socialAccounts.forceRefreshToken(prepared);
     }
 

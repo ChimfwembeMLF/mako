@@ -10,8 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
-import { useFieldEnhance } from "@/hooks/useFieldEnhance";
-import { SuggestedField } from "@/components/form/SuggestedField";
+import { FormFieldAi } from "@/components/form/FormFieldAi";
 import { brandProfilesApi } from "@/lib/api";
 import { DocumentUpload } from "@/components/DocumentUpload";
 
@@ -185,11 +184,6 @@ const BrandBrainInner = () => {
   const activeWorkspaceName = workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name;
 
   const [loading, setLoading] = useState(true);
-
-  const { enhanceField, enhancingKey } = useFieldEnhance({
-    form: "brand-brain",
-    tenantId: tenant?.id,
-  });
 
   useEffect(() => {
     if (!user || !tenant || workspaceLoading) return;
@@ -425,18 +419,15 @@ const BrandBrainInner = () => {
               <Card key={field.key} className="border-border/50">
                 <CardContent className="p-4 space-y-2">
                   <Label htmlFor={field.key}>{field.label}</Label>
-                  <SuggestedField
+                  <FormFieldAi
                     id={field.key}
+                    form="brand-brain"
+                    tenantId={tenant?.id}
+                    fieldKey={field.key}
                     type={field.type}
                     value={data[field.key]}
                     onChange={(value) => updateField(field.key, value)}
                     placeholder={field.placeholder}
-                    onEnhance={() =>
-                      enhanceField(field.key, data[field.key], (value) =>
-                        updateField(field.key, value),
-                      )
-                    }
-                    enhancing={enhancingKey === field.key}
                     rows={field.rows ?? 4}
                   />
                 </CardContent>

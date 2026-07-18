@@ -8,7 +8,7 @@ import { SocialAccounts } from '../social_accounts/entities/social_accounts.enti
 import { YoutubePublishingService } from './youtube-publishing.service';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { summarizeAxiosError } from './publish-error.util';
-import { scopeWhere } from '../../common/workspace-scope.util';
+import { scopeWhereIncludingTenantWide } from '../../common/workspace-scope.util';
 
 const GRAPH_API = 'https://graph.facebook.com/v20.0';
 
@@ -43,12 +43,20 @@ export class PublicationEngagementService {
     userId: string,
     workspaceId?: string,
   ): Promise<number> {
-    const publications = await this.publicationsRepo.find({
-      where: {
-        ...scopeWhere<ContentPublications>(tenantId, workspaceId),
-        status: 'published',
-      },
-    });
+    const qb = this.publicationsRepo
+      .createQueryBuilder('p')
+      .where('p.tenantId = :tenantId', { tenantId })
+      .andWhere('p.status = :status', { status: 'published' })
+      .andWhere('p.externalPostId IS NOT NULL');
+
+    if (workspaceId) {
+      qb.andWhere(
+        '(p.workspaceId = :workspaceId OR p.workspaceId IS NULL)',
+        { workspaceId },
+      );
+    }
+
+    const publications = await qb.getMany();
 
     let updated = 0;
     for (const pub of publications) {
@@ -131,6 +139,9 @@ export class PublicationEngagementService {
         return this.fetchYoutubeMetrics(externalPostId, account);
       case 'linkedin':
         return this.fetchLinkedInMetrics(externalPostId, account);
+      case 'twitter':
+      case 'x':
+        return this.fetchTwitterMetrics(externalPostId, account);
       default:
         return null;
     }
@@ -235,6 +246,35 @@ export class PublicationEngagementService {
         commentCount: comments,
         shareCount: 0,
         viewCount: 0,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  private async fetchTwitterMetrics(
+    tweetId: string,
+    account: SocialAccounts,
+  ): Promise<EngagementMetrics | null> {
+    const token = account.accessToken?.trim();
+    if (!token) return null;
+
+    try {
+      const { data } = await axios.get(
+        `https://api.twitter.com/2/tweets/${encodeURIComponent(tweetId)}`,
+        {
+          params: { 'tweet.fields': 'public_metrics' },
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      const metrics = data?.data?.public_metrics;
+      if (!metrics) return null;
+
+      return {
+        likeCount: Number(metrics.like_count ?? 0),
+        commentCount: Number(metrics.reply_count ?? 0),
+        shareCount: Number(metrics.retweet_count ?? 0),
+        viewCount: Number(metrics.impression_count ?? 0),
       };
     } catch {
       return null;

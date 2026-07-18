@@ -30,4 +30,4 @@ export const FORM_SUGGESTION_FIELDS: Record<FormSuggestionForm, string[]> = {
 
 export const CACHE_TTL_MS = 30 * 60 * 1000;
 export const ROTATION_INTERVAL_MS = 4000;
-export const CACHE_VERSION = 'v4';
+export const CACHE_VERSION = 'v6';

@@ -56,9 +56,10 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
     publish: true,
     comments: false,
     messaging: false,
-    oauth: false,
+    oauth: true,
     status: 'available',
-    notes: 'Manual OAuth 1.0a credentials required.',
+    notes:
+      'Connect with X OAuth 2.0 to post tweets. Media upload works with OAuth connect; advanced manual OAuth 1.0a also supported.',
   },
   {
     id: 'whatsapp',

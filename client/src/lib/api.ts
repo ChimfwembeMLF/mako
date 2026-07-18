@@ -2212,6 +2212,9 @@ export const aiApi = {
         workspaceId?: string;
         form: FormSuggestionForm;
         fields?: string[];
+        variationSeed?: string;
+        refresh?: boolean;
+        avoidTexts?: string[];
     }) =>
         request<{ suggestions: Record<string, string[]> }>('/api/v1/ai/form-suggestions', {
             method: 'POST',
@@ -2224,6 +2227,8 @@ export const aiApi = {
         form: FormSuggestionForm;
         fieldKey: string;
         currentValue?: string;
+        variationSeed?: string;
+        avoidTexts?: string[];
     }) =>
         request<{ text: string }>('/api/v1/ai/enhance-field', {
             method: 'POST',
@@ -2769,9 +2774,6 @@ export type PlatformDashboardRow = {
     shares: number;
     views: number;
     engagementScore: number;
-    followers: number;
-    reach: number;
-    impressions: number;
     pendingReplies: number;
     lastPublishedAt?: string;
     lastEngagementSync?: string;
@@ -2789,9 +2791,6 @@ export type PlatformDashboardResponse = {
         views: number;
         engagementScore: number;
         pendingReplies: number;
-        followers: number;
-        reach: number;
-        impressions: number;
     };
 };
 

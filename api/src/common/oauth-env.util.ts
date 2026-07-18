@@ -12,6 +12,7 @@ const PUBLISHER_CALLBACK_KEYS = [
   'INSTAGRAM_SOCIAL_CALLBACK_URL',
   'LINKEDIN_SOCIAL_CALLBACK_URL',
   'TIKTOK_SOCIAL_CALLBACK_URL',
+  'TWITTER_SOCIAL_CALLBACK_URL',
   'WHATSAPP_SOCIAL_CALLBACK_URL',
 ] as const;
 
@@ -67,6 +68,12 @@ export function summarizeOAuthEnv(): {
     !process.env.TIKTOK_SOCIAL_CALLBACK_URL?.trim()
   ) {
     missingPublisherCallbacks.push('TIKTOK_SOCIAL_CALLBACK_URL');
+  }
+  if (
+    process.env.TWITTER_CLIENT_ID?.trim() &&
+    !process.env.TWITTER_SOCIAL_CALLBACK_URL?.trim()
+  ) {
+    missingPublisherCallbacks.push('TWITTER_SOCIAL_CALLBACK_URL');
   }
 
   const frontendUrl = process.env.FRONTEND_URL?.trim() || null;

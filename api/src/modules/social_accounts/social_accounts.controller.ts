@@ -39,6 +39,7 @@ const OAUTH_PLATFORMS: SocialOAuthPlatform[] = [
   'youtube',
   'whatsapp',
   'tiktok',
+  'twitter',
 ];
 
 @ApiTags('Social Accounts')
@@ -145,8 +146,8 @@ export class SocialAccountsController {
       provider: oauthPlatform,
       redirectUri,
     };
-    if (oauthPlatform === 'tiktok') {
-      connectState = this.oauth.attachTikTokPkce(connectState);
+    if (oauthPlatform === 'tiktok' || oauthPlatform === 'twitter') {
+      connectState = this.oauth.attachOAuthPkce(connectState);
     }
     const state = this.oauth.encodeState(connectState);
 

@@ -20,8 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useFieldEnhance } from "@/hooks/useFieldEnhance";
-import { SuggestedField } from "@/components/form/SuggestedField";
+import { FormFieldAi } from "@/components/form/FormFieldAi";
 import { whatsappPhoneFromLead, isWhatsappLead, formatWhatsappPhoneDisplay } from "@/lib/whatsappLead";
 
 interface Lead {
@@ -108,11 +107,6 @@ const LeadAgent = () => {
   const { user } = useAuth();
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
-
-  const { enhanceField, enhancingKey } = useFieldEnhance({
-    form: "whatsapp-menu",
-    tenantId: tenant?.id,
-  });
 
   useEffect(() => {
     if (!user || !tenant || !activeWorkspace) return;
@@ -745,15 +739,14 @@ const LeadAgent = () => {
 
               <div className="space-y-1.5">
                 <Label className="text-xs">Business / service name</Label>
-                <SuggestedField
+                <FormFieldAi
+                  form="whatsapp-menu"
+                  tenantId={tenant?.id}
+                  fieldKey="serviceName"
                   type="input"
                   value={waFlowServiceName}
                   onChange={setWaFlowServiceName}
-                  placeholder="e.g. Tekrem Solutions"
-                  onEnhance={() =>
-                    enhanceField("serviceName", waFlowServiceName, setWaFlowServiceName)
-                  }
-                  enhancing={enhancingKey === "serviceName"}
+                  placeholder="e.g. Acme Shop"
                   className="h-9"
                 />
                 <p className="text-[11px] text-muted-foreground">
@@ -763,15 +756,14 @@ const LeadAgent = () => {
 
               <div className="space-y-1.5">
                 <Label className="text-xs">Custom welcome message (optional)</Label>
-                <SuggestedField
+                <FormFieldAi
+                  form="whatsapp-menu"
+                  tenantId={tenant?.id}
+                  fieldKey="welcomeMessage"
                   type="input"
                   value={waFlowWelcomeMessage}
                   onChange={setWaFlowWelcomeMessage}
                   placeholder="Welcome to {serviceName}! How can we help?"
-                  onEnhance={() =>
-                    enhanceField("welcomeMessage", waFlowWelcomeMessage, setWaFlowWelcomeMessage)
-                  }
-                  enhancing={enhancingKey === "welcomeMessage"}
                   className="h-9"
                 />
                 <p className="text-[11px] text-muted-foreground">
@@ -808,36 +800,24 @@ const LeadAgent = () => {
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                    <SuggestedField
+                    <FormFieldAi
+                      form="whatsapp-menu"
+                      tenantId={tenant?.id}
+                      fieldKey="menuTitle"
                       type="input"
                       value={item.title}
                       onChange={(value) => updateWaMenuItem(index, { title: value })}
                       placeholder="Menu label — e.g. Pricing, Book a demo, Support"
-                      onEnhance={() =>
-                        enhanceField(
-                          "menuTitle",
-                          item.title,
-                          (value) => updateWaMenuItem(index, { title: value }),
-                          `menuTitle-${index}`,
-                        )
-                      }
-                      enhancing={enhancingKey === `menuTitle-${index}`}
                       className="h-9"
                     />
-                    <SuggestedField
+                    <FormFieldAi
+                      form="whatsapp-menu"
+                      tenantId={tenant?.id}
+                      fieldKey="menuDescription"
                       type="input"
                       value={item.description ?? ""}
                       onChange={(value) => updateWaMenuItem(index, { description: value })}
                       placeholder="Short hint (optional) — shown under the label in the list"
-                      onEnhance={() =>
-                        enhanceField(
-                          "menuDescription",
-                          item.description ?? "",
-                          (value) => updateWaMenuItem(index, { description: value }),
-                          `menuDescription-${index}`,
-                        )
-                      }
-                      enhancing={enhancingKey === `menuDescription-${index}`}
                       className="h-9"
                     />
                     <div className="flex items-center gap-2">
@@ -853,7 +833,10 @@ const LeadAgent = () => {
                         AI writes the reply (use guidance below)
                       </Label>
                     </div>
-                    <SuggestedField
+                    <FormFieldAi
+                      form="whatsapp-menu"
+                      tenantId={tenant?.id}
+                      fieldKey="menuResponse"
                       type="textarea"
                       value={item.response}
                       onChange={(value) => updateWaMenuItem(index, { response: value })}
@@ -862,15 +845,6 @@ const LeadAgent = () => {
                           ? "Guidance for AI — e.g. share pricing tiers and link to book a call"
                           : "Reply when selected — what the customer receives on WhatsApp"
                       }
-                      onEnhance={() =>
-                        enhanceField(
-                          "menuResponse",
-                          item.response,
-                          (value) => updateWaMenuItem(index, { response: value }),
-                          `menuResponse-${index}`,
-                        )
-                      }
-                      enhancing={enhancingKey === `menuResponse-${index}`}
                       rows={3}
                     />
                   </div>

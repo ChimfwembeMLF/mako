@@ -13,7 +13,6 @@ import {
   MessageSquareReply,
   RefreshCw,
   Share2,
-  Users,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -106,9 +105,6 @@ function mergeWithSocialAccounts(
       shares: 0,
       views: 0,
       engagementScore: 0,
-      followers: 0,
-      reach: 0,
-      impressions: 0,
       pendingReplies: 0,
     });
   }
@@ -124,9 +120,6 @@ function mergeWithSocialAccounts(
       views: acc.views + p.views,
       engagementScore: acc.engagementScore + p.engagementScore,
       pendingReplies: acc.pendingReplies + p.pendingReplies,
-      followers: acc.followers + p.followers,
-      reach: acc.reach + p.reach,
-      impressions: acc.impressions + p.impressions,
     }),
     dashboard?.totals ?? {
       connectedPlatforms: 0,
@@ -138,9 +131,6 @@ function mergeWithSocialAccounts(
       views: 0,
       engagementScore: 0,
       pendingReplies: 0,
-      followers: 0,
-      reach: 0,
-      impressions: 0,
     },
   );
 
@@ -276,9 +266,12 @@ export function PlatformDashboard() {
       )}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold font-display">Connected platforms</h2>
+          <h2 className="text-lg font-semibold font-display">Published via Mako</h2>
           <p className="text-sm text-muted-foreground">
-            Unified view across every channel you publish to.
+            Posts you published from Mako and their engagement. Sync engagement to refresh likes and views.
+            {connectedCount > 0 && (
+              <span className="block mt-0.5">{connectedCount} platform{connectedCount === 1 ? '' : 's'} connected.</span>
+            )}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -302,14 +295,12 @@ export function PlatformDashboard() {
       </div>
 
       {totals && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Connected', value: connectedCount, sub: `of ${platforms.length}` },
-            { label: 'Published', value: fmt(totals.publishedPosts), sub: 'posts' },
-            { label: 'Scheduled', value: fmt(totals.scheduledPosts), sub: 'queued' },
-            { label: 'Engagement', value: fmt(totals.likes + totals.comments + totals.shares), sub: 'interactions' },
-            { label: 'Reach', value: fmt(totals.reach), sub: 'today' },
-            { label: 'Pending replies', value: totals.pendingReplies, sub: 'comments' },
+            { label: 'Published', value: fmt(totals.publishedPosts), sub: 'via Mako' },
+            { label: 'Scheduled', value: fmt(totals.scheduledPosts), sub: 'in queue' },
+            { label: 'Views', value: fmt(totals.views), sub: 'on Mako posts' },
+            { label: 'Engagement', value: fmt(totals.likes + totals.comments + totals.shares), sub: 'likes · comments · shares' },
           ].map((s) => (
             <Card key={s.label}>
               <CardContent className="p-3">
@@ -361,19 +352,26 @@ export function PlatformDashboard() {
                 {row.connected ? (
                   <>
                     <div className="grid grid-cols-2 gap-2">
-                      <StatPill icon={BarChart3} label="posts" value={row.publishedPosts} />
+                      <StatPill icon={BarChart3} label="published" value={row.publishedPosts} />
                       <StatPill icon={CalendarClock} label="scheduled" value={row.scheduledPosts} />
                       <StatPill icon={Heart} label="likes" value={fmt(row.likes)} />
                       <StatPill icon={MessageCircle} label="comments" value={fmt(row.comments)} />
                       <StatPill icon={Share2} label="shares" value={fmt(row.shares)} />
                       <StatPill icon={Eye} label="views" value={fmt(row.views)} />
-                      {row.followers > 0 && (
-                        <StatPill icon={Users} label="followers" value={fmt(row.followers)} />
-                      )}
                       {row.pendingReplies > 0 && (
                         <StatPill icon={MessageSquareReply} label="pending" value={row.pendingReplies} />
                       )}
                     </div>
+                    {row.publishedPosts === 0 && row.connected && (
+                      <p className="text-[10px] text-muted-foreground">
+                        No posts published from Mako yet. Create content and publish or schedule from the Scheduler.
+                      </p>
+                    )}
+                    {row.publishedPosts > 0 && row.likes === 0 && row.views === 0 && !row.lastEngagementSync && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Tap Sync engagement to load likes and views for your Mako posts.
+                      </p>
+                    )}
                     {row.lastPublishedAt && (
                       <p className="text-[10px] text-muted-foreground">
                         Last published{' '}

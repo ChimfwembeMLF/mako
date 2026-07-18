@@ -10,8 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useAuth } from '@/hooks/useAuth';
-import { useFieldEnhance } from '@/hooks/useFieldEnhance';
-import { SuggestedField } from '@/components/form/SuggestedField';
+import { FormFieldAi } from '@/components/form/FormFieldAi';
 import { contentCampaignsApi } from '@/lib/api';
 import { MultiPlatformPicker } from '@/components/content/MultiPlatformPicker';
 import { platformOf } from '@/lib/platforms';
@@ -179,11 +178,6 @@ export default function CampaignsPage() {
   const [startDate, setStartDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [platforms, setPlatforms] = useState<string[]>(['linkedin', 'facebook', 'instagram']);
 
-  const { enhanceField, enhancingKey } = useFieldEnhance({
-    form: 'campaign',
-    tenantId: tenant?.id,
-  });
-
   useEffect(() => {
     if (!tenant || !activeWorkspace) return;
     loadCampaigns();
@@ -282,36 +276,39 @@ export default function CampaignsPage() {
           <div className="p-5 space-y-4">
             <div className="space-y-2">
               <Label>Campaign name</Label>
-              <SuggestedField
+              <FormFieldAi
+                form="campaign"
+                tenantId={tenant?.id}
+                fieldKey="name"
                 type="input"
                 value={name}
                 onChange={setName}
                 placeholder="e.g. Summer Product Launch"
-                onEnhance={() => enhanceField('name', name, setName)}
-                enhancing={enhancingKey === 'name'}
               />
             </div>
             <div className="space-y-2">
               <Label>Campaign theme *</Label>
-              <SuggestedField
+              <FormFieldAi
+                form="campaign"
+                tenantId={tenant?.id}
+                fieldKey="theme"
                 type="textarea"
                 value={theme}
                 onChange={setTheme}
                 placeholder="What is this campaign about? e.g. Launching our new delivery app for farmers in Zambia"
-                onEnhance={() => enhanceField('theme', theme, setTheme)}
-                enhancing={enhancingKey === 'theme'}
                 rows={3}
               />
             </div>
             <div className="space-y-2">
               <Label>Goal</Label>
-              <SuggestedField
+              <FormFieldAi
+                form="campaign"
+                tenantId={tenant?.id}
+                fieldKey="goal"
                 type="input"
                 value={goal}
                 onChange={setGoal}
                 placeholder="e.g. Drive sign-ups, build awareness, promote offer"
-                onEnhance={() => enhanceField('goal', goal, setGoal)}
-                enhancing={enhancingKey === 'goal'}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">

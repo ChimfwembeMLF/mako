@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
-import { SocialInsights } from './entities/social_insights.entity';
 import { CommentReplies } from '../comment_replies/entities/comment_replies.entity';
 import { ContentItems } from '../content_items/entities/content_items.entity';
 import {
@@ -28,16 +27,16 @@ export type PlatformDashboardRow = {
   accountCount: number;
   accountName?: string;
   username?: string;
+  /** Posts successfully published from Mako to this platform */
   publishedPosts: number;
+  /** Content items scheduled in Mako for this platform */
   scheduledPosts: number;
+  /** Engagement on Mako-published posts (sync via Sync engagement) */
   likes: number;
   comments: number;
   shares: number;
   views: number;
   engagementScore: number;
-  followers: number;
-  reach: number;
-  impressions: number;
   pendingReplies: number;
   lastPublishedAt?: string;
   lastEngagementSync?: string;
@@ -55,9 +54,6 @@ export type PlatformDashboardResponse = {
     views: number;
     engagementScore: number;
     pendingReplies: number;
-    followers: number;
-    reach: number;
-    impressions: number;
   };
 };
 
@@ -86,8 +82,6 @@ export class PlatformDashboardService {
     private readonly accountsRepo: Repository<SocialAccounts>,
     @InjectRepository(ContentPublications)
     private readonly pubsRepo: Repository<ContentPublications>,
-    @InjectRepository(SocialInsights)
-    private readonly insightsRepo: Repository<SocialInsights>,
     @InjectRepository(CommentReplies)
     private readonly commentsRepo: Repository<CommentReplies>,
     @InjectRepository(ContentItems)
@@ -107,6 +101,7 @@ export class PlatformDashboardService {
 
     const pubQb = this.pubsRepo
       .createQueryBuilder('p')
+      .innerJoin(ContentItems, 'ci', 'ci.id = p.contentId')
       .select('p.platform', 'platform')
       .addSelect('COUNT(*)', 'publishedPosts')
       .addSelect('COALESCE(SUM(p.likeCount), 0)', 'likes')
@@ -120,6 +115,12 @@ export class PlatformDashboardService {
       .andWhere('p.status = :status', { status: 'published' });
 
     applyWorkspaceScope(pubQb, 'p', workspaceId);
+    if (workspaceId) {
+      pubQb.andWhere(
+        '(ci.workspaceId = :workspaceId OR ci.workspaceId IS NULL)',
+        { workspaceId },
+      );
+    }
 
     const pubAggs = (await pubQb.groupBy('p.platform').getRawMany()) as PubAgg[];
     const pubByPlatform = new Map(
@@ -151,7 +152,7 @@ export class PlatformDashboardService {
 
     const scheduledItems = await this.contentRepo.find({
       where: scopeWhereIncludingTenantWide<ContentItems>(tenantId, workspaceId, {
-        status: In(['scheduled', 'approved']),
+        status: 'scheduled',
       }),
       select: ['platforms', 'scheduledDate'],
     });
@@ -162,21 +163,6 @@ export class PlatformDashboardService {
       for (const p of item.platforms ?? []) {
         const key = normalizePlatformId(p);
         scheduledByPlatform.set(key, (scheduledByPlatform.get(key) ?? 0) + 1);
-      }
-    }
-
-    const accountIds = accounts.map((a) => a.id);
-    const insightsByAccount = new Map<string, SocialInsights>();
-    if (accountIds.length) {
-      const insights = await this.insightsRepo
-        .createQueryBuilder('i')
-        .where('i.socialAccountId IN (:...accountIds)', { accountIds })
-        .orderBy('i.date', 'DESC')
-        .getMany();
-      for (const row of insights) {
-        if (!insightsByAccount.has(row.socialAccountId)) {
-          insightsByAccount.set(row.socialAccountId, row);
-        }
       }
     }
 
@@ -191,17 +177,6 @@ export class PlatformDashboardService {
     const platforms: PlatformDashboardRow[] = DASHBOARD_PLATFORMS.map(({ id, label }) => {
       const platformAccounts = accountsByPlatform.get(id) ?? [];
       const pub = pubByPlatform.get(id);
-      let followers = 0;
-      let reach = 0;
-      let impressions = 0;
-      for (const acc of platformAccounts) {
-        const insight = insightsByAccount.get(acc.id);
-        if (insight) {
-          followers += insight.followersCount ?? 0;
-          reach += insight.reach ?? 0;
-          impressions += insight.impressions ?? 0;
-        }
-      }
       const primary = platformAccounts[0];
 
       return {
@@ -218,9 +193,6 @@ export class PlatformDashboardService {
         shares: Number(pub?.shares ?? 0),
         views: Number(pub?.views ?? 0),
         engagementScore: Number(pub?.engagementScore ?? 0),
-        followers,
-        reach,
-        impressions,
         pendingReplies: pendingByPlatform.get(id) ?? 0,
         lastPublishedAt: pub?.lastPublishedAt
           ? new Date(pub.lastPublishedAt).toISOString()
@@ -242,9 +214,6 @@ export class PlatformDashboardService {
         views: acc.views + p.views,
         engagementScore: acc.engagementScore + p.engagementScore,
         pendingReplies: acc.pendingReplies + p.pendingReplies,
-        followers: acc.followers + p.followers,
-        reach: acc.reach + p.reach,
-        impressions: acc.impressions + p.impressions,
       }),
       {
         connectedPlatforms: 0,
@@ -256,9 +225,6 @@ export class PlatformDashboardService {
         views: 0,
         engagementScore: 0,
         pendingReplies: 0,
-        followers: 0,
-        reach: 0,
-        impressions: 0,
       },
     );
 

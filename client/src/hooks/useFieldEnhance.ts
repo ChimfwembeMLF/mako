@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { aiApi } from '@/lib/api';
 import { FormSuggestionForm } from '@/lib/formSuggestionForms';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -8,9 +8,14 @@ interface UseFieldEnhanceOptions {
   tenantId?: string | null;
 }
 
+function newVariationSeed() {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
 export function useFieldEnhance({ form, tenantId }: UseFieldEnhanceOptions) {
   const { activeWorkspace } = useWorkspace();
   const [enhancingKey, setEnhancingKey] = useState<string | null>(null);
+  const recentByField = useRef<Record<string, string[]>>({});
 
   const enhanceField = useCallback(
     async (
@@ -21,16 +26,24 @@ export function useFieldEnhance({ form, tenantId }: UseFieldEnhanceOptions) {
     ): Promise<boolean> => {
       if (!tenantId) return false;
 
-      setEnhancingKey(trackKey ?? fieldKey);
+      const key = trackKey ?? fieldKey;
+      setEnhancingKey(key);
       try {
+        const avoidTexts = recentByField.current[fieldKey]?.slice(-5) ?? [];
         const res = await aiApi.enhanceField({
           tenantId,
           workspaceId: activeWorkspace || undefined,
           form,
           fieldKey,
           currentValue: currentValue.trim() || undefined,
+          variationSeed: newVariationSeed(),
+          avoidTexts,
         });
-        if (res.text) onApply(res.text);
+        if (res.text) {
+          onApply(res.text);
+          const prev = recentByField.current[fieldKey] ?? [];
+          recentByField.current[fieldKey] = [...prev, res.text].slice(-8);
+        }
         return true;
       } catch {
         return false;

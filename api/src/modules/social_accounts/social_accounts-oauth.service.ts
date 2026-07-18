@@ -10,10 +10,12 @@ import {
   INSTAGRAM_PUBLISHER_SCOPES,
   LINKEDIN_PUBLISHER_SCOPES,
   TIKTOK_PUBLISHER_SCOPES,
+  TWITTER_PUBLISHER_SCOPES,
   WHATSAPP_PUBLISHER_SCOPES,
   YOUTUBE_PUBLISHER_SCOPES,
   scopesToParam,
   googleScopesToParam,
+  twitterScopesToParam,
 } from './social_accounts-oauth.scopes';
 
 export type SocialOAuthPlatform =
@@ -23,7 +25,8 @@ export type SocialOAuthPlatform =
   | 'google'
   | 'youtube'
   | 'whatsapp'
-  | 'tiktok';
+  | 'tiktok'
+  | 'twitter';
 
 export interface WhatsAppPhoneOption {
   id: string;
@@ -107,7 +110,7 @@ export interface OAuthConnectState {
   returnUrl?: string;
   provider: SocialOAuthPlatform;
   redirectUri: string;
-  /** TikTok OAuth 2.0 PKCE code verifier (stored in state until callback). */
+  /** OAuth 2.0 PKCE code verifier (TikTok, X/Twitter). */
   codeVerifier?: string;
 }
 
@@ -173,6 +176,11 @@ export class SocialAccountsOAuthService {
     return { ...state, codeVerifier };
   }
 
+  /** Alias — X/Twitter OAuth 2.0 also requires PKCE. */
+  attachOAuthPkce(state: OAuthConnectState): OAuthConnectState {
+    return this.attachTikTokPkce(state);
+  }
+
   getAuthorizeUrl(
     platform: SocialOAuthPlatform,
     state: string,
@@ -199,6 +207,13 @@ export class SocialAccountsOAuthService {
           );
         }
         return this.tiktokAuthorizeUrl(state, redirectUri, codeVerifier);
+      case 'twitter':
+        if (!codeVerifier) {
+          throw new BadRequestException(
+            'X/Twitter OAuth requires PKCE code_verifier',
+          );
+        }
+        return this.twitterAuthorizeUrl(state, redirectUri, codeVerifier);
       default:
         throw new BadRequestException(`Unsupported platform: ${platform}`);
     }
@@ -231,6 +246,12 @@ export class SocialAccountsOAuthService {
         );
       case 'tiktok':
         return this.handleTikTokCallback(
+          code,
+          redirectUri,
+          options?.codeVerifier,
+        );
+      case 'twitter':
+        return this.handleTwitterCallback(
           code,
           redirectUri,
           options?.codeVerifier,
@@ -1209,6 +1230,182 @@ export class SocialAccountsOAuthService {
     }
 
     return data.data?.user ?? {};
+  }
+
+  private twitterAuthorizeUrl(
+    state: string,
+    redirectUri: string,
+    codeVerifier: string,
+  ): string {
+    const codeChallenge = createHash('sha256')
+      .update(codeVerifier)
+      .digest('base64url');
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: this.config.getOrThrow<string>('TWITTER_CLIENT_ID'),
+      redirect_uri: redirectUri,
+      scope: twitterScopesToParam(TWITTER_PUBLISHER_SCOPES),
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+    });
+    return `https://twitter.com/i/oauth2/authorize?${params.toString()}`;
+  }
+
+  private async handleTwitterCallback(
+    code: string,
+    redirectUri: string,
+    codeVerifier?: string,
+  ): Promise<OAuthConnectResult> {
+    if (!codeVerifier) {
+      throw new BadRequestException('X/Twitter OAuth requires PKCE code_verifier');
+    }
+
+    const tokens = await this.exchangeTwitterAuthorizationCode(
+      code,
+      redirectUri,
+      codeVerifier,
+    );
+    const profile = await this.fetchTwitterUserProfile(tokens.accessToken);
+
+    const displayName =
+      profile.name?.trim() ||
+      (profile.username ? `@${profile.username}` : 'X Account');
+
+    return {
+      platform: 'twitter',
+      accountName: displayName,
+      externalId: profile.id,
+      username: profile.username,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+      metadata: {
+        auth_type: 'oauth2',
+        username: profile.username,
+        profile_image_url: profile.profile_image_url,
+        scope: tokens.scope,
+      },
+    };
+  }
+
+  async refreshTwitterAccessToken(refreshToken: string): Promise<{
+    accessToken: string;
+    refreshToken?: string;
+    expiresAt?: Date;
+  }> {
+    const clientId = this.config.getOrThrow<string>('TWITTER_CLIENT_ID');
+    const clientSecret = this.config.getOrThrow<string>('TWITTER_CLIENT_SECRET');
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+    });
+
+    const { data } = await axios.post<{
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      error?: string;
+      error_description?: string;
+    }>('https://api.twitter.com/2/oauth2/token', body.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${basic}`,
+      },
+    });
+
+    if (data.error || !data.access_token) {
+      throw new BadRequestException(
+        data.error_description || data.error || 'X/Twitter token refresh failed',
+      );
+    }
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token ?? refreshToken,
+      expiresAt: data.expires_in
+        ? new Date(Date.now() + data.expires_in * 1000)
+        : undefined,
+    };
+  }
+
+  private async exchangeTwitterAuthorizationCode(
+    code: string,
+    redirectUri: string,
+    codeVerifier: string,
+  ) {
+    const clientId = this.config.getOrThrow<string>('TWITTER_CLIENT_ID');
+    const clientSecret = this.config.getOrThrow<string>('TWITTER_CLIENT_SECRET');
+    const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
+    const body = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: redirectUri,
+      code_verifier: codeVerifier,
+    });
+
+    const { data } = await axios.post<{
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      scope?: string;
+      error?: string;
+      error_description?: string;
+    }>('https://api.twitter.com/2/oauth2/token', body.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${basic}`,
+      },
+    });
+
+    if (data.error || !data.access_token) {
+      throw new BadRequestException(
+        data.error_description ||
+          data.error ||
+          'X/Twitter token exchange failed',
+      );
+    }
+
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      scope: data.scope,
+      expiresAt: data.expires_in
+        ? new Date(Date.now() + data.expires_in * 1000)
+        : undefined,
+    };
+  }
+
+  private async fetchTwitterUserProfile(accessToken: string): Promise<{
+    id?: string;
+    name?: string;
+    username?: string;
+    profile_image_url?: string;
+  }> {
+    const { data } = await axios.get<{
+      data?: {
+        id?: string;
+        name?: string;
+        username?: string;
+        profile_image_url?: string;
+      };
+      errors?: Array<{ message?: string }>;
+    }>('https://api.twitter.com/2/users/me', {
+      params: { 'user.fields': 'profile_image_url,username,name' },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (data.errors?.length) {
+      this.logger.warn(
+        `X user info failed: ${data.errors[0]?.message ?? 'unknown'}`,
+      );
+      return {};
+    }
+
+    return data.data ?? {};
   }
 }
 

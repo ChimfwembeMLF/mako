@@ -17,6 +17,49 @@ import {
 } from '../form-suggestion-forms.constants';
 import { brandContextBlock } from '../prompts/brand-fields';
 
+const CREATIVE_TEMPERATURE = 0.88;
+
+function hashSeed(seed: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function shuffleWithSeed<T>(items: T[], seed: string): T[] {
+  const out = [...items];
+  let state = hashSeed(seed || 'default');
+  for (let i = out.length - 1; i > 0; i--) {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    const j = state % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function pickVaried<T>(items: T[], count: number, seed: string): T[] {
+  if (!items.length) return [];
+  return shuffleWithSeed(items, seed).slice(0, count);
+}
+
+function variationBlock(seed: string, refresh?: boolean, avoidTexts?: string[]): string {
+  const parts = [`Creative variation id: ${seed}. Use it to choose a fresh angle.`];
+  if (refresh) {
+    parts.push(
+      'The user asked for NEW suggestions — do not reuse generic placeholders (e.g. Acme Labs, Tekrem Solutions) or repeat common SaaS clichés.',
+    );
+  }
+  const trimmed = (avoidTexts ?? []).map((t) => t.trim()).filter(Boolean).slice(-5);
+  if (trimmed.length) {
+    parts.push(
+      `Do NOT repeat or closely paraphrase these prior outputs:\n${trimmed.map((t) => `- ${t}`).join('\n')}`,
+    );
+  }
+  return parts.join('\n');
+}
+
 const FALLBACK_SUGGESTIONS: Record<string, string[]> = {
   companyName: [
     'Acme Labs',
@@ -162,6 +205,8 @@ export class FormSuggestionsService {
     form: FormSuggestionType;
     fieldKey: string;
     currentValue?: string;
+    variationSeed?: string;
+    avoidTexts?: string[];
   }): Promise<{ text: string }> {
     const allowed = FORM_SUGGESTION_FIELDS[params.form];
     if (!allowed.includes(params.fieldKey)) {
@@ -189,6 +234,9 @@ export class FormSuggestionsService {
       : MAX_SUGGESTION_LENGTH.textarea;
     const draft = params.currentValue?.trim() ?? '';
     const isEnhance = draft.length > 0;
+    const seed =
+      params.variationSeed?.trim() ||
+      `${Date.now().toString(36)}-${params.fieldKey}`;
 
     try {
       const { data, tokensUsed } = await this.mistral.completeJson<{ text?: string }>(
@@ -201,8 +249,10 @@ Return ONLY JSON: { "text": "..." }
 Form context: ${formBrief}
 Field: ${params.fieldKey} (${label})${hint ? `\nFormat hint: ${hint}` : ''}
 
+${variationBlock(seed, false, params.avoidTexts)}
+
 Rules:
-- ${isEnhance ? 'Improve and expand the user\'s draft — clearer, more specific, on-brand. Keep their intent.' : 'Write one strong starter value tailored to the brand.'}
+- ${isEnhance ? 'Improve and expand the user\'s draft — clearer, more specific, on-brand. Keep their intent but change wording materially.' : 'Write one strong starter value tailored to the brand — not a generic template.'}
 - Plain text only — no markdown headers, code fences, or HTML.
 - Use literal newlines for lists or paragraphs when appropriate.
 - Maximum ${maxLen} characters.`,
@@ -219,7 +269,7 @@ Rules:
             ].join('\n\n'),
           },
         ],
-        { model: this.mistral.defaultModel },
+        { model: this.mistral.defaultModel, temperature: CREATIVE_TEMPERATURE },
       );
 
       await this.usage.record({
@@ -230,9 +280,15 @@ Rules:
       });
 
       const text = this.trimSuggestion(String(data.text ?? ''), maxLen);
-      return { text: text || draft || this.fallbackFor(params.form, params.fieldKey)[0]! };
+      if (text) return { text };
+      return {
+        text:
+          draft ||
+          pickVaried(this.fallbackFor(params.form, params.fieldKey, seed), 1, seed)[0]!,
+      };
     } catch {
-      const fallback = this.fallbackFor(params.form, params.fieldKey)[0] ?? '';
+      const options = this.fallbackFor(params.form, params.fieldKey, seed);
+      const fallback = pickVaried(options, 1, `${seed}-fb`)[0] ?? '';
       return { text: isEnhance ? draft : fallback };
     }
   }
@@ -243,6 +299,9 @@ Rules:
     userId: string;
     form: FormSuggestionType;
     fields?: string[];
+    variationSeed?: string;
+    refresh?: boolean;
+    avoidTexts?: string[];
   }): Promise<{ suggestions: Record<string, string[]> }> {
     const allowed = FORM_SUGGESTION_FIELDS[params.form];
     const fields = (params.fields?.length ? params.fields : allowed).filter(
@@ -276,6 +335,9 @@ Rules:
       .join('\n');
 
     const formBrief = FORM_SUGGESTION_FORM_BRIEFS[params.form];
+    const seed =
+      params.variationSeed?.trim() ||
+      `${Date.now().toString(36)}-${params.form}`;
 
     try {
       const { data, tokensUsed } = await this.mistral.completeJson<{
@@ -289,8 +351,11 @@ Return ONLY JSON: { "suggestions": { "fieldKey": ["suggestion1", "suggestion2", 
 
 Form context: ${formBrief}
 
+${variationBlock(seed, params.refresh, params.avoidTexts)}
+
 Rules:
 - Exactly ${SUGGESTIONS_PER_FIELD} suggestions per field key.
+- Each suggestion must be meaningfully different from the others (different angle, format, length, or example industry).
 - Vary LENGTH: include very short (under 40 chars), medium (1–2 sentences), and longer multi-line entries.
 - Vary FORMAT across suggestions for the same field:
   • plain descriptions and one-liners
@@ -301,8 +366,8 @@ Rules:
   • Q&A pairs for FAQ-style fields
 - Use literal newlines inside strings for multi-line suggestions (lists, paragraphs, Q&A).
 - No markdown headers, code fences, or HTML.
-- Tailor to the brand when a profile exists; otherwise use realistic generic examples.
-- Follow each field's format hint. Do not repeat the same structure for all 4 suggestions.`,
+- Tailor to the brand when a profile exists; otherwise use realistic varied examples (not the same generic names every time).
+- Follow each field's format hint. Do not repeat the same structure for all ${SUGGESTIONS_PER_FIELD} suggestions.`,
           },
           {
             role: 'user',
@@ -315,7 +380,7 @@ Rules:
             ].join('\n\n'),
           },
         ],
-        { model: this.mistral.defaultModel },
+        { model: this.mistral.defaultModel, temperature: CREATIVE_TEMPERATURE },
       );
 
       await this.usage.record({
@@ -326,10 +391,10 @@ Rules:
       });
 
       return {
-        suggestions: this.normalize(params.form, fields, data.suggestions),
+        suggestions: this.normalize(params.form, fields, data.suggestions, seed),
       };
     } catch {
-      return { suggestions: this.fallbackOnly(params.form, fields) };
+      return { suggestions: this.fallbackOnly(params.form, fields, seed) };
     }
   }
 
@@ -337,6 +402,7 @@ Rules:
     form: FormSuggestionType,
     fields: string[],
     raw?: Record<string, string[]>,
+    seed = 'default',
   ): Record<string, string[]> {
     const out: Record<string, string[]> = {};
     for (const field of fields) {
@@ -349,7 +415,20 @@ Rules:
             .filter(Boolean)
             .slice(0, SUGGESTIONS_PER_FIELD)
         : [];
-      out[field] = items.length >= 2 ? items : this.fallbackFor(form, field);
+
+      const fallbacks = this.fallbackFor(form, field, `${seed}-${field}`);
+      const merged = [...items];
+      for (const fb of shuffleWithSeed(fallbacks, `${seed}-${field}-fill`)) {
+        if (merged.length >= SUGGESTIONS_PER_FIELD) break;
+        if (!merged.some((m) => m.toLowerCase() === fb.toLowerCase())) {
+          merged.push(fb);
+        }
+      }
+
+      out[field] =
+        merged.length >= 2
+          ? merged.slice(0, SUGGESTIONS_PER_FIELD)
+          : pickVaried(fallbacks, SUGGESTIONS_PER_FIELD, `${seed}-${field}-fb`);
     }
     return out;
   }
@@ -363,19 +442,23 @@ Rules:
   private fallbackOnly(
     form: FormSuggestionType,
     fields: string[],
+    seed: string,
   ): Record<string, string[]> {
     return Object.fromEntries(
-      fields.map((f) => [f, this.fallbackFor(form, f)]),
+      fields.map((f) => [
+        f,
+        pickVaried(this.fallbackFor(form, f, `${seed}-${f}`), SUGGESTIONS_PER_FIELD, `${seed}-${f}`),
+      ]),
     );
   }
 
-  private fallbackFor(form: FormSuggestionType, field: string): string[] {
+  private fallbackFor(form: FormSuggestionType, field: string, seed?: string): string[] {
     const formSpecific = FALLBACK_BY_FORM[form]?.[field];
     if (formSpecific?.length) {
-      return formSpecific.slice(0, SUGGESTIONS_PER_FIELD);
+      return pickVaried(formSpecific, SUGGESTIONS_PER_FIELD, seed ?? field);
     }
     if (FALLBACK_SUGGESTIONS[field]?.length) {
-      return FALLBACK_SUGGESTIONS[field].slice(0, SUGGESTIONS_PER_FIELD);
+      return pickVaried(FALLBACK_SUGGESTIONS[field], SUGGESTIONS_PER_FIELD, seed ?? field);
     }
     const label = formFieldLabel(form, field);
     return [

@@ -38,6 +38,7 @@ const keys = [
   'LINKEDIN_SOCIAL_CALLBACK_URL',
   'INSTAGRAM_SOCIAL_CALLBACK_URL',
   'WHATSAPP_SOCIAL_CALLBACK_URL',
+  'TWITTER_SOCIAL_CALLBACK_URL',
 ];
 
 console.log('=== OAuth env check ===');

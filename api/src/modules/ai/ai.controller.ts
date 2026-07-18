@@ -36,6 +36,9 @@ export class AiController {
       userId: String(req.user.sub),
       form: dto.form,
       fields: dto.fields,
+      variationSeed: dto.variationSeed,
+      refresh: dto.refresh,
+      avoidTexts: dto.avoidTexts,
     });
   }
 
@@ -50,6 +53,8 @@ export class AiController {
       form: dto.form,
       fieldKey: dto.fieldKey,
       currentValue: dto.currentValue,
+      variationSeed: dto.variationSeed,
+      avoidTexts: dto.avoidTexts,
     });
   }
 }

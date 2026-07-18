@@ -23,8 +23,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-// type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp" | "tiktok";
-type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp" | "tiktok";
+type OAuthPlatform = "facebook" | "linkedin" | "instagram" | "youtube" | "whatsapp" | "tiktok" | "twitter";
 type ManualPlatform = "twitter";
 type PlatformId = OAuthPlatform | ManualPlatform;
 
@@ -50,8 +49,7 @@ type FacebookPageOption = {
   category?: string;
 };
 
-// const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "youtube", "whatsapp", "tiktok"];
-const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "youtube", "whatsapp", "tiktok"];
+const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "youtube", "whatsapp", "tiktok", "twitter"];
 const platforms: {
   id: PlatformId;
   name: string;
@@ -105,10 +103,12 @@ const platforms: {
     icon: Twitter,
     color: "text-foreground",
     bgColor: "bg-muted",
-    description: "Tweet directly from Mako ",
+    description: "Post tweets from Mako via X OAuth 2.0",
+    oauth: true,
+    manualFallback: true,
     fields: [
-      { key: "api_key", label: "API Key (Consumer Key)", placeholder: "Consumer Key from developer portal", type: "password" },
-      { key: "api_secret", label: "API Secret (Consumer Secret)", placeholder: "Consumer Secret from developer portal", type: "password" },
+      { key: "api_key", label: "API Key (Consumer Key)", placeholder: "Consumer Key from X Developer Portal", type: "password" },
+      { key: "api_secret", label: "API Secret (Consumer Secret)", placeholder: "Consumer Secret from X Developer Portal", type: "password" },
       { key: "access_token", label: "Access Token", placeholder: "OAuth 1.0a Access Token", type: "password" },
       { key: "access_token_secret", label: "Access Token Secret", placeholder: "OAuth 1.0a Access Token Secret", type: "password" },
     ],
@@ -410,6 +410,46 @@ const PublisherConnect = () => {
   const handleManualConnect = async (platformId: ManualPlatform | "whatsapp") => {
     if (!tenant || !activeWorkspace) return;
 
+    if (platformId === "twitter") {
+      const { api_key, api_secret, access_token, access_token_secret } = formValues;
+      if (!api_key || !api_secret || !access_token || !access_token_secret) {
+        toast({
+          title: "Missing credentials",
+          description: "All four OAuth 1.0a fields are required for manual X connect.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setSaving(true);
+      try {
+        await socialAccountsApi.connect({
+          tenantId: tenant.id,
+          workspaceId: activeWorkspace ?? undefined,
+          platform: "twitter",
+          accountName: accountName || "X / Twitter",
+          accessToken: access_token,
+          metadata: {
+            api_key,
+            api_secret,
+            access_token_secret,
+            auth_type: "oauth1",
+          },
+        } as Parameters<typeof socialAccountsApi.connect>[0] & { workspaceId?: string });
+        toast({ title: "Connected!", description: "X / Twitter account connected to this workspace." });
+        setConnectDialog(null);
+        setFormValues({});
+        setAccountName("");
+        loadAccounts();
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to connect account";
+        toast({ title: "Error", description: message, variant: "destructive" });
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const accessToken = formValues.access_token;
     if (!accessToken) {
       toast({ title: "Missing token", description: "Access token is required.", variant: "destructive" });
@@ -534,7 +574,13 @@ const PublisherConnect = () => {
   };
 
   const getAccount = (platformId: string) =>
-    accounts.find((a) => a.platform === platformId && a.connected);
+    accounts.find((a) => {
+      if (!a.connected) return false;
+      if (a.platform === platformId) return true;
+      if (platformId === "twitter" && a.platform === "x") return true;
+      if (platformId === "x" && a.platform === "twitter") return true;
+      return false;
+    });
 
   const activePlatform = platforms.find((p) => p.id === connectDialog);
 
@@ -676,7 +722,12 @@ const PublisherConnect = () => {
       </Card>
 
       <Sheet
-        open={!!connectDialog && !oauthPlatforms.includes(connectDialog as OAuthPlatform)}
+        open={
+          !!connectDialog &&
+          Boolean(activePlatform?.fields?.length) &&
+          (!oauthPlatforms.includes(connectDialog as OAuthPlatform) ||
+            activePlatform?.manualFallback)
+        }
         onOpenChange={(open) => {
           if (!open) {
             setConnectDialog(null);
@@ -694,7 +745,9 @@ const PublisherConnect = () => {
           {connectDialog && activePlatform?.fields && (
             <div className="space-y-4 mt-4">
               <p className="text-xs text-muted-foreground">
-                Advanced: paste credentials from Meta Business Manager if OAuth is unavailable.
+                {connectDialog === "twitter"
+                  ? "Advanced: paste OAuth 1.0a user tokens from the X Developer Portal if OAuth connect is unavailable."
+                  : "Advanced: paste credentials from Meta Business Manager if OAuth is unavailable."}
               </p>
               <div className="space-y-2">
                 <Label>Account Name</Label>

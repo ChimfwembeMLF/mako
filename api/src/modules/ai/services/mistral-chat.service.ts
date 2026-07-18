@@ -72,7 +72,12 @@ export class MistralChatService {
 
   async complete(
     messages: ChatMessage[],
-    options?: { model?: string; jsonMode?: boolean; maxTokens?: number },
+    options?: {
+      model?: string;
+      jsonMode?: boolean;
+      maxTokens?: number;
+      temperature?: number;
+    },
   ): Promise<ChatResult> {
     const model = options?.model ?? this.defaultModel;
     try {
@@ -81,6 +86,7 @@ export class MistralChatService {
         model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
         maxTokens: options?.maxTokens ?? 4096,
+        ...(options?.temperature != null ? { temperature: options.temperature } : {}),
         ...(options?.jsonMode
           ? { responseFormat: { type: 'json_object' } }
           : {}),
@@ -126,7 +132,7 @@ export class MistralChatService {
 
   async completeJson<T>(
     messages: ChatMessage[],
-    options?: { model?: string },
+    options?: { model?: string; temperature?: number },
   ): Promise<{ data: T; tokensUsed: number; model: string }> {
     const result = await this.complete(messages, {
       ...options,

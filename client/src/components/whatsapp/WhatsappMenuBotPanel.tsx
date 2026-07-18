@@ -7,8 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { whatsappApi } from '@/lib/api';
-import { useFieldEnhance } from '@/hooks/useFieldEnhance';
-import { SuggestedField } from '@/components/form/SuggestedField';
+import { FormFieldAi } from '@/components/form/FormFieldAi';
 
 type WaMenuItem = {
   id?: string;
@@ -28,7 +27,6 @@ type Props = {
 
 export function WhatsappMenuBotPanel({ tenantId, workspaceId, compact }: Props) {
   const { toast } = useToast();
-  const { enhanceField, enhancingKey } = useFieldEnhance('whatsapp-menu');
 
   const [enabled, setEnabled] = useState(false);
   const [serviceName, setServiceName] = useState('MyService');
@@ -167,26 +165,28 @@ export function WhatsappMenuBotPanel({ tenantId, workspaceId, compact }: Props) 
 
         <div className="space-y-1.5">
           <Label className="text-xs">Business / service name</Label>
-          <SuggestedField
+          <FormFieldAi
+            form="whatsapp-menu"
+            tenantId={tenantId}
+            fieldKey="serviceName"
             type="input"
             value={serviceName}
             onChange={setServiceName}
             placeholder="e.g. Acme Shop"
-            onEnhance={() => enhanceField('serviceName', serviceName, setServiceName)}
-            enhancing={enhancingKey === 'serviceName'}
             className="h-9"
           />
         </div>
 
         <div className="space-y-1.5">
           <Label className="text-xs">Custom welcome message (optional)</Label>
-          <SuggestedField
+          <FormFieldAi
+            form="whatsapp-menu"
+            tenantId={tenantId}
+            fieldKey="welcomeMessage"
             type="input"
             value={welcomeMessage}
             onChange={setWelcomeMessage}
             placeholder="Welcome to {serviceName}! How can we help?"
-            onEnhance={() => enhanceField('welcomeMessage', welcomeMessage, setWelcomeMessage)}
-            enhancing={enhancingKey === 'welcomeMessage'}
             className="h-9"
           />
         </div>
@@ -220,31 +220,24 @@ export function WhatsappMenuBotPanel({ tenantId, workspaceId, compact }: Props) 
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
               </div>
-              <SuggestedField
+              <FormFieldAi
+                form="whatsapp-menu"
+                tenantId={tenantId}
+                fieldKey="menuTitle"
                 type="input"
                 value={item.title}
                 onChange={(value) => updateMenuItem(index, { title: value })}
                 placeholder="Menu label — e.g. Pricing, Support"
-                onEnhance={() =>
-                  enhanceField('menuTitle', item.title, (value) => updateMenuItem(index, { title: value }), `menuTitle-${index}`)
-                }
-                enhancing={enhancingKey === `menuTitle-${index}`}
                 className="h-9"
               />
-              <SuggestedField
+              <FormFieldAi
+                form="whatsapp-menu"
+                tenantId={tenantId}
+                fieldKey="menuDescription"
                 type="input"
                 value={item.description ?? ''}
                 onChange={(value) => updateMenuItem(index, { description: value })}
                 placeholder="Short hint (optional)"
-                onEnhance={() =>
-                  enhanceField(
-                    'menuDescription',
-                    item.description ?? '',
-                    (value) => updateMenuItem(index, { description: value }),
-                    `menuDescription-${index}`,
-                  )
-                }
-                enhancing={enhancingKey === `menuDescription-${index}`}
                 className="h-9"
               />
               <div className="flex items-center gap-2">
@@ -258,7 +251,10 @@ export function WhatsappMenuBotPanel({ tenantId, workspaceId, compact }: Props) 
                   AI writes the reply
                 </Label>
               </div>
-              <SuggestedField
+              <FormFieldAi
+                form="whatsapp-menu"
+                tenantId={tenantId}
+                fieldKey="menuResponse"
                 type="textarea"
                 value={item.response}
                 onChange={(value) => updateMenuItem(index, { response: value })}
@@ -267,15 +263,6 @@ export function WhatsappMenuBotPanel({ tenantId, workspaceId, compact }: Props) 
                     ? 'Guidance for AI — e.g. share pricing and booking link'
                     : 'Reply when selected — sent to customer on WhatsApp'
                 }
-                onEnhance={() =>
-                  enhanceField(
-                    'menuResponse',
-                    item.response,
-                    (value) => updateMenuItem(index, { response: value }),
-                    `menuResponse-${index}`,
-                  )
-                }
-                enhancing={enhancingKey === `menuResponse-${index}`}
                 rows={3}
               />
             </div>

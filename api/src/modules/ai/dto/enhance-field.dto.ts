@@ -1,4 +1,4 @@
-import { IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsArray, IsIn, IsOptional, IsString, IsUUID } from 'class-validator';
 import { FormSuggestionType } from '../form-suggestion-forms.constants';
 
 export class EnhanceFieldDto {
@@ -18,4 +18,14 @@ export class EnhanceFieldDto {
   @IsOptional()
   @IsString()
   currentValue?: string;
+
+  @IsOptional()
+  @IsString()
+  variationSeed?: string;
+
+  /** Prior AI outputs to avoid repeating on regenerate */
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  avoidTexts?: string[];
 }

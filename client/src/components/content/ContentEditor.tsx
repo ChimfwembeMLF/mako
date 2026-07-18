@@ -9,8 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
-import { useFieldEnhance } from '@/hooks/useFieldEnhance';
-import { SuggestedField } from '@/components/form/SuggestedField';
+import { FormFieldAi } from '@/components/form/FormFieldAi';
 import { contentItemsApi, templatesApi } from '@/lib/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { invokeEdgeFunction } from '@/lib/edgeFunctions';
@@ -59,11 +58,6 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   const [editingImageUrl, setEditingImageUrl] = useState<string | null>(null);
   const [templates, setTemplates] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
   const [templateId, setTemplateId] = useState<string>('');
-
-  const { enhanceField, enhancingKey } = useFieldEnhance({
-    form: 'content',
-    tenantId: tenant?.id,
-  });
 
   useEffect(() => {
     setTheme(stripHtml(item?.campaign_theme ?? ''));
@@ -275,26 +269,28 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
             )}
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="content-theme">Campaign theme</Label>
-              <SuggestedField
+              <FormFieldAi
                 id="content-theme"
+                form="content"
+                tenantId={tenant?.id}
+                fieldKey="theme"
                 type="input"
                 value={theme}
                 onChange={setTheme}
                 placeholder="e.g. Summer sale, product launch, weekly tip…"
-                onEnhance={() => enhanceField('theme', theme, setTheme)}
-                enhancing={enhancingKey === 'theme'}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="content-title">Title</Label>
-              <SuggestedField
+              <FormFieldAi
                 id="content-title"
+                form="content"
+                tenantId={tenant?.id}
+                fieldKey="title"
                 type="input"
                 value={title}
                 onChange={setTitle}
                 placeholder="Post headline"
-                onEnhance={() => enhanceField('title', title, setTitle)}
-                enhancing={enhancingKey === 'title'}
               />
             </div>
           </div>

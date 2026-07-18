@@ -252,6 +252,11 @@ export class SocialAccountsService {
         return account.refreshToken
           ? this.refreshTikTokToken(account.refreshToken)
           : undefined;
+      case 'twitter':
+      case 'x':
+        return account.refreshToken
+          ? this.refreshTwitterToken(account.refreshToken)
+          : undefined;
       default:
         return undefined;
     }
@@ -377,6 +382,15 @@ export class SocialAccountsService {
 
   private async refreshTikTokToken(refreshToken: string) {
     const refreshed = await this.oauth.refreshTikTokAccessToken(refreshToken);
+    return {
+      accessToken: refreshed.accessToken,
+      refreshToken: refreshed.refreshToken ?? refreshToken,
+      expiresAt: refreshed.expiresAt,
+    };
+  }
+
+  private async refreshTwitterToken(refreshToken: string) {
+    const refreshed = await this.oauth.refreshTwitterAccessToken(refreshToken);
     return {
       accessToken: refreshed.accessToken,
       refreshToken: refreshed.refreshToken ?? refreshToken,
