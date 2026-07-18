@@ -8,6 +8,9 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 
 RUN corepack enable
 
+# Install all deps (incl. dev) for Vite build — Dokploy often sets NODE_ENV=production
+ENV NODE_ENV=development
+
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY api/package.json ./api/package.json
 COPY client/package.json ./client/package.json
@@ -17,6 +20,8 @@ RUN yarn install --immutable
 COPY client ./client
 
 WORKDIR /app/client
+
+ENV DISABLE_PWA=true
 
 RUN yarn build
 

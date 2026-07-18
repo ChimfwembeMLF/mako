@@ -1,8 +1,18 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import fs from "fs";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+
+/** Monorepo: hls.js may live under client/ or repo root node_modules after yarn install. */
+function resolveHlsJsEntry(): string {
+  const candidates = [
+    path.resolve(__dirname, "node_modules/hls.js/dist/hls.mjs"),
+    path.resolve(__dirname, "../node_modules/hls.js/dist/hls.mjs"),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
+}
 
 /** Workbox precache size cap (4 GiB) — default is 2 MiB */
 const WORKBOX_MAX_PRECACHE_BYTES = 4 * 1024 * 1024 * 1024;
@@ -98,7 +108,7 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
       // @react-three/drei/VideoTexture — ensure ESM entry exists (partial installs omit dist/*.mjs)
-      "hls.js": path.resolve(__dirname, "node_modules/hls.js/dist/hls.mjs"),
+      "hls.js": resolveHlsJsEntry(),
     },
   },
   optimizeDeps: {

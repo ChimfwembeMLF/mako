@@ -5,6 +5,8 @@ WORKDIR /app
 
 RUN apk add --no-cache bash curl && corepack enable
 
+ENV NODE_ENV=development
+
 # Yarn 4 monorepo — lockfile lives at repository root
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY api/package.json ./api/package.json
