@@ -38,7 +38,7 @@ impl AutoPublishService {
                 Err(err) => {
                     tracing::warn!(
                         error = %err,
-                        "Queue auto-publish failed — publishing due items in-process"
+                        "Queue auto-publish failed — publishing due items in-process (if this is a Query Error on scheduled_time, TIMETZ decode is broken)"
                     );
                 }
             }
