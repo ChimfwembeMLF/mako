@@ -41,12 +41,9 @@ impl PawaPayService {
 
     pub fn base_url(&self) -> String {
         let raw = if self.config.env.eq_ignore_ascii_case("sandbox") {
-            first_non_empty(&[
-                &self.config.base_url_sandbox,
-                &self.config.sandbox_api_url,
-            ])
+            first_non_empty(&self.config.base_url_sandbox, &self.config.sandbox_api_url)
         } else {
-            first_non_empty(&[&self.config.base_url_prod, &self.config.api_url])
+            first_non_empty(&self.config.base_url_prod, &self.config.api_url)
         };
 
         let fallback = if self.config.env.eq_ignore_ascii_case("sandbox") {
@@ -179,10 +176,12 @@ fn truncate_customer_message(value: &str) -> String {
     trimmed.chars().take(22).collect()
 }
 
-fn first_non_empty<'a>(values: &'a [&'a str]) -> &'a str {
-    values
-        .iter()
-        .copied()
-        .find(|value| !value.trim().is_empty())
-        .unwrap_or_default()
+fn first_non_empty<'a>(primary: &'a str, secondary: &'a str) -> &'a str {
+    if !primary.trim().is_empty() {
+        primary
+    } else if !secondary.trim().is_empty() {
+        secondary
+    } else {
+        ""
+    }
 }
