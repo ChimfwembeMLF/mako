@@ -9,7 +9,8 @@ deploy/dokploy.env
 **/dist
 **/coverage
 api/uploads
-api-rust
+api-rust/target
 mistralworkflow
 widget
 terminals
+agent-transcripts

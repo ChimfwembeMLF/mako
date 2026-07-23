@@ -17,7 +17,7 @@ Docs: [Dokploy Docker Compose](https://docs.dokploy.com/docs/core/docker-compose
 4. Open `/tmp/dokploy.env` — copy **everything** — paste into Dokploy Environment.
 5. Click **Save**, then **Deploy**.
 
-`docker-compose.yml` already has `env_file: .env`. Dokploy writes your Environment tab to `code/.env` on deploy.
+`docker-compose.yml` builds the **Rust** API (`api-rust`) and loads Environment via `env_file: .env`. See [DOKPLOY_RUST.md](./DOKPLOY_RUST.md) for cutover notes and migrations.
 
 ## Rules (avoids `key cannot contain a space`)
 

@@ -1,11 +1,13 @@
-# Dokploy Environment tab (g → e): paste output of `./scripts/export-dokploy-env.sh`
-# See docs/DOKPLOY_ENV.md — no # comments, no multi-line JWT PEM. env_file loads .env into api.
+# Dokploy: paste env from `./scripts/export-dokploy-env.sh` into Compose → Environment.
+# See docs/DOKPLOY_ENV.md and docs/DOKPLOY_RUST.md
+#
+# Primary API is Rust (api-rust). Nest Dockerfile remains for optional one-off migrations.
 
 services:
   api:
     build:
-      context: .
-      dockerfile: api/Dockerfile
+      context: ./api-rust
+      dockerfile: Dockerfile
     ports:
       - "4000:4000"
     env_file:
@@ -14,14 +16,18 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-4000}
       - QUEUES_ENABLED=${QUEUES_ENABLED:-true}
-      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-true}
+      - AUTO_PUBLISH_CRON_ENABLED=${AUTO_PUBLISH_CRON_ENABLED:-true}
+      - COMMENT_SYNC_CRON_ENABLED=${COMMENT_SYNC_CRON_ENABLED:-true}
+      - DAILY_WORKFLOW_CRON_ENABLED=${DAILY_WORKFLOW_CRON_ENABLED:-true}
+      - NOTIFICATION_CRON_ENABLED=${NOTIFICATION_CRON_ENABLED:-true}
+      - RUST_LOG=${RUST_LOG:-api_rust=info,tower_http=info}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 90s
+      start_period: 40s
 
   client:
     build:
@@ -35,6 +41,21 @@ services:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+  # Optional: run TypeORM migrations (Nest). Usage:
+  #   docker compose --profile migrate run --rm migrate
+  migrate:
+    profiles: ["migrate"]
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - RUN_MIGRATIONS=true
+    entrypoint: ["sh", "-c", "yarn migrations:run:prod"]
+    restart: "no"
 
 networks:
   default:

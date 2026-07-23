@@ -65,11 +65,14 @@ The Rust port reads the same variables as the NestJS API:
 # Local CI (same as GitHub Actions)
 ./scripts/ci-check.sh
 
-# Production deploy (PM2, port 4006 — dual-run with NestJS on 4005)
+# Dokploy: docker-compose.yml builds this crate as the `api` service (port 4000)
+# See docs/DOKPLOY_RUST.md
+
+# Production PM2 (port 4006 — dual-run with NestJS on 4005)
 ./scripts/deploy-production.sh
 ```
 
-See **`docs/DUAL_RUN.md`** and **`../api/docs/RUST_CUTOVER.md`** for LiteSpeed dual-run/cutover and **`../api/docs/CI_CD.md`** for GitHub Actions.
+See **`docs/DUAL_RUN.md`**, **`../docs/DOKPLOY_RUST.md`**, and **`../api/docs/RUST_CUTOVER.md`**.
 
 ## Smoke parity tests
 

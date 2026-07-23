@@ -1,4 +1,5 @@
 # syntax=docker/dockerfile:1
+# Dokploy / docker compose: context = ./api-rust
 
 FROM rust:1-bookworm AS builder
 
