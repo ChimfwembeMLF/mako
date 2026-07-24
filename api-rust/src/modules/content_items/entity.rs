@@ -28,7 +28,7 @@ pub struct Model {
     #[sea_orm(column_type = "JsonBinary", nullable)]
     pub platform_payloads: Option<Json>,
     pub scheduled_date: Option<Date>,
-    #[sea_orm(nullable)]
+    #[sea_orm(column_type = "custom(\"TIMETZ\")", nullable)]
     pub scheduled_time: Option<Timetz>,
     pub published_at: Option<DateTimeWithTimeZone>,
     #[sea_orm(column_type = "Text", nullable)]

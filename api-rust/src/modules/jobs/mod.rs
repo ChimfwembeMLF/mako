@@ -281,7 +281,12 @@ fn spawn_auto_publish(state: AppState) {
                         tracing::warn!(errors = ?result.errors, "Auto-publish errors");
                     }
                 }
-                Err(err) => tracing::error!(error = %err, "Auto-publish cron error"),
+                Err(err) => {
+                    tracing::error!(
+                        error = %err,
+                        "Auto-publish cron failed (query load or publish) — check scheduled_time TIMETZ decode if Query Error"
+                    );
+                }
             }
         }
     });

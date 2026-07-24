@@ -176,7 +176,9 @@ Enable with `QUEUES_ENABLED=true` in `.env`.
 ## Recent changes (2026-07-12)
 
 - ✅ S3/MinIO storage (`AWS_S3_*` / MinIO env vars)
-- ✅ `scheduled_time` TIMETZ decode fix (auto-publish cron)
+- ✅ `scheduled_time` TIMETZ decode via custom `Timetz` + SQLx `PgTimeTz` in
+  `api-rust` (Nest column stays `timetz`; no schema migration). Fixes auto-publish
+  cron `NaiveTime`/`TIME` vs `TIMETZ` mismatch.
 - ✅ Mistral/PawaPay/Supabase dead-code cleanup
 - ✅ Meta webhook automation: WA lead capture + classify, flow engine, keyword auto-reply, social DM auto-reply
 - ✅ All 7 content publishers (Twitter text-only, YouTube, TikTok, WhatsApp broadcast)
