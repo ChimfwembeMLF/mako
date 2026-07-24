@@ -24,4 +24,8 @@ RUN chmod +x docker-entrypoint.sh
 
 EXPOSE 4000
 
+ENV PORT=4000
+ENV SERVE_CLIENT=false
+ENV RUN_MIGRATIONS=false
+
 ENTRYPOINT ["./docker-entrypoint.sh"]

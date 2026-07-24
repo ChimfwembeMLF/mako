@@ -53,9 +53,16 @@ Always **Redeploy** the compose stack. Env changes are not picked up until rebui
 
 ```bash
 # On server after deploy
-docker exec -it <api-container> printenv | grep -E 'NODE_ENV|DB_HOST|TWITTER_CLIENT_ID'
+docker logs mako-prod-nyieyw-api-1 --tail 200
+docker exec -it mako-prod-nyieyw-api-1 printenv | grep -E 'NODE_ENV|PORT|DB_HOST|SERVE_CLIENT|SESSION_SECRET|FRONTEND_URL'
 curl -s https://mako.tekreminnovations.com/api/v1/health
+
+# One-off TypeORM migrations (Nest API skips them on boot by default)
+docker compose --profile migrate run --rm migrate
 ```
+
+If `api` is **unhealthy**: Nest never reached `/api/v1/health` in time, or exited on boot.
+Common causes: missing `SESSION_SECRET` / `FRONTEND_URL`, Redis host unreachable, DB host wrong, or migrations enabled and hanging (`RUN_MIGRATIONS` should be `false` unless you intentionally run them via the migrate profile).
 
 ## Optional: Dokploy shared variables
 

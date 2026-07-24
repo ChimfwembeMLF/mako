@@ -1,8 +1,9 @@
 # Dokploy: paste env from `./scripts/export-dokploy-env.sh` into Compose → Environment.
 # See docs/DOKPLOY_ENV.md
 #
-# Primary API is NestJS (`api/`). Rust (`api-rust`) remains available for local/parity work.
-# Migrations: Nest entrypoint runs them by default (RUN_MIGRATIONS=true), or:
+# Primary API is NestJS (`api/`). SPA is the separate `client` service (Nest does not host client/dist).
+# No service_healthy gate — a failing Nest healthcheck must not block client deploy.
+# Migrations: off by default. Run once after API is up:
 #   docker compose --profile migrate run --rm migrate
 
 services:
@@ -17,18 +18,18 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-4000}
+      - SERVE_CLIENT=false
+      - RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
       - QUEUES_ENABLED=${QUEUES_ENABLED:-true}
       - AUTO_PUBLISH_CRON_ENABLED=${AUTO_PUBLISH_CRON_ENABLED:-true}
       - COMMENT_SYNC_CRON_ENABLED=${COMMENT_SYNC_CRON_ENABLED:-true}
       - DAILY_WORKFLOW_CRON_ENABLED=${DAILY_WORKFLOW_CRON_ENABLED:-true}
       - NOTIFICATION_CRON_ENABLED=${NOTIFICATION_CRON_ENABLED:-true}
     restart: unless-stopped
+    # Disabled: Dokploy was failing the whole stack while Nest was still booting / crashing.
+    # Re-enable after `docker logs …-api-1` shows a clean /api/v1/health.
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/api/v1/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 60s
+      disable: true
 
   client:
     build:
@@ -38,9 +39,6 @@ services:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
     ports:
       - "5173:5173"
-    depends_on:
-      api:
-        condition: service_healthy
     restart: unless-stopped
 
   # Optional: run TypeORM migrations (Nest). Usage:

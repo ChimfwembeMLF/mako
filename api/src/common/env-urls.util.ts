@@ -1,26 +1,24 @@
 import type { ConfigService } from '@nestjs/config';
-import { existsSync } from 'fs';
-import { join } from 'path';
 
 /** Vite dev server port (client/vite.config.ts). */
 export function defaultViteDevPort(): string {
   return process.env.CLIENT_DEV_PORT?.trim() || '5173';
 }
 
-/** True when Nest serves the built React app from client/dist on PORT. */
+/** Vite / client container host the SPA. Nest is API-only (never serves client/dist). */
 export function isServeClientMode(): boolean {
-  return process.env.SERVE_CLIENT === 'true';
+  if (process.env.SERVE_CLIENT === 'true') {
+    console.warn(
+      '[urls] SERVE_CLIENT=true is ignored — Nest does not host client/dist. Serve the SPA via Vite (dev) or the client container (prod).',
+    );
+  }
+  return false;
 }
 
-/** Default browser origin in development. */
+/** Default browser origin in development (Vite on CLIENT_DEV_PORT, default 5173). */
 export function defaultDevFrontendUrl(): string {
   const explicit = process.env.CLIENT_DEV_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, '');
-
-  if (isServeClientMode()) {
-    const port = process.env.PORT || '4000';
-    return `http://localhost:${port}`;
-  }
 
   const vitePort = defaultViteDevPort();
   return `http://localhost:${vitePort}`;
@@ -32,7 +30,7 @@ export function defaultDevApiOrigin(): string {
   return `http://localhost:${port}`;
 }
 
-/** When API-only dev, FRONTEND_URL must not point at Nest (no SPA there). */
+/** When API-only, FRONTEND_URL must not point at Nest (no SPA there). */
 export function normalizeDevFrontendUrl(): void {
   if (process.env.NODE_ENV === 'production') return;
 
@@ -44,18 +42,13 @@ export function normalizeDevFrontendUrl(): void {
     ''
   ).replace(/\/$/, '');
 
-  const clientDist = join(process.cwd(), 'client/dist/index.html');
-  const hasBuiltClient = existsSync(clientDist);
-  const shouldUseVite =
-    !isServeClientMode() &&
-    (!frontend || frontend === apiOrigin) &&
-    !hasBuiltClient;
+  const viteOrigin = defaultDevFrontendUrl();
+  const pointsAtApi = !frontend || frontend === apiOrigin;
 
-  if (shouldUseVite) {
-    const viteOrigin = defaultDevFrontendUrl();
+  if (pointsAtApi) {
     if (frontend && frontend !== viteOrigin) {
       console.warn(
-        `[urls] FRONTEND_URL=${frontend} points at the API, but SERVE_CLIENT is not enabled — using Vite dev server ${viteOrigin} for OAuth redirects`,
+        `[urls] FRONTEND_URL=${frontend} points at the API — using Vite dev server ${viteOrigin} for OAuth redirects`,
       );
     }
     process.env.FRONTEND_URL = viteOrigin;
@@ -63,7 +56,7 @@ export function normalizeDevFrontendUrl(): void {
       process.env.CLIENT_URL = viteOrigin;
     }
   } else if (!process.env.FRONTEND_URL?.trim()) {
-    process.env.FRONTEND_URL = defaultDevFrontendUrl();
+    process.env.FRONTEND_URL = viteOrigin;
   }
 }
 
@@ -147,7 +140,7 @@ export function assertProductionUrls(): void {
   const frontend = resolveFrontendUrl();
   if (!frontend || isLocalhostUrl(frontend)) {
     console.error(
-      'FATAL: Set FRONTEND_URL=https://your-domain.com in production .env (same as API_PUBLIC_URL for single-app deploy)',
+      'FATAL: Set FRONTEND_URL=https://your-spa-origin.com in production .env (client host; Nest does not serve the SPA)',
     );
     process.exit(1);
   }
