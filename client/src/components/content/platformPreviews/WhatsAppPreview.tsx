@@ -15,7 +15,7 @@ export function WhatsAppPreview({
   return (
     <div
       className={cn(
-        'rounded-xl overflow-hidden max-w-sm shadow-sm border',
+        'rounded-xl overflow-hidden w-full max-w-none shadow-sm border',
         'bg-[#e5ddd5] dark:bg-[#0b141a]',
         className,
       )}

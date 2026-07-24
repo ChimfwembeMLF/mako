@@ -14,7 +14,7 @@ export function YouTubePreview({
   const plain = htmlToPlainText(payload.content ?? '');
 
   return (
-    <div className={cn('space-y-3 max-w-md', className)}>
+    <div className={cn('space-y-3 w-full max-w-none', className)}>
       <YouTubeThumbnail
         video={videos[0]}
         title={payload.title || plain.split('\n')[0]?.slice(0, 100)}

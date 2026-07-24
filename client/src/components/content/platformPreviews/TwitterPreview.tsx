@@ -21,7 +21,7 @@ export function TwitterPreview({
   const handle = authorName.replace(/\s+/g, '').toLowerCase();
 
   return (
-    <div className={cn('rounded-xl border bg-white shadow-sm overflow-hidden max-w-md', className)}>
+    <div className={cn('rounded-xl border bg-white shadow-sm overflow-hidden w-full max-w-none', className)}>
       <div className="px-3 py-3 flex gap-2">
         <PreviewAvatar name={authorName} color="#000" size="sm" />
         <div className="min-w-0 flex-1">

@@ -84,7 +84,7 @@ export function LegalLayout({
         <div className="absolute bottom-0 -left-24 h-80 w-80 rounded-full bg-primary/5 blur-3xl" />
       </div>
 
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b bg-card/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <Link to="/" className="flex items-center gap-2 group">
             <Logo className="!h-24 w-24" />

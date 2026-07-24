@@ -23,7 +23,7 @@ import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 import { cn } from "@/lib/utils";
 
 const primaryBtnClass =
-  "w-full h-9 rounded-full text-sm font-medium bg-primary border-0 shadow-sm";
+  "w-full min-h-12 h-12 rounded-xl text-button-md font-semibold bg-primary text-primary-foreground border-0";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -195,12 +195,12 @@ const Auth = () => {
 
 
 
-        <Card className="w-full shadow-card border-border/50 rounded-2xl">
+        <Card className="w-full bg-card rounded-xl border-0 p-1">
           <CardHeader className="pb-2 px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6">
             <div className="flex justify-center shrink-0">
               <Logo className="h-16 w-auto sm:h-24 lg:h-28" />
             </div>
-            <CardTitle className="text-base sm:text-lg font-display text-center lg:text-left">
+            <CardTitle className="text-display-xs font-display text-center lg:text-left font-extrabold tracking-tight">
               {isForgotPassword
                 ? "Reset Password"
                 : isSignUp

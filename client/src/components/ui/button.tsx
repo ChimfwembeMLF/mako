@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-button-md font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-button-md font-semibold ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-100 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -14,17 +14,17 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-foreground bg-background text-foreground hover:bg-surface-soft",
+          "border border-foreground bg-card text-foreground hover:bg-surface-soft",
         secondary:
-          "border border-foreground bg-background text-foreground hover:bg-surface-soft",
+          "bg-secondary text-secondary-foreground hover:bg-primary-pale border-0",
         ghost: "hover:bg-surface-soft hover:text-foreground",
         link: "text-foreground underline-offset-4 hover:underline",
         pill: "rounded-full bg-primary text-primary-foreground text-button-sm hover:bg-primary-active px-5 py-2.5 h-auto",
       },
       size: {
-        default: "h-12 px-6 py-3.5",
-        sm: "h-10 rounded-sm px-4 text-button-sm",
-        lg: "h-12 rounded-sm px-8",
+        default: "h-12 px-6 py-3",
+        sm: "h-10 rounded-xl px-4 text-button-sm",
+        lg: "h-12 rounded-xl px-8",
         icon: "h-10 w-10 rounded-full",
         orb: "h-12 w-12 rounded-full p-0",
       },

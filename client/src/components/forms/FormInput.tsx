@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 type IconComponent = React.ComponentType<{ className?: string }>;
 
 const fieldClass =
-  'h-11 rounded-lg border-border/60 bg-muted/30 px-3.5 text-sm shadow-sm transition-colors placeholder:text-muted-foreground/70 focus-visible:bg-background focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15';
+  'h-12 rounded-md border border-foreground bg-card px-3.5 text-sm transition-colors placeholder:text-muted-foreground focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-foreground';
 
 interface FormInputProps extends React.ComponentProps<'input'> {
   icon?: IconComponent;
@@ -35,7 +35,7 @@ export const FormTextarea = React.forwardRef<HTMLTextAreaElement, FormTextareaPr
     <Textarea
       ref={ref}
       className={cn(
-        'min-h-[88px] rounded-lg border-border/60 bg-muted/30 px-3.5 py-2.5 text-sm shadow-sm resize-none transition-colors focus-visible:bg-background focus-visible:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/15',
+        'min-h-[88px] rounded-md border border-foreground bg-card px-3.5 py-2.5 text-sm resize-none transition-colors focus-visible:bg-card focus-visible:ring-2 focus-visible:ring-foreground',
         className,
       )}
       {...props}
@@ -46,7 +46,7 @@ FormTextarea.displayName = 'FormTextarea';
 
 export function formSelectTriggerClass(className?: string) {
   return cn(
-    'h-11 rounded-lg border-border/60 bg-muted/30 shadow-sm focus:ring-2 focus:ring-primary/15',
+    'h-12 rounded-md border border-foreground bg-card shadow-none focus:ring-2 focus:ring-foreground',
     className,
   );
 }

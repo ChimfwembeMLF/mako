@@ -1,6 +1,5 @@
 import type { ThemeConfig } from '@/hooks/useTheme';
 import { MAKO_THEME } from '@/lib/mako-brand';
-import { DESIGN_THEME } from '@/lib/design-tokens';
 
 export type ThemePalette = {
   id: string;
@@ -14,7 +13,7 @@ export const THEME_PALETTES: ThemePalette[] = [
   {
     id: 'mako',
     name: 'Mako',
-    description: 'Clean white canvas with Rausch accent — see DESIGN.md',
+    description: 'Sage canvas with Wise green CTA — see DESIGN.md',
     theme: {
       primary: MAKO_THEME.primary,
       secondary: MAKO_THEME.secondary,
@@ -35,9 +34,14 @@ export const THEME_PALETTES: ThemePalette[] = [
   },
   {
     id: 'rausch',
-    name: 'Rausch',
-    description: 'Airbnb-inspired marketplace palette',
-    theme: DESIGN_THEME,
+    name: 'Rausch (legacy)',
+    description: 'Optional legacy marketplace red — not default brand',
+    theme: {
+      primary: '349 100% 61%',
+      secondary: '80 11% 5%',
+      accent: '0 0% 95%',
+      radius: '8px',
+    },
   },
   {
     id: 'ocean',

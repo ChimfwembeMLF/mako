@@ -1,17 +1,17 @@
 # Dokploy → Rust API
 
-Dokploy Compose now builds **`api-rust`** (Axum) instead of NestJS for the `api` service. The SPA (`client`) is unchanged and proxies `/api` to `api:4000`.
+Dokploy Compose currently builds **NestJS** (`api/Dockerfile`) for the `api` service by default. This doc covers the optional Rust cutover. The SPA (`client`) is unchanged and proxies `/api` to `api:4000`.
 
-## What changed
+## Optional: switch `api` to Rust
 
-| Service | Before | After |
-|---------|--------|-------|
-| `api` | Nest (`api/Dockerfile`) | Rust (`api-rust/Dockerfile`) |
+| Service | Nest (current default) | Rust cutover |
+|---------|------------------------|--------------|
+| `api` | Nest (`api/Dockerfile`, context `.`) | Rust (`api-rust/Dockerfile`, context `./api-rust`) |
 | `client` | Vite → nginx | Same |
 | Crons / queues | Nest Schedule + BullMQ | Rust in-process crons + Redis `JobStore` |
-| Migrations | Nest entrypoint | **Manual** Nest one-off (`migrate` profile) |
+| Migrations | Nest entrypoint (`RUN_MIGRATIONS`) | Nest one-off (`migrate` profile) |
 
-## Dokploy steps
+## Dokploy steps (Rust cutover)
 
 1. **Push** this commit (compose + Dockerfiles).
 2. **Environment** tab — keep your existing env. Ensure at least:
@@ -66,9 +66,9 @@ If Nest is still running elsewhere (PM2 / old container) with crons/queues on:
 
 Only **one** process should own crons and queues.
 
-## Rollback to Nest
+## Switch back to Nest (default)
 
-In `docker-compose.yml`, point `api.build` back to:
+In `docker-compose.yml`, point `api.build` to:
 
 ```yaml
 build:

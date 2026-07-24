@@ -1,50 +1,59 @@
 /**
- * Design tokens from DESIGN.md (Airbnb-inspired system).
+ * Design tokens from DESIGN.md (Wise-inspired system).
  * HSL values omit the hsl() wrapper — matches CSS custom properties.
  */
 export const DESIGN_COLORS = {
-  primary: '349 100% 61%',
-  primaryActive: '345 91% 46%',
-  primaryDisabled: '350 100% 91%',
-  primaryErrorText: '12 80% 42%',
-  luxe: '277 91% 25%',
-  plus: '330 72% 33%',
-  ink: '0 0% 13%',
-  body: '0 0% 25%',
-  muted: '0 0% 41%',
-  mutedSoft: '0 0% 57%',
-  hairline: '0 0% 87%',
-  hairlineSoft: '0 0% 92%',
-  borderStrong: '0 0% 76%',
+  primary: '96 72% 67%',
+  primaryActive: '97 100% 84%',
+  primaryDisabled: '96 65% 90%',
+  primaryPale: '96 65% 90%',
+  primaryNeutral: '96 65% 80%',
+  primaryErrorText: '358 63% 51%',
+  positive: '134 58% 43%',
+  positiveDeep: '149 88% 16%',
+  warning: '48 100% 55%',
+  warningDeep: '34 100% 36%',
+  luxe: '94 100% 10%',
+  plus: '26 100% 78%',
+  ink: '80 11% 5%',
+  body: '120 1% 27%',
+  muted: '60 0% 52%',
+  mutedSoft: '60 0% 52%',
+  hairline: '96 8% 82%',
+  hairlineSoft: '96 8% 88%',
+  borderStrong: '80 11% 5%',
   canvas: '0 0% 100%',
-  surfaceSoft: '0 0% 97%',
-  surfaceStrong: '0 0% 95%',
-  onPrimary: '0 0% 100%',
-  legalLink: '217 100% 63%',
+  canvasSoft: '96 11% 91%',
+  surfaceSoft: '96 11% 91%',
+  surfaceStrong: '96 65% 90%',
+  onPrimary: '80 11% 5%',
+  legalLink: '197 100% 40%',
 } as const;
 
 export const DESIGN_RADIUS = {
   none: '0px',
   xs: '4px',
   sm: '8px',
-  md: '14px',
-  lg: '20px',
-  xl: '32px',
+  md: '12px',
+  lg: '16px',
+  xl: '24px',
   full: '9999px',
 } as const;
 
 export const DESIGN_SHADOW = {
-  elevated:
-    'rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0',
+  elevated: 'none',
 } as const;
 
 export const DESIGN_FONT =
-  "Inter, Circular, -apple-system, system-ui, Roboto, 'Helvetica Neue', sans-serif";
+  "Inter, system-ui, -apple-system, sans-serif";
+
+export const DESIGN_DISPLAY_FONT =
+  "Manrope, Inter, system-ui, sans-serif";
 
 /** Default theme tokens for applyTheme / theme palettes. */
 export const DESIGN_THEME = {
   primary: DESIGN_COLORS.primary,
   secondary: DESIGN_COLORS.ink,
   accent: DESIGN_COLORS.surfaceStrong,
-  radius: DESIGN_RADIUS.sm,
+  radius: DESIGN_RADIUS.xl,
 } as const;

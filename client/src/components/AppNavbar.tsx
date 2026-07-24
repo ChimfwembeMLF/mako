@@ -54,7 +54,7 @@ function NavLinkItem({
         "relative px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
         className,
       )}
-      activeClassName="!text-foreground after:absolute after:bottom-0 after:inset-x-2 after:h-0.5 after:bg-foreground after:rounded-full"
+      activeClassName="!text-foreground after:absolute after:bottom-0 after:inset-x-2 after:h-0.5 after:bg-primary after:rounded-full"
     >
       {children}
     </NavLink>
@@ -75,7 +75,7 @@ function AppsMenu() {
           className={cn(
             "relative inline-flex items-center gap-0.5 px-2.5 py-2 text-sm font-medium transition-colors outline-none",
             active
-              ? "text-foreground after:absolute after:bottom-0 after:inset-x-2 after:h-0.5 after:bg-foreground after:rounded-full"
+              ? "text-foreground after:absolute after:bottom-0 after:inset-x-2 after:h-0.5 after:bg-primary after:rounded-full"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
@@ -258,7 +258,7 @@ function MobileNav() {
             onClick={() => setOpen(false)}
             className={cn(
               "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              pathname === "/dashboard" ? "bg-foreground text-background" : "hover:bg-surface-soft",
+              pathname === "/dashboard" ? "bg-primary text-primary-foreground" : "hover:bg-surface-soft",
             )}
           >
             <Zap className="h-4 w-4" /> Dashboard
@@ -278,7 +278,7 @@ function MobileNav() {
                     className={cn(
                       "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
                       isActivePath(pathname, item.url)
-                        ? "bg-surface-soft font-medium"
+                        ? "bg-primary/25 font-medium border-l-2 border-primary pl-[10px]"
                         : "hover:bg-surface-soft",
                     )}
                   >
@@ -304,7 +304,7 @@ function MobileNav() {
                     className={cn(
                       "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
                       isActivePath(pathname, item.url)
-                        ? "bg-surface-soft font-medium"
+                        ? "bg-primary/25 font-medium border-l-2 border-primary pl-[10px]"
                         : "hover:bg-surface-soft",
                     )}
                   >
@@ -358,7 +358,7 @@ export function AppNavbar() {
     <>
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
-      <header className="sticky top-0 z-50 border-b border-border bg-background">
+      <header className="sticky top-0 z-50 border-b border-border bg-card">
         <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-2 px-4 md:px-6">
           <MobileNav />
 

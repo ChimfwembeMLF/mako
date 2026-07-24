@@ -29,8 +29,9 @@ export function TikTokPreview({
   }
 
   return (
-    <div className={cn('relative rounded-xl overflow-hidden bg-black max-w-[280px] mx-auto shadow-lg', className)}>
-      <div className="aspect-[9/16] relative">
+    <div className={cn('w-full flex justify-center', className)}>
+      <div className="relative rounded-xl overflow-hidden bg-black w-full max-w-[280px] shadow-lg">
+      <div className="aspect-[9/16] max-h-[420px] relative">
         {videos[0]?.url ? (
           <video
             src={resolveMediaUrl(videos[0].url)}
@@ -82,6 +83,7 @@ export function TikTokPreview({
             <Music2 className="h-3 w-3" /> original sound — {authorName}
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

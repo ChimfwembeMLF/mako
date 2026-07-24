@@ -1,103 +1,117 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Design system — see DESIGN.md */
+/* Design system — Wise-inspired tokens from DESIGN.md */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
+    /* Surfaces */
+    --background: 96 11% 91%; /* canvas-soft #e8ebe6 */
+    --foreground: 80 11% 5%; /* ink #0e0f0c */
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
+    --card-foreground: 80 11% 5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
+    --popover-foreground: 80 11% 5%;
 
-    --primary: 349 100% 61%;
-    --primary-foreground: 0 0% 100%;
-    --primary-active: 345 91% 46%;
-    --primary-disabled: 350 100% 91%;
+    /* Brand CTA — Wise green #9fe870 (not semantic success) */
+    --primary: 96 72% 67%;
+    --primary-foreground: 80 11% 5%;
+    --primary-active: 97 100% 84%; /* #cdffad */
+    --primary-disabled: 96 65% 90%; /* #e2f6d5 */
+    --primary-pale: 96 65% 90%;
+    --primary-neutral: 96 65% 80%;
 
-    --secondary: 0 0% 100%;
-    --secondary-foreground: 0 0% 13%;
+    --secondary: 96 11% 91%; /* sage secondary fill */
+    --secondary-foreground: 80 11% 5%;
 
-    --muted: 0 0% 97%;
-    --muted-foreground: 0 0% 41%;
+    --muted: 96 11% 91%;
+    --muted-foreground: 60 0% 52%; /* mute #868685 */
 
-    --accent: 0 0% 95%;
-    --accent-foreground: 0 0% 13%;
+    --accent: 96 65% 90%;
+    --accent-foreground: 80 11% 5%;
 
-    --destructive: 12 80% 42%;
+    --destructive: 358 63% 51%; /* #d03238 */
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 87%;
-    --input: 0 0% 87%;
-    --ring: 0 0% 13%;
+    --positive: 134 58% 43%;
+    --positive-deep: 149 88% 16%;
+    --warning: 48 100% 55%;
+    --warning-deep: 34 100% 36%;
 
-    --radius: 8px;
+    --border: 96 8% 82%;
+    --input: 80 11% 5%;
+    --ring: 80 11% 5%;
 
-    --body: 0 0% 25%;
-    --muted-soft: 0 0% 57%;
-    --hairline-soft: 0 0% 92%;
-    --border-strong: 0 0% 76%;
-    --surface-soft: 0 0% 97%;
-    --surface-strong: 0 0% 95%;
-    --legal-link: 217 100% 63%;
-    --luxe: 277 91% 25%;
-    --plus: 330 72% 33%;
+    /* Canonical card/button radius base (24px) */
+    --radius: 24px;
+
+    --body: 120 1% 27%; /* #454745 */
+    --muted-soft: 60 0% 52%;
+    --hairline-soft: 96 8% 88%;
+    --border-strong: 80 11% 5%;
+    --surface-soft: 96 11% 91%;
+    --surface-strong: 96 65% 90%;
+    --legal-link: 197 100% 40%;
+    --luxe: 94 100% 10%; /* ink-deep */
+    --plus: 26 100% 78%; /* accent-orange for illustration */
 
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 0 0% 13%;
-    --sidebar-primary: 349 100% 61%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 97%;
-    --sidebar-accent-foreground: 0 0% 13%;
-    --sidebar-border: 0 0% 87%;
-    --sidebar-ring: 349 100% 61%;
+    --sidebar-foreground: 80 11% 5%;
+    --sidebar-primary: 96 72% 67%;
+    --sidebar-primary-foreground: 80 11% 5%;
+    --sidebar-accent: 96 11% 91%;
+    --sidebar-accent-foreground: 80 11% 5%;
+    --sidebar-border: 96 8% 82%;
+    --sidebar-ring: 96 72% 67%;
   }
 
+  /*
+   * Dark mode: light-first product. Minimal contrast mapping so .dark
+   * does not keep Airbnb Rausch; full dark palette deferred.
+   */
   .dark {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 95%;
+    --background: 80 11% 5%;
+    --foreground: 96 11% 91%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 80 8% 10%;
+    --card-foreground: 96 11% 91%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 80 8% 10%;
+    --popover-foreground: 96 11% 91%;
 
-    --primary: 349 100% 61%;
-    --primary-foreground: 0 0% 100%;
-    --primary-active: 345 91% 46%;
-    --primary-disabled: 350 40% 35%;
+    --primary: 96 72% 67%;
+    --primary-foreground: 80 11% 5%;
+    --primary-active: 97 100% 84%;
+    --primary-disabled: 96 20% 25%;
 
-    --secondary: 0 0% 14%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 80 8% 14%;
+    --secondary-foreground: 96 11% 91%;
 
-    --muted: 0 0% 14%;
-    --muted-foreground: 0 0% 60%;
+    --muted: 80 8% 14%;
+    --muted-foreground: 60 0% 60%;
 
-    --accent: 0 0% 16%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 80 8% 16%;
+    --accent-foreground: 96 11% 91%;
 
-    --destructive: 12 70% 50%;
+    --destructive: 358 63% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 95%;
+    --border: 80 8% 20%;
+    --input: 96 11% 91%;
+    --ring: 96 72% 67%;
 
-    --sidebar-background: 0 0% 7%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 349 100% 61%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 14%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 20%;
-    --sidebar-ring: 349 100% 61%;
+    --sidebar-background: 80 11% 5%;
+    --sidebar-foreground: 96 11% 91%;
+    --sidebar-primary: 96 72% 67%;
+    --sidebar-primary-foreground: 80 11% 5%;
+    --sidebar-accent: 80 8% 14%;
+    --sidebar-accent-foreground: 96 11% 91%;
+    --sidebar-border: 80 8% 20%;
+    --sidebar-ring: 96 72% 67%;
   }
 }
 
@@ -108,28 +122,41 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: Inter, Circular, -apple-system, system-ui, Roboto, 'Helvetica Neue', sans-serif;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-feature-settings: "calt";
     font-size: 16px;
     line-height: 1.5;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: inherit;
+    font-family: Manrope, Inter, system-ui, sans-serif;
     color: hsl(var(--foreground));
   }
 }
 
 @layer utilities {
+  .font-display {
+    font-family: Manrope, Inter, system-ui, sans-serif;
+  }
+
   .shadow-elevated {
-    box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0;
+    box-shadow: none;
   }
 
   .shadow-card {
-    box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0;
+    box-shadow: none;
   }
 
   .text-body {
     color: hsl(var(--body));
+  }
+
+  .text-positive {
+    color: hsl(var(--positive));
+  }
+
+  .text-positive-deep {
+    color: hsl(var(--positive-deep));
   }
 
   .text-legal-link {
@@ -144,20 +171,24 @@
     background-color: hsl(var(--surface-strong));
   }
 
+  .bg-primary-pale {
+    background-color: hsl(var(--primary-pale));
+  }
+
   .border-hairline-soft {
     border-color: hsl(var(--hairline-soft));
   }
 
   .landing-screenshot-shadow {
-    filter: drop-shadow(0 28px 48px rgba(0, 0, 0, 0.08))
-      drop-shadow(0 8px 16px rgba(0, 0, 0, 0.04));
+    filter: drop-shadow(0 28px 48px rgba(14, 15, 12, 0.08))
+      drop-shadow(0 8px 16px rgba(14, 15, 12, 0.04));
   }
 
   .landing-glow {
     background: radial-gradient(
       ellipse at center,
-      hsl(var(--primary) / 0.18) 0%,
-      hsl(var(--primary) / 0.06) 45%,
+      hsl(var(--primary) / 0.35) 0%,
+      hsl(var(--primary) / 0.1) 45%,
       transparent 72%
     );
   }
@@ -228,7 +259,7 @@
 .brand-markdown-editor .w-md-editor {
   border: none !important;
   box-shadow: none !important;
-  background: hsl(var(--background)) !important;
+  background: hsl(var(--card)) !important;
 }
 
 .brand-markdown-editor .w-md-editor-toolbar {
@@ -239,12 +270,12 @@
 
 .brand-markdown-editor .w-md-editor-toolbar li > button {
   color: hsl(var(--foreground)) !important;
-  border-radius: 8px !important;
+  border-radius: 12px !important;
 }
 
 .brand-markdown-editor .w-md-editor-toolbar li > button:hover {
-  background: hsl(var(--primary) / 0.12) !important;
-  color: hsl(var(--primary)) !important;
+  background: hsl(var(--primary) / 0.2) !important;
+  color: hsl(var(--foreground)) !important;
 }
 
 .brand-markdown-editor .w-md-editor-text-input,
@@ -309,6 +340,6 @@
 }
 
 .chat-markdown .wmde-markdown a {
-  color: hsl(var(--primary));
+  color: hsl(var(--positive-deep));
   text-decoration: underline;
 }

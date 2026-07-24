@@ -1,13 +1,15 @@
 # Dokploy: paste env from `./scripts/export-dokploy-env.sh` into Compose → Environment.
-# See docs/DOKPLOY_ENV.md and docs/DOKPLOY_RUST.md
+# See docs/DOKPLOY_ENV.md
 #
-# Primary API is Rust (api-rust). Nest Dockerfile remains for optional one-off migrations.
+# Primary API is NestJS (`api/`). Rust (`api-rust`) remains available for local/parity work.
+# Migrations: Nest entrypoint runs them by default (RUN_MIGRATIONS=true), or:
+#   docker compose --profile migrate run --rm migrate
 
 services:
   api:
     build:
-      context: ./api-rust
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "4000:4000"
     env_file:
@@ -20,14 +22,13 @@ services:
       - COMMENT_SYNC_CRON_ENABLED=${COMMENT_SYNC_CRON_ENABLED:-true}
       - DAILY_WORKFLOW_CRON_ENABLED=${DAILY_WORKFLOW_CRON_ENABLED:-true}
       - NOTIFICATION_CRON_ENABLED=${NOTIFICATION_CRON_ENABLED:-true}
-      - RUST_LOG=${RUST_LOG:-api_rust=info,tower_http=info}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
-      start_period: 40s
+      start_period: 60s
 
   client:
     build:
