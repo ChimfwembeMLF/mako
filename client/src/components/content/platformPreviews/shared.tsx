@@ -50,17 +50,17 @@ export function MediaCarousel({
 
   return (
     <div className={cn('relative bg-black/5', rounded && 'rounded-lg overflow-hidden mx-3 mb-2')}>
-      <div className={cn('relative w-full overflow-hidden', aspectClass)}>
+      <div className={cn('relative w-full overflow-hidden max-h-[280px]', aspectClass)}>
         {isVideo ? (
           current.url ? (
             <video
               src={resolveMediaUrl(current.url)}
-              className="h-full w-full object-cover"
+              className="h-full w-full max-h-[280px] object-cover"
               controls
               playsInline
             />
           ) : (
-            <div className="h-full w-full bg-black flex items-center justify-center">
+            <div className="h-full w-full min-h-[160px] max-h-[280px] bg-black flex items-center justify-center">
               <Play className="h-10 w-10 text-white/80" />
             </div>
           )
@@ -68,7 +68,7 @@ export function MediaCarousel({
           <img
             src={resolveMediaUrl(current.url)}
             alt=""
-            className="h-full w-full object-cover"
+            className="h-full w-full max-h-[280px] object-cover"
           />
         )}
 
@@ -138,8 +138,8 @@ export function TwitterImageGrid({ images }: { images: PlatformMediaAttachment[]
           alt=""
           className={cn(
             'w-full object-cover',
-            count === 1 ? 'max-h-80 aspect-video' : 'h-36 sm:h-40',
-            count === 3 && i === 0 && 'row-span-2 h-full min-h-[18rem]',
+            count === 1 ? 'max-h-[240px] aspect-video' : 'h-28 sm:h-32',
+            count === 3 && i === 0 && 'row-span-2 h-full min-h-[12rem] max-h-[240px]',
           )}
         />
       ))}
@@ -160,9 +160,9 @@ export function FacebookImageGrid({
     return (
       <div className="mx-0 border-y bg-black">
         {v.url ? (
-          <video src={resolveMediaUrl(v.url)} className="w-full max-h-96 object-contain" controls playsInline />
+          <video src={resolveMediaUrl(v.url)} className="w-full max-h-[280px] object-contain" controls playsInline />
         ) : (
-          <div className="aspect-video bg-muted flex items-center justify-center text-xs text-muted-foreground">
+          <div className="h-[200px] bg-muted flex items-center justify-center text-xs text-muted-foreground">
             Video preview
           </div>
         )}
@@ -174,7 +174,7 @@ export function FacebookImageGrid({
 
   if (images.length === 1) {
     return (
-      <img src={resolveMediaUrl(images[0]!.url)} alt="" className="w-full max-h-96 object-cover border-y" />
+      <img src={resolveMediaUrl(images[0]!.url)} alt="" className="w-full h-[280px] object-cover border-y" />
     );
   }
 
@@ -182,7 +182,7 @@ export function FacebookImageGrid({
     return (
       <div className="grid grid-cols-2 gap-0.5 border-y">
         {images.map((m, i) => (
-          <img key={i} src={resolveMediaUrl(m.url)} alt="" className="h-48 w-full object-cover" />
+          <img key={i} src={resolveMediaUrl(m.url)} alt="" className="h-[200px] w-full object-cover" />
         ))}
       </div>
     );
@@ -191,10 +191,10 @@ export function FacebookImageGrid({
   const extra = images.length - 5;
   return (
     <div className="grid grid-cols-2 gap-0.5 border-y">
-      <img src={resolveMediaUrl(images[0]!.url)} alt="" className="row-span-2 h-full min-h-[16rem] object-cover" />
+      <img src={resolveMediaUrl(images[0]!.url)} alt="" className="row-span-2 h-full min-h-[12rem] max-h-[280px] object-cover" />
       {images.slice(1, 5).map((m, i) => (
         <div key={i} className="relative">
-          <img src={resolveMediaUrl(m.url)} alt="" className="h-32 w-full object-cover" />
+          <img src={resolveMediaUrl(m.url)} alt="" className="h-[140px] w-full object-cover" />
           {i === 3 && extra > 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-xl font-semibold">
               +{extra}
@@ -217,7 +217,7 @@ export function YouTubeThumbnail({
 }) {
   return (
     <div className="bg-[#0f0f0f] text-white rounded-xl overflow-hidden">
-      <div className="relative aspect-video bg-[#212121]">
+      <div className="relative h-[220px] bg-[#212121]">
         {video?.url ? (
           <>
             <video

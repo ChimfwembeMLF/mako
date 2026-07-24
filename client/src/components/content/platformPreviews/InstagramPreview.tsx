@@ -22,7 +22,7 @@ export function InstagramPreview({
   const handle = authorName.replace(/\s+/g, '').toLowerCase();
 
   return (
-    <div className={cn('rounded-lg border bg-white shadow-sm overflow-hidden max-w-sm', className)}>
+    <div className={cn('rounded-lg border bg-white shadow-sm overflow-hidden w-full max-w-none', className)}>
       <div className="px-3 py-2 flex items-center gap-2 border-b">
         <PreviewAvatar name={authorName} color="#e1306c" size="sm" />
         <p className="text-sm font-semibold flex-1 truncate">{handle}</p>
@@ -32,11 +32,11 @@ export function InstagramPreview({
       {carouselItems.length > 0 ? (
         <MediaCarousel
           items={carouselItems}
-          aspectClass="aspect-square"
+          aspectClass="h-[260px]"
           dotStyle="instagram"
         />
       ) : (
-        <div className="aspect-square bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50 flex items-center justify-center text-xs text-muted-foreground">
+        <div className="h-[260px] bg-gradient-to-br from-purple-100 via-pink-50 to-orange-50 flex items-center justify-center text-xs text-muted-foreground">
           Add photo or video
         </div>
       )}

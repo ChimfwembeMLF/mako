@@ -17,7 +17,7 @@ Docs: [Dokploy Docker Compose](https://docs.dokploy.com/docs/core/docker-compose
 4. Open `/tmp/dokploy.env` — copy **everything** — paste into Dokploy Environment.
 5. Click **Save**, then **Deploy**.
 
-`docker-compose.yml` builds the **Rust** API (`api-rust`) and loads Environment via `env_file: .env`. See [DOKPLOY_RUST.md](./DOKPLOY_RUST.md) for cutover notes and migrations.
+`docker-compose.yml` builds the **NestJS** API (`api/Dockerfile`) and loads Environment via `env_file: .env`. See [DOKPLOY_RUST.md](./DOKPLOY_RUST.md) if you temporarily switch back to Rust.
 
 ## Rules (avoids `key cannot contain a space`)
 

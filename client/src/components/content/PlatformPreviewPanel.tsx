@@ -73,7 +73,7 @@ export function PlatformPreviewPanel({
           };
           return (
             <TabsContent key={p} value={p} className="space-y-3 mt-3">
-              <PlatformPreview platform={p} payload={payloadWithMedia} />
+              <PlatformPreview platform={p} payload={payloadWithMedia} className="w-full max-w-none" />
               {showEditors && onEditPayload && (
                 <div className="space-y-2">
                   <Label className="text-xs">Edit {platformOf(p).label} copy</Label>

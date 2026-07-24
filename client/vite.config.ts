@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => ({
         name: "Mako",
         short_name: "Mako",
         description: "AI-powered social media content generation, publishing, and lead management.",
-        theme_color: "#ff385c",
+        theme_color: "#9fe870",
         background_color: "#ffffff",
         display: "standalone",
         orientation: "portrait-primary",

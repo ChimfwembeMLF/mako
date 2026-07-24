@@ -111,7 +111,7 @@ export function PlatformPreviewCarousel({
                         · draft preview
                       </span>
                     </div>
-                    <PlatformPreview platform={p} payload={payload} />
+                    <PlatformPreview platform={p} payload={payload} className="w-full max-w-none" />
                   </div>
                 </CarouselItem>
               );

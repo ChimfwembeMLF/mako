@@ -22,7 +22,7 @@ export function LinkedInPreview({
   const plain = htmlToPlainText(payload.content ?? '');
 
   return (
-    <div className={cn('rounded-lg border bg-white shadow-sm overflow-hidden max-w-md', className)}>
+    <div className={cn('rounded-lg border bg-white shadow-sm overflow-hidden w-full max-w-none', className)}>
       <div className="px-3 py-3 flex items-start gap-2">
         <PreviewAvatar name={authorName} color="#0a66c2" />
         <div className="min-w-0 flex-1">
@@ -48,14 +48,14 @@ export function LinkedInPreview({
       </div>
 
       {videos.length > 0 ? (
-        <MediaCarousel items={videos} aspectClass="aspect-[1.91/1]" dotStyle="linkedin" rounded />
+        <MediaCarousel items={videos} aspectClass="h-[240px]" dotStyle="linkedin" rounded />
       ) : images.length > 1 ? (
-        <MediaCarousel items={images} aspectClass="aspect-[1.91/1]" dotStyle="linkedin" rounded />
+        <MediaCarousel items={images} aspectClass="h-[240px]" dotStyle="linkedin" rounded />
       ) : images.length === 1 ? (
         <img
           src={resolveMediaUrl(images[0]!.url)}
           alt=""
-          className="mx-3 mb-2 rounded-lg w-[calc(100%-1.5rem)] aspect-[1.91/1] object-cover"
+          className="mx-3 mb-2 rounded-lg w-[calc(100%-1.5rem)] h-[240px] object-cover"
         />
       ) : null}
 

@@ -21,7 +21,7 @@ export function FacebookPreview({
   const plain = htmlToPlainText(payload.content ?? '');
 
   return (
-    <div className={cn('rounded-lg border bg-white shadow-sm overflow-hidden max-w-md', className)}>
+    <div className={cn('rounded-lg border bg-white shadow-sm overflow-hidden w-full max-w-none', className)}>
       <div className="px-3 py-2.5 flex items-start gap-2">
         <PreviewAvatar name={authorName} color="#1877f2" />
         <div className="min-w-0 flex-1">
@@ -47,7 +47,7 @@ export function FacebookPreview({
 
       {images.length > 1 || videos.length > 0 ? (
         images.length > 1 ? (
-          <MediaCarousel items={images} aspectClass="aspect-[1.91/1]" dotStyle="facebook" />
+          <MediaCarousel items={images} aspectClass="h-[240px]" dotStyle="facebook" />
         ) : (
           <FacebookImageGrid images={images} videos={videos} />
         )

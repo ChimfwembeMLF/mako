@@ -69,13 +69,14 @@ export function PlatformSocialPreview({
   }
 
   return (
-    <div className={cn('w-full', className)}>
+    <div className="w-full">
       <Preview
         payload={payload}
         mode={mode}
         authorName={authorName}
         publishedAt={publishedAt}
         engagement={engagement}
+        className={cn('w-full max-w-none', className)}
       />
       {errors}
       {charFooter}

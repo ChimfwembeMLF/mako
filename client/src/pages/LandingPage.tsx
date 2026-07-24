@@ -90,7 +90,7 @@ function SectionHeader({
   return (
     <div className={cn('text-center w-full', className)}>
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground mb-3">{label}</p>
-      <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">{title}</h2>
+      <h2 className="font-display text-display-md sm:text-4xl font-extrabold tracking-tight">{title}</h2>
       {desc && <p className="text-muted-foreground mt-3 leading-relaxed">{desc}</p>}
     </div>
   );
@@ -181,19 +181,19 @@ function Nav() {
   }, []);
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-background border-b border-border shadow-elevated' : 'bg-background'}`}>
-      <div className="max-w-[1280px] mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-card/95 backdrop-blur border-b border-border' : 'bg-transparent'}`}>
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center">
           <Logo className="h-9" />
         </Link>
-        <nav className="hidden md:flex items-center gap-8 text-nav-link text-muted-foreground">
+        <nav className="hidden md:flex items-center gap-8 text-nav-link text-foreground">
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
-            <a key={href} href={href} className="hover:text-foreground transition-colors">{label}</a>
+            <a key={href} href={href} className="hover:opacity-70 transition-opacity">{label}</a>
           ))}
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign in</Link></Button>
-          <Button size="sm" asChild className=" rounded-lg shadow-card">
+          <Button size="sm" asChild className="rounded-xl min-h-12 h-12 px-5">
             <Link to="/auth?mode=signup">Get started <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
           </Button>
         </div>
@@ -202,11 +202,11 @@ function Nav() {
         </button>
       </div>
       {open && (
-        <div className="md:hidden border-t bg-background/95 backdrop-blur px-4 pb-4 space-y-2">
+        <div className="md:hidden border-t bg-card px-4 pb-4 space-y-2">
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
-            <a key={href} href={href} className="block py-2 text-sm" onClick={() => setOpen(false)}>{label}</a>
+            <a key={href} href={href} className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>{label}</a>
           ))}
-          <Button className="w-full mt-2 rounded-lg" asChild>
+          <Button className="w-full mt-2 min-h-12 rounded-xl" asChild>
             <Link to="/auth?mode=signup">Get started</Link>
           </Button>
         </div>
@@ -216,48 +216,31 @@ function Nav() {
 }
 
 function Hero() {
-  const platforms = ['Facebook', 'Instagram', 'LinkedIn', 'WhatsApp', 'Email'];
-
   return (
-    <section className="relative min-h-[92svh] flex items-center pt-20 pb-20 overflow-hidden border-b border-border bg-background">
-      <div className="relative max-w-[1280px] mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
+    <section className="relative min-h-[92svh] flex items-center pt-24 pb-section overflow-hidden bg-background">
+      <div className="absolute inset-0 landing-glow pointer-events-none opacity-60" aria-hidden />
+      <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
         <div className="space-y-7 text-center lg:text-left">
           <Reveal>
-            <p className="inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <span className="h-px w-8 bg-primary/60 hidden sm:block" />
-              Marketing workspace
-              <span className="h-px w-8 bg-primary/60 hidden sm:block" />
+            <p className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+              Mako
             </p>
           </Reveal>
 
           <Reveal delay={80} variant="up">
-            <h1 className="text-display-xl sm:text-[2rem] lg:text-display-xl font-semibold leading-[1.18] tracking-[-0.44px]">
+            <h1 className="font-display text-display-xl text-foreground">
               Your brand voice.
               <br />
-              <span className="text-primary">Every channel.</span>
+              Every channel.
               <br />
-              One dashboard.
+              One workspace.
             </h1>
           </Reveal>
 
           <Reveal delay={140} variant="up">
-            <p className="text-lg text-muted-foreground max-w-lg mx-auto lg:mx-0 leading-relaxed">
+            <p className="text-lg text-body max-w-lg mx-auto lg:mx-0 leading-relaxed">
               Plan content, publish to social, reply to comments, and follow up on leads — without switching between a dozen tabs.
             </p>
-          </Reveal>
-
-          <Reveal delay={200} variant="up">
-            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
-              {platforms.map((platform, i) => (
-                <span
-                  key={platform}
-                  className="rounded-full border border-border/80 bg-background/90 px-3 py-1 text-xs font-medium text-muted-foreground motion-reduce:opacity-100 motion-reduce:translate-y-0 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both"
-                  style={{ animationDelay: `${240 + i * 60}ms` }}
-                >
-                  {platform}
-                </span>
-              ))}
-            </div>
           </Reveal>
 
           <Reveal delay={280} variant="up">
@@ -265,31 +248,31 @@ function Hero() {
               <Button
                 size="lg"
                 asChild
-                className="h-12 px-8 rounded-sm shadow-card hover:opacity-95"
+                className="min-h-12 h-12 px-8 rounded-xl"
               >
                 <Link to="/auth?mode=signup">
                   Get started free
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-sm">
+              <Button size="lg" variant="secondary" asChild className="min-h-12 h-12 px-8 rounded-xl">
                 <a href="#product">See how it works</a>
               </Button>
             </div>
           </Reveal>
 
           <Reveal delay={360} variant="up">
-            <ul className="flex flex-col sm:flex-row flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-muted-foreground">
+            <ul className="flex flex-col sm:flex-row flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-body">
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
                 No credit card required
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
                 Mobile money billing
               </li>
               <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
                 Built in Zambia
               </li>
             </ul>
@@ -297,13 +280,15 @@ function Hero() {
         </div>
 
         <Reveal delay={180} variant="scale" className="relative lg:pl-4">
-          <ScreenshotFrame
-            src="/screenshots/mako-dashboard-desktop.webp"
-            alt="Mako dashboard — content, scheduling, and analytics"
-            device="desktop"
-            float
-            mock={<div className="min-h-[300px] rounded-2xl border border-dashed border-border/60 animate-pulse" />}
-          />
+          <div className="rounded-xl bg-card p-3 sm:p-4">
+            <ScreenshotFrame
+              src="/screenshots/mako-dashboard-desktop.webp"
+              alt="Mako dashboard — content, scheduling, and analytics"
+              device="desktop"
+              float
+              mock={<div className="min-h-[300px] rounded-xl border border-dashed border-border/60 animate-pulse" />}
+            />
+          </div>
         </Reveal>
       </div>
     </section>
@@ -312,8 +297,8 @@ function Hero() {
 
 function ProductShowcase() {
   return (
-    <section id="product" className="py-24 border-t border-border/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-20">
+    <section id="product" className="py-section bg-card border-t border-border/40">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 mb-20">
         <Reveal>
           <SectionHeader
             label="Product"
@@ -337,7 +322,7 @@ function ProductShowcase() {
                 </p>
                 <h3 className="text-2xl sm:text-3xl font-bold font-display leading-tight tracking-tight">{s.title}</h3>
                 <p className="text-muted-foreground text-base leading-relaxed max-w-md">{s.desc}</p>
-                <Button variant="outline" asChild className="rounded-lg transition-transform duration-300 hover:translate-x-0.5">
+                <Button variant="outline" asChild className="rounded-xl transition-transform duration-300 hover:translate-x-0.5">
                   <Link to="/auth?mode=signup">
                     Open {s.badge}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -376,7 +361,7 @@ const FEATURES = [
 
 function FeaturesGrid() {
   return (
-    <section id="features" className="py-24 bg-muted/25 border-t border-border/50">
+    <section id="features" className="py-section bg-background border-t border-border/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <Reveal>
           <SectionHeader
@@ -390,7 +375,7 @@ function FeaturesGrid() {
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70} variant="up">
               <div className="rounded-xl border border-border/80 bg-card p-6 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/20">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 mb-4">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 mb-4">
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold mb-2 text-foreground">{f.title}</h3>
@@ -417,7 +402,7 @@ function Pricing() {
   }, []);
 
   return (
-    <section id="pricing" className="py-24 border-t border-border/50">
+    <section id="pricing" className="py-section bg-card border-t border-border/40">
       <div className="w-full px-4 sm:px-6">
         <Reveal>
           <SectionHeader
@@ -447,12 +432,12 @@ function Pricing() {
                   <ul className="space-y-2.5 mt-6 flex-1">
                     {planFeatureBullets(p).map((f) => (
                       <li key={f} className="flex gap-2 text-sm text-muted-foreground leading-snug">
-                        <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+                        <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0 mt-0.5" />
                         {f}
                       </li>
                     ))}
                   </ul>
-                  <Button className={`mt-6 w-full rounded-lg ${p.highlight ? '' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
+                  <Button className={`mt-6 w-full rounded-xl ${p.highlight ? '' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
                     <Link to="/auth?mode=signup">Get started</Link>
                   </Button>
                 </div>
@@ -470,21 +455,23 @@ function Pricing() {
 
 function FinalCTA() {
   return (
-    <section className="py-24 px-4 border-t border-border/50">
+    <section className="py-section px-4 bg-foreground text-background">
       <Reveal variant="scale">
-        <div className="w-full rounded-2xl border border-border/80 bg-card p-10 sm:p-12 text-center shadow-card transition-shadow duration-500 hover:shadow-elevated">
-          <h2 className="text-3xl sm:text-4xl font-bold font-display tracking-tight">Start with a free account</h2>
-          <p className="text-muted-foreground mt-4 text-lg max-w-lg mx-auto leading-relaxed">
+        <div className="w-full max-w-[1200px] mx-auto rounded-xl bg-foreground p-10 sm:p-12 text-center">
+          <h2 className="font-display text-display-md sm:text-4xl font-extrabold tracking-tight text-primary">
+            Start with a free account
+          </h2>
+          <p className="text-background/70 mt-4 text-lg max-w-lg mx-auto leading-relaxed">
             Set up your brand, connect a channel, and publish your first post. Most teams are up and running the same day.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <Button size="lg" asChild className=" h-12 px-8 rounded-xl shadow-card">
+            <Button size="lg" asChild className="min-h-12 h-12 px-8 rounded-xl">
               <Link to="/auth?mode=signup">
                 Create free account
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
-            <Button size="lg" variant="outline" asChild className="h-12 px-8 rounded-xl">
+            <Button size="lg" variant="outline" asChild className="min-h-12 h-12 px-8 rounded-xl border-background/40 bg-transparent text-background hover:bg-background/10">
               <Link to="/auth">Sign in</Link>
             </Button>
           </div>
@@ -496,22 +483,22 @@ function FinalCTA() {
 
 function Footer() {
   return (
-    <footer className="border-t border-border/50 py-12 bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between gap-8">
+    <footer className="py-section bg-foreground text-background">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 flex flex-col md:flex-row justify-between gap-8">
         <div>
-          <Logo className="h-14" />
-          <p className="text-sm text-muted-foreground mt-3 max-w-xs leading-relaxed">
+          <Logo className="h-14 brightness-0 invert" />
+          <p className="text-sm text-background/70 mt-3 max-w-xs leading-relaxed">
             Marketing workspace by Tekrem Innovation Solutions. Built in Zambia for teams across Africa.
           </p>
         </div>
-        <div className="flex gap-8 text-sm text-muted-foreground">
-          <Link to="/privacy" className="hover:text-foreground">Privacy</Link>
-          <Link to="/terms" className="hover:text-foreground">Terms</Link>
-          <Link to="/data-deletion" className="hover:text-foreground">Data deletion</Link>
-          <Link to="/auth" className="hover:text-foreground">Sign in</Link>
+        <div className="flex gap-8 text-sm text-background/70">
+          <Link to="/privacy" className="hover:text-background">Privacy</Link>
+          <Link to="/terms" className="hover:text-background">Terms</Link>
+          <Link to="/data-deletion" className="hover:text-background">Data deletion</Link>
+          <Link to="/auth" className="hover:text-background">Sign in</Link>
         </div>
       </div>
-      <p className="text-center text-xs text-muted-foreground mt-8">© {new Date().getFullYear()} Mako · Tekrem Innovation Solutions</p>
+      <p className="text-center text-xs text-background/50 mt-8">© {new Date().getFullYear()} Mako · Tekrem Innovation Solutions</p>
     </footer>
   );
 }
