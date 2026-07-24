@@ -62,7 +62,7 @@ yarn pm2:startup   # run the sudo command it prints
 |----------|-------------------------------|
 | `PORT` | `4005` (see `ecosystem.config.json`) |
 | `NODE_ENV` | `production` |
-| `SERVE_CLIENT` | `true` |
+| `SERVE_CLIENT` | `false` (Nest is API-only; SPA is the client service) |
 | `CORS_DISABLED` | `true` |
 | `DB_SYNCHRONIZE` | `false` |
 | `JWT_SECRET` | Strong random string |
@@ -110,7 +110,7 @@ Secrets live in `.env` on the server — NestJS loads them at boot; PM2 does not
 
 ## 3. Client (built into `client/dist`)
 
-Vite builds directly to `autopilot-api/client/dist/`. Nest serves it when `SERVE_CLIENT=true`. No copy step.
+Vite builds the SPA for the **client** container / nginx. Nest does **not** serve `client/dist` (`SERVE_CLIENT=false`).
 
 ```bash
 yarn build          # client + API
@@ -225,7 +225,7 @@ Queues: `content-publish`, `comments`, `webhooks`, `ai`, `email`. Job status: `G
 - [ ] Meta Data Deletion Callback registered
 - [ ] OAuth callback URLs updated to production domains
 - [ ] `PAYMENTS_DEV_AUTO_COMPLETE=false`
-- [ ] `SERVE_CLIENT=true` and `curl /` returns React HTML
+- [ ] `SERVE_CLIENT=false` and `curl /` on the API does **not** return React HTML (SPA is the client host)
 - [ ] Publish test post → verify `content_publications` row + comment sync
 
 ---

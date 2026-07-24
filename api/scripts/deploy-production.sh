@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Production deploy: install deps, build client + API, restart PM2.
-# Nest serves React from client/dist — one command, no manual copy steps.
+# Production deploy: install deps, build API (and optionally client for the separate SPA host).
+# Nest is API-only — it does not serve client/dist.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -49,10 +49,10 @@ sleep 2
 PORT="${PORT:-4005}"
 curl -sf "http://127.0.0.1:${PORT}/api/v1/health" | head -c 500 || echo "(health curl failed — check pm2 logs)"
 echo ""
-if curl -sf "http://127.0.0.1:${PORT}/" | head -1 | grep -qi doctype; then
-  echo "SPA: OK (index.html served at /)"
+if curl -sf "http://127.0.0.1:${PORT}/" 2>/dev/null | head -1 | grep -qi doctype; then
+  echo "WARN: Nest is serving HTML at / — SPA should be the client container, not Nest (SERVE_CLIENT must stay false)"
 else
-  echo "WARN: / did not return HTML — check SERVE_CLIENT=true and client/dist"
+  echo "API-only: OK (Nest is not hosting client/dist)"
 fi
 echo ""
 echo "Done. pm2 logs: yarn pm2:logs"
