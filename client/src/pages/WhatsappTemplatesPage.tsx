@@ -480,7 +480,13 @@ export default function WhatsappTemplatesPage() {
     setLoading(true);
     try {
       const rows = await whatsappTemplatesApi.list(tenant.id, ws);
-      setTemplates(Array.isArray(rows) ? rows : []);
+      // Guard against accidental non-array payloads (historical route clash).
+      const list = Array.isArray(rows)
+        ? rows
+        : Array.isArray((rows as { data?: unknown })?.data)
+          ? ((rows as { data: WaTemplate[] }).data)
+          : [];
+      setTemplates(list);
     } catch (e: unknown) {
       toast({ title: 'Failed to load templates', description: e instanceof Error ? e.message : 'Unknown error', variant: 'destructive' });
     } finally {
@@ -519,7 +525,7 @@ export default function WhatsappTemplatesPage() {
         title: 'Import complete',
         description: `${res.imported} imported, ${res.skipped} skipped.`,
       });
-      load();
+      await load();
       if (metaTemplates.length === 0) void loadMetaTemplates();
     } catch (e: unknown) {
       toast({ title: 'Import failed', description: e instanceof Error ? e.message : 'Unknown error', variant: 'destructive' });
@@ -672,7 +678,8 @@ export default function WhatsappTemplatesPage() {
           ) : (
             <div className="space-y-3">
               {templates.map((tpl) => {
-                const body = tpl.components.find((c) => c.type === 'BODY');
+                const components = Array.isArray(tpl.components) ? tpl.components : [];
+                const body = components.find((c) => c.type === 'BODY');
                 const canEdit = tpl.status === 'DRAFT' || tpl.status === 'REJECTED';
                 const canSubmit = tpl.status === 'DRAFT' || tpl.status === 'REJECTED';
                 const canSync = !!tpl.metaTemplateId || tpl.status === 'PENDING';

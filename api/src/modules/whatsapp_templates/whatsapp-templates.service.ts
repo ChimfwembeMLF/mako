@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
-import { applyWorkspaceScope } from '../../common/workspace-scope.util';
+import { scopeWhereIncludingTenantWide } from '../../common/workspace-scope.util';
 import {
   WhatsappTemplate,
   TemplateComponent,
@@ -49,12 +49,13 @@ export class WhatsappTemplatesService {
     tenantId: string,
     workspaceId?: string,
   ): Promise<WhatsappTemplate[]> {
-    const qb = this.repo
-      .createQueryBuilder('t')
-      .where('t.tenantId = :tenantId', { tenantId })
-      .orderBy('t.createdAt', 'DESC');
-    applyWorkspaceScope(qb, 't', workspaceId);
-    return qb.getMany();
+    return this.repo.find({
+      where: scopeWhereIncludingTenantWide<WhatsappTemplate>(
+        tenantId,
+        workspaceId,
+      ),
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findOne(id: string, tenantId: string): Promise<WhatsappTemplate> {
@@ -120,7 +121,7 @@ export class WhatsappTemplatesService {
     const wabaId = await this.resolveWabaId(creds);
     if (!wabaId) {
       throw new BadRequestException(
-        'Could not resolve WhatsApp Business Account ID from your credentials.',
+        'Could not resolve WhatsApp Business Account ID. Set WHATSAPP_PLATFORM_WABA_ID (platform WhatsApp) or reconnect WhatsApp in Publisher Connect so waba_id is saved on the account.',
       );
     }
 
@@ -201,7 +202,7 @@ export class WhatsappTemplatesService {
     const wabaId = await this.resolveWabaId(creds);
     if (!wabaId) {
       throw new BadRequestException(
-        'Could not resolve WhatsApp Business Account ID. Reconnect WhatsApp in Publisher Connect.',
+        'Could not resolve WhatsApp Business Account ID. Set WHATSAPP_PLATFORM_WABA_ID (platform WhatsApp) or reconnect WhatsApp in Publisher Connect so waba_id is saved on the account.',
       );
     }
     try {
@@ -230,7 +231,7 @@ export class WhatsappTemplatesService {
           metaId: t.id ?? '',
           name: t.name!,
           language: t.language ?? 'en',
-          status: t.status ?? 'UNKNOWN',
+          status: String(t.status ?? 'UNKNOWN').toUpperCase(),
           category: t.category,
           components: (t.components ?? []) as TemplateComponent[],
         }));
@@ -251,11 +252,15 @@ export class WhatsappTemplatesService {
     let imported = 0;
     let skipped = 0;
     for (const tpl of metaTemplates) {
-      if (!['APPROVED', 'PENDING'].includes(tpl.status)) {
+      const status = String(tpl.status ?? '').toUpperCase();
+      if (!['APPROVED', 'PENDING'].includes(status)) {
         skipped++;
         continue;
       }
-      await this.importFromMeta(tenantId, workspaceId, tpl);
+      await this.importFromMeta(tenantId, workspaceId, {
+        ...tpl,
+        status,
+      });
       imported++;
     }
     return { imported, skipped };
@@ -274,15 +279,27 @@ export class WhatsappTemplatesService {
       components: TemplateComponent[];
     },
   ): Promise<WhatsappTemplate> {
+    const status = String(metaTemplate.status ?? 'APPROVED').toUpperCase() as WhatsappTemplate['status'];
     const existing = await this.repo.findOne({
-      where: { tenantId, name: metaTemplate.name, language: metaTemplate.language },
+      where: {
+        tenantId,
+        name: metaTemplate.name,
+        language: metaTemplate.language,
+      },
     });
     if (existing) {
       existing.metaTemplateId = metaTemplate.metaId;
-      existing.status = metaTemplate.status as WhatsappTemplate['status'];
-      existing.components = metaTemplate.components;
-      existing.variables = this.extractVariables(metaTemplate.components);
+      existing.status = status;
+      existing.category =
+        (metaTemplate.category as WhatsappTemplate['category']) ??
+        existing.category;
+      existing.components = metaTemplate.components ?? [];
+      existing.variables = this.extractVariables(existing.components);
       existing.syncedAt = new Date();
+      // Bind to the workspace the user is importing into (unique is per tenant+name+lang).
+      if (workspaceId) {
+        existing.workspaceId = workspaceId;
+      }
       return this.repo.save(existing);
     }
     const tpl = this.repo.create({
@@ -291,9 +308,9 @@ export class WhatsappTemplatesService {
       name: metaTemplate.name,
       language: metaTemplate.language,
       category: (metaTemplate.category as WhatsappTemplate['category']) ?? 'UTILITY',
-      status: metaTemplate.status as WhatsappTemplate['status'],
-      components: metaTemplate.components,
-      variables: this.extractVariables(metaTemplate.components),
+      status,
+      components: metaTemplate.components ?? [],
+      variables: this.extractVariables(metaTemplate.components ?? []),
       metaTemplateId: metaTemplate.metaId,
       syncedAt: new Date(),
     });
@@ -407,9 +424,14 @@ export class WhatsappTemplatesService {
   private async resolveWabaId(
     creds: WhatsappCredentials,
   ): Promise<string | null> {
+    if (creds.wabaId?.trim()) {
+      return creds.wabaId.trim();
+    }
+
     try {
       const { data } = await axios.get<{
         whatsapp_business_account?: { id?: string };
+        error?: { message?: string; code?: number };
       }>(
         `https://graph.facebook.com/${GRAPH_VERSION}/${creds.phoneNumberId}`,
         {
@@ -419,8 +441,17 @@ export class WhatsappTemplatesService {
           },
         },
       );
-      return data.whatsapp_business_account?.id ?? null;
-    } catch {
+      const id = data.whatsapp_business_account?.id ?? null;
+      if (!id) {
+        this.logger.warn(
+          `Phone ${creds.phoneNumberId} returned no whatsapp_business_account. Set WHATSAPP_PLATFORM_WABA_ID or reconnect WhatsApp so metadata.waba_id is stored.`,
+        );
+      }
+      return id;
+    } catch (err) {
+      this.logger.warn(
+        `resolveWabaId Graph lookup failed: ${this.formatGraphError(err)}`,
+      );
       return null;
     }
   }

@@ -271,7 +271,10 @@ export class WhatsappController {
     };
   }
 
-  @Get('templates')
+  @Get('message-templates')
+  @ApiOperation({
+    summary: 'List approved Meta HSM templates for sending (not the local template registry)',
+  })
   async listTemplates(
     @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,

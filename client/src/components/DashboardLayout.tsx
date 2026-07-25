@@ -5,6 +5,7 @@ import { BackendStatusBanner } from "@/components/BackendStatusBanner";
 import { OnboardingWizard, useNeedsOnboarding } from "@/components/OnboardingWizard";
 import { pageWidthClass, resolvePageWidth } from "@/components/layout/PageContainer";
 import { PageBreadcrumbProvider } from "@/hooks/usePageBreadcrumb";
+import { resolveProductShell } from "@/lib/social-shell";
 import { cn } from "@/lib/utils";
 
 function DashboardMain() {
@@ -28,10 +29,12 @@ function DashboardMain() {
 
 export function DashboardLayout() {
   const { needs, dismiss } = useNeedsOnboarding();
+  const { pathname } = useLocation();
+  const shell = resolveProductShell(pathname);
 
   return (
     <PageBreadcrumbProvider>
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background" data-product-shell={shell}>
       <AppNavbar />
       <BackendStatusBanner />
 

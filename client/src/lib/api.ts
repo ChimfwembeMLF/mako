@@ -1919,7 +1919,7 @@ export const whatsappApi = {
         return request<{
             templates: Array<{ name: string; language: string; status: string; category?: string }>;
             defaultTemplate?: string;
-        }>(`/api/v1/whatsapp/templates?${qs}`);
+        }>(`/api/v1/whatsapp/message-templates?${qs}`);
     },
 
     getFlowConfig: (tenantId: string, workspaceId?: string) => {

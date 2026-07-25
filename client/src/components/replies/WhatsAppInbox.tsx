@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, Loader2, MessageSquare, Send } from 'lucide-react';
-import { whatsappApi } from '@/lib/api';
+import { whatsappApi, whatsappTemplatesApi } from '@/lib/api';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
@@ -101,13 +101,45 @@ export function WhatsAppInbox() {
 
   useEffect(() => {
     if (!tenant || !activeWorkspace) return;
-    void whatsappApi.listTemplates(tenant.id, activeWorkspace).then((res) => {
-      const list = res.templates ?? [];
+    let cancelled = false;
+    (async () => {
+      const [localResult, metaResult] = await Promise.allSettled([
+        whatsappTemplatesApi.list(tenant.id, activeWorkspace),
+        whatsappApi.listTemplates(tenant.id, activeWorkspace),
+      ]);
+      if (cancelled) return;
+
+      const fromLocal =
+        localResult.status === 'fulfilled' && Array.isArray(localResult.value)
+          ? localResult.value
+              .filter((t) => String(t.status ?? '').toUpperCase() === 'APPROVED')
+              .map((t) => ({
+                name: String(t.name),
+                language: String(t.language ?? 'en'),
+                status: 'APPROVED',
+              }))
+          : [];
+      const meta = metaResult.status === 'fulfilled' ? metaResult.value : null;
+      const fromMeta = (meta?.templates ?? []).map((t) => ({
+        name: t.name,
+        language: t.language ?? 'en',
+        status: t.status ?? 'APPROVED',
+      }));
+      const byKey = new Map<string, { name: string; language: string; status: string }>();
+      for (const t of [...fromLocal, ...fromMeta]) {
+        byKey.set(`${t.name}::${t.language}`, t);
+      }
+      const list = [...byKey.values()];
       setTemplates(list);
-      if (res.defaultTemplate) setTemplateName(res.defaultTemplate);
+      if (meta?.defaultTemplate) setTemplateName(meta.defaultTemplate);
       else if (list[0]?.name) setTemplateName(list[0].name);
       if (list[0]?.language) setTemplateLanguage(list[0].language);
-    }).catch(() => setTemplates([]));
+    })().catch(() => {
+      if (!cancelled) setTemplates([]);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [tenant, activeWorkspace, workspaceVersion]);
 
   useEffect(() => {

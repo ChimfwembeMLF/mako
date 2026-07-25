@@ -6,6 +6,7 @@ import {
   MoreHorizontal, Check,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { GlobalSearch, GlobalSearchTrigger, useGlobalSearchShortcut } from "@/components/GlobalSearch";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -23,8 +24,10 @@ import { cn } from "@/lib/utils";
 import { NavLink } from "@/components/NavLink";
 import Logo from "./Logo";
 import {
-  NAV_GROUPS, MORE_ITEMS, filterNavGroups, filterNavItems, type NavGroup, type NavItem,
+  NAV_GROUPS, SOCIAL_NAV_GROUPS, MORE_ITEMS,
+  filterNavGroups, filterNavItems, type NavGroup, type NavItem,
 } from "@/lib/nav-config";
+import { resolveProductShell } from "@/lib/social-shell";
 
 function isActivePath(pathname: string, url: string, exact = false) {
   if (exact) return pathname === url;
@@ -64,7 +67,9 @@ function NavLinkItem({
 function AppsMenu() {
   const { pathname } = useLocation();
   const { canAny, isSuperAdmin, loading } = usePermissions();
-  const groups = filterNavGroups(NAV_GROUPS, canAny, isSuperAdmin, loading);
+  const shell = resolveProductShell(pathname);
+  const source = shell === "social" ? SOCIAL_NAV_GROUPS : NAV_GROUPS;
+  const groups = filterNavGroups(source, canAny, isSuperAdmin, loading);
   const active = groups.some((group) => isGroupActive(pathname, group));
 
   return (
@@ -236,13 +241,21 @@ function MobileNav() {
   const { pathname } = useLocation();
   const { canAny, isSuperAdmin, loading } = usePermissions();
   const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
+  const shell = resolveProductShell(pathname);
   const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
-  const groups = filterNavGroups(NAV_GROUPS, canAny, isSuperAdmin, loading);
+  const groups = filterNavGroups(
+    shell === "social" ? SOCIAL_NAV_GROUPS : NAV_GROUPS,
+    canAny,
+    isSuperAdmin,
+    loading,
+  );
+  const homeTo = shell === "social" ? "/social" : "/dashboard";
+  const homeLabel = shell === "social" ? "Social" : "Dashboard";
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden shrink-0 -ml-1">
+        <Button variant="ghost" size="icon" className="lg:hidden shrink-0 -ml-1 min-h-12 min-w-12">
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
@@ -254,15 +267,33 @@ function MobileNav() {
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-5">
           <Link
-            to="/dashboard"
+            to={homeTo}
             onClick={() => setOpen(false)}
             className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              pathname === "/dashboard" ? "bg-primary text-primary-foreground" : "hover:bg-surface-soft",
+              "flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm font-medium transition-colors",
+              pathname === homeTo ? "bg-primary text-primary-foreground" : "hover:bg-surface-soft",
             )}
           >
-            <Zap className="h-4 w-4" /> Dashboard
+            <Zap className="h-4 w-4" /> {homeLabel}
           </Link>
+
+          {shell === "social" ? (
+            <Link
+              to="/dashboard"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm font-medium transition-colors hover:bg-surface-soft text-muted-foreground"
+            >
+              <Layers className="h-4 w-4" /> Main app
+            </Link>
+          ) : (
+            <Link
+              to="/social"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm font-medium transition-colors hover:bg-surface-soft text-muted-foreground"
+            >
+              <Sparkles className="h-4 w-4" /> Social
+            </Link>
+          )}
 
           {groups.map((group) => (
             <div key={group.label}>
@@ -276,7 +307,7 @@ function MobileNav() {
                     to={item.url}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm transition-colors",
                       isActivePath(pathname, item.url)
                         ? "bg-primary/25 font-medium border-l-2 border-primary pl-[10px]"
                         : "hover:bg-surface-soft",
@@ -302,7 +333,7 @@ function MobileNav() {
                     to={item.url}
                     onClick={() => setOpen(false)}
                     className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors",
+                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm transition-colors",
                       isActivePath(pathname, item.url)
                         ? "bg-primary/25 font-medium border-l-2 border-primary pl-[10px]"
                         : "hover:bg-surface-soft",
@@ -330,7 +361,7 @@ function MobileNav() {
                     setOpen(false);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition-colors",
+                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 min-h-12 text-sm text-left transition-colors",
                     ws.id === activeWorkspace ? "bg-surface-soft font-medium" : "hover:bg-surface-soft",
                   )}
                 >
@@ -347,8 +378,12 @@ function MobileNav() {
 }
 
 export function AppNavbar() {
+  const { pathname } = useLocation();
   const { canAny, isSuperAdmin, loading } = usePermissions();
   const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
+  const shell = resolveProductShell(pathname);
+  const homeTo = shell === "social" ? "/social" : "/dashboard";
+  const homeLabel = shell === "social" ? "Social" : "Dashboard";
 
   const [searchOpen, setSearchOpen] = useState(false);
   const openSearch = useCallback(() => setSearchOpen(true), []);
@@ -362,13 +397,18 @@ export function AppNavbar() {
         <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-2 px-4 md:px-6">
           <MobileNav />
 
-          <Link to="/dashboard" className="flex shrink-0 items-center mr-2 lg:mr-4">
+          <Link to={homeTo} className="flex shrink-0 items-center mr-2 lg:mr-4">
             <Logo className="h-11" />
           </Link>
 
           <nav className="hidden lg:flex items-center gap-0.5 min-w-0">
-            <NavLinkItem to="/dashboard" end>Dashboard</NavLinkItem>
+            <NavLinkItem to={homeTo} end>{homeLabel}</NavLinkItem>
             <AppsMenu />
+            {shell === "social" ? (
+              <NavLinkItem to="/dashboard" className="text-muted-foreground">Main app</NavLinkItem>
+            ) : (
+              <NavLinkItem to="/social" className="text-muted-foreground">Social</NavLinkItem>
+            )}
           </nav>
 
           <div className="hidden md:flex flex-1 justify-center max-w-md mx-2 lg:mx-4">
@@ -379,7 +419,7 @@ export function AppNavbar() {
             <Button
               variant="ghost"
               size="icon"
-              className="shrink-0 text-muted-foreground md:hidden"
+              className="shrink-0 text-muted-foreground md:hidden min-h-12 min-w-12"
               onClick={openSearch}
               aria-label="Search"
             >
@@ -390,7 +430,7 @@ export function AppNavbar() {
               asChild
               variant="ghost"
               size="icon"
-              className="shrink-0 text-muted-foreground xl:hidden"
+              className="shrink-0 text-muted-foreground xl:hidden min-h-12 min-w-12"
               aria-label="Create content"
             >
               <Link to="/content">
@@ -400,7 +440,7 @@ export function AppNavbar() {
             <Button
               asChild
               size="sm"
-              className="hidden xl:inline-flex shrink-0 gap-1.5 rounded-sm px-3"
+              className="hidden xl:inline-flex shrink-0 gap-1.5 rounded-xl px-3 min-h-10"
             >
               <Link to="/content">
                 <Sparkles className="h-3.5 w-3.5" />
@@ -409,6 +449,7 @@ export function AppNavbar() {
             </Button>
 
             <NotificationBell />
+            <ColorModeToggle />
             <div className="hidden lg:contents">
               <MoreMenu items={visibleMore} />
             </div>

@@ -72,6 +72,53 @@ export const DASHBOARD_NAV: NavItem = {
   keywords: "home dashboard overview",
 };
 
+/** Social product shell home (contracts/ui-shells.md). */
+export const SOCIAL_DASHBOARD_NAV: NavItem = {
+  title: "Social",
+  url: "/social",
+  icon: Megaphone,
+  description: "Social publishing home",
+  keywords: "social dashboard publish inbox connections",
+};
+
+/**
+ * Apps menu while in Social shell — excludes Leads, Mail, Chatbot, Ads (research R2).
+ * WhatsApp kept as optional messaging adjacency under Inbox.
+ */
+export const SOCIAL_NAV_GROUPS: NavGroup[] = [
+  {
+    label: "Create",
+    items: [
+      { title: "Brand Brain", url: "/brand-brain", icon: Brain, description: "Voice, audience & guidelines", keywords: "brand voice identity audience profile" },
+      { title: "Content Engine", url: "/content", icon: Pen, description: "Write and generate posts", keywords: "create posts generate content write" },
+      { title: "Campaigns", url: "/campaigns", icon: Megaphone, description: "Plan multi-post campaigns", keywords: "campaign series posts plan narrative" },
+      { title: "Scheduler", url: "/scheduler", icon: CalendarClock, description: "Calendar, queue & publish", keywords: "schedule publish calendar queue" },
+      { title: "Connections", url: "/publisher", icon: Link2, description: "Link social & ad accounts", keywords: "connect social oauth linkedin meta publisher channels" },
+    ],
+  },
+  {
+    label: "Inbox",
+    items: [
+      { title: "Social Inbox", url: "/replies", icon: MessageSquareReply, description: "Comments, DMs & WhatsApp chats", keywords: "comments auto reply rules inbox replies social" },
+      { title: "WhatsApp", url: "/whatsapp", icon: MessageCircle, description: "Connect, menu bot, templates & messaging", keywords: "whatsapp connect webhook menu bot flows inbox templates hsm" },
+    ],
+  },
+  {
+    label: "Insights",
+    items: [
+      { title: "Analytics", url: "/analytics", icon: BarChart3, description: "Performance insights", keywords: "analytics metrics stats performance" },
+      { title: "Reports", url: "/reports", icon: ClipboardList, description: "On-demand insights", keywords: "reports export insights" },
+    ],
+  },
+  {
+    label: "Library",
+    items: [
+      { title: "Media", url: "/media", icon: Image, description: "Images & assets", keywords: "media images assets upload library" },
+      { title: "Post Templates", url: "/templates", icon: LayoutTemplate, description: "Reusable post copy", keywords: "templates reusable content post" },
+    ],
+  },
+];
+
 export const MORE_ITEMS: NavItem[] = [
   { title: "Workspaces", url: "/workspaces", icon: Building2, description: "Organize by brand", keywords: "workspaces brands organizations" },
   { title: "Approvals", url: "/approvals", icon: GitPullRequestArrow, permission: P.approvals.view, keywords: "approvals workflow review" },
@@ -122,8 +169,13 @@ export function allNavItems(
   loading: boolean,
 ): NavItem[] {
   const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
-  const groups = filterNavGroups(NAV_GROUPS, canAny, isSuperAdmin, loading).flatMap((g) => g.items);
-  return [DASHBOARD_NAV, ...groups, ...visibleMore];
+  const mainGroups = filterNavGroups(NAV_GROUPS, canAny, isSuperAdmin, loading).flatMap((g) => g.items);
+  const socialGroups = filterNavGroups(SOCIAL_NAV_GROUPS, canAny, isSuperAdmin, loading).flatMap((g) => g.items);
+  const byUrl = new Map<string, NavItem>();
+  for (const item of [DASHBOARD_NAV, SOCIAL_DASHBOARD_NAV, ...mainGroups, ...socialGroups, ...visibleMore]) {
+    byUrl.set(item.url, item);
+  }
+  return Array.from(byUrl.values());
 }
 
 export function matchNavItems(items: NavItem[], query: string): NavItem[] {

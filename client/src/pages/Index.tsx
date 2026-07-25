@@ -1,9 +1,10 @@
-import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target, Link2 } from "lucide-react";
+import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target, Link2, Megaphone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { PlatformDashboard } from "@/components/dashboard/PlatformDashboard";
+import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/hooks/usePermissions";
 import { P, type PermissionKey } from "@/lib/permissions";
+import { canAccessSocialShell } from "@/lib/social-shell";
 import { cn } from "@/lib/utils";
 
 type DashboardModule = {
@@ -66,11 +67,19 @@ const modules: DashboardModule[] = [
     status: "Ready",
   },
   {
+    title: "Mail",
+    description: "Gmail inbox, drafts, and auto-replies",
+    icon: Mail,
+    href: "/mail",
+    gradient: "bg-primary",
+    status: "Ready",
+  },
+  {
     title: "Chatbot",
     description: "Brand Brain–powered assistant with document knowledge",
     icon: Bot,
     href: "/chatbot",
-    gradient: "bg-primary",
+    gradient: "bg-surface-strong text-foreground",
     status: "Ready",
     permission: P.chatbot.view,
   },
@@ -103,10 +112,11 @@ const modules: DashboardModule[] = [
 ];
 
 const Dashboard = () => {
-  const { can, loading } = usePermissions();
+  const { can, canAny, loading } = usePermissions();
   const visibleModules = loading
     ? modules
     : modules.filter((mod) => !mod.permission || can(mod.permission));
+  const showSocialEntry = loading || canAccessSocialShell(canAny);
 
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
@@ -130,7 +140,33 @@ const Dashboard = () => {
         <div className="absolute -right-5 -bottom-10 h-32 w-32 rounded-full bg-primary-foreground/5 blur-xl" />
       </div>
 
-      <PlatformDashboard />
+      {showSocialEntry && (
+        <Link to="/social" className="block">
+          <Card className="border-0 bg-foreground text-background overflow-hidden group">
+            <CardContent className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                  <Megaphone className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">
+                    Social media
+                  </p>
+                  <h2 className="font-display text-lg sm:text-xl font-semibold tracking-tight">
+                    Open Social Dashboard
+                  </h2>
+                  <p className="text-sm text-background/70 mt-1 max-w-lg">
+                    Focused home for content, scheduling, connections, and inbox — built for social operators.
+                  </p>
+                </div>
+              </div>
+              <Button className="shrink-0 rounded-xl min-h-12 self-start sm:self-center group-hover:translate-x-0.5 transition-transform">
+                Go to Social <ArrowRight className="ml-1 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
 
       {/* Module cards */}
       <div>

@@ -70,39 +70,55 @@
   }
 
   /*
-   * Dark mode: light-first product. Minimal contrast mapping so .dark
-   * does not keep Airbnb Rausch; full dark palette deferred.
+   * Dark mode — Wise-inspired inverted surfaces; primary lime stays brand CTA.
    */
   .dark {
-    --background: 80 11% 5%;
-    --foreground: 96 11% 91%;
+    --background: 80 11% 5%; /* ink */
+    --foreground: 96 11% 91%; /* canvas-soft */
 
-    --card: 80 8% 10%;
+    --card: 80 8% 9%;
     --card-foreground: 96 11% 91%;
 
-    --popover: 80 8% 10%;
+    --popover: 80 8% 9%;
     --popover-foreground: 96 11% 91%;
 
     --primary: 96 72% 67%;
     --primary-foreground: 80 11% 5%;
     --primary-active: 97 100% 84%;
-    --primary-disabled: 96 20% 25%;
+    --primary-disabled: 96 20% 22%;
+    --primary-pale: 96 30% 18%;
+    --primary-neutral: 96 25% 22%;
 
     --secondary: 80 8% 14%;
     --secondary-foreground: 96 11% 91%;
 
     --muted: 80 8% 14%;
-    --muted-foreground: 60 0% 60%;
+    --muted-foreground: 60 0% 62%;
 
     --accent: 80 8% 16%;
     --accent-foreground: 96 11% 91%;
 
-    --destructive: 358 63% 51%;
+    --destructive: 358 63% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 80 8% 20%;
+    --positive: 134 55% 48%;
+    --positive-deep: 149 70% 55%;
+    --warning: 48 100% 55%;
+    --warning-deep: 34 100% 50%;
+
+    --border: 80 8% 18%;
     --input: 96 11% 91%;
     --ring: 96 72% 67%;
+
+    --body: 96 8% 72%;
+    --muted-soft: 60 0% 62%;
+    --hairline-soft: 80 8% 16%;
+    --border-strong: 96 11% 91%;
+    --surface-soft: 80 8% 12%;
+    --surface-strong: 96 30% 18%;
+    --legal-link: 197 100% 65%;
+    --luxe: 96 11% 91%;
+    --plus: 26 100% 78%;
 
     --sidebar-background: 80 11% 5%;
     --sidebar-foreground: 96 11% 91%;
@@ -110,7 +126,7 @@
     --sidebar-primary-foreground: 80 11% 5%;
     --sidebar-accent: 80 8% 14%;
     --sidebar-accent-foreground: 96 11% 91%;
-    --sidebar-border: 80 8% 20%;
+    --sidebar-border: 80 8% 18%;
     --sidebar-ring: 96 72% 67%;
   }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Settings as SettingsIcon, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter, Monitor, Moon, Sun } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
+import { useTheme, type ColorMode } from "@/hooks/useTheme";
 import { socialAccountsApi, notificationsApi, SocialAccount } from "@/lib/api";
+import { cn } from "@/lib/utils";
 
 interface Profile {
   display_name: string | null;
@@ -37,6 +39,7 @@ const platformLabels: Record<string, string> = {
 const SettingsPage = () => {
   const { user, signOut } = useAuth();
   const { tenant } = useTenant();
+  const { colorMode, setColorMode } = useTheme();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile>({ display_name: "", avatar_url: "", notification_preferences: null });
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([]);
@@ -186,6 +189,37 @@ const SettingsPage = () => {
                 {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                 {saving ? "Saving..." : "Save Profile"}
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-display">Appearance</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Choose light, dark, or follow your device setting.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { id: "light" as ColorMode, label: "Light", icon: Sun },
+                    { id: "dark" as ColorMode, label: "Dark", icon: Moon },
+                    { id: "system" as ColorMode, label: "System", icon: Monitor },
+                  ] as const
+                ).map(({ id, label, icon: Icon }) => (
+                  <Button
+                    key={id}
+                    type="button"
+                    variant={colorMode === id ? "default" : "outline"}
+                    className={cn("min-h-11 gap-2 rounded-xl")}
+                    onClick={() => setColorMode(id)}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
             </CardContent>
           </Card>
 
