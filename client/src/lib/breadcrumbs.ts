@@ -34,6 +34,7 @@ const ROUTE_PATTERNS: RoutePattern[] = [
   { path: '/whatsapp/templates', crumbs: [DASH, WHATSAPP, { label: 'Templates' }] },
   { path: '/whatsapp', crumbs: [DASH, WHATSAPP] },
   { path: '/dashboard', crumbs: [DASH] },
+  { path: '/social', crumbs: [{ label: 'Social', href: '/social' }] },
   { path: '/brand-brain', crumbs: [DASH, { label: 'Brand Brain' }] },
   { path: '/content', crumbs: [DASH, CONTENT] },
   { path: '/campaigns', crumbs: [DASH, { label: 'Campaigns' }] },

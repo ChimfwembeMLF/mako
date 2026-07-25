@@ -3,6 +3,8 @@ import { ConfigService } from '@nestjs/config';
 export type WhatsappCredentials = {
   phoneNumberId: string;
   accessToken: string;
+  /** WhatsApp Business Account ID — preferred for template Graph APIs */
+  wabaId?: string;
 };
 
 export type WhatsappConnectionMode = 'platform' | 'oauth';
@@ -36,7 +38,13 @@ export function getWhatsappPlatformCredentials(
     ?.trim();
   if (!phoneNumberId || !accessToken) return null;
 
-  return { phoneNumberId, accessToken };
+  const wabaId = config.get<string>('WHATSAPP_PLATFORM_WABA_ID')?.trim();
+
+  return {
+    phoneNumberId,
+    accessToken,
+    ...(wabaId ? { wabaId } : {}),
+  };
 }
 
 export function isPlatformManagedWhatsappAccount(

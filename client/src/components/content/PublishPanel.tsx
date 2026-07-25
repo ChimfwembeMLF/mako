@@ -12,6 +12,7 @@ import {
   mediaApi,
   contentAiApi,
   whatsappApi,
+  whatsappTemplatesApi,
   SocialAccount,
   resolveQueued,
 } from '@/lib/api';
@@ -105,26 +106,68 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       setWaTemplates([]);
       return;
     }
-    whatsappApi
-      .listTemplates(tenant.id, workspaceId)
-      .then((res) => {
-        setWaTemplates(res.templates ?? []);
-        if (res.defaultTemplate) setWaDefaultTemplate(res.defaultTemplate);
-        setPlatformPayloads((prev) => {
-          if (prev.whatsapp?.whatsappTemplate) return prev;
-          return {
-            ...prev,
-            whatsapp: {
-              ...prev.whatsapp,
-              content: prev.whatsapp?.content ?? '',
-              whatsappTemplate: res.defaultTemplate ?? 'hello_world',
-              whatsappTemplateLanguage: res.templates?.[0]?.language ?? 'en',
-              whatsappUseTemplate: true,
-            },
-          };
-        });
-      })
-      .catch(() => setWaTemplates([]));
+    let cancelled = false;
+    (async () => {
+      // Prefer local APPROVED registry (imported templates), then Meta HSM list.
+      const [localResult, metaResult] = await Promise.allSettled([
+        whatsappTemplatesApi.list(tenant.id, workspaceId),
+        whatsappApi.listTemplates(tenant.id, workspaceId),
+      ]);
+
+      if (cancelled) return;
+
+      const fromLocal =
+        localResult.status === 'fulfilled' && Array.isArray(localResult.value)
+          ? localResult.value
+              .filter((t) => String(t.status ?? '').toUpperCase() === 'APPROVED')
+              .map((t) => ({
+                name: String(t.name),
+                language: String(t.language ?? 'en'),
+              }))
+          : [];
+
+      const meta =
+        metaResult.status === 'fulfilled' ? metaResult.value : null;
+      const fromMeta = (meta?.templates ?? []).map((t) => ({
+        name: t.name,
+        language: t.language ?? 'en',
+      }));
+
+      const byKey = new Map<string, { name: string; language: string }>();
+      for (const t of [...fromLocal, ...fromMeta]) {
+        byKey.set(`${t.name}::${t.language}`, t);
+      }
+      const merged = [...byKey.values()].sort((a, b) => a.name.localeCompare(b.name));
+      setWaTemplates(merged);
+
+      const defaultName =
+        meta?.defaultTemplate ||
+        merged.find((t) => t.name === 'hello_world')?.name ||
+        merged[0]?.name ||
+        'hello_world';
+      setWaDefaultTemplate(defaultName);
+
+      setPlatformPayloads((prev) => {
+        if (prev.whatsapp?.whatsappTemplate) return prev;
+        const pick = merged.find((t) => t.name === defaultName) ?? merged[0];
+        return {
+          ...prev,
+          whatsapp: {
+            ...prev.whatsapp,
+            content: prev.whatsapp?.content ?? '',
+            whatsappTemplate: pick?.name ?? defaultName,
+            whatsappTemplateLanguage: pick?.language ?? 'en',
+            whatsappUseTemplate: true,
+          },
+        };
+      });
+    })().catch(() => {
+      if (!cancelled) setWaTemplates([]);
+    });
+
+    return () => {
+      cancelled = true;
+    };
   }, [tenant?.id, workspaceId, selectedPlatforms.includes('whatsapp')]);
 
   useEffect(() => {

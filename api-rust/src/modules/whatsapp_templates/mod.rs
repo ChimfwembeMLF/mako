@@ -57,7 +57,11 @@ async fn list(
         .order_by_desc(TemplateColumn::UpdatedAt);
 
     if let Some(workspace_id) = query.workspace_id {
-        db_query = db_query.filter(TemplateColumn::WorkspaceId.eq(workspace_id));
+        db_query = db_query.filter(
+            TemplateColumn::WorkspaceId
+                .eq(workspace_id)
+                .or(TemplateColumn::WorkspaceId.is_null()),
+        );
     }
 
     let rows = db_query.all(&state.db).await?;
@@ -287,7 +291,11 @@ async fn sync_all(
         .filter(TemplateColumn::TenantId.eq(query.tenant_id))
         .order_by_desc(TemplateColumn::UpdatedAt);
     if let Some(workspace_id) = query.workspace_id {
-        db_query = db_query.filter(TemplateColumn::WorkspaceId.eq(workspace_id));
+        db_query = db_query.filter(
+            TemplateColumn::WorkspaceId
+                .eq(workspace_id)
+                .or(TemplateColumn::WorkspaceId.is_null()),
+        );
     }
     let rows = db_query.all(&state.db).await?;
     let mut synced = 0usize;
@@ -386,6 +394,9 @@ async fn import_from_meta(
         active.meta_template_id = Set(Some(body.meta_id.clone()));
         active.synced_at = Set(Some(now));
         active.updated_at = Set(now);
+        if let Some(workspace_id) = query.workspace_id {
+            active.workspace_id = Set(Some(workspace_id));
+        }
         let updated = active.update(&state.db).await?;
         return Ok(Json(template_json(&updated)));
     }
@@ -442,6 +453,7 @@ fn template_json(t: &TemplateModel) -> Value {
 struct WhatsappCredentials {
     phone_number_id: String,
     access_token: String,
+    waba_id: Option<String>,
 }
 
 async fn find_whatsapp_account(
@@ -487,13 +499,31 @@ fn whatsapp_credentials_from_account(account: &SocialAccountModel) -> Option<Wha
         .as_ref()
         .map(|v| v.trim().to_string())
         .filter(|v| !v.is_empty())?;
+    let waba_id = account
+        .metadata
+        .as_ref()
+        .and_then(|m| m.get("waba_id"))
+        .and_then(|v| v.as_str())
+        .map(str::trim)
+        .filter(|v| !v.is_empty())
+        .map(str::to_string);
     Some(WhatsappCredentials {
         phone_number_id,
         access_token,
+        waba_id,
     })
 }
 
 async fn resolve_waba_id(creds: &WhatsappCredentials) -> ApiResult<String> {
+    if let Some(waba_id) = creds
+        .waba_id
+        .as_ref()
+        .map(|v| v.trim().to_string())
+        .filter(|v| !v.is_empty())
+    {
+        return Ok(waba_id);
+    }
+
     let url = format!(
         "https://graph.facebook.com/v19.0/{}",
         urlencoding::encode(&creds.phone_number_id)
@@ -520,7 +550,10 @@ async fn resolve_waba_id(creds: &WhatsappCredentials) -> ApiResult<String> {
         .and_then(|v| v.as_str())
         .map(str::to_string)
         .ok_or_else(|| {
-            ApiError::BadRequest("Could not resolve WhatsApp Business Account ID".into())
+            ApiError::BadRequest(
+                "Could not resolve WhatsApp Business Account ID. Set WHATSAPP_PLATFORM_WABA_ID or reconnect WhatsApp so waba_id is stored."
+                    .into(),
+            )
         })
 }
 

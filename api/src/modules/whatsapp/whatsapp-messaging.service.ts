@@ -198,20 +198,27 @@ export class WhatsappMessagingService {
     Array<{ name: string; language: string; status: string; category?: string }>
   > {
     try {
-      const { data: phoneData } = await axios.get<{
-        whatsapp_business_account?: { id?: string };
-      }>(
-        `https://graph.facebook.com/${this.graphVersion}/${creds.phoneNumberId}`,
-        {
-          params: {
-            fields: 'whatsapp_business_account',
-            access_token: creds.accessToken,
+      let wabaId = creds.wabaId?.trim() || '';
+      if (!wabaId) {
+        const { data: phoneData } = await axios.get<{
+          whatsapp_business_account?: { id?: string };
+        }>(
+          `https://graph.facebook.com/${this.graphVersion}/${creds.phoneNumberId}`,
+          {
+            params: {
+              fields: 'whatsapp_business_account',
+              access_token: creds.accessToken,
+            },
           },
-        },
-      );
-
-      const wabaId = phoneData.whatsapp_business_account?.id;
-      if (!wabaId) return [];
+        );
+        wabaId = phoneData.whatsapp_business_account?.id?.trim() || '';
+      }
+      if (!wabaId) {
+        this.logger.warn(
+          'listMessageTemplates: no WABA id (set WHATSAPP_PLATFORM_WABA_ID or reconnect WhatsApp)',
+        );
+        return [];
+      }
 
       const { data } = await axios.get<{
         data?: Array<{
@@ -232,18 +239,19 @@ export class WhatsappMessagingService {
       );
 
       return (data.data ?? [])
-        .filter((t) => t.name && t.status === 'APPROVED')
+        .filter(
+          (t) =>
+            t.name && String(t.status ?? '').toUpperCase() === 'APPROVED',
+        )
         .map((t) => ({
           name: t.name!,
           language: t.language ?? 'en',
-          status: t.status ?? 'APPROVED',
+          status: 'APPROVED',
           category: t.category,
         }));
     } catch (err) {
       this.logger.warn(
-        `Failed to list WhatsApp templates: ${
-          err instanceof Error ? err.message : err
-        }`,
+        `Failed to list WhatsApp templates: ${this.formatGraphError(err)}`,
       );
       return [];
     }
@@ -253,8 +261,18 @@ export class WhatsappMessagingService {
     accessToken?: string;
     metadata?: Record<string, unknown>;
   }): WhatsappCredentials | null {
+    const metaWaba =
+      typeof account.metadata?.waba_id === 'string'
+        ? account.metadata.waba_id.trim()
+        : '';
+
     if (isPlatformManagedWhatsappAccount(account.metadata)) {
-      return getWhatsappPlatformCredentials(this.config);
+      const platform = getWhatsappPlatformCredentials(this.config);
+      if (!platform) return null;
+      return {
+        ...platform,
+        wabaId: platform.wabaId || metaWaba || undefined,
+      };
     }
 
     const phoneNumberId =
@@ -263,7 +281,11 @@ export class WhatsappMessagingService {
         : '';
     const accessToken = account.accessToken?.trim();
     if (!phoneNumberId || !accessToken) return null;
-    return { phoneNumberId, accessToken };
+    return {
+      phoneNumberId,
+      accessToken,
+      ...(metaWaba ? { wabaId: metaWaba } : {}),
+    };
   }
 
   getPlatformCredentials(): WhatsappCredentials | null {

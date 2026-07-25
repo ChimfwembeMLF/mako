@@ -17,6 +17,7 @@ import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/auth/Auth";
 
 const Index = lazy(() => import("./pages/Index"));
+const SocialDashboardPage = lazy(() => import("./pages/social/SocialDashboardPage"));
 const BrandBrain = lazy(() => import("./pages/BrandBrain"));
 const ContentEngine = lazy(() => import("./pages/ContentEngine"));
 const ContentDetailPage = lazy(() => import("./pages/ContentDetailPage"));
@@ -153,6 +154,8 @@ const App = () => (
                 <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
                   <Route path="/dashboard" element={<LazyPage><Index /></LazyPage>} />
                   <Route path="/index" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/social" element={<LazyPage><SocialDashboardPage /></LazyPage>} />
+                  <Route path="/social/dashboard" element={<Navigate to="/social" replace />} />
                   <Route path="/brand-brain" element={<LazyPage><BrandBrain /></LazyPage>} />
                   <Route path="/content" element={<LazyPage><ContentEngine /></LazyPage>} />
                   <Route path="/campaigns" element={<LazyPage><CampaignsPage /></LazyPage>} />
