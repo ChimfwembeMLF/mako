@@ -25,6 +25,8 @@ services:
       - COMMENT_SYNC_CRON_ENABLED=${COMMENT_SYNC_CRON_ENABLED:-true}
       - DAILY_WORKFLOW_CRON_ENABLED=${DAILY_WORKFLOW_CRON_ENABLED:-true}
       - NOTIFICATION_CRON_ENABLED=${NOTIFICATION_CRON_ENABLED:-true}
+    networks:
+      - dokploy-network
     restart: unless-stopped
     # Disabled: Dokploy was failing the whole stack while Nest was still booting / crashing.
     # Re-enable after `docker logs …-api-1` shows a clean /api/v1/health.
@@ -37,8 +39,15 @@ services:
       dockerfile: client/Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
+        - VITE_ADSENSE_PUBLISHER_ID=${VITE_ADSENSE_PUBLISHER_ID:-ca-pub-6221660864872022}
+        - VITE_ADSENSE_SLOT_GATE=${VITE_ADSENSE_SLOT_GATE:?Set the real AdSense gate slot ID}
+        - VITE_ADSENSE_SLOT_DISCOVER=${VITE_ADSENSE_SLOT_DISCOVER:?Set the real AdSense Discover slot ID}
+        - VITE_ADSENSE_SLOT_TRACK=${VITE_ADSENSE_SLOT_TRACK:?Set the real AdSense Track slot ID}
+        - VITE_ADSENSE_SLOT_ARTIST=${VITE_ADSENSE_SLOT_ARTIST:?Set the real AdSense Artist slot ID}
     ports:
       - "5173:5173"
+    networks:
+      - dokploy-network
     restart: unless-stopped
 
   # Optional: run TypeORM migrations (Nest). Usage:
@@ -57,6 +66,6 @@ services:
     restart: "no"
 
 networks:
-  default:
+  dokploy-network:
     name: dokploy-network
     external: true
