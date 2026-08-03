@@ -20,6 +20,7 @@ import {
 } from '@/components/landing/ProductMocks';
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
+import { GuestAdUnit } from '@/components/GuestAdUnit';
 
 function useInView(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
@@ -508,9 +509,13 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background text-foreground">
       <Nav />
       <Hero />
+      <GuestAdUnit slotId={import.meta.env.VITE_ADSENSE_SLOT_DISCOVER} className="px-4 py-6 sm:px-6" />
       <ProductShowcase />
+      <GuestAdUnit slotId={import.meta.env.VITE_ADSENSE_SLOT_TRACK} className="px-4 py-6 sm:px-6" />
       <FeaturesGrid />
+      <GuestAdUnit slotId={import.meta.env.VITE_ADSENSE_SLOT_ARTIST} className="px-4 py-6 sm:px-6" />
       <Pricing />
+      <GuestAdUnit slotId={import.meta.env.VITE_ADSENSE_SLOT_GATE} className="px-4 py-6 sm:px-6" />
       <FinalCTA />
       <Footer />
     </div>
