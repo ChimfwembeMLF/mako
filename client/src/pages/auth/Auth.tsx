@@ -56,19 +56,19 @@ const SOCIAL_PROVIDERS = [
     theme:
       "bg-slate-50 text-slate-900 border border-slate-300 hover:bg-slate-100 hover:text-slate-900 shadow-sm",
   },
-  {
+  /* {
     id: "facebook" as const,
     label: "Facebook",
     Icon: Facebook,
     theme: "bg-[#1877F2] text-white border-0 hover:bg-[#166FE5] shadow-sm",
-  },
+  }, */
   {
     id: "linkedin" as const,
     label: "LinkedIn",
     Icon: Linkedin,
     theme: "bg-[#0A66C2] text-white border-0 hover:bg-[#095196] shadow-sm",
   },
-  {
+  /* {
     id: "instagram" as const,
     label: "Instagram",
     Icon: Instagram,
@@ -80,7 +80,7 @@ const SOCIAL_PROVIDERS = [
     label: "X",
     Icon: Twitter,
     theme: "bg-black text-white border-0 hover:bg-neutral-800 shadow-sm",
-  },
+  }, */
 ];
 
 const Auth = () => {

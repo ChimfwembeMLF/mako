@@ -148,9 +148,17 @@ export class GmailInboxSyncService {
         lastSyncedAt: new Date(),
       });
     } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
       if (this.gmailClient.isInsufficientScopeError(error)) {
         this.logger.warn(
           `Gmail inbox sync needs reconnect for user ${connection.userId} (missing read scope)`,
+        );
+      } else if (
+        message.includes('Gmail access token expired') ||
+        message.includes('Gmail is not connected')
+      ) {
+        this.logger.warn(
+          `Gmail inbox sync failed for user ${connection.userId}: ${message}`,
         );
       } else {
         this.logger.error(
