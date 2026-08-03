@@ -170,8 +170,6 @@ services:
       - "4000:4000"
     # Dokploy must provide all runtime values above; no local env_file fallback.
     environment: *mako-runtime-env
-    networks:
-      - dokploy-network
     restart: unless-stopped
     # Disabled: Dokploy was failing the whole stack while Nest was still booting / crashing.
     # Re-enable after `docker logs …-api-1` shows a clean /api/v1/health.
@@ -191,8 +189,6 @@ services:
         - VITE_ADSENSE_SLOT_ARTIST=${VITE_ADSENSE_SLOT_ARTIST:?Set the real AdSense Artist slot ID}
     ports:
       - "5173:5173"
-    networks:
-      - dokploy-network
     restart: unless-stopped
 
   # Optional: run TypeORM migrations (Nest). Usage:
@@ -204,11 +200,9 @@ services:
       dockerfile: api/Dockerfile
     environment: *mako-runtime-env
     entrypoint: ["sh", "-c", "yarn migrations:run:prod"]
-    networks:
-      - dokploy-network
     restart: "no"
 
 networks:
-  dokploy-network:
+  default:
     name: dokploy-network
     external: true
