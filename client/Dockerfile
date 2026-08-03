@@ -25,7 +25,7 @@ COPY package.json yarn.lock .yarnrc.yml ./
 COPY api/package.json ./api/package.json
 COPY client/package.json ./client/package.json
 
-RUN yarn install --immutable
+RUN yarn workspaces focus @mako/client
 
 COPY client ./client
 
