@@ -2,7 +2,7 @@
 #
 
 services:
-  api:
+  mako-api:
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -19,7 +19,7 @@ services:
     healthcheck:
       disable: true
 
-  client:
+  mako-client:
     build:
       context: .
       dockerfile: client/Dockerfile
@@ -38,7 +38,7 @@ services:
 
   # Optional: run TypeORM migrations (Nest). Usage:
   #   docker compose --profile migrate run --rm migrate
-  migrate:
+  mako-migrate:
     profiles: ["migrate"]
     build:
       context: .
