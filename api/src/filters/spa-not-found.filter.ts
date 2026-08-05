@@ -1,5 +1,3 @@
-import { existsSync } from 'fs';
-import { join } from 'path';
 import {
   ArgumentsHost,
   Catch,
@@ -7,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { resolveFrontendUrl, isServeClientMode, getClientDistPath } from '../common/env-urls.util';
+import { resolveFrontendUrl } from '../common/env-urls.util';
 
 /** Client routes that must never return JSON 404 from the API in split dev mode. */
 const SPA_BROWSER_PATH =
@@ -15,8 +13,7 @@ const SPA_BROWSER_PATH =
 
 /**
  * Returns JSON 404 for unmatched API routes.
- * Browser navigations to SPA paths redirect to FRONTEND_URL (Vite in local dev),
- * or serve the local index.html if Nest serves the client.
+ * Browser navigations to SPA paths redirect to FRONTEND_URL (Vite in local dev).
  */
 @Catch(NotFoundException)
 export class SpaNotFoundFilter implements ExceptionFilter {
@@ -31,42 +28,26 @@ export class SpaNotFoundFilter implements ExceptionFilter {
     const res = ctx.getResponse<Response>();
     const path = req.path ?? req.url?.split('?')[0] ?? '';
 
-    if (req.method === 'GET') {
-      if (isServeClientMode()) {
-        const isApiOrAsset =
-          path.startsWith('/api') ||
-          path.startsWith('/uploads') ||
-          path.startsWith('/documentation') ||
-          path.startsWith('/admin') ||
-          path.includes('.');
+    if (
+      req.method === 'GET' &&
+      SPA_BROWSER_PATH.test(path) &&
+      typeof res.redirect === 'function'
+    ) {
+      const frontend = resolveFrontendUrl().replace(/\/$/, '');
+      const requestHost = req.get?.('host');
+      let frontendHost: string | undefined;
+      try {
+        frontendHost = new URL(frontend).host;
+      } catch {
+        frontendHost = undefined;
+      }
 
-        if (!isApiOrAsset) {
-          const clientDist = getClientDistPath();
-          if (clientDist && existsSync(join(clientDist, 'index.html'))) {
-            res.sendFile(join(clientDist, 'index.html'));
-            return;
-          }
-        }
-      } else if (
-        SPA_BROWSER_PATH.test(path) &&
-        typeof res.redirect === 'function'
-      ) {
-        const frontend = resolveFrontendUrl().replace(/\/$/, '');
-        const requestHost = req.get?.('host');
-        let frontendHost: string | undefined;
-        try {
-          frontendHost = new URL(frontend).host;
-        } catch {
-          frontendHost = undefined;
-        }
-
-        if (frontendHost && requestHost && frontendHost !== requestHost) {
-          const query = req.url?.includes('?')
-            ? req.url.slice(req.url.indexOf('?'))
-            : '';
-          res.redirect(302, `${frontend}${path}${query}`);
-          return;
-        }
+      if (frontendHost && requestHost && frontendHost !== requestHost) {
+        const query = req.url?.includes('?')
+          ? req.url.slice(req.url.indexOf('?'))
+          : '';
+        res.redirect(302, `${frontend}${path}${query}`);
+        return;
       }
     }
 

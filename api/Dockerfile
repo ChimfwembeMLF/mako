@@ -1,31 +1,25 @@
-# Build from repo root: docker compose build api (context: .)
-FROM node:20-alpine
-
+FROM node:20-alpine AS base
 WORKDIR /app
+RUN corepack enable
 
-RUN apk add --no-cache bash curl && corepack enable
-
-ENV NODE_ENV=development
-
-# Yarn 4 monorepo — lockfile lives at repository root
+FROM base AS deps
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY api/package.json ./api/package.json
 COPY client/package.json ./client/package.json
+RUN yarn install --immutable || yarn install
 
+FROM base AS build
+COPY --from=deps /app/node_modules ./node_modules
 RUN yarn workspaces focus custom-template-api
-
 COPY api ./api
-
 WORKDIR /app/api
-
 RUN yarn build
 
-RUN chmod +x docker-entrypoint.sh
-
+FROM base AS runner
+ENV NODE_ENV=production
+WORKDIR /app/api
+COPY --from=build /app/api/dist ./dist
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/api/package.json ./
 EXPOSE 4000
-
-ENV PORT=4000
-ENV SERVE_CLIENT=false
-ENV RUN_MIGRATIONS=false
-
-ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["node", "dist/main.js"]

@@ -1,5 +1,3 @@
-import { existsSync } from 'fs';
-import { join, resolve } from 'path';
 import type { ConfigService } from '@nestjs/config';
 
 /** Vite dev server port (client/vite.config.ts). */
@@ -7,24 +5,9 @@ export function defaultViteDevPort(): string {
   return process.env.CLIENT_DEV_PORT?.trim() || '5173';
 }
 
-/** Get path to the client's build directory (dist). */
-export function getClientDistPath(): string | null {
-  const paths = [
-    resolve(process.cwd(), '../client/dist'),
-    resolve(process.cwd(), 'client/dist'),
-    resolve(process.cwd(), 'dist/client'),
-  ];
-  for (const p of paths) {
-    if (existsSync(p)) {
-      return p;
-    }
-  }
-  return null;
-}
-
-/** Vite / client container host the SPA or Nest serves it. */
+/** Vite / client container host the SPA. Nest is API-only (never serves client/dist). */
 export function isServeClientMode(): boolean {
-  return process.env.SERVE_CLIENT === 'true';
+  return false;
 }
 
 /** Default browser origin in development (Vite on CLIENT_DEV_PORT, default 5173). */

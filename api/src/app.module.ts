@@ -3,13 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
-import { ServeStaticModule } from '@nestjs/serve-static';
 import { AppThrottlerGuard } from './common/guards/app-throttler.guard';
 import { throttleOptionsFromConfig } from './common/throttle.config';
 import { AllExceptionsFilter } from './filters/http-exception.filter';
 import { SpaNotFoundFilter } from './filters/spa-not-found.filter';
 import { typeOrmConfigFactory } from './database/ormconfig';
-import { getClientDistPath, isServeClientMode } from './common/env-urls.util';
 
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
@@ -78,15 +76,6 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
       inject: [ConfigService],
       useFactory: typeOrmConfigFactory,
     }),
-
-    ...(isServeClientMode() && getClientDistPath()
-      ? [
-          ServeStaticModule.forRoot({
-            rootPath: getClientDistPath()!,
-            exclude: ['/api/(.*)', '/uploads/(.*)', '/documentation(.*)', '/admin/(.*)'],
-          }),
-        ]
-      : []),
 
     AuthModule,
     UserModule,

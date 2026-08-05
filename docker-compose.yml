@@ -1,165 +1,5 @@
-# Dokploy: paste env from `./scripts/export-dokploy-env.sh` into Compose → Environment.
-# See docs/DOKPLOY_ENV.md
+# Dokploy: paste env into Compose → Environment.
 #
-# Primary API is NestJS (`api/`). SPA is the separate `client` service (Nest does not host client/dist).
-# No service_healthy gate — a failing Nest healthcheck must not block client deploy.
-# Migrations: off by default. Run once after API is up:
-#   docker compose --profile migrate run --rm migrate
-
-# Dokploy injects these variables into the Compose process. Nothing is loaded
-# from a repository-local .env file in production.
-x-mako-runtime-env: &mako-runtime-env
-  - PORT
-  - NODE_ENV
-  - RUN_MIGRATIONS
-  - APP_VERSION
-  - APP_NAME
-  - SERVE_CLIENT
-  - CORS_DISABLED
-  - FRONTEND_URL
-  - CLIENT_URL
-  - APP_URL
-  - API_PUBLIC_URL
-  - API_BASE_URL
-  - API_URL
-  - DB_HOST
-  - DB_PORT
-  - DB_USERNAME
-  - DB_PASSWORD
-  - DB_DATABASE
-  - DB_NAME
-  - DB_SYNCHRONIZE
-  - DB_SSL
-  - DB_ENV
-  - SESSION_STORE
-  - REDIS_HOST
-  - REDIS_PORT
-  - REDIS_PASSWORD
-  - REDIS_DB
-  - QUEUE_REDIS_HOST
-  - QUEUE_REDIS_PORT
-  - QUEUE_PREFIX
-  - QUEUES_ENABLED
-  - PRIVACY_POLICY_URL
-  - TERMS_OF_SERVICE_URL
-  - SUPPORT_EMAIL
-  - JWT_SECRET
-  - JWT_EXPIRY
-  - JWT_REFRESH_EXPIRY
-  - SESSION_SECRET
-  - SESSION_EXPIRY
-  - SESSION_SECURE
-  - SESSION_SAME_SITE
-  - GOOGLE_CLIENT_ID
-  - GOOGLE_CLIENT_SECRET
-  - GOOGLE_CALLBACK_URL
-  - GOOGLE_SOCIAL_CALLBACK_URL
-  - FACEBOOK_APP_ID
-  - FACEBOOK_APP_SECRET
-  - FACEBOOK_CALLBACK_URL
-  - FACEBOOK_SOCIAL_CALLBACK_URL
-  - FACEBOOK_GRAPH_VERSION
-  - FACEBOOK_GRAPH_URL
-  - LINKEDIN_CLIENT_ID
-  - LINKEDIN_CLIENT_SECRET
-  - LINKEDIN_CALLBACK_URL
-  - LINKEDIN_SOCIAL_CALLBACK_URL
-  - INSTAGRAM_CLIENT_ID
-  - INSTAGRAM_CLIENT_SECRET
-  - INSTAGRAM_CALLBACK_URL
-  - INSTAGRAM_SOCIAL_CALLBACK_URL
-  - INSTAGRAM_GRAPH_URL
-  - TWITTER_CLIENT_ID
-  - TWITTER_CLIENT_SECRET
-  - TWITTER_BEARER_TOKEN
-  - TWITTER_CONSUMER_KEY
-  - TWITTER_CONSUMER_SECRET
-  - TWITTER_OAUTH1_ACCESS_TOKEN
-  - TWITTER_OAUTH1_ACCESS_TOKEN_SECRET
-  - TWITTER_CALLBACK_URL
-  - TWITTER_SOCIAL_CALLBACK_URL
-  - TWITTER_OAUTH_DM_SCOPES
-  - TWITTER_WEBHOOK_ENV
-  - TIKTOK_CLIENT_KEY
-  - TIKTOK_CLIENT_SECRET
-  - TIKTOK_SOCIAL_CALLBACK_URL
-  - YOUTUBE_SOCIAL_CALLBACK_URL
-  - WHATSAPP_SOCIAL_CALLBACK_URL
-  - WHATSAPP_PLATFORM_ENABLED
-  - WHATSAPP_PLATFORM_PHONE_NUMBER_ID
-  - WHATSAPP_PLATFORM_ACCESS_TOKEN
-  - WHATSAPP_PLATFORM_WABA_ID
-  - WHATSAPP_PLATFORM_DISPLAY_NAME
-  - WHATSAPP_PLATFORM_DISPLAY_PHONE
-  - WHATSAPP_BROADCAST_TEMPLATE
-  - WHATSAPP_USE_TEMPLATE_BROADCAST
-  - WHATSAPP_FLOW_ENABLED
-  - META_WEBHOOK_VERIFY_TOKEN
-  - MISTRAL_API_KEY
-  - MISTRAL_TEXT_MODEL
-  - MISTRAL_PREMIUM_MODEL
-  - MISTRAL_IMAGE_AGENT_MODEL
-  - MISTRAL_EMBED_MODEL
-  - MISTRAL_TTS_MODEL
-  - AI_USAGE_FREE_LIMIT
-  - SCRAPE_MAX_PAGES
-  - SCRAPE_TIMEOUT_MS
-  - AUTO_PUBLISH_CRON_ENABLED
-  - DAILY_WORKFLOW_CRON_ENABLED
-  - COMMENT_SYNC_CRON_ENABLED
-  - NOTIFICATION_CRON_ENABLED
-  - GMAIL_INBOX_SYNC_ENABLED
-  - PAYMENTS_DEV_AUTO_COMPLETE
-  - PAWAPAY_ENV
-  - PAWAPAY_API_TOKEN
-  - PAWAPAY_BASE_URL_SANDBOX
-  - PAWAPAY_BASE_URL_PROD
-  - PAWAPAY_PRIVATE_KEY
-  - PAWAPAY_PUBLIC_KEY_ID
-  - META_AD_ACCOUNT_ID
-  - GOOGLE_ADS_DEVELOPER_TOKEN
-  - GOOGLE_ADS_CUSTOMER_ID
-  - TIKTOK_ADVERTISER_ID
-  - LINKEDIN_AD_ACCOUNT_ID
-  - PINTEREST_ADS_ACCESS_TOKEN
-  - PINTEREST_AD_ACCOUNT_ID
-  - TABOOLA_CLIENT_ID
-  - TABOOLA_CLIENT_SECRET
-  - TABOOLA_ACCOUNT_ID
-  - X_ADS_ACCOUNT_ID
-  - X_ADS_ACCESS_TOKEN
-  - X_ADS_FUNDING_INSTRUMENT_ID
-  - MAIL_HOST
-  - MAIL_PORT
-  - MAIL_USERNAME
-  - MAIL_PASSWORD
-  - MAIL_FROM
-  - MAIL_FROM_NAME
-  - SUPABASE_URL
-  - SUPABASE_SERVICE_ROLE_KEY
-  - SUPABASE_STORAGE_BUCKET
-  - AWS_S3_ENDPOINT
-  - AWS_S3_BUCKET_NAME
-  - AWS_S3_BUCKET_NAME_REGION
-  - AWS_ACCESS_KEY_ID
-  - AWS_SECRET_ACCESS_KEY
-  - AWS_S3_FORCE_PATH_STYLE
-  - MAKO_WIDGET_API_KEY
-  - SEED_MAKO_OWNER_EMAIL
-  - COMPANY_LEGAL_NAME
-  - COMPANY_TAGLINE
-  - COMPANY_ADDRESS
-  - COMPANY_TPIN
-  - COMPANY_PHONES
-  - COMPANY_WEBSITE
-  - COMPANY_BANK_NAME
-  - COMPANY_BANK_BRANCH
-  - COMPANY_BANK_ACCOUNT_NAME
-  - COMPANY_BANK_ACCOUNT_NUMBER
-  - LOG_LEVEL
-  - LOG_FILE
-  - RATE_LIMIT_TTL
-  - RATE_LIMIT_MAX
 
 services:
   api:
@@ -168,13 +8,14 @@ services:
       dockerfile: api/Dockerfile
     ports:
       - "4000:4000"
-    # Dokploy must provide all runtime values above; no local env_file fallback.
-    environment: *mako-runtime-env
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-4000}
     networks:
       - dokploy-network
     restart: unless-stopped
-    # Disabled: Dokploy was failing the whole stack while Nest was still booting / crashing.
-    # Re-enable after `docker logs …-api-1` shows a clean /api/v1/health.
     healthcheck:
       disable: true
 
@@ -184,11 +25,11 @@ services:
       dockerfile: client/Dockerfile
       args:
         - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
-        - VITE_ADSENSE_PUBLISHER_ID=${VITE_ADSENSE_PUBLISHER_ID:?Set the AdSense publisher ID in Dokploy}
-        - VITE_ADSENSE_SLOT_GATE=${VITE_ADSENSE_SLOT_GATE:?Set the real AdSense gate slot ID}
-        - VITE_ADSENSE_SLOT_DISCOVER=${VITE_ADSENSE_SLOT_DISCOVER:?Set the real AdSense Discover slot ID}
-        - VITE_ADSENSE_SLOT_TRACK=${VITE_ADSENSE_SLOT_TRACK:?Set the real AdSense Track slot ID}
-        - VITE_ADSENSE_SLOT_ARTIST=${VITE_ADSENSE_SLOT_ARTIST:?Set the real AdSense Artist slot ID}
+        - VITE_ADSENSE_PUBLISHER_ID=${VITE_ADSENSE_PUBLISHER_ID:-ca-pub-6221660864872022}
+        - VITE_ADSENSE_SLOT_GATE=${VITE_ADSENSE_SLOT_GATE:?Set a real AdSense gate slot ID}
+        - VITE_ADSENSE_SLOT_DISCOVER=${VITE_ADSENSE_SLOT_DISCOVER:?Set a real AdSense Discover slot ID}
+        - VITE_ADSENSE_SLOT_TRACK=${VITE_ADSENSE_SLOT_TRACK:?Set a real AdSense Track slot ID}
+        - VITE_ADSENSE_SLOT_ARTIST=${VITE_ADSENSE_SLOT_ARTIST:?Set a real AdSense Artist slot ID}
     ports:
       - "5173:5173"
     networks:
@@ -202,8 +43,11 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
-    environment: *mako-runtime-env
-    entrypoint: ["sh", "-c", "yarn migrations:run:prod"]
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    entrypoint: ["sh", "-c", "yarn migrations:run"]
     networks:
       - dokploy-network
     restart: "no"
