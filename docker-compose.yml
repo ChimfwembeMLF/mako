@@ -2,7 +2,7 @@
 #
 
 services:
-  mako-api:
+  api:
     build:
       context: .
       dockerfile: api/Dockerfile
@@ -14,12 +14,14 @@ services:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-4000}
     networks:
-      - dokploy-network
+      dokploy-network:
+        aliases:
+          - mako-api
     restart: unless-stopped
     healthcheck:
       disable: true
 
-  mako-client:
+  client:
     build:
       context: .
       dockerfile: client/Dockerfile
@@ -33,12 +35,14 @@ services:
     ports:
       - "5173:5173"
     networks:
-      - dokploy-network
+      dokploy-network:
+        aliases:
+          - mako-client
     restart: unless-stopped
 
   # Optional: run TypeORM migrations (Nest). Usage:
   #   docker compose --profile migrate run --rm migrate
-  mako-migrate:
+  migrate:
     profiles: ["migrate"]
     build:
       context: .
@@ -49,7 +53,9 @@ services:
       - NODE_ENV=production
     entrypoint: ["sh", "-c", "yarn migrations:run"]
     networks:
-      - dokploy-network
+      dokploy-network:
+        aliases:
+          - mako-migrate
     restart: "no"
 
 networks:
