@@ -9,6 +9,9 @@ COPY client/package.json ./client/package.json
 RUN yarn install --immutable || yarn install
 
 FROM base AS build
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY api/package.json ./api/package.json
+COPY client/package.json ./client/package.json
 COPY --from=deps /app/node_modules ./node_modules
 RUN yarn workspaces focus custom-template-api
 COPY api ./api
