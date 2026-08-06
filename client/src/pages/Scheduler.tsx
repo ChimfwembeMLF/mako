@@ -254,6 +254,27 @@ function PostMediaPreview({ post }: { post: ScheduledPost }) {
   );
 }
 
+function getBrandBg(p: string) {
+  switch (p) {
+    case "facebook": return "bg-[#1877F2]";
+    case "linkedin": return "bg-[#0A66C2]";
+    case "instagram": return "bg-gradient-to-tr from-[#F58529] via-[#DD2A7B] to-[#8134AF]";
+    case "twitter": return "bg-[#000000]";
+    case "tiktok": return "bg-[#000000]";
+    case "whatsapp": return "bg-[#25D366]";
+    case "youtube": return "bg-[#FF0000]";
+    default: return "bg-muted-foreground";
+  }
+}
+
+function getPlatformStatusDot(posts: ScheduledPost[]) {
+  if (posts.some(p => p.status === 'rejected')) return 'bg-destructive';
+  if (posts.every(p => p.status === 'published')) return 'bg-green-500';
+  if (posts.some(p => p.status === 'approved')) return 'bg-primary';
+  if (posts.some(p => p.status === 'scheduled')) return 'bg-blue-500';
+  return 'bg-muted-foreground'; // draft
+}
+
 const Scheduler = () => {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [view, setView] = useState<"list" | "calendar">("calendar");
@@ -349,6 +370,11 @@ const Scheduler = () => {
       setNewDate(toLocalDateInput(new Date()));
     }
   }, [sheetOpen, newDate]);
+
+  const openCreatePostForDate = (date: Date) => {
+    setNewDate(toLocalDateInput(date));
+    setSheetOpen(true);
+  };
 
   useEffect(() => {
     if (!sheetOpen) setSchedulePayloadOverrides({});
@@ -896,6 +922,19 @@ const Scheduler = () => {
                       const todayClass = isToday(day) ? "ring-2 ring-primary ring-inset" : "";
                       const isDraggingActive = dragId !== null;
 
+                      // Group posts by platform/channel
+                      const platformPostsMap: Record<string, ScheduledPost[]> = {};
+                      for (const post of dayPosts) {
+                        const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+                        for (const p of platforms) {
+                          if (!platformPostsMap[p]) {
+                            platformPostsMap[p] = [];
+                          }
+                          platformPostsMap[p].push(post);
+                        }
+                      }
+                      const activePlatforms = Object.keys(platformPostsMap);
+
                       return (
                         <div
                           key={day.toISOString()}
@@ -905,40 +944,71 @@ const Scheduler = () => {
                           onDragOver={handleDragOver}
                           onDrop={(e) => void handleDrop(e, day)}
                         >
-                          <div className={`text-xs font-semibold mb-1 ${isToday(day) ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                            {day.getDate()}
-                          </div>
-                          <div className="space-y-1 z-10">
-                            {dayPosts.slice(0, 3).map((post) => (
-                              <CalendarPostChip
-                                key={post.id}
-                                post={post}
-                                dragId={dragId}
-                                onReschedule={openReschedule}
-                                onDragStart={handleDragStart}
-                              />
-                            ))}
-                            {dayPosts.length > 3 && (
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <button type="button" className="text-[10px] text-primary hover:underline pl-1">
-                                    +{dayPosts.length - 3} more
-                                  </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-64 p-2 space-y-1" align="start">
-                                  <p className="text-xs font-semibold mb-2">{dayPosts.length} posts on this day</p>
-                                  {dayPosts.slice(3).map((post) => (
-                                    <CalendarPostChip
-                                      key={post.id}
-                                      post={post}
-                                      dragId={dragId}
-                                      onReschedule={openReschedule}
-                                      onDragStart={handleDragStart}
-                                    />
-                                  ))}
-                                </PopoverContent>
-                              </Popover>
+                          {/* Day Cell Header */}
+                          <div className="flex items-center justify-between group/cell mb-1 text-[10px] sm:text-xs">
+                            {dayPosts.length > 0 ? (
+                              <span className="text-[10px] font-semibold text-muted-foreground/80">
+                                {dayPosts.length} {dayPosts.length === 1 ? 'Post' : 'Posts'}
+                              </span>
+                            ) : (
+                              <span />
                             )}
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-4 w-4 opacity-0 group-hover/cell:opacity-100 transition-opacity p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openCreatePostForDate(day);
+                                }}
+                                title="Add post"
+                              >
+                                <Plus className="h-2.5 w-2.5" />
+                              </Button>
+                              <span className={`font-semibold shrink-0 ${isToday(day) ? "text-primary font-bold" : "text-muted-foreground"}`}>
+                                {day.getDate() < 10 ? `0${day.getDate()}` : day.getDate()}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Day Cell Content: Grouped Platform Rows */}
+                          <div className="space-y-1 z-10">
+                            {activePlatforms.map((platform) => {
+                              const Icon = channelIcons[platform] || CalendarClock;
+                              const platformPosts = platformPostsMap[platform] || [];
+                              const statusDot = getPlatformStatusDot(platformPosts);
+
+                              return (
+                                <Popover key={platform}>
+                                  <PopoverTrigger asChild>
+                                    <div className="flex items-center justify-between px-1.5 py-0.5 rounded border border-border/40 bg-card hover:bg-muted/15 cursor-pointer text-[10px] font-medium transition-all">
+                                      <div className="flex items-center gap-1">
+                                        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded text-white text-[8px] font-bold ${getBrandBg(platform)}`}>
+                                          <Icon className="h-2 w-2" />
+                                        </span>
+                                        <span className="text-foreground/90 font-semibold">{platformPosts.length}</span>
+                                      </div>
+                                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
+                                    </div>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-64 p-2 space-y-1" align="start">
+                                    <p className="text-xs font-semibold mb-2 capitalize">{platform} Posts ({platformPosts.length})</p>
+                                    <div className="space-y-1">
+                                      {platformPosts.map((post) => (
+                                        <CalendarPostChip
+                                          key={post.id}
+                                          post={post}
+                                          dragId={dragId}
+                                          onReschedule={openReschedule}
+                                          onDragStart={handleDragStart}
+                                        />
+                                      ))}
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              );
+                            })}
                           </div>
                         </div>
                       );
