@@ -24,7 +24,21 @@ import { TenantBootstrapService } from '../tenants/tenant-bootstrap.service';
 import { TenantSummaryDto } from '../tenants/dto/tenant-summary.dto';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
 
-const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+function parseDurationToMs(duration: string): number {
+  const match = duration.match(/^(\d+)([smhd])$/);
+  if (!match) return 7 * 24 * 60 * 60 * 1000;
+  const value = parseInt(match[1], 10);
+  const unit = match[2];
+  switch (unit) {
+    case 's': return value * 1000;
+    case 'm': return value * 60 * 1000;
+    case 'h': return value * 60 * 60 * 1000;
+    case 'd': return value * 24 * 60 * 60 * 1000;
+    default: return 7 * 24 * 60 * 60 * 1000;
+  }
+}
+
+const DEFAULT_REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
@@ -56,15 +70,18 @@ export class AuthService {
       provider: user.provider ?? 'local',
     };
     const token = this.jwtService.sign(payload);
+    const refreshExpiry = this.config.get<string>('JWT_REFRESH_EXPIRY')?.trim() || '7d';
+    const ttlMs = parseDurationToMs(refreshExpiry);
+
     const refreshToken = this.jwtService.sign(
       { ...payload, type: 'refresh' },
-      { expiresIn: '7d' },
+      { expiresIn: refreshExpiry },
     );
 
     await this.refreshTokenService.save(
       String(user.id),
       refreshToken,
-      new Date(Date.now() + REFRESH_TOKEN_TTL_MS),
+      new Date(Date.now() + ttlMs),
     );
 
     const userDto = new UserDto({ ...user, token });
