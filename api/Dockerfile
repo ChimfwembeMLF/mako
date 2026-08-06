@@ -6,7 +6,7 @@ FROM base AS deps
 COPY package.json yarn.lock .yarnrc.yml ./
 COPY api/package.json ./api/package.json
 COPY client/package.json ./client/package.json
-RUN yarn install --immutable || yarn install
+RUN --mount=type=cache,target=/root/.yarn/berry/cache yarn install --immutable || yarn install
 
 FROM base AS build
 COPY package.json yarn.lock .yarnrc.yml ./
