@@ -982,14 +982,14 @@ const Scheduler = () => {
                               return (
                                 <Popover key={platform}>
                                   <PopoverTrigger asChild>
-                                    <div className="flex items-center justify-between px-1.5 py-0.5 rounded border border-border/40 bg-card hover:bg-muted/15 cursor-pointer text-[10px] font-medium transition-all">
-                                      <div className="flex items-center gap-1">
+                                    <div className="flex items-center justify-center sm:justify-between px-0.5 sm:px-1.5 py-0.5 rounded border border-border/40 bg-card hover:bg-muted/15 cursor-pointer text-[10px] font-medium transition-all">
+                                      <div className="flex items-center gap-0.5 sm:gap-1">
                                         <span className={`flex h-3.5 w-3.5 items-center justify-center rounded text-white text-[8px] font-bold ${getBrandBg(platform)}`}>
                                           <Icon className="h-2 w-2" />
                                         </span>
-                                        <span className="text-foreground/90 font-semibold">{platformPosts.length}</span>
+                                        <span className="text-foreground/90 font-semibold hidden sm:inline">{platformPosts.length}</span>
                                       </div>
-                                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot}`} />
+                                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot} hidden sm:inline`} />
                                     </div>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-64 p-2 space-y-1" align="start">
