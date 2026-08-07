@@ -35,7 +35,7 @@ import { GmailService } from './gmail.service';
       useFactory: (config: ConfigService) => ({
         secret: config.get<string>('JWT_SECRET') || 'default_secret',
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRY')?.trim() || '1h',
+          expiresIn: (config.get<string>('JWT_EXPIRY')?.trim() || '1d') as any,
         },
       }),
     }),

@@ -75,7 +75,7 @@ export class AuthService {
 
     const refreshToken = this.jwtService.sign(
       { ...payload, type: 'refresh' },
-      { expiresIn: refreshExpiry },
+      { expiresIn: refreshExpiry as any },
     );
 
     await this.refreshTokenService.save(
