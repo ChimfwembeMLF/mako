@@ -177,6 +177,7 @@ const PublisherConnect = () => {
   } | null>(null);
   const { tenant } = useTenant();
   const { activeWorkspace, workspaces, workspaceVersion } = useWorkspace();
+  const { toast } = useToast();
   const activeWorkspaceName =
     workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name;
 
@@ -373,11 +374,14 @@ const PublisherConnect = () => {
     try {
       const returnUrl = `${window.location.origin}/publisher`;
       const { redirectUrl } = await socialAccountsApi.startOAuth(platform, tenant.id, returnUrl, activeWorkspace);
-      window.location.href = redirectUrl;
+      if (!redirectUrl || !/^https?:\/\//i.test(redirectUrl)) {
+        throw new Error("Invalid OAuth redirect URL from server");
+      }
+      window.location.assign(redirectUrl);
     } catch (error: unknown) {
+      setConnectingOAuth(null);
       const message = error instanceof Error ? error.message : "Failed to start OAuth";
       toast({ title: "Connection failed", description: message, variant: "destructive" });
-      setConnectingOAuth(null);
     }
   };
 
@@ -419,9 +423,9 @@ const PublisherConnect = () => {
 
       await startOAuthConnect("whatsapp");
     } catch (error: unknown) {
+      setConnectingOAuth(null);
       const message = error instanceof Error ? error.message : "Failed to start WhatsApp connect";
       toast({ title: "Connection failed", description: message, variant: "destructive" });
-      setConnectingOAuth(null);
     }
   };
 
