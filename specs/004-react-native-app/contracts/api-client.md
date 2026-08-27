@@ -21,5 +21,5 @@ The mobile app primarily relies on the standard REST API endpoints defined by `a
 - `POST /api/v1/auth/login`: Issue tokens.
 - `POST /api/v1/auth/register`: Create a new user.
 - `POST /api/v1/auth/{provider}-auth`: Social OAuth token verification (e.g., `google-auth`, `facebook-auth`).
-- `GET /api/v1/users/me`: Fetch the current user profile.
+- `GET /api/v1/auth/me`: Fetch the current user profile (and tenant bootstrap context).
 - `GET /api/v1/workspaces`: Fetch the user's active workspaces.

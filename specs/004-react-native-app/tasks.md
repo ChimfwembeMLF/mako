@@ -110,6 +110,12 @@ description: "Task list template for feature implementation"
 - [x] T023 Inject `Authorization: Bearer <token>` into outgoing requests in `mobile/src/lib/api.ts` using `getToken()` per FR-004 (missing)
 - [x] T024 Update `AuthContext.tsx` to store the full `UserSession` object (with `userId` and `expiresAt`) per data-model.md (partial)
 
+## Phase 10: Convergence
+
+- [x] T025 Point `api.getProfile` at `GET /api/v1/auth/me` (not `/api/v1/users/me`) and normalize `{ user, tenant }` into the Profile UI fields in `mobile/src/lib/api.ts` and `mobile/app/(tabs)/profile.tsx` per FR-004 / contracts/api-client.md / US2 (contradicts)
+- [x] T026 Persist `refreshToken` from login/signup/googleAuth into SecureStore + `UserSession`, and handle expired tokens (check `expiresAt` on boot; on 401 attempt `POST /api/v1/auth/refresh` or sign out) in `mobile/src/lib/auth-store.ts`, `mobile/src/context/AuthContext.tsx`, and `mobile/src/lib/api.ts` per Edge Cases / data-model.md UserSession / FR-003 (missing)
+- [x] T027 Implement active `WorkspaceContext` (select a workspace from Home, persist selection, include workspace/tenant scope on subsequent fetches) in `mobile/src/context/` and `mobile/app/(tabs)/index.tsx` per FR-005 / data-model.md WorkspaceContext (partial)
+
 ---
 
 ## Dependencies & Execution Order

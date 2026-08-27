@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Image } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../../src/context/AuthContext';
+import { normalizeAuthResponse, useAuth } from '../../src/context/AuthContext';
 import { api } from '../../src/lib/api';
 import { colors, spacing, rounded, typography } from '../../src/theme';
 import * as WebBrowser from 'expo-web-browser';
@@ -42,8 +42,9 @@ export default function SignupScreen() {
     setError('');
     try {
       const apiResponse = await api.googleAuth(token);
-      if (apiResponse && apiResponse.token) {
-        await signIn(apiResponse.token);
+      const payload = normalizeAuthResponse(apiResponse);
+      if (payload) {
+        await signIn(payload);
       } else {
         setError('Signup failed: invalid response from server');
       }
@@ -65,8 +66,9 @@ export default function SignupScreen() {
 
     try {
       const response = await api.signup(email, password, firstName, lastName);
-      if (response && response.token) {
-        await signIn(response.token);
+      const payload = normalizeAuthResponse(response);
+      if (payload) {
+        await signIn(payload);
       } else {
         setError('Signup failed: invalid response from server');
       }

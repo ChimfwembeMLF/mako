@@ -2,12 +2,14 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '../../src/context/AuthContext';
+import { useWorkspace } from '../../src/context/WorkspaceContext';
 import { api } from '../../src/lib/api';
 import { colors, spacing, rounded, typography } from '../../src/theme';
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
-  const { data: profile, isLoading } = useQuery({
+  const { activeWorkspace } = useWorkspace();
+  const { data: profile, isLoading, error } = useQuery({
     queryKey: ['profile'],
     queryFn: api.getProfile,
   });
@@ -16,22 +18,40 @@ export default function ProfileScreen() {
     <View style={styles.container}>
       <View style={styles.card}>
         <Text style={styles.title}>Profile</Text>
-        
+
         {isLoading ? (
           <ActivityIndicator color={colors.primary} />
         ) : profile ? (
           <View style={styles.infoContainer}>
             <Text style={styles.label}>Email</Text>
-            <Text style={styles.value}>{profile.email}</Text>
-            
+            <Text style={styles.value}>{profile.email || '—'}</Text>
+
             <Text style={styles.label}>Name</Text>
-            <Text style={styles.value}>{profile.firstName} {profile.lastName}</Text>
+            <Text style={styles.value}>
+              {[profile.firstName, profile.lastName].filter(Boolean).join(' ') || '—'}
+            </Text>
+
+            {profile.tenant?.name ? (
+              <>
+                <Text style={styles.label}>Tenant</Text>
+                <Text style={styles.value}>{profile.tenant.name}</Text>
+              </>
+            ) : null}
+
+            {activeWorkspace ? (
+              <>
+                <Text style={styles.label}>Active workspace</Text>
+                <Text style={styles.value}>{activeWorkspace.name}</Text>
+              </>
+            ) : null}
           </View>
         ) : (
-          <Text style={styles.errorText}>Could not load profile details.</Text>
+          <Text style={styles.errorText}>
+            {error?.message || 'Could not load profile details.'}
+          </Text>
         )}
-        
-        <TouchableOpacity style={styles.button} onPress={signOut}>
+
+        <TouchableOpacity style={styles.button} onPress={() => void signOut()}>
           <Text style={styles.buttonText}>Sign Out</Text>
         </TouchableOpacity>
       </View>
@@ -84,5 +104,5 @@ const styles = StyleSheet.create({
   errorText: {
     color: colors.negative,
     marginBottom: spacing.lg,
-  }
+  },
 });
