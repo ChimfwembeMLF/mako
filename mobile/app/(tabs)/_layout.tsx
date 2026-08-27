@@ -16,19 +16,12 @@ export default function TabLayout() {
         headerTintColor: colors.primary,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Home',
-          // Icon could be added here if we had vector-icons setup
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-        }}
-      />
+      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="content" options={{ title: 'Content', headerShown: false }} />
+      <Tabs.Screen name="connections" options={{ title: 'Connect' }} />
+      <Tabs.Screen name="inbox" options={{ title: 'Inbox', headerShown: false }} />
+      <Tabs.Screen name="schedule" options={{ title: 'Schedule' }} />
+      <Tabs.Screen name="profile" options={{ title: 'Profile' }} />
     </Tabs>
   );
 }

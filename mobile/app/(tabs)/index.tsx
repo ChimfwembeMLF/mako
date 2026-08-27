@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../src/lib/api';
 import { colors, spacing, rounded, typography } from '../../src/theme';
 import { useWorkspace, type WorkspaceContextValue } from '../../src/context/WorkspaceContext';
+import { useOfflineBanner } from '../../src/components/OfflineBanner';
 
 type WorkspaceRow = {
   id: string;
@@ -20,7 +21,9 @@ type WorkspaceRow = {
 };
 
 export default function HomeScreen() {
-  const { activeWorkspace, tenantId, setActiveWorkspace, setTenantId } = useWorkspace();
+  const { activeWorkspace, tenantId, setActiveWorkspace, setTenantId, reconcileWorkspaces } =
+    useWorkspace();
+  const { reportError } = useOfflineBanner();
 
   const { data: workspaces = [], isLoading, error } = useQuery({
     queryKey: ['workspaces', tenantId],
@@ -28,18 +31,14 @@ export default function HomeScreen() {
   });
 
   React.useEffect(() => {
-    if (!activeWorkspace?.id || !Array.isArray(workspaces) || workspaces.length === 0) return;
-    const match = (workspaces as WorkspaceRow[]).find((w) => w.id === activeWorkspace.id);
-    if (!match) return;
-    if (match.name && match.name !== activeWorkspace.name) {
-      void setActiveWorkspace({
-        id: match.id,
-        name: match.name,
-        role: match.role || activeWorkspace.role || 'member',
-        tenantId: match.tenantId || activeWorkspace.tenantId,
-      });
-    }
-  }, [workspaces, activeWorkspace, setActiveWorkspace]);
+    if (error?.message) reportError(error.message);
+    else reportError(null);
+  }, [error, reportError]);
+
+  React.useEffect(() => {
+    if (!Array.isArray(workspaces)) return;
+    void reconcileWorkspaces(workspaces as WorkspaceRow[]);
+  }, [workspaces, reconcileWorkspaces]);
 
   const selectWorkspace = async (item: WorkspaceRow) => {
     if (item.tenantId) {
@@ -66,9 +65,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Your Workspaces</Text>
       {activeWorkspace ? (
-        <Text style={styles.activeLabel}>
-          Active: {activeWorkspace.name}
-        </Text>
+        <Text style={styles.activeLabel}>Active: {activeWorkspace.name}</Text>
       ) : (
         <Text style={styles.activeLabel}>Select a workspace to continue</Text>
       )}

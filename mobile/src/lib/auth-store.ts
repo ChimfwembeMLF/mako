@@ -5,12 +5,20 @@ const REFRESH_TOKEN_KEY = 'mako_refresh_token';
 const WORKSPACE_KEY = 'mako_active_workspace';
 const TENANT_KEY = 'mako_active_tenant';
 
-export async function saveToken(token: string) {
+async function setItem(key: string, value: string) {
+  await SecureStore.setItemAsync(key, value);
+}
+
+async function deleteItem(key: string) {
   try {
-    await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, token);
-  } catch (error) {
-    console.error('Failed to save the token to secure store', error);
+    await SecureStore.deleteItemAsync(key);
+  } catch {
+    // ignore missing keys
   }
+}
+
+export async function saveToken(token: string) {
+  await setItem(ACCESS_TOKEN_KEY, token);
 }
 
 export async function getToken() {
@@ -23,23 +31,15 @@ export async function getToken() {
 }
 
 export async function deleteToken() {
-  try {
-    await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
-  } catch (error) {
-    console.error('Failed to delete the token from secure store', error);
-  }
+  await deleteItem(ACCESS_TOKEN_KEY);
 }
 
 export async function saveRefreshToken(token: string | null) {
-  try {
-    if (!token) {
-      await SecureStore.deleteItemAsync(REFRESH_TOKEN_KEY);
-      return;
-    }
-    await SecureStore.setItemAsync(REFRESH_TOKEN_KEY, token);
-  } catch (error) {
-    console.error('Failed to save the refresh token to secure store', error);
+  if (!token) {
+    await deleteItem(REFRESH_TOKEN_KEY);
+    return;
   }
+  await setItem(REFRESH_TOKEN_KEY, token);
 }
 
 export async function getRefreshToken() {
@@ -52,15 +52,11 @@ export async function getRefreshToken() {
 }
 
 export async function saveActiveWorkspaceId(workspaceId: string | null) {
-  try {
-    if (!workspaceId) {
-      await SecureStore.deleteItemAsync(WORKSPACE_KEY);
-      return;
-    }
-    await SecureStore.setItemAsync(WORKSPACE_KEY, workspaceId);
-  } catch (error) {
-    console.error('Failed to save active workspace', error);
+  if (!workspaceId) {
+    await deleteItem(WORKSPACE_KEY);
+    return;
   }
+  await setItem(WORKSPACE_KEY, workspaceId);
 }
 
 export async function getActiveWorkspaceId() {
@@ -73,15 +69,11 @@ export async function getActiveWorkspaceId() {
 }
 
 export async function saveTenantId(tenantId: string | null) {
-  try {
-    if (!tenantId) {
-      await SecureStore.deleteItemAsync(TENANT_KEY);
-      return;
-    }
-    await SecureStore.setItemAsync(TENANT_KEY, tenantId);
-  } catch (error) {
-    console.error('Failed to save tenant id', error);
+  if (!tenantId) {
+    await deleteItem(TENANT_KEY);
+    return;
   }
+  await setItem(TENANT_KEY, tenantId);
 }
 
 export async function getTenantId() {

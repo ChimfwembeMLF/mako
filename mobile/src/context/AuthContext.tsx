@@ -8,6 +8,7 @@ import {
   saveToken,
 } from '../lib/auth-store';
 import { api, setSessionHooks, type AuthTokensResponse } from '../lib/api';
+import { queryClient } from '../lib/query-client';
 
 export interface UserSession {
   accessToken: string;
@@ -97,14 +98,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   const applySession = useCallback(async (accessToken: string, refreshToken: string | null) => {
-    await saveToken(accessToken);
-    await saveRefreshToken(refreshToken);
+    try {
+      await saveToken(accessToken);
+      await saveRefreshToken(refreshToken);
+    } catch (error) {
+      throw new Error(
+        error instanceof Error
+          ? `Could not save session securely: ${error.message}`
+          : 'Could not save session securely on this device.',
+      );
+    }
     setToken(accessToken);
     setSession(buildSession(accessToken, refreshToken));
   }, []);
 
   const signOut = useCallback(async () => {
+    try {
+      await api.logout();
+    } catch {
+      // local clear still required
+    }
     await clearSession();
+    queryClient.clear();
     setToken(null);
     setSession(null);
   }, []);
@@ -169,7 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               return;
             }
           } catch {
-            // fall through to clear
+            // fall through
           }
         }
 

@@ -30,9 +30,9 @@ description: "Task list for Mobile Core Features"
 
 **Purpose**: Dependencies and env scaffolding for core feature screens
 
-- [ ] T001 Add `expo-image-picker` dependency in `mobile/package.json`
-- [ ] T002 [P] Create `mobile/.env.example` documenting `EXPO_PUBLIC_API_URL` and Google OAuth public client IDs
-- [ ] T003 [P] Align `mobile/app.json` app `name`/`slug`/`scheme` toward Mako branding (no secrets)
+- [x] T001 Add `expo-image-picker` dependency in `mobile/package.json`
+- [x] T002 [P] Create `mobile/.env.example` documenting `EXPO_PUBLIC_API_URL` and Google OAuth public client IDs
+- [x] T003 [P] Align `mobile/app.json` app `name`/`slug`/`scheme` toward Mako branding (no secrets)
 
 ---
 
@@ -42,10 +42,10 @@ description: "Task list for Mobile Core Features"
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 Split public vs authenticated fetch in `mobile/src/lib/api.ts` (`fetchPublic` for login/register/google/refresh; `fetchWithAuth` keeps 401 refresh only for authed routes) per `contracts/mobile-api.md`
-- [ ] T005 Extend `mobile/src/lib/api.ts` with typed helpers for content-items, media upload, content-ai publish, social-accounts, and inbox endpoints from `contracts/mobile-api.md`
-- [ ] T006 Harden `mobile/src/context/WorkspaceContext.tsx` to validate active workspace against list, clear stale IDs, and always expose `tenantId` + `workspaceId` for scoped calls
-- [ ] T007 Wire React Query `queryClient.clear()` into sign-out in `mobile/src/context/AuthContext.tsx` and `mobile/app/_layout.tsx`
+- [x] T004 Split public vs authenticated fetch in `mobile/src/lib/api.ts` (`fetchPublic` for login/register/google/refresh; `fetchWithAuth` keeps 401 refresh only for authed routes) per `contracts/mobile-api.md`
+- [x] T005 Extend `mobile/src/lib/api.ts` with typed helpers for content-items, media upload, content-ai publish, social-accounts, and inbox endpoints from `contracts/mobile-api.md`
+- [x] T006 Harden `mobile/src/context/WorkspaceContext.tsx` to validate active workspace against list, clear stale IDs, and always expose `tenantId` + `workspaceId` for scoped calls
+- [x] T007 Wire React Query `queryClient.clear()` into sign-out in `mobile/src/context/AuthContext.tsx` and `mobile/app/_layout.tsx`
 
 **Checkpoint**: Foundation ready — user story implementation can begin
 
@@ -59,10 +59,10 @@ description: "Task list for Mobile Core Features"
 
 ### Implementation for User Story 1
 
-- [ ] T008 [US1] Fix cold-start routing so authenticated users on `/` redirect to `/(tabs)` in `mobile/app/index.tsx` and/or `mobile/app/_layout.tsx`
-- [ ] T009 [US1] Route `api.login` / `api.signup` / `api.googleAuth` through `fetchPublic` in `mobile/src/lib/api.ts` and keep credential error messages in `mobile/app/(auth)/login.tsx` and `mobile/app/(auth)/signup.tsx`
-- [ ] T010 [US1] Surface SecureStore write failures from `mobile/src/lib/auth-store.ts` to `signIn` in `mobile/src/context/AuthContext.tsx` (do not claim persisted session if save failed)
-- [ ] T011 [US1] Call `POST /api/v1/auth/logout` on sign-out when possible from `mobile/src/context/AuthContext.tsx` before `clearSession`
+- [x] T008 [US1] Fix cold-start routing so authenticated users on `/` redirect to `/(tabs)` in `mobile/app/index.tsx` and/or `mobile/app/_layout.tsx`
+- [x] T009 [US1] Route `api.login` / `api.signup` / `api.googleAuth` through `fetchPublic` in `mobile/src/lib/api.ts` and keep credential error messages in `mobile/app/(auth)/login.tsx` and `mobile/app/(auth)/signup.tsx`
+- [x] T010 [US1] Surface SecureStore write failures from `mobile/src/lib/auth-store.ts` to `signIn` in `mobile/src/context/AuthContext.tsx` (do not claim persisted session if save failed)
+- [x] T011 [US1] Call `POST /api/v1/auth/logout` on sign-out when possible from `mobile/src/context/AuthContext.tsx` before `clearSession`
 
 **Checkpoint**: US1 fully testable — stop here for MVP reliability demo if needed
 
@@ -76,12 +76,12 @@ description: "Task list for Mobile Core Features"
 
 ### Implementation for User Story 2
 
-- [ ] T012 [P] [US2] Add Content tab route stubs in `mobile/app/(tabs)/_layout.tsx` and `mobile/app/(tabs)/content/index.tsx`
-- [ ] T013 [US2] Implement content list (draft/scheduled/published) with React Query in `mobile/app/(tabs)/content/index.tsx` using `tenantId` + `workspaceId`
-- [ ] T014 [US2] Implement content editor create/edit screen in `mobile/app/(tabs)/content/[id].tsx` (or `new.tsx`) saving via content-items API
-- [ ] T015 [US2] Add image pick + upload + attach flow with `expo-image-picker` in the content editor under `mobile/app/(tabs)/content/`
-- [ ] T016 [US2] Implement publish-now UI calling `POST /api/v1/content-ai/{id}/publish` and show per-destination results in the content editor
-- [ ] T017 [US2] Implement schedule controls (set future time, save scheduled status) in the content editor and block publish when no platforms/accounts selected
+- [x] T012 [P] [US2] Add Content tab route stubs in `mobile/app/(tabs)/_layout.tsx` and `mobile/app/(tabs)/content/index.tsx`
+- [x] T013 [US2] Implement content list (draft/scheduled/published) with React Query in `mobile/app/(tabs)/content/index.tsx` using `tenantId` + `workspaceId`
+- [x] T014 [US2] Implement content editor create/edit screen in `mobile/app/(tabs)/content/[id].tsx` (or `new.tsx`) saving via content-items API
+- [x] T015 [US2] Add image pick + upload + attach flow with `expo-image-picker` in the content editor under `mobile/app/(tabs)/content/`
+- [x] T016 [US2] Implement publish-now UI calling `POST /api/v1/content-ai/{id}/publish` and show per-destination results in the content editor
+- [x] T017 [US2] Implement schedule controls (set future time, save scheduled status) in the content editor and block publish when no platforms/accounts selected
 
 **Checkpoint**: US2 independently testable with a pre-connected account
 
@@ -95,10 +95,10 @@ description: "Task list for Mobile Core Features"
 
 ### Implementation for User Story 3
 
-- [ ] T018 [P] [US3] Create Connections screen listing accounts in `mobile/app/(tabs)/connections.tsx` and register tab in `mobile/app/(tabs)/_layout.tsx`
-- [ ] T019 [US3] Implement OAuth start + deep-link/return handling for authorize URL in `mobile/app/(tabs)/connections.tsx` (and linking config in `mobile/app.json` / Expo Router as needed)
-- [ ] T020 [US3] Implement Facebook (and Instagram if required) page/account finalize sheets in `mobile/app/(tabs)/connections.tsx` mirroring web finalize APIs
-- [ ] T021 [US3] Implement disconnect action and refresh list in `mobile/app/(tabs)/connections.tsx`
+- [x] T018 [P] [US3] Create Connections screen listing accounts in `mobile/app/(tabs)/connections.tsx` and register tab in `mobile/app/(tabs)/_layout.tsx`
+- [x] T019 [US3] Implement OAuth start + deep-link/return handling for authorize URL in `mobile/app/(tabs)/connections.tsx` (and linking config in `mobile/app.json` / Expo Router as needed)
+- [x] T020 [US3] Implement Facebook (and Instagram if required) page/account finalize sheets in `mobile/app/(tabs)/connections.tsx` mirroring web finalize APIs
+- [x] T021 [US3] Implement disconnect action and refresh list in `mobile/app/(tabs)/connections.tsx`
 
 **Checkpoint**: US3 independently testable
 
@@ -112,9 +112,9 @@ description: "Task list for Mobile Core Features"
 
 ### Implementation for User Story 4
 
-- [ ] T022 [P] [US4] Create Inbox list screen in `mobile/app/(tabs)/inbox.tsx` and register tab in `mobile/app/(tabs)/_layout.tsx`
-- [ ] T023 [US4] Load conversations + optional sync via inbox APIs scoped to active workspace in `mobile/app/(tabs)/inbox.tsx`
-- [ ] T024 [US4] Implement conversation thread + reply composer (messages + reply endpoints) in `mobile/app/(tabs)/inbox/[id].tsx` or inline in `inbox.tsx`
+- [x] T022 [P] [US4] Create Inbox list screen in `mobile/app/(tabs)/inbox.tsx` and register tab in `mobile/app/(tabs)/_layout.tsx`
+- [x] T023 [US4] Load conversations + optional sync via inbox APIs scoped to active workspace in `mobile/app/(tabs)/inbox.tsx`
+- [x] T024 [US4] Implement conversation thread + reply composer (messages + reply endpoints) in `mobile/app/(tabs)/inbox/[id].tsx` or inline in `inbox.tsx`
 
 **Checkpoint**: US4 independently testable with existing inbound messages
 
@@ -128,8 +128,8 @@ description: "Task list for Mobile Core Features"
 
 ### Implementation for User Story 5
 
-- [ ] T025 [P] [US5] Create Schedule screen listing upcoming scheduled content in `mobile/app/(tabs)/schedule.tsx` and register tab in `mobile/app/(tabs)/_layout.tsx`
-- [ ] T026 [US5] Link schedule rows to content detail actions (view, cancel schedule, publish-now) reusing `mobile/app/(tabs)/content/` editor routes
+- [x] T025 [P] [US5] Create Schedule screen listing upcoming scheduled content in `mobile/app/(tabs)/schedule.tsx` and register tab in `mobile/app/(tabs)/_layout.tsx`
+- [x] T026 [US5] Link schedule rows to content detail actions (view, cancel schedule, publish-now) reusing `mobile/app/(tabs)/content/` editor routes
 
 **Checkpoint**: All user stories independently functional
 
@@ -139,10 +139,10 @@ description: "Task list for Mobile Core Features"
 
 **Purpose**: UX, isolation, and quickstart validation across stories
 
-- [ ] T027 [P] Add simple offline/error banner component used on main tabs in `mobile/src/components/OfflineBanner.tsx` (or equivalent) and mount from `mobile/app/(tabs)/_layout.tsx`
-- [ ] T028 [P] Disable or hide publish/reply actions when role lacks permission (client UX) in content editor and inbox screens under `mobile/app/(tabs)/`
-- [ ] T029 Validate workspace switch clears/refetches Content, Inbox, and Schedule queries (keys include workspace id) across `mobile/app/(tabs)/`
-- [ ] T030 Run `specs/005-mobile-core-features/quickstart.md` scenarios 1–8 and note results
+- [x] T027 [P] Add simple offline/error banner component used on main tabs in `mobile/src/components/OfflineBanner.tsx` (or equivalent) and mount from `mobile/app/(tabs)/_layout.tsx`
+- [x] T028 [P] Disable or hide publish/reply actions when role lacks permission (client UX) in content editor and inbox screens under `mobile/app/(tabs)/`
+- [x] T029 Validate workspace switch clears/refetches Content, Inbox, and Schedule queries (keys include workspace id) across `mobile/app/(tabs)/`
+- [x] T030 Run `specs/005-mobile-core-features/quickstart.md` scenarios 1–8 and note results
 
 ---
 
@@ -212,3 +212,8 @@ Task: "T025 Schedule screen in mobile/app/(tabs)/schedule.tsx"
 - [USn] maps to spec user stories
 - No new `api-rust` modules planned — client of existing contracts only
 - Avoid committing secrets; use `EXPO_PUBLIC_*` only
+
+## Phase 9: Convergence
+
+- [x] T031 Before publish in `mobile/src/components/ContentEditorScreen.tsx`, verify the active workspace has at least one connected social account (via `api.listSocialAccounts`) and block with guidance to open Connections when none exist per Edge Cases / FR-005 (partial)
+- [x] T032 Derive real publish/reply permission from profile or membership data (not default `workspace.role === 'member'`) and apply it in `mobile/src/components/ContentEditorScreen.tsx` and `mobile/app/(tabs)/inbox/[id].tsx` per FR-012 (partial)

@@ -20,6 +20,8 @@ interface WorkspaceContextType {
   isLoading: boolean;
   setActiveWorkspace: (workspace: WorkspaceContextValue | null) => Promise<void>;
   setTenantId: (tenantId: string | null) => Promise<void>;
+  /** Drop stored selection if it is not in the provided list. */
+  reconcileWorkspaces: (workspaces: Array<{ id: string; name?: string; tenantId?: string; role?: string }>) => Promise<void>;
 }
 
 const WorkspaceContext = createContext<WorkspaceContextType | undefined>(undefined);
@@ -86,6 +88,43 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
     setTenantIdState(nextTenantId);
   }, []);
 
+  const reconcileWorkspaces = useCallback(
+    async (
+      workspaces: Array<{ id: string; name?: string; tenantId?: string; role?: string }>,
+    ) => {
+      if (!workspaces.length) {
+        if (activeWorkspace) await setActiveWorkspace(null);
+        return;
+      }
+
+      if (activeWorkspace) {
+        const match = workspaces.find((w) => w.id === activeWorkspace.id);
+        if (!match) {
+          await setActiveWorkspace(null);
+          return;
+        }
+        if (match.name && match.name !== activeWorkspace.name) {
+          await setActiveWorkspace({
+            id: match.id,
+            name: match.name,
+            role: match.role || 'member',
+            tenantId: match.tenantId || activeWorkspace.tenantId,
+          });
+        }
+        return;
+      }
+
+      const first = workspaces[0];
+      await setActiveWorkspace({
+        id: first.id,
+        name: first.name || 'Workspace',
+        role: first.role || 'member',
+        tenantId: first.tenantId,
+      });
+    },
+    [activeWorkspace, setActiveWorkspace],
+  );
+
   return (
     <WorkspaceContext.Provider
       value={{
@@ -94,6 +133,7 @@ export function WorkspaceProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         setActiveWorkspace,
         setTenantId,
+        reconcileWorkspaces,
       }}
     >
       {children}

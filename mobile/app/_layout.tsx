@@ -1,10 +1,10 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { WorkspaceProvider } from '../src/context/WorkspaceContext';
-
-const queryClient = new QueryClient();
+import { OfflineProvider } from '../src/components/OfflineBanner';
+import { queryClient } from '../src/lib/query-client';
 
 function InitialLayout() {
   const { token, isLoading } = useAuth();
@@ -31,7 +31,9 @@ export default function RootLayout() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <WorkspaceProvider>
-          <InitialLayout />
+          <OfflineProvider>
+            <InitialLayout />
+          </OfflineProvider>
         </WorkspaceProvider>
       </AuthProvider>
     </QueryClientProvider>
