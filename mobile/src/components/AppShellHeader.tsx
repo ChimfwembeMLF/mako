@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
   },
   textCol: {
     flex: 1,
+    minWidth: 0,
   },
   label: {
     ...typography.caption,

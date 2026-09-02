@@ -1,4 +1,4 @@
-import { Loader2, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import Logo from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
@@ -12,14 +12,14 @@ export function OfflineGate({ children }: { children: React.ReactNode }) {
       {import.meta.env.PROD && !isOnline && (
         <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-background/80 backdrop-blur-sm px-6 text-center">
           <div className="bg-card p-8 rounded-xl shadow-xl flex flex-col items-center max-w-sm border border-border/50">
-            <Logo className="h-10 mb-6" />
             {isChecking ? (
               <>
-                <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+                <Logo className="h-16 w-auto animate-pulse mb-4" />
                 <p className="text-sm text-muted-foreground">Checking connection…</p>
               </>
             ) : (
               <>
+                <Logo className="h-10 mb-6" />
                 <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted mb-4">
                   <WifiOff className="h-7 w-7 text-muted-foreground" />
                 </div>

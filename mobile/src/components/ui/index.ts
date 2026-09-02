@@ -8,6 +8,7 @@ export { Badge } from './Badge';
 export { Chip } from './Chip';
 export { PageHeader } from './PageHeader';
 export { Screen } from './Screen';
+export { AppLogoLoader } from './AppLogoLoader';
 export { HeroBanner } from './HeroBanner';
 export { QuickLinkCard } from './QuickLinkCard';
 export { ToastProvider, useToast } from './Toast';

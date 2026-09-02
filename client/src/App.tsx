@@ -68,6 +68,7 @@ import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
 import { DataProtectionBanner } from "@/components/DataProtectionBanner";
 import { OfflineGate } from "@/components/OfflineGate";
 import { PwaUpdatePrompt } from "@/components/PwaUpdatePrompt";
+import { AppPageLoader } from "@/components/AppPageLoader";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,11 +82,7 @@ const queryClient = new QueryClient({
 });
 
 function PageLoader() {
-  return (
-    <div className="flex items-center justify-center min-h-[40vh] text-muted-foreground">
-      <div className="animate-pulse text-sm">Loading…</div>
-    </div>
-  );
+  return <AppPageLoader />;
 }
 
 function LazyPage({ children }: { children: React.ReactNode }) {
@@ -95,11 +92,7 @@ function LazyPage({ children }: { children: React.ReactNode }) {
 function HomeRoute() {
   const { user, loading } = useAuth();
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen text-muted-foreground">
-        <div className="animate-pulse text-sm">Loading…</div>
-      </div>
-    );
+    return <AppPageLoader />;
   }
   if (user) return <Navigate to="/dashboard" replace />;
   return <LandingPage />;
@@ -107,18 +100,14 @@ function HomeRoute() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return (
-    <div className="flex items-center justify-center min-h-screen text-muted-foreground">
-      <div className="animate-pulse text-sm">Loading…</div>
-    </div>
-  );
+  if (loading) return <AppPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   return <>{children}</>;
 }
 
 function PublicOnly({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return null;
+  if (loading) return <AppPageLoader />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }

@@ -1,15 +1,17 @@
 import { Redirect } from 'expo-router';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { useAuth } from '../src/context/AuthContext';
-import { colors } from '../src/theme';
+import { AppLogoLoader } from '../src/components/ui/AppLogoLoader';
+import { useTheme } from '../src/context/ThemeContext';
 
 export default function Index() {
   const { token, isLoading } = useAuth();
+  const { colors } = useTheme();
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors['canvas-soft'] }}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }}>
+        <AppLogoLoader />
       </View>
     );
   }

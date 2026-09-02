@@ -1,18 +1,19 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Slot, useRouter, useSegments } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { WorkspaceProvider } from '../src/context/WorkspaceContext';
 import { OfflineProvider } from '../src/components/OfflineBanner';
-import { ToastProvider } from '../src/components/ui';
+import { AppLogoLoader, ToastProvider } from '../src/components/ui';
 import { queryClient } from '../src/lib/query-client';
 import { useAppFonts } from '../src/hooks/useAppFonts';
 
 function InitialLayout() {
   const { token, isLoading } = useAuth();
+  const { colors } = useTheme();
   const segments = useSegments();
   const router = useRouter();
 
@@ -28,6 +29,14 @@ function InitialLayout() {
     }
   }, [token, isLoading, segments, router]);
 
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }}>
+        <AppLogoLoader />
+      </View>
+    );
+  }
+
   return <Slot />;
 }
 
@@ -37,8 +46,8 @@ function FontGate({ children }: { children: React.ReactNode }) {
 
   if (!loaded) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors['canvas-soft'] }}>
-        <ActivityIndicator size="large" color={colors.primary} />
+      <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }}>
+        <AppLogoLoader />
       </View>
     );
   }
