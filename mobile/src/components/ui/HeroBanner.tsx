@@ -21,8 +21,12 @@ export function HeroBanner({
   return (
     <View style={styles.hero}>
       <Text style={styles.eyebrow}>{eyebrow}</Text>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
+      <Text style={styles.title} numberOfLines={3} ellipsizeMode="tail">
+        {title}
+      </Text>
+      <Text style={styles.subtitle} numberOfLines={4} ellipsizeMode="tail">
+        {subtitle}
+      </Text>
       {(primaryAction || secondaryAction) && (
         <View style={styles.actions}>
           {primaryAction ? (

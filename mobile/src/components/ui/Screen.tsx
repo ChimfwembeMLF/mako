@@ -1,61 +1,61 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   type ScrollViewProps,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAppShellChrome } from '../../context/AppShellChromeContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
+import { AppLogoLoader } from './AppLogoLoader';
 import { EmptyState } from './EmptyState';
-import { SkeletonList } from './Skeleton';
 
 type Props = ScrollViewProps & {
   children?: React.ReactNode;
   loading?: boolean;
+  /** @deprecated Logo loader is used for all loading states */
   skeleton?: boolean;
   empty?: boolean;
   emptyMessage?: string;
   emptyTitle?: string;
   emptyActionLabel?: string;
   onEmptyAction?: () => void;
+  loadingMessage?: string;
   padded?: boolean;
 };
 
 export function Screen({
   children,
   loading,
-  skeleton,
+  skeleton: _skeleton,
   empty,
   emptyMessage = 'Nothing here yet.',
   emptyTitle,
   emptyActionLabel,
   onEmptyAction,
+  loadingMessage,
   padded = true,
   contentContainerStyle,
   ...rest
 }: Props) {
   const { colors } = useTheme();
+  const chrome = useAppShellChrome();
 
-  if (loading && skeleton) {
-    return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors['canvas-soft'] }]} edges={['bottom']}>
-        <View style={[padded && styles.pad]}>
-          <SkeletonList count={4} />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  useEffect(() => {
+    if (!loading || !chrome) return;
+    chrome.setChromeHidden(true);
+    return () => chrome.setChromeHidden(false);
+  }, [loading, chrome]);
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: colors['canvas-soft'] }]} edges={['bottom']}>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+      <SafeAreaView
+        style={[styles.safe, { backgroundColor: colors['canvas-soft'] }]}
+        edges={['top', 'bottom']}
+      >
+        <AppLogoLoader message={loadingMessage} />
       </SafeAreaView>
     );
   }

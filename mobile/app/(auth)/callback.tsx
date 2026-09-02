@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { colors, fonts, spacing, typography } from '../../src/theme';
+import { AppLogoLoader } from '../../src/components/ui/AppLogoLoader';
+import { useTheme } from '../../src/context/ThemeContext';
 
 export default function AuthCallbackScreen() {
   const params = useLocalSearchParams<{ token?: string; error?: string }>();
   const router = useRouter();
   const { signIn } = useAuth();
+  const { colors } = useTheme();
   const [message, setMessage] = useState('Signing you in…');
 
   useEffect(() => {
@@ -50,9 +52,8 @@ export default function AuthCallbackScreen() {
   }, []);
 
   return (
-    <View style={styles.center}>
-      <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.meta}>{message}</Text>
+    <View style={[styles.center, { backgroundColor: colors['canvas-soft'] }]}>
+      <AppLogoLoader message={message} />
     </View>
   );
 }
@@ -60,16 +61,5 @@ export default function AuthCallbackScreen() {
 const styles = StyleSheet.create({
   center: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.md,
-    backgroundColor: colors['canvas-soft'],
-    padding: spacing.xl,
-  },
-  meta: {
-    ...typography.bodyMd,
-    fontFamily: fonts.body,
-    color: colors.mute,
-    textAlign: 'center',
   },
 });

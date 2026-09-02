@@ -47,6 +47,7 @@ type SocialOAuthUser = {
 
 function isAllowedMobileOAuthReturnUrl(returnUrl: string): boolean {
   if (/^mako:\/\//.test(returnUrl)) return true;
+  if (/^exp[s]?:\/\//.test(returnUrl)) return true;
   try {
     const u = new URL(returnUrl);
     if (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {

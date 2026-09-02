@@ -8,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { api, type SocialAccount } from '../../src/lib/api';
 import {
@@ -16,6 +15,7 @@ import {
   parseOAuthCallbackUrl,
   type OAuthPickerState,
 } from '../../src/lib/oauth-callback';
+import { getMobileOAuthReturnUrl } from '../../src/lib/oauth-redirect';
 import { PLATFORMS, platformMeta } from '../../src/constants/platforms';
 import { TabShell } from '../../src/components/TabShell';
 import { useWorkspace } from '../../src/context/WorkspaceContext';
@@ -55,7 +55,7 @@ export default function ConnectionsScreen() {
       }
       setBusy(platform);
       try {
-        const returnUrl = Linking.createURL('publisher');
+        const returnUrl = getMobileOAuthReturnUrl('publisher');
         const { redirectUrl } = await api.startOAuth(
           platform,
           effectiveTenant,

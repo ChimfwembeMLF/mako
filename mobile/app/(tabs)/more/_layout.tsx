@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router';
-import { View } from 'react-native';
-import { AppShellHeader } from '../../../src/components/AppShellHeader';
+import { AppShellGate } from '../../../src/context/AppShellChromeContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 
 export default function MoreLayout() {
   const { colors } = useTheme();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }}>
-      <AppShellHeader />
+    <AppShellGate>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -29,6 +27,6 @@ export default function MoreLayout() {
         <Stack.Screen name="whatsapp" />
         <Stack.Screen name="auto-reply-rules" />
       </Stack>
-    </View>
+    </AppShellGate>
   );
 }

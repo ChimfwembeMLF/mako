@@ -64,7 +64,9 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={labelColor} />
       ) : (
-        <Text style={[styles.label, { color: labelColor }]}>{label}</Text>
+        <Text style={[styles.label, { color: labelColor }]} numberOfLines={1} ellipsizeMode="tail">
+          {label}
+        </Text>
       )}
     </Pressable>
   );

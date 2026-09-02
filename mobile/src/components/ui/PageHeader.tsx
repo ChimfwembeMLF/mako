@@ -1,7 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter, usePathname } from 'expo-router';
-import { colors, fonts, spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { fonts, spacing, typography } from '../../theme';
 
 type Props = {
   title: string;
@@ -15,6 +16,7 @@ type Props = {
 export function PageHeader({ title, subtitle, icon, actions, showBack }: Props) {
   const router = useRouter();
   const pathname = usePathname();
+  const { colors } = useTheme();
   const onMoreSubScreen = /\/more\/.+/.test(pathname);
   const shouldShowBack = showBack ?? onMoreSubScreen;
 
@@ -27,15 +29,31 @@ export function PageHeader({ title, subtitle, icon, actions, showBack }: Props) 
           onPress={() => router.back()}
           style={styles.backBtn}
         >
-          <Text style={styles.backText}>← More</Text>
+          <Text style={[styles.backText, { color: colors.primary }]}>← More</Text>
         </Pressable>
       ) : null}
       <View style={styles.row}>
         <View style={styles.lead}>
-          {icon ? <View style={styles.iconTile}>{icon}</View> : null}
+          {icon ? (
+            <View style={[styles.iconTile, { backgroundColor: colors['primary-pale'] }]}>{icon}</View>
+          ) : null}
           <View style={styles.copy}>
-            <Text style={styles.title}>{title}</Text>
-            {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+            <Text
+              style={[styles.title, { color: colors.ink }]}
+              numberOfLines={2}
+              ellipsizeMode="tail"
+            >
+              {title}
+            </Text>
+            {subtitle ? (
+              <Text
+                style={[styles.subtitle, { color: colors.mute }]}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {subtitle}
+              </Text>
+            ) : null}
           </View>
         </View>
         {actions ? <View style={styles.actions}>{actions}</View> : null}
@@ -47,6 +65,7 @@ export function PageHeader({ title, subtitle, icon, actions, showBack }: Props) 
 const styles = StyleSheet.create({
   wrap: {
     marginBottom: spacing.lg,
+    minWidth: 0,
   },
   backBtn: {
     alignSelf: 'flex-start',
@@ -57,16 +76,19 @@ const styles = StyleSheet.create({
   backText: {
     ...typography.bodySmStrong,
     fontFamily: fonts.bodySemi,
-    color: colors.primary,
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'flex-start',
-    justifyContent: 'space-between',
     gap: spacing.md,
+    minWidth: 0,
   },
   lead: {
-    flex: 1,
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: 0,
+    minWidth: 0,
     flexDirection: 'row',
     gap: spacing.md,
   },
@@ -74,25 +96,27 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: colors['primary-pale'],
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
   copy: {
     flex: 1,
+    minWidth: 0,
     gap: spacing.xs,
   },
   title: {
     ...typography.displayXs,
     fontFamily: fonts.display,
-    color: colors.ink,
   },
   subtitle: {
     ...typography.bodySm,
     fontFamily: fonts.body,
-    color: colors.mute,
   },
   actions: {
     flexShrink: 0,
+    flexGrow: 0,
+    alignSelf: 'flex-start',
+    marginLeft: 'auto',
   },
 });

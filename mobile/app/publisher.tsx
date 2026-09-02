@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -76,14 +76,7 @@ export default function PublisherOAuthScreen() {
   };
 
   if (processing && !picker) {
-    return (
-      <Screen>
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.meta}>Finishing connection…</Text>
-        </View>
-      </Screen>
-    );
+    return <Screen loading loadingMessage="Finishing connection…" padded={false} />;
   }
 
   return (
@@ -182,8 +175,6 @@ export default function PublisherOAuthScreen() {
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.md },
-  meta: { ...typography.bodyMd, fontFamily: fonts.body, color: colors.mute },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

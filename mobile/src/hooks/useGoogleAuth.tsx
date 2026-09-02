@@ -1,9 +1,13 @@
 import React from 'react';
-import { Platform } from 'react-native';
-import * as Linking from 'expo-linking';
+import { Linking, Platform } from 'react-native';
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
 import { getGoogleMobileAuthUrl } from '../lib/api';
+import {
+  getMobileOAuthReturnUrl,
+  isAuthCallbackUrl,
+  parseAuthCallbackFromUrl,
+} from '../lib/oauth-redirect';
 import { Button } from '../components/ui';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -120,8 +124,23 @@ function GoogleServerAuthButton({
 
   const prompt = async () => {
     setBusy(true);
+    let subscription: { remove: () => void } | undefined;
+
+    const finishFromUrl = (url: string): boolean => {
+      const { token, error } = parseAuthCallbackFromUrl(url);
+      if (error) {
+        onError(error);
+        return true;
+      }
+      if (token) {
+        onSuccess({ kind: 'jwt', token });
+        return true;
+      }
+      return false;
+    };
+
     try {
-      const returnUrl = Linking.createURL('callback');
+      const returnUrl = getMobileOAuthReturnUrl('callback');
       const authUrl = getGoogleMobileAuthUrl(returnUrl);
 
       if (Platform.OS === 'web') {
@@ -129,28 +148,31 @@ function GoogleServerAuthButton({
         return;
       }
 
-      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
-      if (result.type !== 'success' || !result.url) {
-        if (result.type === 'cancel' || result.type === 'dismiss') return;
-        onError('Google sign-in was not completed');
+      subscription = Linking.addEventListener('url', ({ url }) => {
+        if (!isAuthCallbackUrl(url, returnUrl)) return;
+        void WebBrowser.dismissBrowser();
+        finishFromUrl(url);
+        setBusy(false);
+      });
+
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl, {
+        showInRecents: true,
+      });
+
+      if (result.type === 'success' && result.url) {
+        void WebBrowser.dismissBrowser();
+        if (!finishFromUrl(result.url)) {
+          onError('Missing sign-in token from server');
+        }
         return;
       }
-      const parsed = Linking.parse(result.url);
-      const params = parsed.queryParams || {};
-      const err = params.error;
-      if (err) {
-        onError(typeof err === 'string' ? err : String(err));
-        return;
-      }
-      const token = params.token;
-      if (!token || typeof token !== 'string') {
-        onError('Missing sign-in token from server');
-        return;
-      }
-      onSuccess({ kind: 'jwt', token });
+
+      if (result.type === 'cancel' || result.type === 'dismiss') return;
+      onError('Google sign-in was not completed');
     } catch (e: any) {
       onError(e.message || 'Google sign-in failed');
     } finally {
+      subscription?.remove();
       setBusy(false);
     }
   };
