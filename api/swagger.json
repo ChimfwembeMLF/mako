@@ -166,6 +166,30 @@
         ]
       }
     },
+    "/api/v1/auth/google/mobile": {
+      "get": {
+        "operationId": "AuthController_googleAuthMobile",
+        "parameters": [
+          {
+            "name": "returnUrl",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Start Google OAuth for mobile (same as web client, deep-link return)",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/api/v1/auth/google": {
       "get": {
         "operationId": "AuthController_googleAuth",

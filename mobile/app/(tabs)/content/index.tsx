@@ -1,21 +1,25 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
+import { FlatList, StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { api, type ContentItem } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useOfflineBanner } from '../../../src/components/OfflineBanner';
-import { colors, spacing, rounded, typography } from '../../../src/theme';
+import { useTheme } from '../../../src/context/ThemeContext';
+import { fonts, spacing, typography } from '../../../src/theme';
+import { Badge, Button, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+
+function statusTone(status?: string | null): 'default' | 'positive' | 'scheduled' | 'muted' {
+  const s = (status || 'draft').toLowerCase();
+  if (s === 'published') return 'positive';
+  if (s === 'scheduled') return 'scheduled';
+  if (s === 'draft') return 'muted';
+  return 'default';
+}
 
 export default function ContentListScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
   const { activeWorkspace, tenantId } = useWorkspace();
   const { reportError } = useOfflineBanner();
   const workspaceId = activeWorkspace?.id;
@@ -33,71 +37,101 @@ export default function ContentListScreen() {
 
   if (!workspaceId || !effectiveTenant) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.emptyText}>Select a workspace on Home first.</Text>
-      </View>
+      <Screen
+        empty
+        emptyTitle="No workspace selected"
+        emptyMessage="Tap the workspace name at the top to choose a workspace."
+      />
     );
   }
 
   if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
+    return <Screen loading skeleton />;
   }
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.primaryBtn} onPress={() => router.push('/content/new' as any)}>
-        <Text style={styles.primaryBtnText}>New post</Text>
-      </TouchableOpacity>
-      {error ? <Text style={styles.errorText}>{error.message}</Text> : null}
+    <Screen>
+      <PageHeader
+        title="Content Engine"
+        subtitle="Write, save drafts, and publish to connected channels."
+        icon={<Text style={[styles.headerIcon, { color: colors['positive-deep'] }]}>✎</Text>}
+        actions={
+          <Button
+            label="New post"
+            onPress={() => router.push('/content/new' as any)}
+            style={styles.headerBtn}
+          />
+        }
+      />
+
+      {error ? <Text style={[styles.errorText, { color: colors.negative }]}>{error.message}</Text> : null}
+
       <FlatList
         data={data as ContentItem[]}
+        scrollEnabled={false}
         refreshing={isRefetching}
         onRefresh={() => void refetch()}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.card}
-            onPress={() => router.push(`/content/${item.id}` as any)}
-          >
-            <Text style={styles.cardTitle}>{item.title || 'Untitled'}</Text>
-            <Text style={styles.cardMeta} numberOfLines={2}>
-              {item.content || '—'}
+          <Card onPress={() => router.push(`/content/${item.id}` as any)} style={styles.card}>
+            <View style={styles.cardTop}>
+              <Text style={[styles.cardTitle, { color: colors.ink, fontFamily: fonts.bodySemi }]}>
+                {item.title || 'Untitled'}
+              </Text>
+              <Badge label={(item.status || 'draft').toUpperCase()} tone={statusTone(item.status)} />
+            </View>
+            <Text style={[styles.cardMeta, { color: colors.body, fontFamily: fonts.body }]} numberOfLines={2}>
+              {item.content || 'No body yet'}
             </Text>
-            <Text style={styles.cardMeta}>
-              {(item.status || 'draft').toUpperCase()}
-              {item.platforms?.length ? ` · ${item.platforms.join(', ')}` : ''}
-            </Text>
-          </TouchableOpacity>
+            {item.platforms?.length ? (
+              <Text style={[styles.platforms, { color: colors.mute, fontFamily: fonts.body }]}>
+                {item.platforms.join(' · ')}
+              </Text>
+            ) : null}
+          </Card>
         )}
-        ListEmptyComponent={<Text style={styles.emptyText}>No posts yet.</Text>}
+        ListEmptyComponent={
+          <EmptyState
+            title="No posts yet"
+            description="Create your first post for this workspace."
+            actionLabel="New post"
+            onAction={() => router.push('/content/new' as any)}
+          />
+        }
       />
-    </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors['canvas-soft'], padding: spacing.lg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
-  primaryBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: rounded.xl,
-    padding: spacing.md,
-    alignItems: 'center',
-    marginBottom: spacing.lg,
+  headerIcon: {
+    fontSize: 18,
   },
-  primaryBtnText: { ...typography.buttonMd, color: colors['on-primary'] },
+  headerBtn: {
+    minHeight: 40,
+    paddingHorizontal: spacing.lg,
+  },
   card: {
-    backgroundColor: colors.canvas,
-    borderRadius: rounded.xl,
-    padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  cardTitle: { ...typography.bodyMdStrong, color: colors.ink },
-  cardMeta: { ...typography.bodySm, color: colors.mute, marginTop: spacing.xs },
-  errorText: { color: colors.negative, marginBottom: spacing.md },
-  emptyText: { ...typography.bodyMd, color: colors.mute, textAlign: 'center' },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  cardTitle: {
+    ...typography.bodyMdStrong,
+    flex: 1,
+  },
+  cardMeta: {
+    ...typography.bodySm,
+  },
+  platforms: {
+    ...typography.caption,
+    marginTop: spacing.sm,
+    textTransform: 'capitalize',
+  },
+  errorText: { marginBottom: spacing.md },
 });

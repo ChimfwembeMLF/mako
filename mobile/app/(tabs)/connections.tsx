@@ -1,40 +1,41 @@
 import React, { useCallback, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
   FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
 import { api, type SocialAccount } from '../../src/lib/api';
+import {
+  handleOAuthCallback,
+  parseOAuthCallbackUrl,
+  type OAuthPickerState,
+} from '../../src/lib/oauth-callback';
+import { PLATFORMS, platformMeta } from '../../src/constants/platforms';
+import { TabShell } from '../../src/components/TabShell';
 import { useWorkspace } from '../../src/context/WorkspaceContext';
 import { useOfflineBanner } from '../../src/components/OfflineBanner';
-import { colors, spacing, rounded, typography } from '../../src/theme';
+import { useTheme } from '../../src/context/ThemeContext';
+import { colors, fonts, spacing, typography } from '../../src/theme';
+import { Badge, Button, Card, EmptyState, PageHeader, Screen, useToast } from '../../src/components/ui';
 
-const PLATFORMS = [
-  { id: 'facebook', label: 'Facebook' },
-  { id: 'instagram', label: 'Instagram' },
-  { id: 'linkedin', label: 'LinkedIn' },
-];
+type PickerState = OAuthPickerState;
 
 export default function ConnectionsScreen() {
+  const { colors } = useTheme();
+  const toast = useToast();
   const { activeWorkspace, tenantId } = useWorkspace();
   const { reportError } = useOfflineBanner();
   const queryClient = useQueryClient();
   const effectiveTenant = tenantId || activeWorkspace?.tenantId;
   const workspaceId = activeWorkspace?.id;
   const [busy, setBusy] = useState<string | null>(null);
-  const [pagePicker, setPagePicker] = useState<{
-    setupToken: string;
-    pages: Array<{ id: string; name: string }>;
-  } | null>(null);
+  const [picker, setPicker] = useState<PickerState | null>(null);
 
   const { data = [], isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ['social-accounts', effectiveTenant, workspaceId],
@@ -49,7 +50,7 @@ export default function ConnectionsScreen() {
   const connect = useCallback(
     async (platform: string) => {
       if (!effectiveTenant || !workspaceId) {
-        Alert.alert('Workspace', 'Select a workspace on Home first.');
+        toast.error('Select a workspace using the header switcher first.');
         return;
       }
       setBusy(platform);
@@ -63,28 +64,23 @@ export default function ConnectionsScreen() {
         );
         const result = await WebBrowser.openAuthSessionAsync(redirectUrl, returnUrl);
         if (result.type === 'success' && result.url) {
-          const parsed = Linking.parse(result.url);
-          const setup =
-            (parsed.queryParams?.facebookSetup as string) ||
-            (parsed.queryParams?.setupToken as string);
-          if (setup && (platform === 'facebook' || platform === 'instagram')) {
-            const setupData = await api.getFacebookSetup(setup);
-            const pages = setupData?.pages || [];
-            if (pages.length === 1) {
-              await api.finalizeFacebook({ setupToken: setup, pageId: pages[0].id });
-            } else if (pages.length > 1) {
-              setPagePicker({ setupToken: setup, pages });
-            }
+          const outcome = await handleOAuthCallback(parseOAuthCallbackUrl(result.url));
+          if (outcome.errorMessage) {
+            toast.error(outcome.errorMessage);
+          } else if (outcome.successMessage) {
+            toast.success(outcome.successMessage);
+          } else if (outcome.picker) {
+            setPicker(outcome.picker);
           }
         }
         await refetch();
       } catch (e: any) {
-        Alert.alert('Connection failed', e.message || 'Could not connect');
+        toast.error(e.message || 'Could not connect');
       } finally {
         setBusy(null);
       }
     },
-    [effectiveTenant, workspaceId, refetch],
+    [effectiveTenant, workspaceId, refetch, toast],
   );
 
   const disconnect = async (account: SocialAccount) => {
@@ -95,125 +91,254 @@ export default function ConnectionsScreen() {
         queryKey: ['social-accounts', effectiveTenant, workspaceId],
       });
     } catch (e: any) {
-      Alert.alert('Disconnect failed', e.message || 'Could not disconnect');
+      toast.error(e.message || 'Could not disconnect');
     }
   };
 
   if (!workspaceId || !effectiveTenant) {
     return (
-      <View style={styles.center}>
-        <Text style={styles.meta}>Select a workspace on Home first.</Text>
-      </View>
+      <TabShell>
+        <Screen
+          empty
+          emptyTitle="No workspace selected"
+          emptyMessage="Tap the workspace name at the top to choose a workspace."
+        />
+      </TabShell>
     );
   }
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Connections</Text>
-      <Text style={styles.meta}>Link accounts for the active workspace.</Text>
+  if (isLoading) {
+    return (
+      <TabShell>
+        <Screen loading skeleton />
+      </TabShell>
+    );
+  }
 
-      <View style={styles.row}>
-        {PLATFORMS.map((p) => (
-          <TouchableOpacity
-            key={p.id}
-            style={styles.connectBtn}
-            disabled={busy === p.id}
-            onPress={() => void connect(p.id)}
-          >
-            {busy === p.id ? (
-              <ActivityIndicator color={colors['on-primary']} />
-            ) : (
-              <Text style={styles.connectBtnText}>{p.label}</Text>
-            )}
-          </TouchableOpacity>
-        ))}
+  const connectedIds = new Set((data as SocialAccount[]).map((a) => a.platform));
+
+  return (
+    <TabShell>
+    <Screen>
+      <PageHeader
+        title="Connections"
+        subtitle="Link social accounts for the active workspace."
+        icon={<Text style={[styles.headerIcon, { color: colors['positive-deep'] }]}>⛓</Text>}
+      />
+
+      <Text style={styles.sectionLabel}>Platforms</Text>
+      <View style={styles.platformGrid}>
+        {PLATFORMS.map((p) => {
+          const connected = connectedIds.has(p.id);
+          return (
+            <Card key={p.id} style={styles.platformCard}>
+              <View style={[styles.platformIcon, { backgroundColor: p.bg }]}>
+                <Text style={[styles.platformGlyph, { color: p.color }]}>
+                  {p.label.charAt(0)}
+                </Text>
+              </View>
+              <View style={styles.platformCopy}>
+                <Text style={styles.platformTitle}>{p.label}</Text>
+                {connected ? <Badge label="Connected" tone="positive" /> : null}
+              </View>
+              <Button
+                label={connected ? 'Add' : 'Connect'}
+                variant={connected ? 'outline' : 'primary'}
+                loading={busy === p.id}
+                onPress={() => void connect(p.id)}
+                style={styles.platformBtn}
+              />
+            </Card>
+          );
+        })}
       </View>
 
-      {isLoading ? (
-        <ActivityIndicator color={colors.primary} />
-      ) : (
-        <FlatList
-          data={data as SocialAccount[]}
-          refreshing={isRefetching}
-          onRefresh={() => void refetch()}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
+      <Text style={styles.sectionLabel}>Connected accounts</Text>
+      <FlatList
+        data={data as SocialAccount[]}
+        scrollEnabled={false}
+        refreshing={isRefetching}
+        onRefresh={() => void refetch()}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          const meta = platformMeta(item.platform);
+          return (
+            <Card style={styles.accountCard}>
+              <View style={[styles.platformIcon, { backgroundColor: meta.bg }]}>
+                <Text style={[styles.platformGlyph, { color: meta.color }]}>
+                  {meta.label.charAt(0)}
+                </Text>
+              </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.cardTitle}>
+                <Text style={styles.accountTitle}>
                   {item.accountName || item.name || item.platform}
                 </Text>
-                <Text style={styles.meta}>{item.platform}</Text>
+                <Text style={styles.accountMeta}>{meta.label}</Text>
               </View>
-              <TouchableOpacity onPress={() => void disconnect(item)}>
-                <Text style={styles.danger}>Disconnect</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-          ListEmptyComponent={<Text style={styles.meta}>No accounts connected yet.</Text>}
-        />
-      )}
+              <Button
+                label="Disconnect"
+                variant="ghost"
+                onPress={() => void disconnect(item)}
+                style={styles.disconnectBtn}
+              />
+            </Card>
+          );
+        }}
+        ListEmptyComponent={
+          <EmptyState
+            title="No accounts connected"
+            description="Connect a platform above to publish and manage inbox."
+          />
+        }
+      />
 
-      <Modal visible={Boolean(pagePicker)} transparent animationType="slide">
+      <Modal visible={Boolean(picker)} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
           <View style={styles.modalCard}>
-            <Text style={styles.title}>Select a Page</Text>
-            {pagePicker?.pages.map((page) => (
-              <Pressable
-                key={page.id}
-                style={styles.card}
-                onPress={() => {
-                  void (async () => {
-                    try {
-                      await api.finalizeFacebook({
-                        setupToken: pagePicker.setupToken,
-                        pageId: page.id,
-                      });
-                      setPagePicker(null);
-                      await refetch();
-                    } catch (e: any) {
-                      Alert.alert('Finalize failed', e.message || 'Could not finalize');
-                    }
-                  })();
-                }}
-              >
-                <Text style={styles.cardTitle}>{page.name}</Text>
-              </Pressable>
-            ))}
-            <TouchableOpacity onPress={() => setPagePicker(null)}>
-              <Text style={styles.meta}>Cancel</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalTitle}>
+              {picker?.kind === 'youtube'
+                ? 'Select a channel'
+                : picker?.kind === 'whatsapp'
+                  ? 'Select a phone number'
+                  : 'Select a Page'}
+            </Text>
+            {picker?.kind === 'facebook'
+              ? picker.pages.map((page) => (
+                  <Pressable
+                    key={page.id}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      void (async () => {
+                        try {
+                          await api.finalizeFacebook({
+                            setupToken: picker.setupToken,
+                            pageId: page.id,
+                          });
+                          setPicker(null);
+                          await refetch();
+                        } catch (e: any) {
+                          toast.error(e.message || 'Could not finalize');
+                        }
+                      })();
+                    }}
+                  >
+                    <Text style={styles.accountTitle}>{page.name}</Text>
+                  </Pressable>
+                ))
+              : null}
+            {picker?.kind === 'youtube'
+              ? picker.channels.map((ch) => (
+                  <Pressable
+                    key={ch.id}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      void (async () => {
+                        try {
+                          await api.finalizeYoutube({
+                            setupToken: picker.setupToken,
+                            channelId: ch.id,
+                          });
+                          setPicker(null);
+                          await refetch();
+                        } catch (e: any) {
+                          toast.error(e.message || 'Could not finalize');
+                        }
+                      })();
+                    }}
+                  >
+                    <Text style={styles.accountTitle}>{ch.title}</Text>
+                  </Pressable>
+                ))
+              : null}
+            {picker?.kind === 'whatsapp'
+              ? picker.phones.map((phone) => (
+                  <Pressable
+                    key={phone.id}
+                    style={styles.modalOption}
+                    onPress={() => {
+                      void (async () => {
+                        try {
+                          await api.finalizeWhatsapp({
+                            setupToken: picker.setupToken,
+                            phoneNumberId: phone.id,
+                          });
+                          setPicker(null);
+                          await refetch();
+                        } catch (e: any) {
+                          toast.error(e.message || 'Could not finalize');
+                        }
+                      })();
+                    }}
+                  >
+                    <Text style={styles.accountTitle}>
+                      {phone.verifiedName || phone.displayPhoneNumber || phone.id}
+                    </Text>
+                  </Pressable>
+                ))
+              : null}
+            <Button label="Cancel" variant="ghost" onPress={() => setPicker(null)} />
           </View>
         </View>
       </Modal>
-    </View>
+    </Screen>
+    </TabShell>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors['canvas-soft'], padding: spacing.lg },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  title: { ...typography.displayXs, color: colors.ink, marginBottom: spacing.sm },
-  meta: { ...typography.bodySm, color: colors.mute, marginBottom: spacing.md },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  connectBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: rounded.xl,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  connectBtnText: { ...typography.buttonMd, color: colors['on-primary'] },
-  card: {
-    backgroundColor: colors.canvas,
-    borderRadius: rounded.xl,
-    padding: spacing.lg,
+  headerIcon: { fontSize: 18 },
+  sectionLabel: {
+    ...typography.bodySmStrong,
+    fontFamily: fonts.bodySemi,
+    color: colors.mute,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
     marginBottom: spacing.md,
+    marginTop: spacing.sm,
+  },
+  platformGrid: { gap: spacing.md, marginBottom: spacing.xl },
+  platformCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
-  cardTitle: { ...typography.bodyMdStrong, color: colors.ink },
-  danger: { ...typography.bodySmStrong, color: colors.negative },
+  platformIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  platformGlyph: {
+    ...typography.bodyMdStrong,
+    fontFamily: fonts.bodySemi,
+  },
+  platformCopy: { flex: 1, gap: spacing.xs },
+  platformTitle: {
+    ...typography.bodyMdStrong,
+    fontFamily: fonts.bodySemi,
+    color: colors.ink,
+  },
+  platformBtn: { minHeight: 40, paddingHorizontal: spacing.md },
+  accountCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  accountTitle: {
+    ...typography.bodyMdStrong,
+    fontFamily: fonts.bodySemi,
+    color: colors.ink,
+  },
+  accountMeta: {
+    ...typography.bodySm,
+    fontFamily: fonts.body,
+    color: colors.mute,
+    marginTop: spacing.xxs,
+  },
+  disconnectBtn: { minHeight: 36, paddingHorizontal: spacing.sm },
+  emptyText: { ...typography.bodyMd, color: colors.mute },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',
@@ -221,9 +346,20 @@ const styles = StyleSheet.create({
   },
   modalCard: {
     backgroundColor: colors.canvas,
-    borderTopLeftRadius: rounded.xl,
-    borderTopRightRadius: rounded.xl,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     padding: spacing.xl,
     maxHeight: '70%',
+  },
+  modalTitle: {
+    ...typography.displayXs,
+    fontFamily: fonts.display,
+    color: colors.ink,
+    marginBottom: spacing.lg,
+  },
+  modalOption: {
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
 });

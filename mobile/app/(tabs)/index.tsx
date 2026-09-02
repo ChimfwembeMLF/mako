@@ -1,150 +1,72 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  TouchableOpacity,
-} from 'react-native';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '../../src/lib/api';
-import { colors, spacing, rounded, typography } from '../../src/theme';
-import { useWorkspace, type WorkspaceContextValue } from '../../src/context/WorkspaceContext';
-import { useOfflineBanner } from '../../src/components/OfflineBanner';
-
-type WorkspaceRow = {
-  id: string;
-  name?: string;
-  tenantId?: string;
-  role?: string;
-};
+import { useRouter } from 'expo-router';
+import { Text } from 'react-native';
+import { TabShell } from '../../src/components/TabShell';
+import { OnboardingHint } from '../../src/components/OnboardingHint';
+import { useTheme } from '../../src/context/ThemeContext';
+import { HeroBanner, PageHeader, QuickLinkCard, Screen } from '../../src/components/ui';
 
 export default function HomeScreen() {
-  const { activeWorkspace, tenantId, setActiveWorkspace, setTenantId, reconcileWorkspaces } =
-    useWorkspace();
-  const { reportError } = useOfflineBanner();
-
-  const { data: workspaces = [], isLoading, error } = useQuery({
-    queryKey: ['workspaces', tenantId],
-    queryFn: () => api.getWorkspaces(tenantId),
-  });
-
-  React.useEffect(() => {
-    if (error?.message) reportError(error.message);
-    else reportError(null);
-  }, [error, reportError]);
-
-  React.useEffect(() => {
-    if (!Array.isArray(workspaces)) return;
-    void reconcileWorkspaces(workspaces as WorkspaceRow[]);
-  }, [workspaces, reconcileWorkspaces]);
-
-  const selectWorkspace = async (item: WorkspaceRow) => {
-    if (item.tenantId) {
-      await setTenantId(item.tenantId);
-    }
-    const next: WorkspaceContextValue = {
-      id: item.id,
-      name: item.name || 'Untitled Workspace',
-      role: item.role || 'member',
-      tenantId: item.tenantId,
-    };
-    await setActiveWorkspace(next);
-  };
-
-  if (isLoading) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
-    );
-  }
+  const router = useRouter();
+  const { colors } = useTheme();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Your Workspaces</Text>
-      {activeWorkspace ? (
-        <Text style={styles.activeLabel}>Active: {activeWorkspace.name}</Text>
-      ) : (
-        <Text style={styles.activeLabel}>Select a workspace to continue</Text>
-      )}
-      {error ? (
-        <Text style={styles.errorText}>{error.message || 'Failed to fetch workspaces'}</Text>
-      ) : null}
+    <TabShell>
+      <Screen>
+        <HeroBanner
+          title="Publish. Engage. Measure."
+          subtitle="Content, scheduling, connections, and inbox — your social workspace on mobile."
+          primaryAction={{
+            label: 'Create post',
+            onPress: () => router.push('/content/new' as any),
+          }}
+          secondaryAction={{
+            label: 'Open inbox',
+            onPress: () => router.push('/inbox' as any),
+          }}
+        />
 
-      <FlatList
-        data={workspaces as WorkspaceRow[]}
-        keyExtractor={(item, index) => item.id || index.toString()}
-        renderItem={({ item }) => {
-          const selected = activeWorkspace?.id === item.id;
-          return (
-            <TouchableOpacity
-              style={[styles.card, selected && styles.cardSelected]}
-              onPress={() => void selectWorkspace(item)}
-            >
-              <Text style={styles.cardTitle}>{item.name || 'Untitled Workspace'}</Text>
-              <Text style={styles.cardSubtitle}>
-                {selected ? 'Active workspace' : 'Tap to select'}
-                {item.role ? ` · ${item.role}` : ''}
-              </Text>
-            </TouchableOpacity>
-          );
-        }}
-        ListEmptyComponent={<Text style={styles.emptyText}>No workspaces found.</Text>}
-      />
-    </View>
+        <OnboardingHint />
+
+        <PageHeader
+          title="Quick actions"
+          subtitle="Same core flows as the web social dashboard."
+        />
+
+        <QuickLinkCard
+          title="Content Engine"
+          description="Write and publish posts"
+          icon={<Text style={{ fontSize: 20, color: colors['positive-deep'] }}>✎</Text>}
+          onPress={() => router.push('/content' as any)}
+        />
+        <QuickLinkCard
+          title="Scheduler"
+          description="View and manage scheduled posts"
+          icon={<Text style={{ fontSize: 20, color: colors['positive-deep'] }}>▦</Text>}
+          iconBg={colors['canvas-soft']}
+          onPress={() => router.push('/schedule' as any)}
+        />
+        <QuickLinkCard
+          title="Connections"
+          description="Link Facebook, Instagram, LinkedIn & more"
+          icon={<Text style={{ fontSize: 20, color: colors['positive-deep'] }}>⛓</Text>}
+          onPress={() => router.push('/connections' as any)}
+        />
+        <QuickLinkCard
+          title="Social Inbox"
+          description="Comments, DMs and replies"
+          icon={<Text style={{ fontSize: 20, color: colors['positive-deep'] }}>✉</Text>}
+          onPress={() => router.push('/inbox' as any)}
+        />
+
+        <PageHeader title="Explore" subtitle="Brand tools and workspace settings live under More." />
+        <QuickLinkCard
+          title="Open More menu"
+          description="Brand Brain, Media, Analytics, Team & Settings"
+          icon={<Text style={{ fontSize: 20, color: colors['positive-deep'] }}>☰</Text>}
+          onPress={() => router.push('/more' as any)}
+        />
+      </Screen>
+    </TabShell>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors['canvas-soft'],
-    padding: spacing.xl,
-  },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: colors['canvas-soft'],
-  },
-  title: {
-    ...typography.displayXs,
-    color: colors.ink,
-    marginBottom: spacing.md,
-  },
-  activeLabel: {
-    ...typography.bodySm,
-    color: colors.mute,
-    marginBottom: spacing.xl,
-  },
-  card: {
-    backgroundColor: colors.canvas,
-    borderRadius: rounded.xl,
-    padding: spacing.xl,
-    marginBottom: spacing.lg,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  cardSelected: {
-    borderColor: colors.primary,
-  },
-  cardTitle: {
-    ...typography.bodyMdStrong,
-    color: colors.ink,
-  },
-  cardSubtitle: {
-    ...typography.bodySm,
-    color: colors.mute,
-    marginTop: spacing.xs,
-  },
-  errorText: {
-    color: colors.negative,
-    marginBottom: spacing.lg,
-  },
-  emptyText: {
-    ...typography.bodyMd,
-    color: colors.mute,
-  },
-});

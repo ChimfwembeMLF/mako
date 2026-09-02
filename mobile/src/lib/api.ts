@@ -8,6 +8,19 @@ import {
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:4000';
 
+/** Same server OAuth entrypoint as web `client/src/lib/api.ts` getSocialLoginUrl. */
+export function getSocialLoginUrl(
+  provider: 'google' | 'facebook' | 'linkedin' | 'instagram' | 'twitter',
+) {
+  return `${API_URL.replace(/\/$/, '')}/api/v1/auth/${provider}`;
+}
+
+/** Mobile native Google sign-in via API redirect (uses api GOOGLE_CLIENT_ID, not expo client ids). */
+export function getGoogleMobileAuthUrl(returnUrl: string) {
+  const base = API_URL.replace(/\/$/, '');
+  return `${base}/api/v1/auth/google/mobile?returnUrl=${encodeURIComponent(returnUrl)}`;
+}
+
 export type UserProfile = {
   id: string;
   email: string | null;
@@ -42,6 +55,7 @@ export type ContentItem = {
   workspaceId?: string;
   title?: string | null;
   content?: string | null;
+  campaignTheme?: string | null;
   status?: string | null;
   platforms?: string[] | null;
   scheduledDate?: string | null;
@@ -49,6 +63,58 @@ export type ContentItem = {
   publishedAt?: string | null;
   media?: Array<{ id?: string; url?: string; type?: string }>;
 };
+
+export type FormSuggestionForm = 'brand-brain' | 'content' | 'campaign' | 'whatsapp-menu';
+
+export type BrandProfile = {
+  id?: string;
+  tenantId?: string;
+  workspaceId?: string;
+  brandType?: string;
+  companyName?: string;
+  industry?: string;
+  description?: string;
+  services?: string;
+  targetAudience?: string;
+  audiencePainPoints?: string;
+  toneOfVoice?: string;
+  brandPersonality?: string;
+  currentOffers?: string;
+  uniqueSellingPoints?: string;
+  faqs?: string;
+  caseStudies?: string;
+  bannedWords?: string;
+  bannedTopics?: string;
+  competitors?: string;
+  keywords?: string;
+  websiteUrl?: string;
+};
+
+export type ContentCampaign = {
+  id: string;
+  name?: string;
+  theme?: string;
+  goal?: string;
+  summary?: string;
+  postCount?: number;
+  startDate?: string;
+  status?: string;
+  platforms?: string[];
+  created_at?: string;
+};
+
+export type CampaignDetail = {
+  campaign: ContentCampaign;
+  posts: Array<{
+    id?: string;
+    title?: string;
+    content?: string;
+    platforms?: string[];
+    scheduledDate?: string;
+    status?: string;
+  }>;
+};
+
 
 export type SocialAccount = {
   id: string;
@@ -66,7 +132,22 @@ export type InboxConversation = {
   preview?: string;
   title?: string;
   lastMessageAt?: string;
+  lastAt?: string;
+  contentId?: string;
 };
+
+export type ReplyOutcome = {
+  sent: boolean;
+  message?: string;
+  usedTemplate?: boolean;
+};
+
+export function assertReplySent(result: ReplyOutcome | null | undefined): ReplyOutcome {
+  if (!result || result.sent !== true) {
+    throw new Error(result?.message || 'Send failed');
+  }
+  return result;
+}
 
 export type InboxMessage = {
   id: string;
@@ -92,9 +173,11 @@ let refreshInFlight: Promise<string | null> | null = null;
 
 function messageFromErrorBody(errorData: unknown, fallback: string): string {
   if (!errorData || typeof errorData !== 'object') return fallback;
-  const data = errorData as { message?: string | string[] };
+  const data = errorData as { message?: string | string[]; error?: string | string[] };
   if (Array.isArray(data.message)) return data.message.join(', ');
   if (typeof data.message === 'string') return data.message;
+  if (Array.isArray(data.error)) return data.error.join(', ');
+  if (typeof data.error === 'string') return data.error;
   return fallback;
 }
 
@@ -182,7 +265,12 @@ export async function fetchPublic(endpoint: string, options: RequestInit = {}) {
   }
 }
 
-export async function fetchWithAuth(endpoint: string, options: RequestInit = {}, retried = false) {
+export async function fetchWithAuth(
+  endpoint: string,
+  options: RequestInit = {},
+  retried = false,
+  timeoutMs = 10000,
+) {
   const headers = new Headers(options.headers || {});
   if (!headers.has('Content-Type') && options.body && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
@@ -194,7 +282,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {},
   }
 
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), 10000);
+  const id = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
     const response = await fetch(`${API_URL}${endpoint}`, {
@@ -208,7 +296,7 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {},
     if (response.status === 401 && !retried) {
       const refreshed = await refreshAccessToken();
       if (refreshed) {
-        return fetchWithAuth(endpoint, options, true);
+        return fetchWithAuth(endpoint, options, true, timeoutMs);
       }
       sessionHooks.onAuthFailure?.();
       throw new Error('Your session has expired. Please sign in again.');
@@ -340,7 +428,8 @@ export const api = {
     contentId?: string,
     mimeType = 'image/jpeg',
     fileName = 'upload.jpg',
-  ) => {
+    retried = false,
+  ): Promise<any> => {
     const token = await getToken();
     const qs = withScope({ tenantId, workspaceId, contentId });
     const form = new FormData();
@@ -360,6 +449,16 @@ export const api = {
         signal: controller.signal,
       });
       clearTimeout(id);
+
+      if (response.status === 401 && !retried) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+          return api.uploadMedia(uri, tenantId, workspaceId, contentId, mimeType, fileName, true);
+        }
+        sessionHooks.onAuthFailure?.();
+        throw new Error('Your session has expired. Please sign in again.');
+      }
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(messageFromErrorBody(errorData, 'Upload failed'));
@@ -421,29 +520,58 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  getYoutubeSetup: (token: string) =>
+    fetchWithAuth(
+      `/api/v1/social-accounts/youtube/setup?token=${encodeURIComponent(token)}`,
+    ),
+
+  finalizeYoutube: (data: { setupToken: string; channelId: string }) =>
+    fetchWithAuth('/api/v1/social-accounts/youtube/finalize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getWhatsappSetup: (token: string) =>
+    fetchWithAuth(
+      `/api/v1/social-accounts/whatsapp/setup?token=${encodeURIComponent(token)}`,
+    ),
+
+  finalizeWhatsapp: (data: { setupToken: string; phoneNumberId: string }) =>
+    fetchWithAuth('/api/v1/social-accounts/whatsapp/finalize', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   disconnectSocial: (id: string, tenantId?: string) =>
     fetchWithAuth(
       `/api/v1/social-accounts/${id}/disconnect${withScope({ tenantId })}`,
       { method: 'POST' },
     ),
 
-  listInboxConversations: (
+  listInboxConversations: async (
     tenantId: string,
     workspaceId?: string,
     channel = 'all',
-  ): Promise<InboxConversation[]> =>
-    fetchWithAuth(
+  ): Promise<InboxConversation[]> => {
+    const data = await fetchWithAuth(
       `/api/v1/inbox/conversations${withScope({ tenantId, workspaceId, channel })}`,
-    ),
+    );
+    if (Array.isArray(data)) return data as InboxConversation[];
+    if (Array.isArray(data?.data)) return data.data as InboxConversation[];
+    return [];
+  },
 
-  listInboxMessages: (
+  listInboxMessages: async (
     tenantId: string,
     conversationId: string,
     workspaceId?: string,
-  ): Promise<InboxMessage[]> =>
-    fetchWithAuth(
+  ): Promise<InboxMessage[]> => {
+    const data = await fetchWithAuth(
       `/api/v1/inbox/messages${withScope({ tenantId, conversationId, workspaceId })}`,
-    ),
+    );
+    if (Array.isArray(data)) return data as InboxMessage[];
+    return [];
+  },
 
   syncInbox: (tenantId: string, workspaceId?: string) =>
     fetchWithAuth('/api/v1/inbox/sync', {
@@ -456,9 +584,263 @@ export const api = {
     conversationId: string,
     message: string,
     workspaceId?: string,
-  ) =>
+  ): Promise<ReplyOutcome> =>
     fetchWithAuth('/api/v1/inbox/messages/reply', {
       method: 'POST',
       body: JSON.stringify({ tenantId, conversationId, message, workspaceId }),
+    }),
+
+  commentRepliesInbox: (
+    tenantId: string,
+    workspaceId?: string,
+    contentId?: string,
+  ): Promise<{ posts?: any[] }> =>
+    fetchWithAuth(
+      `/api/v1/comment-replies/inbox${withScope({ tenantId, workspaceId, contentId })}`,
+    ),
+
+  fetchCommentReplies: (tenantId: string, workspaceId?: string) =>
+    fetchWithAuth('/api/v1/comment-replies/fetch', {
+      method: 'POST',
+      body: JSON.stringify({ tenantId, workspaceId }),
+    }),
+
+  sendCommentReply: (
+    commentId: string,
+    message: string,
+  ): Promise<ReplyOutcome> =>
+    fetchWithAuth(`/api/v1/comment-replies/${commentId}/send`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+
+  suggestCommentReply: (commentId: string) =>
+    fetchWithAuth(`/api/v1/comment-replies/${commentId}/suggest`, {
+      method: 'POST',
+      body: JSON.stringify({}),
+    }),
+
+  getFormSuggestions: (data: {
+    tenantId: string;
+    workspaceId?: string;
+    form: FormSuggestionForm;
+    fields?: string[];
+    variationSeed?: string;
+    refresh?: boolean;
+    avoidTexts?: string[];
+  }): Promise<{ suggestions: Record<string, string[]> }> =>
+    fetchWithAuth('/api/v1/ai/form-suggestions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  enhanceField: (data: {
+    tenantId: string;
+    workspaceId?: string;
+    form: FormSuggestionForm;
+    fieldKey: string;
+    currentValue?: string;
+    variationSeed?: string;
+    avoidTexts?: string[];
+  }): Promise<{ text: string }> =>
+    fetchWithAuth('/api/v1/ai/enhance-field', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  generateContent: (data: {
+    theme?: string;
+    draft?: string;
+    workspaceId?: string;
+    workspace_id?: string;
+    tenantId?: string;
+    contentType?: string;
+    platform?: string;
+    templateId?: string;
+    save?: boolean;
+  }) =>
+    fetchWithAuth(
+      '/api/v1/content-ai/generate',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          ...data,
+          // Match web client: generate into editor only; user saves draft explicitly.
+          save: data.contentType === 'reply' ? false : data.save ?? false,
+        }),
+      },
+      false,
+      120000,
+    ),
+
+  getBrandProfileMine: (tenantId: string, workspaceId?: string): Promise<BrandProfile | null> =>
+    fetchWithAuth(`/api/v1/brand-profiles/mine${withScope({ tenantId, workspaceId })}`),
+
+  saveBrandProfile: (
+    tenantId: string,
+    workspaceId: string | undefined,
+    body: Record<string, unknown>,
+  ): Promise<BrandProfile> =>
+    fetchWithAuth('/api/v1/brand-profiles', {
+      method: 'POST',
+      body: JSON.stringify({ tenantId, workspaceId, ...body }),
+    }),
+
+  updateBrandProfile: (id: string, body: Record<string, unknown>) =>
+    fetchWithAuth(`/api/v1/brand-profiles/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  listMedia: async (tenantId: string, workspaceId?: string) => {
+    const data = await fetchWithAuth(`/api/v1/media${withScope({ tenantId, workspaceId })}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    if (Array.isArray(data?.data)) return data.data;
+    return [];
+  },
+
+  listTemplates: async (tenantId: string, workspaceId?: string) => {
+    const data = await fetchWithAuth(`/api/v1/templates${withScope({ tenantId, workspaceId })}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  },
+
+  getTemplate: (id: string, tenantId: string) =>
+    fetchWithAuth(`/api/v1/templates/${id}${withScope({ tenantId })}`),
+
+  listCampaigns: async (tenantId: string, workspaceId?: string): Promise<ContentCampaign[]> => {
+    const data = await fetchWithAuth(
+      `/api/v1/content-campaigns${withScope({ tenantId, workspaceId })}`,
+    );
+    if (Array.isArray(data)) return data as ContentCampaign[];
+    return [];
+  },
+
+  getCampaign: (id: string, tenantId: string): Promise<CampaignDetail> =>
+    fetchWithAuth(`/api/v1/content-campaigns/${id}${withScope({ tenantId })}`),
+
+  generateCampaign: (data: {
+    tenantId: string;
+    workspaceId: string;
+    theme: string;
+    name?: string;
+    goal?: string;
+    platforms?: string[];
+    postCount?: number;
+    startDate?: string;
+  }): Promise<{ campaign: ContentCampaign; posts: CampaignDetail['posts'] }> =>
+    fetchWithAuth(
+      '/api/v1/content-campaigns/generate',
+      {
+        method: 'POST',
+        body: JSON.stringify(data),
+      },
+      false,
+      180000,
+    ),
+
+  deleteCampaign: (id: string, tenantId: string) =>
+    fetchWithAuth(`/api/v1/content-campaigns/${id}${withScope({ tenantId })}`, {
+      method: 'DELETE',
+    }),
+
+  getPlatformDashboard: (tenantId: string, workspaceId?: string) =>
+    fetchWithAuth(`/api/v1/analytics/platform-dashboard${withScope({ tenantId, workspaceId })}`),
+
+  listTeamMembers: async (tenantId: string) => {
+    const data = await fetchWithAuth(
+      `/api/v1/tenant-members?tenantId=${encodeURIComponent(tenantId)}&detailed=true`,
+    );
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  },
+
+  listApprovalRequests: async (
+    tenantId: string,
+    opts?: { status?: string; statuses?: string[] },
+  ) => {
+    const params = new URLSearchParams({ tenantId });
+    if (opts?.status) params.set('status', opts.status);
+    if (opts?.statuses?.length) params.set('statuses', opts.statuses.join(','));
+    const data = await fetchWithAuth(`/api/v1/approval-requests?${params.toString()}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  },
+
+  updateApprovalRequest: (id: string, body: Record<string, unknown>) =>
+    fetchWithAuth(`/api/v1/approval-requests/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  listLeads: async (tenantId: string, workspaceId?: string) => {
+    const data = await fetchWithAuth(`/api/v1/leads${withScope({ tenantId, workspaceId })}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    if (Array.isArray(data?.leads)) return data.leads;
+    return [];
+  },
+
+  getLead: (id: string) => fetchWithAuth(`/api/v1/leads/${id}`),
+
+  getGmailStatus: () =>
+    fetchWithAuth('/api/v1/mail/gmail/status') as Promise<{
+      connected: boolean;
+      email?: string | null;
+      smtpConfigured?: boolean;
+      inboxAutoReply?: boolean;
+    }>,
+
+  listMailInbox: async (tenantId: string, workspaceId?: string, limit = 30) => {
+    const params = new URLSearchParams({ tenantId, limit: String(limit) });
+    if (workspaceId) params.set('workspaceId', workspaceId);
+    const data = await fetchWithAuth(`/api/v1/mail/inbox?${params.toString()}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  },
+
+  listRoles: async (tenantId: string) => {
+    const data = await fetchWithAuth(`/api/v1/roles?tenantId=${encodeURIComponent(tenantId)}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  },
+
+  getWhatsappStatus: (tenantId: string, workspaceId?: string) =>
+    fetchWithAuth(`/api/v1/whatsapp/connection-status${withScope({ tenantId, workspaceId })}`) as Promise<{
+      connected: boolean;
+      displayPhoneNumber?: string;
+      accountName?: string;
+      message?: string;
+      graphError?: string;
+    }>,
+
+  listAutoReplyRules: async (tenantId: string, workspaceId?: string) => {
+    const data = await fetchWithAuth(`/api/v1/auto-reply-rules${withScope({ tenantId, workspaceId })}`);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.items)) return data.items;
+    return [];
+  },
+
+  updateAutoReplyRule: (id: string, body: Record<string, unknown>) =>
+    fetchWithAuth(`/api/v1/auto-reply-rules/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
+
+  forgotPassword: (email: string) =>
+    fetch(`${API_URL}/api/v1/auth/forgot-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(messageFromErrorBody(data, 'Request failed'));
+      return data;
     }),
 };

@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { TabShell } from '../../src/components/TabShell';
 import { useAuth } from '../../src/context/AuthContext';
 import { useWorkspace } from '../../src/context/WorkspaceContext';
 import { api } from '../../src/lib/api';
-import { colors, spacing, rounded, typography } from '../../src/theme';
+import { colors, fonts, spacing, typography } from '../../src/theme';
+import { Button, Card, PageHeader, Screen } from '../../src/components/ui';
 
 export default function ProfileScreen() {
   const { signOut } = useAuth();
@@ -14,35 +16,30 @@ export default function ProfileScreen() {
     queryFn: api.getProfile,
   });
 
+  if (isLoading) {
+    return <Screen loading />;
+  }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.card}>
-        <Text style={styles.title}>Profile</Text>
+    <TabShell>
+    <Screen>
+      <PageHeader
+        title="Profile"
+        subtitle="Account details for your signed-in Mako user."
+        icon={<Text style={styles.headerIcon}>●</Text>}
+      />
 
-        {isLoading ? (
-          <ActivityIndicator color={colors.primary} />
-        ) : profile ? (
+      <Card style={styles.card}>
+        {profile ? (
           <View style={styles.infoContainer}>
-            <Text style={styles.label}>Email</Text>
-            <Text style={styles.value}>{profile.email || '—'}</Text>
-
-            <Text style={styles.label}>Name</Text>
-            <Text style={styles.value}>
-              {[profile.firstName, profile.lastName].filter(Boolean).join(' ') || '—'}
-            </Text>
-
-            {profile.tenant?.name ? (
-              <>
-                <Text style={styles.label}>Tenant</Text>
-                <Text style={styles.value}>{profile.tenant.name}</Text>
-              </>
-            ) : null}
-
+            <Field label="Email" value={profile.email || '—'} />
+            <Field
+              label="Name"
+              value={[profile.firstName, profile.lastName].filter(Boolean).join(' ') || '—'}
+            />
+            {profile.tenant?.name ? <Field label="Tenant" value={profile.tenant.name} /> : null}
             {activeWorkspace ? (
-              <>
-                <Text style={styles.label}>Active workspace</Text>
-                <Text style={styles.value}>{activeWorkspace.name}</Text>
-              </>
+              <Field label="Active workspace" value={activeWorkspace.name} />
             ) : null}
           </View>
         ) : (
@@ -51,55 +48,43 @@ export default function ProfileScreen() {
           </Text>
         )}
 
-        <TouchableOpacity style={styles.button} onPress={() => void signOut()}>
-          <Text style={styles.buttonText}>Sign Out</Text>
-        </TouchableOpacity>
-      </View>
+        <Button label="Sign out" variant="outline" onPress={() => void signOut()} />
+      </Card>
+    </Screen>
+    </TabShell>
+  );
+}
+
+function Field({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <Text style={styles.value}>{value}</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors['canvas-soft'],
-    padding: spacing.xl,
-  },
+  headerIcon: { fontSize: 18, color: colors['positive-deep'] },
   card: {
-    backgroundColor: colors.canvas,
-    borderRadius: rounded.xl,
     padding: spacing.xl,
-  },
-  title: {
-    ...typography.displayXs,
-    color: colors.ink,
-    marginBottom: spacing.xl,
   },
   infoContainer: {
     marginBottom: spacing.xl,
   },
+  field: {
+    marginBottom: spacing.lg,
+  },
   label: {
     ...typography.bodySmStrong,
+    fontFamily: fonts.bodySemi,
     color: colors.mute,
     marginBottom: spacing.xs,
   },
   value: {
     ...typography.bodyMd,
+    fontFamily: fonts.body,
     color: colors.ink,
-    marginBottom: spacing.lg,
-  },
-  button: {
-    backgroundColor: colors['canvas-soft'],
-    borderRadius: rounded.xl,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-    borderColor: colors.ink,
-    borderWidth: 1,
-  },
-  buttonText: {
-    color: colors.ink,
-    ...typography.buttonMd,
   },
   errorText: {
     color: colors.negative,

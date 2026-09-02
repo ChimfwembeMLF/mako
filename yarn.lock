@@ -2748,6 +2748,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@expo-google-fonts/inter@npm:^0.4.2":
+  version: 0.4.2
+  resolution: "@expo-google-fonts/inter@npm:0.4.2"
+  checksum: 10c0/a88e6d1321584055d2fa265861795d55ec04b64d9726ecb60fd11a970252d23a1fd8c1febab7b587eb8ec699071d35c38c591625e44a2826c1e0e18bb1aa1946
+  languageName: node
+  linkType: hard
+
+"@expo-google-fonts/manrope@npm:^0.4.2":
+  version: 0.4.2
+  resolution: "@expo-google-fonts/manrope@npm:0.4.2"
+  checksum: 10c0/84985ce8a64c584147a702e3e6f0dd11eb3d53180192e50669a814de9d555e778d37f974ca434a7785c3580df8fb594ff6985f82537a8d6934f528feb5aeddc8
+  languageName: node
+  linkType: hard
+
 "@expo-google-fonts/material-symbols@npm:^0.4.1":
   version: 0.4.42
   resolution: "@expo-google-fonts/material-symbols@npm:0.4.42"
@@ -14761,6 +14775,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-image-loader@npm:~6.0.0":
+  version: 6.0.0
+  resolution: "expo-image-loader@npm:6.0.0"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/36f1e80d2b3d2a1cce440c7d938cd3cf3138f2b1fa706a1954e415bfae87b5b8eeaec65be0ab17880eb7585dd28c9225d056ebdb98ac81e0ffbfe880d952b0eb
+  languageName: node
+  linkType: hard
+
+"expo-image-picker@npm:~17.0.8":
+  version: 17.0.11
+  resolution: "expo-image-picker@npm:17.0.11"
+  dependencies:
+    expo-image-loader: "npm:~6.0.0"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/4708eca0f93258b9214d4a107edeed52562ade4bc1b53c5fa6dcb1218ccdf56ba46e5993110cda81b19e6d5a52e61572e057ccbcb7efdd6a48d99f5633b178ec
+  languageName: node
+  linkType: hard
+
 "expo-image@npm:~57.0.2":
   version: 57.0.2
   resolution: "expo-image@npm:57.0.2"
@@ -20889,6 +20923,8 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "mobile@workspace:mobile"
   dependencies:
+    "@expo-google-fonts/inter": "npm:^0.4.2"
+    "@expo-google-fonts/manrope": "npm:^0.4.2"
     "@expo/ui": "npm:~57.0.9"
     "@tanstack/react-query": "npm:^5.101.4"
     "@types/react": "npm:~19.2.2"
@@ -20900,6 +20936,7 @@ __metadata:
     expo-font: "npm:~57.0.1"
     expo-glass-effect: "npm:~57.0.1"
     expo-image: "npm:~57.0.2"
+    expo-image-picker: "npm:~17.0.8"
     expo-linking: "npm:~57.0.5"
     expo-router: "npm:~57.0.11"
     expo-secure-store: "npm:~57.0.1"

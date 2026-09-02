@@ -69,17 +69,43 @@ async fn list_conversations(
     Query(query): Query<ConversationsQuery>,
 ) -> ApiResult<Json<Value>> {
     let channel = query.channel.as_deref().unwrap_or("all");
+    let mut conversations: Vec<Value> = Vec::new();
 
-    let mut db_query = MessageEntity::find()
-        .filter(MessageColumn::TenantId.eq(query.tenant_id))
-        .order_by_desc(MessageColumn::CreatedAt);
-
-    if let Some(workspace_id) = query.workspace_id {
-        db_query = db_query.filter(MessageColumn::WorkspaceId.eq(workspace_id));
+    if channel == "all" || channel == "post_comment" {
+        conversations.extend(
+            crate::modules::comment_replies::post_comment_conversations(
+                &state,
+                query.tenant_id,
+            )
+            .await?,
+        );
     }
 
-    let rows = db_query.all(&state.db).await?;
-    let conversations = build_conversations(&rows, channel);
+    if channel == "all" || channel == "dm" {
+        let mut db_query = MessageEntity::find()
+            .filter(MessageColumn::TenantId.eq(query.tenant_id))
+            .order_by_desc(MessageColumn::CreatedAt);
+
+        if let Some(workspace_id) = query.workspace_id {
+            db_query = db_query.filter(MessageColumn::WorkspaceId.eq(workspace_id));
+        }
+
+        let rows = db_query.all(&state.db).await?;
+        conversations.extend(build_conversations(&rows, "dm"));
+    }
+
+    conversations.sort_by(|a, b| {
+        let a_ts = a
+            .get("lastAt")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let b_ts = b
+            .get("lastAt")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        b_ts.cmp(a_ts)
+    });
+
     Ok(Json(json!(conversations)))
 }
 

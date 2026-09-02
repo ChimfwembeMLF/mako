@@ -45,6 +45,19 @@ type SocialOAuthUser = {
   };
 };
 
+function isAllowedMobileOAuthReturnUrl(returnUrl: string): boolean {
+  if (/^mako:\/\//.test(returnUrl)) return true;
+  try {
+    const u = new URL(returnUrl);
+    if (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {
+      return true;
+    }
+  } catch {
+    return false;
+  }
+  return false;
+}
+
 @Controller('api/v1/auth')
 @ApiTags('Auth')
 export class AuthController {
@@ -113,6 +126,25 @@ export class AuthController {
 
   // ========== SOCIAL LOGIN (SIGN IN) ENDPOINTS ==========
 
+  @Get('google/mobile')
+  @ApiOperation({ summary: 'Start Google OAuth for mobile (same as web client, deep-link return)' })
+  googleAuthMobile(
+    @Req() req: Request,
+    @Res() res: Response,
+    @Query('returnUrl') returnUrl?: string,
+  ) {
+    if (returnUrl && isAllowedMobileOAuthReturnUrl(returnUrl)) {
+      res.cookie('mako.oauth.mobile_return', returnUrl, {
+        maxAge: 600_000,
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+      });
+    }
+    const base = `${req.protocol}://${req.get('host')}`;
+    return res.redirect(`${base}/api/v1/auth/google`);
+  }
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Start Google OAuth login' })
@@ -134,12 +166,24 @@ export class AuthController {
         },
       );
       const tokens = await this.authService.completeAuthentication(user);
+      const mobileReturn = req.cookies?.['mako.oauth.mobile_return'];
+      if (mobileReturn && isAllowedMobileOAuthReturnUrl(String(mobileReturn))) {
+        res.clearCookie('mako.oauth.mobile_return', { path: '/' });
+        return res.redirect(`${mobileReturn}?token=${encodeURIComponent(tokens.token)}`);
+      }
       return res.redirect(
         `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
       );
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Google authentication failed';
+      const mobileReturn = req.cookies?.['mako.oauth.mobile_return'];
+      if (mobileReturn && isAllowedMobileOAuthReturnUrl(String(mobileReturn))) {
+        res.clearCookie('mako.oauth.mobile_return', { path: '/' });
+        return res.redirect(
+          `${mobileReturn}?error=${encodeURIComponent(message)}`,
+        );
+      }
       return res.redirect(
         `${this.frontendUrl}/auth/callback?error=${encodeURIComponent(
           message,

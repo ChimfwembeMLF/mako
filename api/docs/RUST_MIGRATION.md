@@ -118,7 +118,7 @@ The Rust API is a **broad HTTP port**: nearly every NestJS controller has a matc
 | Module | Routes | Status | Notes |
 |--------|-------:|--------|-------|
 | `notifications` | 9 | 🔶 | Digest + subscription-ending crons |
-| `social_inbox` | 4 | 🔶 | Inbound webhook + DM auto-reply |
+| `social_inbox` | 4 | 🔶 | Inbound webhook + DM auto-reply; **2026-08-27**: `GET /inbox/conversations` now merges Nest-parity `post_comment` rows from `comment_replies` (was empty for that channel) |
 | `comment_replies` | 9 | ✅ | Sync + auto-reply + suggest-comment-reply queue |
 | `analytics` | 2 | 🔶 | Reads DB + daily FB/IG insights sync cron |
 | `ads` | 11 | 🔶 | Meta/TikTok/LinkedIn/X live adapters; Google/Pinterest/Taboola env fallback |
@@ -273,3 +273,27 @@ wc -l api-rust/src/openapi/routes.json
 ```
 
 Update this file when shipping modules or closing parity gaps.
+
+---
+
+## Mobile app route parity (007-mobile-ui-parity)
+
+Routes consumed by `mobile/src/lib/api.ts` and More tab screens. Use **NestJS API** (`api/`) for mobile dev unless `EXPO_PUBLIC_API_URL` points at Rust.
+
+| Mobile screen | API route(s) | Nest | Rust | Notes |
+|---------------|--------------|------|------|-------|
+| Brand Brain | `GET/PATCH /api/v1/brand-profiles/*` | ✅ | ✅ | |
+| Media / editor pick | `GET /api/v1/media` | ✅ | ✅ | |
+| Templates | `GET /api/v1/templates` | ✅ | ✅ | |
+| Campaigns | `GET/POST/DELETE /api/v1/content-campaigns/*` | ✅ | ✅ | Generate uses AI queue |
+| Analytics | `GET /api/v1/analytics/platform-dashboard` | ✅ | 🔶 | Rust may return simplified metrics |
+| Team | `GET /api/v1/tenant-members`, `GET /api/v1/roles` | ✅ | 🔶 | Rust invite email not sent |
+| Approvals | `GET/PATCH /api/v1/approval-requests/*` | ✅ | ✅ | |
+| Leads | `GET /api/v1/leads/*` | ✅ | 🔶 | Gmail-first email |
+| Mail | `GET /api/v1/mail/gmail/status`, `GET /api/v1/mail/inbox` | ✅ | 🔶 | Connect Gmail on web |
+| WhatsApp | `GET /api/v1/whatsapp/connection-status` | ✅ | ✅ | |
+| Auto-reply | `GET/PATCH /api/v1/auto-reply-rules/*` | ✅ | ✅ | |
+| Social inbox | `GET /api/v1/social-inbox/*`, comment-replies | ✅ | 🔶 | Rust post_comment merge fixed 2026-08-27 |
+| Auth forgot password | `POST /api/v1/auth/forgot-password` | ✅ | ✅ | |
+
+**If mobile hits 404 on Rust**: set `EXPO_PUBLIC_API_URL=http://<LAN-IP>:4000` to Nest, or file a parity gap here before marking US3/US4 complete.
