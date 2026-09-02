@@ -30,11 +30,14 @@ export function resolveCorsOrigins(): string[] {
   const frontend = process.env.FRONTEND_URL?.trim();
   const port = process.env.PORT || '4000';
   const vitePort = process.env.CLIENT_DEV_PORT?.trim() || '5173';
+  const expoPort = process.env.EXPO_DEV_PORT?.trim() || '8081';
   const defaults = [
     `http://localhost:${port}`,
     `http://127.0.0.1:${port}`,
     `http://localhost:${vitePort}`,
     `http://127.0.0.1:${vitePort}`,
+    `http://localhost:${expoPort}`,
+    `http://127.0.0.1:${expoPort}`,
   ];
   return [
     ...new Set([...fromEnv, ...(frontend ? [frontend] : []), ...defaults]),

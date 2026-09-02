@@ -336,6 +336,12 @@ fn group_inbox_posts(rows: &[ReplyModel]) -> Vec<Value> {
                 .iter()
                 .filter(|c| c.status.as_deref() == Some("pending"))
                 .count();
+            let last_at = comments
+                .iter()
+                .map(|c| c.created_at)
+                .max()
+                .map(|t| t.to_rfc3339())
+                .unwrap_or_else(|| Utc::now().to_rfc3339());
 
             json!({
                 "key": content_id,
@@ -343,6 +349,7 @@ fn group_inbox_posts(rows: &[ReplyModel]) -> Vec<Value> {
                 "platform": platform,
                 "postTitle": format!("Post {content_id}"),
                 "postContent": "",
+                "publishedAt": last_at,
                 "totalComments": comments.len(),
                 "pendingCount": pending_count,
                 "comments": comments.iter().map(|c| reply_json(c)).collect::<Vec<_>>(),
@@ -357,6 +364,76 @@ fn group_inbox_posts(rows: &[ReplyModel]) -> Vec<Value> {
     });
 
     posts
+}
+
+/// Nest-parity conversation rows for unified inbox (`channel=post_comment` / `all`).
+pub async fn post_comment_conversations(
+    state: &AppState,
+    tenant_id: Uuid,
+) -> ApiResult<Vec<Value>> {
+    let rows = ReplyEntity::find()
+        .filter(ReplyColumn::TenantId.eq(tenant_id))
+        .order_by_desc(ReplyColumn::CreatedAt)
+        .all(&state.db)
+        .await?;
+
+    let posts = group_inbox_posts(&rows);
+    Ok(posts
+        .into_iter()
+        .map(|post| {
+            let content_id = post
+                .get("contentId")
+                .cloned()
+                .unwrap_or(Value::Null);
+            let key = post
+                .get("key")
+                .and_then(|v| v.as_str())
+                .unwrap_or("unknown");
+            let platform = post
+                .get("platform")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let title = post
+                .get("postTitle")
+                .and_then(|v| v.as_str())
+                .unwrap_or("Post comments")
+                .to_string();
+            let preview = post
+                .get("postContent")
+                .and_then(|v| v.as_str())
+                .filter(|s| !s.is_empty())
+                .map(|s| s.chars().take(120).collect::<String>())
+                .unwrap_or_else(|| {
+                    let total = post
+                        .get("totalComments")
+                        .and_then(|v| v.as_u64())
+                        .unwrap_or(0);
+                    format!("{total} comments")
+                });
+            let last_at = post
+                .get("publishedAt")
+                .cloned()
+                .unwrap_or(Value::String(Utc::now().to_rfc3339()));
+            let pending = post
+                .get("pendingCount")
+                .and_then(|v| v.as_u64())
+                .unwrap_or(0);
+
+            json!({
+                "id": format!("post:{key}"),
+                "channel": "post_comment",
+                "platform": platform,
+                "title": title,
+                "preview": preview,
+                "lastAt": last_at,
+                "unreadCount": pending,
+                "pendingCount": pending,
+                "contentId": content_id,
+                "postKey": key,
+            })
+        })
+        .collect())
 }
 
 fn reply_json(row: &ReplyModel) -> Value {

@@ -4,7 +4,8 @@
   "packageManager": "yarn@4.17.1",
   "workspaces": [
     "api",
-    "client"
+    "client",
+    "mobile"
   ],
   "engines": {
     "node": ">=20"
