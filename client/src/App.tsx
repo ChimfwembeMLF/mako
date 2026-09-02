@@ -15,6 +15,7 @@ import { DashboardLayout } from "@/components/DashboardLayout";
 // Existing pages — landing/auth stay eager for first paint
 import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/auth/Auth";
+import MobileDownloadPage from "./pages/MobileDownloadPage";
 
 const Index = lazy(() => import("./pages/Index"));
 const SocialDashboardPage = lazy(() => import("./pages/social/SocialDashboardPage"));
@@ -147,6 +148,8 @@ const App = () => (
                 <Route path="/privacy" element={<LazyPage><PrivacyPage /></LazyPage>} />
                 <Route path="/terms" element={<LazyPage><TermsPage /></LazyPage>} />
                 <Route path="/data-deletion" element={<LazyPage><DataDeletionPage /></LazyPage>} />
+                <Route path="/download" element={<MobileDownloadPage />} />
+                <Route path="/mobile" element={<Navigate to="/download" replace />} />
                 <Route path="/" element={<HomeRoute />} />
                 <Route path="/home" element={<HomeRoute />} />
 

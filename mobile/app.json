@@ -8,8 +8,12 @@
     "scheme": "mako",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.tekrem.mako"
+      "icon": "./assets/images/icon.png",
+      "bundleIdentifier": "com.tekrem.mako",
+      "buildNumber": "1",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "com.tekrem.mako",
@@ -32,7 +36,7 @@
         {
           "backgroundColor": "#e8ebe6",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "imageWidth": 120
         }
       ],
       "expo-secure-store",

@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "eas-cli": "^16.0.0",
     "typescript": "~6.0.3"
   },
   "scripts": {
@@ -44,7 +45,11 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:ios": "eas build --platform ios --profile production --non-interactive",
+    "build:android": "eas build --platform android --profile apk --non-interactive",
+    "publish:apk": "eas build --platform android --profile apk --non-interactive && eas build:download --platform android --latest --output ../client/public/downloads/mako.apk",
+    "submit:ios": "eas submit --platform ios --profile production --latest --non-interactive"
   },
   "private": true
 }
