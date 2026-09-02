@@ -47,7 +47,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "build:ios": "eas build --platform ios --profile production --non-interactive",
-    "build:ios:preview": "eas build --platform ios --profile preview --non-interactive",
+    "build:android": "eas build --platform android --profile apk --non-interactive",
+    "publish:apk": "eas build --platform android --profile apk --non-interactive && eas build:download --platform android --latest --output ../client/public/downloads/mako.apk",
     "submit:ios": "eas submit --platform ios --profile production --latest --non-interactive"
   },
   "private": true

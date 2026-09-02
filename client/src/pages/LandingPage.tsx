@@ -191,6 +191,7 @@ function Nav() {
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
             <a key={href} href={href} className="hover:opacity-70 transition-opacity">{label}</a>
           ))}
+          <Link to="/download" className="hover:opacity-70 transition-opacity">Android app</Link>
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign in</Link></Button>
@@ -207,6 +208,7 @@ function Nav() {
           {[['#product', 'Product'], ['#features', 'Features'], ['#pricing', 'Pricing']].map(([href, label]) => (
             <a key={href} href={href} className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>{label}</a>
           ))}
+          <Link to="/download" className="block py-2 text-sm font-semibold" onClick={() => setOpen(false)}>Android app</Link>
           <Button className="w-full mt-2 min-h-12 rounded-xl" asChild>
             <Link to="/auth?mode=signup">Get started</Link>
           </Button>
@@ -493,6 +495,7 @@ function Footer() {
           </p>
         </div>
         <div className="flex gap-8 text-sm text-background/70">
+          <Link to="/download" className="hover:text-background">Android app</Link>
           <Link to="/privacy" className="hover:text-background">Privacy</Link>
           <Link to="/terms" className="hover:text-background">Terms</Link>
           <Link to="/data-deletion" className="hover:text-background">Data deletion</Link>
