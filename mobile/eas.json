@@ -35,7 +35,8 @@
       },
       "env": {
         "EXPO_PUBLIC_API_URL": "https://mako.tekreminnovations.com",
-        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "368369715835-t26iccfehvcbrna9d284irnnrh0q6v0l.apps.googleusercontent.com"
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "368369715835-t26iccfehvcbrna9d284irnnrh0q6v0l.apps.googleusercontent.com",
+        "YARN_ENABLE_IMMUTABLE_INSTALLS": "false"
       }
     },
     "production": {

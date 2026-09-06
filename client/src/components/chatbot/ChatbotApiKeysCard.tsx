@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Copy, Key, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { chatbotApi, type ChatbotApiKeySummary } from "@/lib/api";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,7 +73,7 @@ export function ChatbotApiKeysCard({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-base">
-            <KeyRound className="h-4 w-4" />
+            <Key className="h-4 w-4" />
             API keys
           </CardTitle>
           <CardDescription>

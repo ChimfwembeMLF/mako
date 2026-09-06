@@ -132,7 +132,9 @@ export default defineConfig(({ mode }) => ({
             return "editor-vendor";
           }
           if (id.includes("@radix-ui")) return "radix-vendor";
-          if (id.includes("lucide-react")) return "icons-vendor";
+          // Keep lucide-react in the graph (do not force icons-vendor).
+          // Splitting it caused intermittent ReferenceError: <Icon> is not defined
+          // when Rollup left bare icon identifiers in the entry chunk.
         },
       },
     },
