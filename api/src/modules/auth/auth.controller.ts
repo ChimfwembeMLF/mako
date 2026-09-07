@@ -138,7 +138,8 @@ export class AuthController {
       res.cookie('mako.oauth.mobile_return', returnUrl, {
         maxAge: 600_000,
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
+        secure: true,
         path: '/',
       });
     }
