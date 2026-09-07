@@ -12,8 +12,8 @@ try {
     // Read the logo
     const logo = await Jimp.read(logoPath);
     
-    // Scale logo to fit comfortably in 1024x1024 (e.g., 600x600 max)
-    logo.scaleToFit(600, 600);
+    // Scale logo to fit comfortably in 1024x1024 (make it smaller for more padding)
+    logo.scaleToFit(400, 400);
     
     // Create a new 1024x1024 transparent image
     const background = await new Jimp(1024, 1024, 0x00000000);
