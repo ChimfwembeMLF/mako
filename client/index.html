@@ -11,10 +11,6 @@
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="theme-color" content="#9fe870" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Mako" />
-    <meta name="mobile-web-app-capable" content="yes" />
 
     <meta property="og:type" content="website" />
     <meta property="og:title" content="Mako Market " />
@@ -40,28 +36,32 @@
       })();
     </script>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=%VITE_ADSENSE_PUBLISHER_ID%" data-ad-client="%VITE_ADSENSE_PUBLISHER_ID%" crossorigin="anonymous"></script>
-    <!-- OAuth callbacks (/api/v1/auth/*/redirect, /api/v1/social-accounts/oauth/*/callback) must hit Nest, not this SPA.
-         If a legacy service worker serves this page for /api/*, unregister and reload once. -->
+    <!-- Drop the removed PWA service worker and its cached bundles once. -->
     <script>
       (function () {
-        var path = location.pathname;
-        if (!/^\/(api|uploads|documentation|admin)(\/|$)/.test(path)) return;
-        var key = "mako-oauth-api-reload";
-        if (sessionStorage.getItem(key) === location.href) {
-          sessionStorage.removeItem(key);
-          return;
-        }
-        sessionStorage.setItem(key, location.href);
-        function reload() {
-          location.replace(location.href);
-        }
-        if ("serviceWorker" in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function (regs) {
-            return Promise.all(regs.map(function (r) { return r.unregister(); }));
-          }).finally(reload);
-        } else {
-          reload();
-        }
+        if (!("serviceWorker" in navigator)) return;
+        var key = "mako-sw-removed";
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          if (!regs.length) return;
+          return Promise.all(
+            regs.map(function (r) {
+              return r.unregister();
+            }),
+          ).then(function () {
+            if (!window.caches || !caches.keys) return;
+            return caches.keys().then(function (keys) {
+              return Promise.all(
+                keys.map(function (k) {
+                  return caches.delete(k);
+                }),
+              );
+            });
+          }).then(function () {
+            if (sessionStorage.getItem(key)) return;
+            sessionStorage.setItem(key, "1");
+            location.reload();
+          });
+        });
       })();
     </script>
   </head>

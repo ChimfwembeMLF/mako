@@ -67,7 +67,6 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
 import { DataProtectionBanner } from "@/components/DataProtectionBanner";
 import { OfflineGate } from "@/components/OfflineGate";
-import { PwaUpdatePrompt } from "@/components/PwaUpdatePrompt";
 import { AppPageLoader } from "@/components/AppPageLoader";
 
 const queryClient = new QueryClient({
@@ -125,7 +124,6 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <OfflineGate>
-              <PwaUpdatePrompt />
               <ChatbotWidgetLoader />
               <DataProtectionBanner />
               <Routes>
