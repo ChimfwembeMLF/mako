@@ -2,6 +2,7 @@ import { Tabs, router } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import { Platform, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../src/context/ThemeContext';
+import { useTenantTheme } from '../../src/store/themeStore';
 import { fonts } from '../../src/theme';
 
 function TabIcon({ ios, glyph, color }: { ios: string; glyph: string; color: string }) {
@@ -14,21 +15,25 @@ function TabIcon({ ios, glyph, color }: { ios: string; glyph: string; color: str
 
 export default function TabLayout() {
   const { colors } = useTheme();
+  const { theme } = useTenantTheme();
+  
+  const activeColor = theme.primaryColor || colors.ink;
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.ink,
+        tabBarActiveTintColor: activeColor,
         tabBarInactiveTintColor: colors.mute,
         tabBarStyle: {
           backgroundColor: colors.canvas,
           borderTopColor: colors.border,
-          height: 60,
-          paddingTop: 6,
+          height: 70, // Increased for larger touch targets
+          paddingTop: 10,
+          paddingBottom: 10,
         },
         tabBarLabelStyle: {
           fontFamily: fonts.bodySemi,
-          fontSize: 11,
+          fontSize: 12,
         },
         headerShown: false,
       }}
@@ -51,6 +56,7 @@ export default function TabLayout() {
         name="connections"
         options={{
           title: 'Connect',
+          href: null,
           tabBarIcon: ({ color }) => <TabIcon ios="link" glyph="⛓" color={String(color)} />,
         }}
       />
@@ -65,6 +71,7 @@ export default function TabLayout() {
         name="schedule"
         options={{
           title: 'Schedule',
+          href: null,
           tabBarIcon: ({ color }) => <TabIcon ios="calendar" glyph="▦" color={String(color)} />,
         }}
       />
@@ -94,6 +101,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          href: null,
           tabBarIcon: ({ color }) => <TabIcon ios="person.fill" glyph="●" color={String(color)} />,
         }}
       />

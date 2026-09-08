@@ -30,6 +30,7 @@ pub fn router() -> Router<AppState> {
         .route("/", post(create).get(find_all))
         .route("/mine", get(find_mine))
         .route("/{id}", get(find_one).patch(update).delete(remove))
+        .route("/{id}/theme", get(get_theme))
 }
 
 async fn create(
@@ -88,6 +89,19 @@ async fn find_one(
         .ok_or_else(|| ApiError::NotFound("Tenants not found".into()))?;
 
     Ok(Json(json!(tenant_json(&tenant))))
+}
+
+async fn get_theme(
+    State(state): State<AppState>,
+    Path(tenant_id): Path<Uuid>,
+) -> ApiResult<Json<Value>> {
+    let tenant = TenantEntity::find_by_id(tenant_id)
+        .one(&state.db)
+        .await?
+        .ok_or_else(|| ApiError::NotFound("Tenants not found".into()))?;
+
+    let theme = tenant.theme_config.unwrap_or_else(|| json!({}));
+    Ok(Json(json!(theme)))
 }
 
 async fn update(

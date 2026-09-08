@@ -10,12 +10,27 @@ import { OfflineProvider } from '../src/components/OfflineBanner';
 import { AppLogoLoader, ToastProvider } from '../src/components/ui';
 import { queryClient } from '../src/lib/query-client';
 import { useAppFonts } from '../src/hooks/useAppFonts';
+import { TenantThemeProvider, useTenantTheme } from '../src/store/themeStore';
+import { useWorkspace } from '../src/context/WorkspaceContext';
+import { api } from '../src/lib/api';
 
 function InitialLayout() {
   const { token, isLoading } = useAuth();
   const { colors } = useTheme();
+  const { setTheme } = useTenantTheme();
+  const { tenantId } = useWorkspace();
   const segments = useSegments();
   const router = useRouter();
+
+  useEffect(() => {
+    if (tenantId) {
+      api.getTenantTheme(tenantId).then(theme => {
+        if (theme) {
+          setTheme(theme);
+        }
+      }).catch(console.error);
+    }
+  }, [tenantId, setTheme]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -59,9 +74,10 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
-        <FontGate>
-          <QueryClientProvider client={queryClient}>
-            <AuthProvider>
+        <TenantThemeProvider>
+          <FontGate>
+            <QueryClientProvider client={queryClient}>
+              <AuthProvider>
               <WorkspaceProvider>
                 <OfflineProvider>
                   <ToastProvider>
@@ -72,6 +88,7 @@ export default function RootLayout() {
             </AuthProvider>
           </QueryClientProvider>
         </FontGate>
+        </TenantThemeProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

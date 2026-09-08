@@ -9,6 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { useTenantTheme } from '../../store/themeStore';
 import { fonts, rounded, spacing, typography } from '../../theme';
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'destructive' | 'inverse';
@@ -29,11 +30,14 @@ export function Button({
   ...rest
 }: Props) {
   const { colors } = useTheme();
+  const { theme } = useTenantTheme();
   const isDisabled = disabled || loading;
+  
+  const primaryColor = theme.primaryColor || colors.primary;
 
   const variantStyle: ViewStyle =
     variant === 'primary'
-      ? { backgroundColor: colors.primary }
+      ? { backgroundColor: primaryColor }
       : variant === 'outline'
         ? { backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.ink }
         : variant === 'ghost'

@@ -381,6 +381,10 @@ export const api = {
     return fetchWithAuth(`/api/v1/workspaces${withScope({ tenantId: resolvedTenant })}`);
   },
 
+  getTenantTheme: async (tenantId: string): Promise<Record<string, unknown> | null> => {
+    return fetchPublic(`/api/v1/tenants/${tenantId}/theme`);
+  },
+
   listContent: async (tenantId: string, workspaceId: string) => {
     const data = await fetchWithAuth(
       `/api/v1/content-items${withScope({ tenantId, workspaceId, includeMedia: 'true' })}`,
