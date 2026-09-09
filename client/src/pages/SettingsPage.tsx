@@ -15,6 +15,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { useTheme, type ColorMode } from "@/hooks/useTheme";
 import { socialAccountsApi, notificationsApi, SocialAccount } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { IntegrationSettings } from "@/components/IntegrationSettings";
 
 interface Profile {
   display_name: string | null;
@@ -152,15 +153,18 @@ const SettingsPage = () => {
       </div>
 
       <Tabs defaultValue="profile">
-        <TabsList className="w-full justify-start">
-          <TabsTrigger value="profile" className="flex items-center gap-1.5">
+        <TabsList className="w-full justify-start overflow-x-auto">
+          <TabsTrigger value="profile" className="flex items-center gap-1.5 whitespace-nowrap">
             <User className="h-3.5 w-3.5" /> Profile
           </TabsTrigger>
-          <TabsTrigger value="notifications" className="flex items-center gap-1.5">
+          <TabsTrigger value="notifications" className="flex items-center gap-1.5 whitespace-nowrap">
             <Bell className="h-3.5 w-3.5" /> Notifications
           </TabsTrigger>
-          <TabsTrigger value="connections" className="flex items-center gap-1.5">
+          <TabsTrigger value="connections" className="flex items-center gap-1.5 whitespace-nowrap">
             <Link2 className="h-3.5 w-3.5" /> Connections
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-1.5 whitespace-nowrap">
+            <Key className="h-3.5 w-3.5" /> API Keys
           </TabsTrigger>
         </TabsList>
 
@@ -408,6 +412,16 @@ const SettingsPage = () => {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        {/* Integrations Tab */}
+        <TabsContent value="integrations" className="space-y-4 mt-4">
+          {tenant?.id ? (
+            <IntegrationSettings tenantId={tenant.id} />
+          ) : (
+            <div className="p-4 text-center text-sm text-muted-foreground">
+              Please select a tenant to configure API keys.
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 

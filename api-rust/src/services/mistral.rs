@@ -58,7 +58,16 @@ impl MistralService {
         messages: Vec<ChatMessage>,
         model: Option<String>,
     ) -> Result<(Value, i32, String), ApiError> {
-        let result = Self::complete(config, messages, model, true, None).await?;
+        Self::complete_json_with_key(config, messages, model, None).await
+    }
+
+    pub async fn complete_json_with_key(
+        config: &MistralConfig,
+        messages: Vec<ChatMessage>,
+        model: Option<String>,
+        custom_api_key: Option<String>,
+    ) -> Result<(Value, i32, String), ApiError> {
+        let result = Self::complete_with_key(config, messages, model, true, None, custom_api_key).await?;
         let cleaned = result
             .content
             .trim()
@@ -79,7 +88,20 @@ impl MistralService {
         json_mode: bool,
         max_tokens: Option<i32>,
     ) -> Result<ChatResult, ApiError> {
-        if config.api_key.trim().is_empty() {
+        Self::complete_with_key(config, messages, model, json_mode, max_tokens, None).await
+    }
+
+    pub async fn complete_with_key(
+        config: &MistralConfig,
+        messages: Vec<ChatMessage>,
+        model: Option<String>,
+        json_mode: bool,
+        max_tokens: Option<i32>,
+        custom_api_key: Option<String>,
+    ) -> Result<ChatResult, ApiError> {
+        let api_key = custom_api_key.unwrap_or_else(|| config.api_key.clone());
+
+        if api_key.trim().is_empty() {
             return Err(ApiError::BadRequest(
                 "MISTRAL_API_KEY is not configured on the server".into(),
             ));
@@ -96,7 +118,7 @@ impl MistralService {
         let client = reqwest::Client::new();
         let response = client
             .post(MISTRAL_CHAT_URL)
-            .header(AUTHORIZATION, format!("Bearer {}", config.api_key.trim()))
+            .header(AUTHORIZATION, format!("Bearer {}", api_key.trim()))
             .header(CONTENT_TYPE, "application/json")
             .json(&body)
             .send()

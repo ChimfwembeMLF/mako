@@ -1,29 +1,35 @@
 import { useState, useEffect, useRef } from 'react';
 import * as Device from 'expo-device';
-import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { api } from '@/lib/api';
 import { useRouter } from 'expo-router';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+let Notifications: any = null;
+try {
+  // Use require so that it doesn't statically crash Expo Go on load
+  Notifications = require('expo-notifications');
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+    }),
+  });
+} catch (e) {
+  console.warn('Push notifications are not supported in Expo Go.');
+}
 
 export interface PushNotificationState {
   expoPushToken?: string;
-  notification?: Notifications.Notification;
+  notification?: any;
 }
 
 export const usePushNotifications = (isAuthenticated: boolean): PushNotificationState => {
   const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
-  const [notification, setNotification] = useState<Notifications.Notification | undefined>();
+  const [notification, setNotification] = useState<any | undefined>();
   const notificationListener = useRef<any>(null);
   const responseListener = useRef<any>(null);
   const router = useRouter();
@@ -39,19 +45,23 @@ export const usePushNotifications = (isAuthenticated: boolean): PushNotification
       }
     });
 
-    notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
-      setNotification(notification);
-    });
+    try {
+      notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+        setNotification(notification);
+      });
 
-    responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
-      // Handle deep linking or specific actions when user taps the notification
-      console.log('Notification response received:', response);
-      const data = response.notification.request.content.data;
-      if (data?.url) {
-        // Assuming url is a valid route like '/content' or '/inbox'
-        router.push(data.url as any);
-      }
-    });
+      responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+        // Handle deep linking or specific actions when user taps the notification
+        console.log('Notification response received:', response);
+        const data = response.notification.request.content.data;
+        if (data?.url) {
+          // Assuming url is a valid route like '/content' or '/inbox'
+          router.push(data.url as any);
+        }
+      });
+    } catch (e) {
+      console.warn('Push notification listeners not supported in Expo Go');
+    }
 
     return () => {
       if (notificationListener.current) {
@@ -70,6 +80,8 @@ export const usePushNotifications = (isAuthenticated: boolean): PushNotification
 };
 
 async function registerForPushNotificationsAsync() {
+  if (!Notifications) return undefined;
+  
   let token;
 
   if (Platform.OS === 'android') {

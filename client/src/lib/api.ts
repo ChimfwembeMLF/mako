@@ -817,6 +817,22 @@ export const tenantsApi = {
         request<any>(`/api/v1/tenants/${id}`, { method: 'DELETE' }),
 };
 
+export const tenantIntegrationConfigsApi = {
+    getConfigs: (tenantId: string) =>
+        request<any[]>(`/api/v1/tenant-integration-configs/${tenantId}`),
+    
+    upsertConfig: (tenantId: string, data: { provider: string; apiKey: string }) =>
+        request<any>(`/api/v1/tenant-integration-configs/${tenantId}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
+    
+    deleteConfig: (tenantId: string, provider: string) =>
+        request<any>(`/api/v1/tenant-integration-configs/${tenantId}/${provider}`, {
+            method: 'DELETE',
+        }),
+};
+
 export const rbacApi = {
     hasRoles: async (tenantId: string, userId: string, roles: string) => {
         const res = await request<{ hasRole: boolean }>(

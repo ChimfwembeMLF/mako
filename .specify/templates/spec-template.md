@@ -96,8 +96,7 @@
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
-- **FR-006**: When the feature touches the live API, System MUST behave correctly
-  on the Rust runtime (`api-rust`) unless the spec explicitly scopes Nest-only work
+- **FR-006**: When the feature touches the live API, System MUST implement the behavior in **BOTH** the NestJS (`api/`) and Rust (`api-rust/`) runtimes unless the spec explicitly scopes it.
 - **FR-007**: When the feature stores tenant or workspace data, System MUST enforce
   tenant/workspace isolation and RBAC
 

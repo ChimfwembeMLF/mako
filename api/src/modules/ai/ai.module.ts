@@ -13,16 +13,19 @@ import { FormSuggestionsService } from './services/form-suggestions.service';
 import { MistralWorkflowsService } from './services/mistral-workflows.service';
 
 import { StorageModule } from '../media/storage.module';
+import { TenantIntegrationConfig } from '../tenants/entities/tenant-integration-config.entity';
+import { EncryptionService } from '../tenants/services/encryption.service';
 
 @Module({
   imports: [
     AiUsageModule,
     SubscriptionsModule,
     StorageModule,
-    TypeOrmModule.forFeature([BrandProfiles]),
+    TypeOrmModule.forFeature([BrandProfiles, TenantIntegrationConfig]),
   ],
   controllers: [AiController],
   providers: [
+    EncryptionService,
     MistralChatService,
     MistralTtsService,
     MistralAgentsService,

@@ -7,7 +7,7 @@ import { NotificationsController } from './notifications.controller';
 import { NotificationCron } from './notification.cron';
 import { PushService } from './push.service';
 import { UserEntity } from '../user/user.entity';
-import { DevicePushTokenEntity } from '../user/entities/device-push-token.entity';
+import { DevicePushTokenEntity } from '../user/device-push-token.entity';
 import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
 import { TenantSubscriptions } from '../subscriptions/entities/tenant_subscriptions.entity';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';

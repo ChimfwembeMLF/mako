@@ -217,9 +217,93 @@ export function UnifiedSocialInbox() {
       </div>
 
       {conversations.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground text-sm space-y-2">
-          <Inbox className="h-8 w-8 mx-auto opacity-40" />
-          <p>No conversations yet. Connect platforms and sync your inbox.</p>
+        <div className="space-y-4 pt-2">
+          {/* Facebook Messenger Card */}
+          <div className="rounded-xl border border-border/50 bg-background/50 p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                  Facebook Messenger <span className="text-muted-foreground text-[10px]">·</span> Setup required
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Connect or reconnect the Facebook Page to enable Messenger.
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                  New messages appear automatically. Earlier messages are not imported automatically. Meta restricts unapproved apps to eligible test users.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium">Check connection</Button>
+                <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium">Reconnect Facebook</Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Instagram Card */}
+          <div className="rounded-xl border border-border/50 bg-background/50 p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                  Instagram <span className="text-muted-foreground text-[10px]">·</span> Setup required
+                </h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Connect Instagram to enable messaging.
+                </p>
+                <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                  New messages appear automatically. Earlier messages are not imported automatically. Meta restricts unapproved apps to eligible test users.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium">Check connection</Button>
+                <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium">Reconnect Instagram</Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Comments Section */}
+          <div className="rounded-xl border border-border/50 bg-background/50 overflow-hidden">
+            <div className="p-4 border-b border-border/50 flex items-center justify-between">
+              <h3 className="font-semibold text-sm text-foreground">Facebook & Instagram comments</h3>
+              <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium">Check comments</Button>
+            </div>
+            
+            <div className="p-4 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                  Facebook <span className="text-muted-foreground text-[10px]">·</span> Setup required
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">Connect or reconnect this account to receive comments.</p>
+              </div>
+              <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium shrink-0">Reconnect Facebook</Button>
+            </div>
+            
+            <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h4 className="font-semibold text-sm text-foreground flex items-center gap-1.5">
+                  Instagram <span className="text-muted-foreground text-[10px]">·</span> Setup required
+                </h4>
+                <p className="text-xs text-muted-foreground mt-0.5">Connect or reconnect this account to receive comments.</p>
+                <p className="text-[11px] text-muted-foreground/70 mt-0.5">New comments appear automatically. Earlier comments are not imported automatically.</p>
+              </div>
+              <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium shrink-0">Reconnect Instagram</Button>
+            </div>
+          </div>
+
+          {/* YouTube Card */}
+          <div className="rounded-xl border border-border/50 bg-background/50 p-5">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold text-sm text-foreground mb-1">YouTube comments</h3>
+                <p className="text-xs text-muted-foreground">
+                  Import published top-level comments from the connected channel, 100 at a time. Reconnect YouTube to grant comment reply access.
+                </p>
+                <a href="/publisher" className="text-xs text-primary underline underline-offset-2 mt-1.5 inline-block opacity-80 hover:opacity-100">
+                  Manage YouTube connection
+                </a>
+              </div>
+              <Button variant="outline" size="sm" className="bg-transparent border-border/50 h-8 text-xs font-medium shrink-0">Import latest comments</Button>
+            </div>
+          </div>
         </div>
       ) : (
         <InboxSplitLayout

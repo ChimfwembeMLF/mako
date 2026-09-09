@@ -38,14 +38,44 @@ export interface ChatResult {
   model: string;
 }
 
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
+import { EncryptionService } from '../../tenants/services/encryption.service';
+
 @Injectable()
 export class MistralChatService {
   private readonly logger = new Logger(MistralChatService.name);
   private client: Mistral | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    @InjectRepository(TenantIntegrationConfig)
+    private readonly configRepo: Repository<TenantIntegrationConfig>,
+    private readonly encryptionService: EncryptionService,
+  ) {}
 
-  private getClient(): Mistral {
+  private async getClient(tenantId?: string): Promise<Mistral> {
+    if (tenantId) {
+      try {
+        const customConfig = await this.configRepo.findOne({
+          where: { tenantId, provider: IntegrationProvider.MISTRAL },
+        });
+
+        if (customConfig) {
+          const decryptedKey = this.encryptionService.decrypt(
+            customConfig.encryptedApiKey,
+            customConfig.iv,
+            customConfig.authTag,
+          );
+          return new Mistral({ apiKey: decryptedKey.trim() });
+        }
+      } catch (err) {
+        this.logger.error(`Failed to load custom Mistral key for tenant ${tenantId}`, err);
+        // Fallback to platform key
+      }
+    }
+
     const apiKey = this.config.get<string>('MISTRAL_API_KEY');
     if (!apiKey?.trim()) {
       throw new ServiceUnavailableException(
@@ -77,11 +107,12 @@ export class MistralChatService {
       jsonMode?: boolean;
       maxTokens?: number;
       temperature?: number;
+      tenantId?: string;
     },
   ): Promise<ChatResult> {
     const model = options?.model ?? this.defaultModel;
     try {
-      const client = this.getClient();
+      const client = await this.getClient(options?.tenantId);
       const response = await client.chat.complete({
         model,
         messages: messages.map((m) => ({ role: m.role, content: m.content })),
@@ -132,7 +163,7 @@ export class MistralChatService {
 
   async completeJson<T>(
     messages: ChatMessage[],
-    options?: { model?: string; temperature?: number },
+    options?: { model?: string; temperature?: number; tenantId?: string },
   ): Promise<{ data: T; tokensUsed: number; model: string }> {
     const result = await this.complete(messages, {
       ...options,
@@ -157,10 +188,10 @@ export class MistralChatService {
     }
   }
 
-  async healthCheck(): Promise<{ ok: boolean; model: string }> {
+  async healthCheck(tenantId?: string): Promise<{ ok: boolean; model: string }> {
     const result = await this.complete(
       [{ role: 'user', content: 'Reply with exactly: ok' }],
-      { maxTokens: 16 },
+      { maxTokens: 16, tenantId },
     );
     return {
       ok: result.content.toLowerCase().includes('ok'),
@@ -188,14 +219,14 @@ export class MistralChatService {
 
   async speak(
     text: string,
-    options?: { voiceId?: string; model?: string },
+    options?: { voiceId?: string; model?: string; tenantId?: string },
   ): Promise<{ audioData: string; format: 'mp3' }> {
     const input = text.trim().slice(0, 4096);
     if (!input) {
       throw new BadRequestException('No text to synthesize');
     }
     try {
-      const client = this.getClient();
+      const client = await this.getClient(options?.tenantId);
       const response = await client.audio.speech.complete({
         model: options?.model ?? this.ttsModel,
         input,
@@ -233,15 +264,15 @@ export class MistralChatService {
     }
   }
 
-  async embed(text: string): Promise<number[]> {
-    const [embedding] = await this.embedBatch([text]);
+  async embed(text: string, tenantId?: string): Promise<number[]> {
+    const [embedding] = await this.embedBatch([text], tenantId);
     return embedding;
   }
 
-  async embedBatch(texts: string[]): Promise<number[][]> {
+  async embedBatch(texts: string[], tenantId?: string): Promise<number[][]> {
     if (!texts.length) return [];
     try {
-      const client = this.getClient();
+      const client = await this.getClient(tenantId);
       const response = await client.embeddings.create({
         model: this.embedModel,
         inputs: texts,

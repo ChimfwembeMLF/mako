@@ -1,16 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: (uninitialized template) → 1.0.0
-- Modified principles: N/A (first ratification from placeholders)
-- Added sections: Core Principles (I–V), Platform & Stack Constraints,
-  Development & Delivery Workflow, Governance
-- Removed sections: none (template placeholders replaced)
+- Version change: 1.0.0 → 1.1.0
+- Modified principles: I. Nest–Rust Behavioral Parity
+- Added sections: none
+- Removed sections: none
 - Templates requiring updates:
-  - .specify/templates/plan-template.md ✅ updated (Constitution Check gates + structure)
-  - .specify/templates/tasks-template.md ✅ updated (Mako path conventions)
-  - .specify/templates/spec-template.md ✅ updated (tenancy / API parity notes)
-  - .specify/templates/checklist-template.md ⚠ pending (no constitution refs yet)
-- Follow-up TODOs: none deferred
+  - .specify/templates/plan-template.md ✅ updated
+  - .specify/templates/spec-template.md ✅ updated
+- Follow-up TODOs: Update plan and spec templates to reflect the dual-runtime rule.
 -->
 
 # Mako Constitution
@@ -19,9 +16,9 @@ Sync Impact Report
 
 ### I. Nest–Rust Behavioral Parity (NON-NEGOTIABLE for API work)
 
-The production runtime API is **Rust** (`api-rust/`, Dokploy `api` service).
-NestJS (`api/`) remains the **schema and migration owner** (TypeORM) and a
-reference implementation until parity is complete.
+The production runtime API is **Both** (`api/` and `api-rust/`).
+NestJS (`api/`) is the Dokploy `mako-api` service, schema and migration owner (TypeORM),
+while `api-rust/` is a parallel production implementation.
 
 - MUST implement every new HTTP route, webhook, cron, and queue job in **BOTH** `api/` (NestJS) and `api-rust/` simultaneously when shipping product features. This prevents the NestJS implementation from drifting or falling behind.
 - MUST keep Nest and Rust response shapes and auth semantics aligned for
@@ -96,14 +93,14 @@ and billing; opaque failures block cutover.
 ## Platform & Stack Constraints
 
 - **Monorepo**: Yarn 4 workspaces — `api/` (Nest), `api-rust/` (Axum +
-  SeaORM), `client/` (React + Vite). Root `yarn.lock` is authoritative.
+  SeaORM), `client/` (React + Vite), `mobile/` (Expo). Root `yarn.lock` is authoritative.
 - **Database**: Shared PostgreSQL. Schema changes MUST go through Nest
   TypeORM migrations (`docker compose --profile migrate` on Dokploy or
   `yarn migrations:run` / `migrations:run:prod`).
 - **Queues**: Nest BullMQ or Rust `JobStore` (Redis when `REDIS_HOST` /
   `REDIS_URL` set). Same environment MUST NOT run both queue workers
   against production workloads.
-- **Deploy**: Dokploy Docker Compose — Rust API + nginx client. PM2 is
+- **Deploy**: Dokploy Docker Compose — NestJS API (`mako-api`) + React client (`mako-client`). PM2 is
   for optional bare-metal dual-run only, not Dokploy.
 - **Frontend**: Follow established Mako UI patterns and `DESIGN.md` brand
   tokens when changing marketing or branded surfaces; preserve existing

@@ -1,6 +1,8 @@
 pub mod bootstrap;
 pub mod dto;
 pub mod entity;
+pub mod integration_config_entity;
+pub mod integration_configs_handler;
 pub mod tenant_seeds;
 
 use axum::{
@@ -31,6 +33,7 @@ pub fn router() -> Router<AppState> {
         .route("/mine", get(find_mine))
         .route("/{id}", get(find_one).patch(update).delete(remove))
         .route("/{id}/theme", get(get_theme))
+        .nest("/integration-configs", integration_configs_handler::router())
 }
 
 async fn create(

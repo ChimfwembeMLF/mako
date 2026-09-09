@@ -4,6 +4,8 @@ import { Tenants } from './entities/tenants.entity';
 import { TenantsService } from './tenants.service';
 import { TenantsController } from './tenants.controller';
 import { TenantBootstrapService } from './tenant-bootstrap.service';
+import { EncryptionService } from './services/encryption.service';
+import { TenantIntegrationConfigsController } from './controllers/tenant-integration-configs.controller';
 import { Profiles } from '../profiles/entities/profiles.entity';
 import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
 import { Roles } from '../auth/rbac/roles/entities/roles.entity';
@@ -16,6 +18,7 @@ import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { TemplatesModule } from '../templates/templates.module';
 import { AutoReplyRulesModule } from '../auto_reply_rules/auto_reply_rules.module';
 import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
+import { TenantIntegrationConfig } from './entities/tenant-integration-config.entity';
 
 @Module({
   imports: [
@@ -33,10 +36,11 @@ import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
       Workspaces,
       ApprovalWorkflows,
       UserEntity,
+      TenantIntegrationConfig,
     ]),
   ],
-  providers: [TenantsService, TenantBootstrapService],
-  controllers: [TenantsController],
-  exports: [TenantsService, TenantBootstrapService],
+  providers: [TenantsService, TenantBootstrapService, EncryptionService],
+  controllers: [TenantsController, TenantIntegrationConfigsController],
+  exports: [TenantsService, TenantBootstrapService, EncryptionService],
 })
 export class TenantsModule {}

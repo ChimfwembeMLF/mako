@@ -72,7 +72,11 @@
             "NSExtensionActivationSupportsImageWithMaxCount": 1,
             "NSExtensionActivationSupportsMovieWithMaxCount": 1
           },
-          "androidIntentFilters": ["text/*", "image/*", "video/*"]
+          "androidIntentFilters": [
+            "text/*",
+            "image/*",
+            "video/*"
+          ]
         }
       ],
       [
@@ -80,7 +84,9 @@
         {
           "cameraPermission": "Allow Mako to access your camera to capture photos for posts."
         }
-      ]
+      ],
+      "expo-font",
+      "expo-image"
     ],
     "experiments": {
       "typedRoutes": true,

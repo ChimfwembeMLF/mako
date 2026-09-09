@@ -40,8 +40,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [ ] **I. Nest–Rust parity**: Live API changes targeted at `api-rust/`; Nest-only
-      gaps documented in `api/docs/RUST_MIGRATION.md` if temporary
+- [ ] **I. Nest–Rust parity**: Live API changes targeted at **BOTH** `api/` (NestJS) and `api-rust/` (Rust) for strict parity.
 - [ ] **II. Tenancy**: Tenant/workspace scoping and RBAC identified for every
       data path
 - [ ] **III. Secrets**: No secrets in spec/plan; OAuth/webhook URLs listed

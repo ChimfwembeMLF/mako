@@ -34,7 +34,7 @@ const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = [
   { path: '/export', width: '3xl' },
   { path: '/admin/maker-checker', width: '3xl' },
   { path: '/admin/system', width: '3xl' },
-  { path: '/brand-brain', width: '4xl' },
+  { path: '/brand-brain', width: '6xl' },
   { path: '/team', width: '4xl' },
   { path: '/billing', width: '4xl' },
   { path: '/ads', width: '4xl' },

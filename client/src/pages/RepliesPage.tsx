@@ -26,7 +26,10 @@ import {
   Loader2,
   MessagesSquare,
   Inbox,
+  Search,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function countPending(posts: PostInboxGroup[]) {
   return posts.reduce((sum, p) => sum + p.pendingCount, 0);
@@ -156,20 +159,47 @@ export default function RepliesPage() {
   return (
     <PermissionGate require={P.replies.view} fallback={true}>
       <PageContainer>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3 min-w-0">
-            <MessageSquareReply className="h-6 w-6 text-primary shrink-0 mt-0.5" />
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-2xl font-semibold">Social Inbox</h1>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                Unified inbox for all platforms — comments, DMs, attachments, and auto-replies.
-              </p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-2">
+          <div className="min-w-0">
+            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest mb-1.5">
+              Community Operations
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-foreground tracking-tight mb-1">
+              Social inbox
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Review comments, mentions, and messages received through connected channels.
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-3 self-start sm:self-end mt-2 sm:mt-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Live updates</span>
+              <div className="h-4 w-7 bg-primary rounded-full relative opacity-50 cursor-not-allowed">
+                <div className="absolute right-0.5 top-0.5 h-3 w-3 bg-background rounded-full" />
+              </div>
+            </div>
+            
+            <div className="relative hidden sm:block">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                type="search" 
+                placeholder="Search conversations" 
+                className="pl-8 h-9 w-[220px] bg-background border-border/50 text-sm" 
+              />
+            </div>
+            
+            <div className="hidden sm:block">
+              <Select defaultValue="all">
+                <SelectTrigger className="h-9 w-[140px] bg-background border-border/50 text-sm">
+                  <SelectValue placeholder="All channels" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All channels</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
-          <Button variant="outline" size="sm" className="w-full sm:w-auto shrink-0" onClick={() => void fetchComments()} disabled={fetching}>
-            {fetching ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-            {fetching ? 'Syncing…' : 'Pull comments'}
-          </Button>
         </div>
 
         <Tabs defaultValue="inbox" className="min-w-0">

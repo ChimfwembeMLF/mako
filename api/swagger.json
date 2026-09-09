@@ -804,6 +804,91 @@
         ]
       }
     },
+    "/tenant-integration-configs/{tenantId}": {
+      "get": {
+        "operationId": "TenantIntegrationConfigsController_getConfigs",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "TenantIntegrationConfigs"
+        ]
+      },
+      "put": {
+        "operationId": "TenantIntegrationConfigsController_upsertConfig",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertIntegrationConfigDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "TenantIntegrationConfigs"
+        ]
+      }
+    },
+    "/tenant-integration-configs/{tenantId}/{provider}": {
+      "delete": {
+        "operationId": "TenantIntegrationConfigsController_deleteConfig",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "provider",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "TenantIntegrationConfigs"
+        ]
+      }
+    },
     "/api/v1/subscriptions/tenant/{tenantId}": {
       "get": {
         "operationId": "SubscriptionsController_getForTenant",
@@ -9547,6 +9632,26 @@
       "TenantsUpdateDto": {
         "type": "object",
         "properties": {}
+      },
+      "UpsertIntegrationConfigDto": {
+        "type": "object",
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "openai",
+              "gemini",
+              "mistral"
+            ]
+          },
+          "apiKey": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "provider",
+          "apiKey"
+        ]
       },
       "AutoRenewDto": {
         "type": "object",
