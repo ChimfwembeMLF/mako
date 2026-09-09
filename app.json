@@ -1,0 +1,18 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "7ab86a0f-8813-4363-8063-ffb3810848e5"
+      }
+    },
+    "android": {
+      "package": "com.thecodefathasteam.mako"
+    },
+    "ios": {
+      "bundleIdentifier": "com.thecodefathasteam.mako",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    }
+  }
+}
