@@ -110,7 +110,7 @@ export default function ConnectionsScreen() {
   if (isLoading) {
     return (
       <TabShell>
-        <Screen loading skeleton />
+        <Screen scroll={false} loading skeleton />
       </TabShell>
     );
   }
@@ -119,7 +119,7 @@ export default function ConnectionsScreen() {
 
   return (
     <TabShell>
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="Connections"
         subtitle="Link social accounts for the active workspace."

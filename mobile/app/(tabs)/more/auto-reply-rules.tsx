@@ -51,14 +51,14 @@ export default function AutoReplyRulesScreen() {
   });
 
   if (!effectiveTenant) {
-    return <Screen empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
+    return <Screen scroll={false} empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
   }
-  if (isLoading) return <Screen loading skeleton />;
+  if (isLoading) return <Screen scroll={false} loading skeleton />;
 
   const rules = data as ReplyRule[];
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="Auto-reply rules"
         subtitle="Toggle automated replies per platform."

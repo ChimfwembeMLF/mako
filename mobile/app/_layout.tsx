@@ -13,6 +13,7 @@ import { useAppFonts } from '../src/hooks/useAppFonts';
 import { TenantThemeProvider, useTenantTheme } from '../src/store/themeStore';
 import { useWorkspace } from '../src/context/WorkspaceContext';
 import { api } from '../src/lib/api';
+import { usePushNotifications } from '../src/hooks/usePushNotifications';
 
 function InitialLayout() {
   const { token, isLoading } = useAuth();
@@ -22,13 +23,19 @@ function InitialLayout() {
   const segments = useSegments();
   const router = useRouter();
 
+  usePushNotifications(!!token);
+
   useEffect(() => {
     if (tenantId) {
       api.getTenantTheme(tenantId).then(theme => {
         if (theme) {
           setTheme(theme);
         }
-      }).catch(console.error);
+      }).catch(err => {
+        if (err.message !== 'Not Found') {
+          console.error(err);
+        }
+      });
     }
   }, [tenantId, setTheme]);
 
@@ -43,6 +50,16 @@ function InitialLayout() {
       router.replace('/(tabs)');
     }
   }, [token, isLoading, segments, router]);
+
+  const { hasShareIntent } = useShareIntentContext();
+  useEffect(() => {
+    if (token && hasShareIntent && segments[0] !== '(auth)') {
+      // Small timeout to allow tabs to mount if just opening
+      setTimeout(() => {
+        router.push('/content/new' as any);
+      }, 100);
+    }
+  }, [hasShareIntent, token, segments, router]);
 
   if (isLoading) {
     return (
@@ -70,26 +87,30 @@ function FontGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
+
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <TenantThemeProvider>
-          <FontGate>
-            <QueryClientProvider client={queryClient}>
-              <AuthProvider>
-              <WorkspaceProvider>
-                <OfflineProvider>
-                  <ToastProvider>
-                    <InitialLayout />
-                  </ToastProvider>
-                </OfflineProvider>
-              </WorkspaceProvider>
-            </AuthProvider>
-          </QueryClientProvider>
-        </FontGate>
-        </TenantThemeProvider>
-      </ThemeProvider>
-    </SafeAreaProvider>
+    <ShareIntentProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <TenantThemeProvider>
+            <FontGate>
+              <QueryClientProvider client={queryClient}>
+                <AuthProvider>
+                <WorkspaceProvider>
+                  <OfflineProvider>
+                    <ToastProvider>
+                      <InitialLayout />
+                    </ToastProvider>
+                  </OfflineProvider>
+                </WorkspaceProvider>
+              </AuthProvider>
+            </QueryClientProvider>
+          </FontGate>
+          </TenantThemeProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </ShareIntentProvider>
   );
 }

@@ -190,4 +190,40 @@ impl UsersService {
         active.update(&state.db).await?;
         Ok(())
     }
+
+    pub async fn register_push_token(
+        state: &AppState,
+        user_id: Uuid,
+        token: &str,
+        platform: &str,
+    ) -> ApiResult<()> {
+        use crate::modules::users::device_push_token_entity::{
+            ActiveModel as PushTokenActiveModel, Column as PushTokenColumn, Entity as PushTokenEntity,
+        };
+
+        // Check if token already exists for this user
+        let existing = PushTokenEntity::find()
+            .filter(PushTokenColumn::UserId.eq(user_id))
+            .filter(PushTokenColumn::Token.eq(token))
+            .one(&state.db)
+            .await?;
+
+        if existing.is_some() {
+            return Ok(());
+        }
+
+        let now = Utc::now().fixed_offset();
+        PushTokenActiveModel {
+            id: Set(Uuid::new_v4()),
+            user_id: Set(user_id),
+            token: Set(token.to_string()),
+            platform: Set(platform.to_string()),
+            created_at: Set(now),
+            updated_at: Set(now),
+        }
+        .insert(&state.db)
+        .await?;
+
+        Ok(())
+    }
 }

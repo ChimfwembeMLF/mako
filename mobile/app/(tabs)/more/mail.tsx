@@ -68,14 +68,14 @@ export default function MailScreen() {
   });
 
   if (!effectiveTenant) {
-    return <Screen empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
+    return <Screen scroll={false} empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
   }
-  if (statusLoading || inboxLoading) return <Screen loading skeleton />;
+  if (statusLoading || inboxLoading) return <Screen scroll={false} loading skeleton />;
 
   const emails = inbox as InboundEmail[];
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="Mail"
         subtitle="Gmail connection and inbound messages."

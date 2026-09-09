@@ -112,14 +112,14 @@ export default function ScheduleScreen() {
   if (isLoading) {
     return (
       <TabShell>
-        <Screen loading skeleton />
+        <Screen scroll={false} loading skeleton />
       </TabShell>
     );
   }
 
   return (
     <TabShell>
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="Scheduler"
         subtitle="Calendar queue and upcoming posts for this workspace."

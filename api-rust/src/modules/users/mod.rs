@@ -1,5 +1,6 @@
 pub mod dto;
 pub mod entity;
+pub mod device_push_token_entity;
 pub mod service;
 
 use axum::{
@@ -17,7 +18,9 @@ use crate::modules::users::entity::Model as UserModel;
 use crate::modules::users::service::UsersService;
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/", get(list_users))
+    Router::new()
+        .route("/", get(list_users))
+        .route("/push-tokens", axum::routing::post(register_push_token))
 }
 
 async fn list_users(
@@ -60,4 +63,17 @@ fn user_dto_json(user: &UserModel) -> Value {
         "phone": user.phone,
         "createdAt": user.created_at,
     })
+}
+
+async fn register_push_token(
+    AuthUser { user, .. }: AuthUser,
+    State(state): State<AppState>,
+    Json(payload): Json<crate::modules::users::dto::RegisterPushTokenDto>,
+) -> ApiResult<Json<Value>> {
+    UsersService::register_push_token(&state, user.id, &payload.token, &payload.platform).await?;
+    
+    Ok(Json(json!({
+        "success": true,
+        "message": "Push token registered successfully",
+    })))
 }

@@ -23,3 +23,9 @@ impl PageOptionsDto {
             .unwrap_or(false)
     }
 }
+
+#[derive(Deserialize)]
+pub struct RegisterPushTokenDto {
+    pub token: String,
+    pub platform: String,
+}

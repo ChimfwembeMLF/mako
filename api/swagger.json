@@ -645,6 +645,35 @@
         ]
       }
     },
+    "/api/v1/users/push-tokens": {
+      "post": {
+        "operationId": "UserController_registerPushToken",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterPushTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/api/v1/tenants": {
       "post": {
         "operationId": "TenantsController_create",
@@ -9506,6 +9535,10 @@
         "required": [
           "token"
         ]
+      },
+      "RegisterPushTokenDto": {
+        "type": "object",
+        "properties": {}
       },
       "TenantsCreateDto": {
         "type": "object",

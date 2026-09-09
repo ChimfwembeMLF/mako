@@ -42,12 +42,12 @@ export default function TeamScreen() {
   }, [roles]);
 
   if (!effectiveTenant) {
-    return <Screen empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
+    return <Screen scroll={false} empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
   }
-  if (isLoading) return <Screen loading skeleton />;
+  if (isLoading) return <Screen scroll={false} loading skeleton />;
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="Team"
         subtitle="Members with access to this workspace."

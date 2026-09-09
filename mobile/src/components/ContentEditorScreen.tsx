@@ -12,6 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as ImagePicker from 'expo-image-picker';
+import { useShareIntentContext } from 'expo-share-intent';
 import { api } from '../lib/api';
 import { useWorkspace } from '../context/WorkspaceContext';
 import { useTheme } from '../context/ThemeContext';
@@ -19,6 +20,9 @@ import { useEffectivePermissions } from '../hooks/useEffectivePermissions';
 import { fonts, spacing, rounded, typography } from '../theme';
 import { Button, Chip, FormFieldAi, Input, Sheet, SheetRow, useToast } from './ui';
 import { resolveQueued } from '../lib/queue';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { useDraftsStore } from '../store/draftsStore';
+import { CameraModal } from './CameraModal';
 
 const PLATFORM_OPTIONS = [
   'facebook',
@@ -52,6 +56,7 @@ export default function ContentEditorScreen() {
   const toast = useToast();
   const { colors } = useTheme();
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
   const [libraryPick, setLibraryPick] = useState<{ url: string; assetId?: string; type?: string } | null>(
     null,
   );
@@ -107,11 +112,28 @@ export default function ContentEditorScreen() {
     },
   });
 
+  const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntentContext();
+
   React.useEffect(() => {
     if (!isNew) return;
     if (templateTitle) setTitle(String(templateTitle));
     if (templateBody) setContent(String(templateBody));
   }, [isNew, templateTitle, templateBody]);
+
+  React.useEffect(() => {
+    if (!isNew || !hasShareIntent) return;
+    if (shareIntent.text) {
+      const text = shareIntent.text || shareIntent.webUrl || '';
+      setContent((prev) => prev ? `${prev}\n\n${text}` : text);
+    }
+    if (shareIntent.files?.length) {
+      const file = shareIntent.files[0];
+      if (file.path) {
+        setLocalImage(file.path);
+      }
+    }
+    resetShareIntent();
+  }, [isNew, hasShareIntent, shareIntent, resetShareIntent]);
 
   React.useEffect(() => {
     if (!isNew) return;
@@ -256,11 +278,41 @@ export default function ContentEditorScreen() {
     }
   };
 
+  const { saveDraft } = useDraftsStore();
+  const netInfo = useNetInfo();
+  const isOffline = netInfo.isConnected === false;
+
   const handleSave = async () => {
     if (!permissionsReady || !canMutate) {
       toast.error('You do not have permission to save this draft.');
       return;
     }
+
+    if (isOffline) {
+      if (!effectiveTenant || !workspaceId) {
+        toast.error('Select a workspace first');
+        return;
+      }
+      if (!content.trim()) {
+        toast.error('Post content is required');
+        return;
+      }
+      saveDraft({
+        id: isNew ? undefined : id,
+        tenantId: effectiveTenant,
+        workspaceId,
+        title: title.trim() || 'Untitled',
+        content: content.trim(),
+        campaignTheme: theme.trim() || undefined,
+        platforms,
+        scheduledDate: scheduledDate || null,
+        scheduledTime: scheduledTime || null,
+        localImage: localImage || libraryPick?.url || null,
+      });
+      toast.success('Saved locally (Offline)');
+      return;
+    }
+
     setBusy(true);
     setStatusMsg('');
     try {
@@ -464,6 +516,12 @@ export default function ContentEditorScreen() {
       {canMutate ? (
         <>
           <Button
+            label="Open Camera"
+            variant="outline"
+            onPress={() => setCameraOpen(true)}
+            style={styles.field}
+          />
+          <Button
             label={localImage ? 'Change device image' : 'Add from device'}
             variant="outline"
             onPress={() => void pickImage()}
@@ -541,6 +599,14 @@ export default function ContentEditorScreen() {
           <Text style={[styles.meta, { color: colors.mute }]}>No media in library yet.</Text>
         )}
       </Sheet>
+
+      <CameraModal 
+        visible={cameraOpen} 
+        onClose={() => setCameraOpen(false)} 
+        onPhotoTaken={(uri) => {
+          setLocalImage(uri);
+        }} 
+      />
     </ScrollView>
   );
 }

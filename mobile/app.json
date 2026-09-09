@@ -61,7 +61,33 @@
       ],
       "expo-secure-store",
       "expo-web-browser",
-      "expo-image-picker"
+      "expo-image-picker",
+      "expo-notifications",
+      [
+        "expo-share-intent",
+        {
+          "iosActivationRules": {
+            "NSExtensionActivationSupportsWebURLWithMaxCount": 1,
+            "NSExtensionActivationSupportsWebPageWithMaxCount": 1,
+            "NSExtensionActivationSupportsImageWithMaxCount": 1,
+            "NSExtensionActivationSupportsMovieWithMaxCount": 1
+          },
+          "androidIntentFilters": ["text/*", "image/*", "video/*"]
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Mako to access your camera to capture photos for posts."
+        }
+      ],
+      [
+        "react-native-widget-extension",
+        {
+          "widgetsFolder": "widgets",
+          "deploymentTarget": "16.2"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

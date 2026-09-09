@@ -309,6 +309,16 @@ async fn notify_user(
         }
         .insert(&state.db)
         .await?;
+
+        // Send Expo Push Notification (Fire and forget, any errors are logged inside)
+        let _ = crate::modules::notifications::push_service::send_expo_push_notification(
+            state,
+            user_id,
+            title,
+            body,
+            link,
+        )
+        .await;
     }
 
     if send_email {

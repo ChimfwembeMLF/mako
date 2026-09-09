@@ -106,15 +106,15 @@ export default function CampaignsScreen() {
   };
 
   if (!effectiveTenant || !workspaceId) {
-    return <Screen empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
+    return <Screen scroll={false} empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
   }
-  if (isLoading) return <Screen loading skeleton />;
+  if (isLoading) return <Screen scroll={false} loading skeleton />;
 
   const campaign = detail?.campaign;
   const posts = detail?.posts ?? [];
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="AI Campaigns"
         subtitle="Generate a multi-day content series from one theme."

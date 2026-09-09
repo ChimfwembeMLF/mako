@@ -24,6 +24,7 @@ type Props = ScrollViewProps & {
   onEmptyAction?: () => void;
   loadingMessage?: string;
   padded?: boolean;
+  scroll?: boolean;
 };
 
 export function Screen({
@@ -37,6 +38,7 @@ export function Screen({
   onEmptyAction,
   loadingMessage,
   padded = true,
+  scroll = true,
   contentContainerStyle,
   ...rest
 }: Props) {
@@ -77,13 +79,19 @@ export function Screen({
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors['canvas-soft'] }]} edges={['bottom']}>
-      <ScrollView
-        contentContainerStyle={[padded && styles.pad, contentContainerStyle]}
-        keyboardShouldPersistTaps="handled"
-        {...rest}
-      >
-        {children}
-      </ScrollView>
+      {scroll ? (
+        <ScrollView
+          contentContainerStyle={[padded && styles.pad, contentContainerStyle]}
+          keyboardShouldPersistTaps="handled"
+          {...rest}
+        >
+          {children}
+        </ScrollView>
+      ) : (
+        <View style={[styles.safe, padded && styles.pad, contentContainerStyle]} {...rest}>
+          {children}
+        </View>
+      )}
     </SafeAreaView>
   );
 }

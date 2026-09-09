@@ -13,6 +13,7 @@ import { SocialAuthRegisterDto } from '../auth/dtos/social-auth.dto';
 import { UserRegisterDto } from '../auth/dtos/user-register.dto';
 import { UserDto } from './dtos/user.dto';
 import { UserEntity } from './user.entity';
+import { DevicePushTokenEntity } from './device-push-token.entity';
 import { decryptToken, encryptToken } from '../../common/utils/token-crypto.util';
 
 @Injectable()
@@ -20,6 +21,8 @@ export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private userRepository: Repository<UserEntity>,
+    @InjectRepository(DevicePushTokenEntity)
+    private pushTokenRepository: Repository<DevicePushTokenEntity>,
   ) {}
 
   async createUser(data: {
@@ -139,5 +142,18 @@ export class UserService {
         : undefined,
       expiresAt: row.googleTokenExpiresAt ?? undefined,
     };
+  }
+
+  async registerPushToken(userId: string, token: string, deviceName?: string, platform?: string): Promise<void> {
+    const existing = await this.pushTokenRepository.findOneBy({ userId, token });
+    if (!existing) {
+      const newToken = this.pushTokenRepository.create({
+        userId,
+        token,
+        deviceName,
+        platform,
+      });
+      await this.pushTokenRepository.save(newToken);
+    }
   }
 }

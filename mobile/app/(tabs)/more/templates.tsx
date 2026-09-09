@@ -22,12 +22,12 @@ export default function TemplatesScreen() {
   });
 
   if (!effectiveTenant) {
-    return <Screen empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
+    return <Screen scroll={false} empty emptyTitle="No workspace" emptyMessage="Select a workspace from the header." />;
   }
-  if (isLoading) return <Screen loading skeleton />;
+  if (isLoading) return <Screen scroll={false} loading skeleton />;
 
   return (
-    <Screen>
+    <Screen scroll={false}>
       <PageHeader
         title="Post Templates"
         subtitle="Tap a template to start a new draft with its copy."

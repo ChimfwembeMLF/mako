@@ -85,7 +85,7 @@ export default function InboxListScreen() {
   }
 
   if (isLoading) {
-    return <Screen loading skeleton />;
+    return <Screen scroll={false} loading skeleton />;
   }
 
   const listHeader = (
@@ -153,7 +153,7 @@ export default function InboxListScreen() {
 
   if (isTablet) {
     return (
-      <Screen padded={false}>
+      <Screen scroll={false} padded={false}>
         <View style={styles.tabletWrap}>
           <View style={[styles.listPane, { borderRightColor: colors.border }]}>
             {listHeader}
@@ -180,7 +180,7 @@ export default function InboxListScreen() {
     );
   }
 
-  return <Screen>{listBody}</Screen>;
+  return <Screen scroll={false}>{listBody}</Screen>;
 }
 
 const styles = StyleSheet.create({
