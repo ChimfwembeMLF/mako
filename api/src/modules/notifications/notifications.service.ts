@@ -8,6 +8,7 @@ import { TenantMembers } from '../tenant_members/entities/tenant_members.entity'
 import { TenantSubscriptions } from '../subscriptions/entities/tenant_subscriptions.entity';
 import { MailService } from '../mail/mail.service';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
+import { PushService } from './push.service';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
 import { CommentReplies } from '../comment_replies/entities/comment_replies.entity';
 import { Leads } from '../leads/entities/leads.entity';
@@ -103,6 +104,7 @@ export class NotificationsService {
     @InjectRepository(ChatbotApiKey)
     private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
     private readonly mail: MailService,
+    private readonly pushService: PushService,
     @Optional() private readonly queueDispatch?: QueueDispatchService,
   ) {}
 
@@ -125,6 +127,16 @@ export class NotificationsService {
           emailSent: false,
         }),
       );
+
+      // Fire and forget Expo Push Notification
+      this.pushService
+        .sendExpoPushNotification(
+          input.userId,
+          input.title,
+          input.body,
+          input.link,
+        )
+        .catch((e) => this.logger.error(`Push error: ${e}`));
     }
 
     if (input.email && input.emailCategory && prefs[input.emailCategory]) {

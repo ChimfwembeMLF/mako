@@ -80,13 +80,6 @@
         {
           "cameraPermission": "Allow Mako to access your camera to capture photos for posts."
         }
-      ],
-      [
-        "react-native-widget-extension",
-        {
-          "widgetsFolder": "widgets",
-          "deploymentTarget": "16.2"
-        }
       ]
     ],
     "experiments": {

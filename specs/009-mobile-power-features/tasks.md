@@ -71,3 +71,10 @@
 
 - [x] T022 Implement Expo push notification delivery in Rust backend to send notifications on critical events per FR-002 (missing)
 - [x] T023 Implement deep linking logic inside `Notifications.addNotificationResponseReceivedListener` in `usePushNotifications.ts` to navigate to specific app screens per FR-003 (missing)
+
+## Phase 9: Workflow, Connections, and NestJS Parity
+
+- [x] T024 Remove `react-native-widget-extension` from `mobile/app.json` plugins.
+- [x] T025 Update `.specify/memory/constitution.md` Principle I to mandate dual-implementation in NestJS and Rust.
+- [x] T026 Replace `WebBrowser.openAuthSessionAsync` with `Linking.openURL` in `mobile/app/(tabs)/connections.tsx` and handle deep link returns.
+- [x] T027 Add Expo Push Notification delivery to `api/src/modules/notifications/push.service.ts` in NestJS using standard HTTP client and wire it into `notifications.service.ts`.

@@ -23,8 +23,7 @@ The production runtime API is **Rust** (`api-rust/`, Dokploy `api` service).
 NestJS (`api/`) remains the **schema and migration owner** (TypeORM) and a
 reference implementation until parity is complete.
 
-- MUST implement every new HTTP route, webhook, cron, and queue job in
-  `api-rust/` when shipping product features that depend on the live API.
+- MUST implement every new HTTP route, webhook, cron, and queue job in **BOTH** `api/` (NestJS) and `api-rust/` simultaneously when shipping product features. This prevents the NestJS implementation from drifting or falling behind.
 - MUST keep Nest and Rust response shapes and auth semantics aligned for
   shared clients (`client/`). Prefer smoke parity
   (`api-rust/scripts/smoke-parity.sh`) for contract-sensitive changes.

@@ -5,7 +5,9 @@ import { NotificationPreferences } from './entities/notification_preferences.ent
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationCron } from './notification.cron';
+import { PushService } from './push.service';
 import { UserEntity } from '../user/user.entity';
+import { DevicePushTokenEntity } from '../user/entities/device-push-token.entity';
 import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
 import { TenantSubscriptions } from '../subscriptions/entities/tenant_subscriptions.entity';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
@@ -28,6 +30,7 @@ import { QueuesModule } from '../queues/queues.module';
       Notifications,
       NotificationPreferences,
       UserEntity,
+      DevicePushTokenEntity,
       TenantMembers,
       TenantSubscriptions,
       ContentPublications,
@@ -46,7 +49,7 @@ import { QueuesModule } from '../queues/queues.module';
     forwardRef(() => QueuesModule),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationCron],
-  exports: [NotificationsService],
+  providers: [NotificationsService, NotificationCron, PushService],
+  exports: [NotificationsService, PushService],
 })
 export class NotificationsModule {}

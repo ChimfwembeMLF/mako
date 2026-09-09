@@ -66,11 +66,11 @@ fn user_dto_json(user: &UserModel) -> Value {
 }
 
 async fn register_push_token(
-    AuthUser { user, .. }: AuthUser,
+    AuthUser { id: user_id, .. }: AuthUser,
     State(state): State<AppState>,
     Json(payload): Json<crate::modules::users::dto::RegisterPushTokenDto>,
 ) -> ApiResult<Json<Value>> {
-    UsersService::register_push_token(&state, user.id, &payload.token, &payload.platform).await?;
+    UsersService::register_push_token(&state, user_id, &payload.token, &payload.platform).await?;
     
     Ok(Json(json!({
         "success": true,

@@ -78,3 +78,11 @@ schema in `api/database/migrations`, UI in `client/`. Do not invent a parallel
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
+
+## Addendum: Workflow, Connections, and NestJS Parity (2026-09-09)
+
+Based on recent workflow clarifications:
+1. **Mobile Crash Fix**: Remove `react-native-widget-extension` from `app.json` plugins to resolve the immediate Android launch crash while building an APK.
+2. **Social Connections**: Replace `WebBrowser.openAuthSessionAsync` with `Linking.openURL` in `connections.tsx` so OAuth flows trigger Universal Links and open native platform apps (e.g., Facebook, YouTube) directly.
+3. **Constitution Parity Rule**: Update Principle I in `.specify/memory/constitution.md` to mandate dual-implementation in NestJS and Rust to prevent the reference implementation from falling behind.
+4. **NestJS Parity (Expo Push)**: Add Expo Push Notification delivery to NestJS (`api/src/modules/notifications/push.service.ts`) using standard HTTP clients, wiring it into `notifications.service.ts` to match the Rust implementation.

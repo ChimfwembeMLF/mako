@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Linking,
 } from 'react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as WebBrowser from 'expo-web-browser';
@@ -47,6 +48,26 @@ export default function ConnectionsScreen() {
     reportError(error?.message ?? null);
   }, [error, reportError]);
 
+  React.useEffect(() => {
+    const subscription = Linking.addEventListener('url', async ({ url }) => {
+      try {
+        const outcome = await handleOAuthCallback(parseOAuthCallbackUrl(url));
+        if (outcome.errorMessage) {
+          toast.error(outcome.errorMessage);
+        } else if (outcome.successMessage) {
+          toast.success(outcome.successMessage);
+        } else if (outcome.picker) {
+          setPicker(outcome.picker);
+        }
+        await refetch();
+      } catch (e: any) {
+        toast.error(e.message || 'Error processing social connection');
+      }
+    });
+
+    return () => subscription.remove();
+  }, [refetch, toast]);
+
   const connect = useCallback(
     async (platform: string) => {
       if (!effectiveTenant || !workspaceId) {
@@ -62,25 +83,14 @@ export default function ConnectionsScreen() {
           returnUrl,
           workspaceId,
         );
-        const result = await WebBrowser.openAuthSessionAsync(redirectUrl, returnUrl);
-        if (result.type === 'success' && result.url) {
-          const outcome = await handleOAuthCallback(parseOAuthCallbackUrl(result.url));
-          if (outcome.errorMessage) {
-            toast.error(outcome.errorMessage);
-          } else if (outcome.successMessage) {
-            toast.success(outcome.successMessage);
-          } else if (outcome.picker) {
-            setPicker(outcome.picker);
-          }
-        }
-        await refetch();
+        await Linking.openURL(redirectUrl);
       } catch (e: any) {
         toast.error(e.message || 'Could not connect');
       } finally {
         setBusy(null);
       }
     },
-    [effectiveTenant, workspaceId, refetch, toast],
+    [effectiveTenant, workspaceId, toast],
   );
 
   const disconnect = async (account: SocialAccount) => {
