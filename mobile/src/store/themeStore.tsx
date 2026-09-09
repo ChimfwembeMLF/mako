@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -45,14 +45,16 @@ export const TenantThemeProvider: React.FC<{ children: React.ReactNode }> = ({ c
   return <>{children}</>;
 };
 
+
+
 export const useTenantTheme = () => {
   const theme = useThemeStore((state) => state.theme);
   const setThemeStore = useThemeStore((state) => state.setTheme);
   const isLoading = useThemeStore((state) => state.isLoading);
 
-  const setTheme = async (newTheme: ThemeConfig) => {
+  const setTheme = useCallback(async (newTheme: ThemeConfig) => {
     setThemeStore(newTheme);
-  };
+  }, [setThemeStore]);
 
   return { theme, setTheme, isLoading };
 };
