@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
+import * as Crypto from 'expo-crypto';
 
 export interface LocalDraft {
   id: string; // uuid for local identification
@@ -38,7 +37,7 @@ export const useDraftsStore = create<DraftsState>()(
             ),
           };
         } else {
-          const newDraft = { ...draftData, id: uuidv4(), updatedAt: now } as LocalDraft;
+          const newDraft = { ...draftData, id: Crypto.randomUUID(), updatedAt: now } as LocalDraft;
           return {
             drafts: [newDraft, ...state.drafts],
           };

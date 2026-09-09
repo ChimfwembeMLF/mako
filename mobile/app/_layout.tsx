@@ -14,6 +14,7 @@ import { TenantThemeProvider, useTenantTheme } from '../src/store/themeStore';
 import { useWorkspace } from '../src/context/WorkspaceContext';
 import { api } from '../src/lib/api';
 import { usePushNotifications } from '../src/hooks/usePushNotifications';
+import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 
 function InitialLayout() {
   const { token, isLoading } = useAuth();
@@ -87,7 +88,6 @@ function FontGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 
 export default function RootLayout() {
   return (

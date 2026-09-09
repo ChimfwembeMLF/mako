@@ -9,6 +9,8 @@ import { useRouter } from 'expo-router';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
   }),
@@ -22,8 +24,8 @@ export interface PushNotificationState {
 export const usePushNotifications = (isAuthenticated: boolean): PushNotificationState => {
   const [expoPushToken, setExpoPushToken] = useState<string | undefined>();
   const [notification, setNotification] = useState<Notifications.Notification | undefined>();
-  const notificationListener = useRef<Notifications.Subscription>();
-  const responseListener = useRef<Notifications.Subscription>();
+  const notificationListener = useRef<any>(null);
+  const responseListener = useRef<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -32,10 +34,8 @@ export const usePushNotifications = (isAuthenticated: boolean): PushNotification
       setExpoPushToken(token);
       if (token) {
         // Send the token to our backend
-        api.post('/users/push-tokens', {
-          token,
-          platform: Platform.OS,
-        }).catch(err => console.error('Failed to register push token with backend:', err));
+        api.registerPushToken(token, Platform.OS)
+          .catch((err: any) => console.error('Failed to register push token with backend:', err));
       }
     });
 
@@ -55,10 +55,10 @@ export const usePushNotifications = (isAuthenticated: boolean): PushNotification
 
     return () => {
       if (notificationListener.current) {
-        Notifications.removeNotificationSubscription(notificationListener.current);
+        notificationListener.current.remove();
       }
       if (responseListener.current) {
-        Notifications.removeNotificationSubscription(responseListener.current);
+        responseListener.current.remove();
       }
     };
   }, [isAuthenticated, router]);

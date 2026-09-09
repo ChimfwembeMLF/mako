@@ -348,6 +348,12 @@ export const api = {
       body: JSON.stringify({ token }),
     }),
 
+  registerPushToken: (token: string, platform: string) =>
+    fetchWithAuth('/api/v1/users/push-tokens', {
+      method: 'POST',
+      body: JSON.stringify({ token, platform }),
+    }),
+
   refresh: async (refreshToken: string): Promise<AuthTokensResponse> =>
     fetchPublic('/api/v1/auth/refresh', {
       method: 'POST',
