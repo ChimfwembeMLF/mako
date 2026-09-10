@@ -13,7 +13,7 @@ services:
     # The container name is referenced by Nginx as `client`
 
   # NestJS backend (API)
-  api:
+  mako-api:
     build:
       context: .
       dockerfile: api/Dockerfile.dev   # dev Dockerfile in api folder
@@ -32,7 +32,7 @@ services:
       - "80:80"
     depends_on:
       - client
-      - api
+      - mako-api
     # No TLS configuration – plain HTTP for development. For production with Dokploy you can enable TLS by
     # uncommenting the `listen 443 ssl;` lines in nginx.conf and mounting your certs.
 
