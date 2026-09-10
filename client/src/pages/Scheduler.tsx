@@ -4,7 +4,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import {
   CalendarClock, Plus, CheckCircle2, XCircle, Send, Facebook, Linkedin, Instagram,
   Twitter, Mail, Megaphone, Zap, Loader2, List, CalendarDays, ChevronLeft, ChevronRight,
-  AlertCircle, RotateCcw, Clock, Eye, Youtube, MessageCircle, Users, User,
+  AlertCircle, RotateCcw, Clock, Eye, Youtube, MessageCircle, Users, User, Bot,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -29,6 +29,8 @@ import { MediaUpload } from "@/components/MediaUpload";
 import { MultiPlatformPicker } from "@/components/content/MultiPlatformPicker";
 import { PlatformPreviewPanel } from "@/components/content/PlatformPreviewPanel";
 import { PublishPanel } from "@/components/content/PublishPanel";
+import { AutomationSettingsTab } from "@/components/scheduler/AutomationSettingsTab";
+import { CalendarDayModal } from "@/components/scheduler/CalendarDayModal";
 import type { ContentItem } from "@/components/content/types";
 import {
   buildPlatformPayloads,
@@ -277,9 +279,10 @@ function getPlatformStatusDot(posts: ScheduledPost[]) {
 
 const Scheduler = () => {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
-  const [view, setView] = useState<"list" | "calendar">("calendar");
+  const [view, setView] = useState<"list" | "calendar" | "automations">("calendar");
   const [listFilter, setListFilter] = useState<ListFilter>("upcoming");
   const [showTeam, setShowTeam] = useState(true);
+  const [selectedDayForModal, setSelectedDayForModal] = useState<Date | null>(null);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [newContent, setNewContent] = useState("");
@@ -292,6 +295,8 @@ const Scheduler = () => {
   const [retrying, setRetrying] = useState<string | null>(null);
   const [runningWorkflow, setRunningWorkflow] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [dragId, setDragId] = useState<string | null>(null);
   const [reschedule, setReschedule] = useState<{ postId: string; date: string; time: string; status: string } | null>(null);
   const [savingReschedule, setSavingReschedule] = useState(false);
@@ -302,7 +307,8 @@ const Scheduler = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { tenant } = useTenant();
-  const { activeWorkspace, workspaceVersion, loading: workspaceLoading } = useWorkspace();
+  const { activeWorkspace, workspaces, workspaceVersion, loading: workspaceLoading } = useWorkspace();
+  const activeWorkspaceObj = workspaces.find(w => w.id === activeWorkspace) ?? null;
 
   const schedulePreviewPayloads = useMemo(() => {
     const baseMedia: PlatformMediaAttachment[] = newMedia
@@ -775,28 +781,72 @@ const Scheduler = () => {
     <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <CalendarClock className="h-5 w-5" />
-          </div>
           <div>
-            <h1 className="text-2xl font-bold font-display">Scheduler</h1>
-            <p className="text-muted-foreground text-sm">Plan, schedule, and publish across channels</p>
+            <h1 className="text-2xl font-bold font-display">{view === "calendar" ? "Calendar" : view === "automations" ? "Automations" : "Scheduler"}</h1>
+            <p className="text-muted-foreground text-sm">
+              {view === "calendar" ? `Plan, inspect, and reschedule posts for ${activeWorkspaceObj?.name || "your workspace"}.` : "Plan, schedule, and publish across channels"}
+            </p>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar")}>
-            <TabsList className="h-9">
-              <TabsTrigger value="calendar" className="h-7 text-xs px-2.5"><CalendarDays className="h-3.5 w-3.5 mr-1" /> Calendar</TabsTrigger>
-              <TabsTrigger value="list" className="h-7 text-xs px-2.5"><List className="h-3.5 w-3.5 mr-1" /> List</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          <Button onClick={handleDailyWorkflow} disabled={runningWorkflow} variant="outline" size="sm">
-            {runningWorkflow ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : <Zap className="mr-1.5 h-3.5 w-3.5" />}
-            Auto-Generate
-          </Button>
+        <div className="flex gap-4 flex-wrap items-center">
+          {view === "calendar" && (
+            <div className="flex items-center gap-2 bg-card border border-border/50 rounded-full px-1.5 py-1">
+              <div className="px-2 border-r border-border/50">
+                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground"><path d="M2.5 3.5C2.5 3.22386 2.72386 3 3 3H12C12.2761 3 12.5 3.22386 12.5 3.5C12.5 3.77614 12.2761 4 12 4H3C2.72386 4 2.5 3.77614 2.5 3.5ZM4.5 7.5C4.5 7.22386 4.72386 7 5 7H10C10.2761 7 10.5 7.22386 10.5 7.5C10.5 7.77614 10.2761 8 10 8H5C4.72386 8 4.5 7.77614 4.5 7.5ZM6.5 11.5C6.5 11.2239 6.72386 11 7 11H8C8.27614 11 8.5 11.2239 8.5 11.5C8.5 11.7761 8.27614 12 8 12H7C6.72386 12 6.5 11.7761 6.5 11.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
+              </div>
+              <div className="flex items-center gap-1.5 px-1">
+                <Badge variant="secondary" className="bg-white text-black hover:bg-white/90 rounded-full text-[10px] px-2 h-5 cursor-pointer">All</Badge>
+                <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-[#fd5949] to-[#d6249f] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                  <Instagram className="h-2.5 w-2.5 text-white" />
+                </div>
+                <div className="h-5 w-5 rounded-full bg-black flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5 text-white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+                </div>
+                <div className="h-5 w-5 rounded-full bg-[#0A66C2] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                  <Linkedin className="h-2.5 w-2.5 text-white" />
+                </div>
+                <div className="h-5 w-5 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
+                  <Facebook className="h-2.5 w-2.5 text-white" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            {view === "calendar" && (
+               <div className="flex items-center bg-card border border-border/50 rounded-full p-1 h-9 text-xs font-medium">
+                 {(['day', 'week', 'month'] as const).map((v) => (
+                   <button
+                     key={v}
+                     className={`px-3 rounded-full capitalize transition-all ${
+                       calendarView === v
+                         ? 'bg-white dark:bg-foreground text-black shadow-sm h-7 font-semibold'
+                         : 'text-muted-foreground hover:text-foreground'
+                     }`}
+                     onClick={() => {
+                       setCalendarView(v);
+                       if (v === 'day') setCalendarDate(new Date());
+                       if (v === 'week' || v === 'month') setCalendarMonth(new Date());
+                     }}
+                   >
+                     {v}
+                   </button>
+                 ))}
+               </div>
+            )}
+            
+            <Tabs value={view} onValueChange={(v) => setView(v as "list" | "calendar" | "automations")}>
+              <TabsList className="h-9 rounded-full">
+                <TabsTrigger value="calendar" className="h-7 text-xs px-2.5 rounded-full"><CalendarDays className="h-3.5 w-3.5 mr-1 hidden sm:block" /> Calendar</TabsTrigger>
+                <TabsTrigger value="list" className="h-7 text-xs px-2.5 rounded-full"><List className="h-3.5 w-3.5 mr-1 hidden sm:block" /> List</TabsTrigger>
+                <TabsTrigger value="automations" className="h-7 text-xs px-2.5 rounded-full"><Bot className="h-3.5 w-3.5 mr-1 hidden sm:block" /> Automations</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
-              <Button size="sm"><Plus className="mr-1.5 h-3.5 w-3.5" /> Schedule</Button>
+              <Button size="sm" className="rounded-full bg-white text-black hover:bg-white/90 h-9 font-medium shadow-sm"><Plus className="mr-1 h-4 w-4" /> Schedule</Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
               <SheetHeader>
@@ -885,147 +935,269 @@ const Scheduler = () => {
         ))}
       </div>
 
-      {view === "calendar" && (
-        <div className="space-y-4">
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1))}>
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-display font-semibold">{monthLabel}</h2>
-                  <Button variant="outline" size="sm" className="h-7 text-xs" onClick={() => { setCalendarMonth(new Date()); }}>
-                    Today
-                  </Button>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1))}>
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+      {view === "calendar" && (() => {
+        // ── Shared helpers ────────────────────────────────────────────────
+        const navLabel = (() => {
+          if (calendarView === 'day') return calendarDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+          if (calendarView === 'week') {
+            const weekStart = new Date(calendarDate); weekStart.setDate(calendarDate.getDate() - calendarDate.getDay());
+            const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate() + 6);
+            return `${weekStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} – ${weekEnd.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+          }
+          return calendarMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        })();
 
-              {loadingPosts ? (
-                <Skeleton className="h-80 w-full" />
-              ) : (
+        const navPrev = () => {
+          if (calendarView === 'day') { const d = new Date(calendarDate); d.setDate(d.getDate() - 1); setCalendarDate(d); }
+          else if (calendarView === 'week') { const d = new Date(calendarDate); d.setDate(d.getDate() - 7); setCalendarDate(d); }
+          else setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1));
+        };
+        const navNext = () => {
+          if (calendarView === 'day') { const d = new Date(calendarDate); d.setDate(d.getDate() + 1); setCalendarDate(d); }
+          else if (calendarView === 'week') { const d = new Date(calendarDate); d.setDate(d.getDate() + 7); setCalendarDate(d); }
+          else setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1));
+        };
+        const navToday = () => { setCalendarDate(new Date()); setCalendarMonth(new Date()); };
+
+        const sharedHeader = (
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-border/20">
+            <div>
+              <p className="text-[11px] font-semibold text-gray-400 dark:text-muted-foreground uppercase tracking-widest mb-0.5">{calendarView} View</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground">{navLabel}</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button className="h-9 w-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-border/50 bg-white dark:bg-background hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors shadow-sm" onClick={navPrev}>
+                <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-muted-foreground" />
+              </button>
+              <button className="h-9 px-4 rounded-full text-xs font-semibold border border-gray-200 dark:border-border/50 bg-white dark:bg-background hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors shadow-sm text-gray-700 dark:text-foreground" onClick={navToday}>
+                Today
+              </button>
+              <button className="h-9 w-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-border/50 bg-white dark:bg-background hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors shadow-sm" onClick={navNext}>
+                <ChevronRight className="h-4 w-4 text-gray-600 dark:text-muted-foreground" />
+              </button>
+            </div>
+          </div>
+        );
+
+        const legend = (
+          <div className="flex flex-wrap items-center gap-4 px-6 py-3 border-t border-gray-100 dark:border-border/20 bg-gray-50/50 dark:bg-muted/5 text-[11px] text-gray-400 dark:text-muted-foreground">
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Draft</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" /> Scheduled</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Approved</span>
+            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-green-500" /> Published</span>
+            <span className="ml-auto hidden sm:inline">Click a day to view or add posts</span>
+          </div>
+        );
+
+        // ── Day chip helper ───────────────────────────────────────────────
+        const DayCellPosts = ({ day, mini = false }: { day: Date; mini?: boolean }) => {
+          const dayPosts = getPostsForDate(day);
+          const platformPostsMap: Record<string, ScheduledPost[]> = {};
+          for (const post of dayPosts) {
+            const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+            for (const p of platforms) {
+              if (!platformPostsMap[p]) platformPostsMap[p] = [];
+              platformPostsMap[p].push(post);
+            }
+          }
+          const platKeys = Object.keys(platformPostsMap);
+          return (
+            <>
+              {platKeys.slice(0, mini ? 2 : 3).map((platform) => {
+                const Icon = channelIcons[platform] || CalendarClock;
+                const platformPosts = platformPostsMap[platform] || [];
+                const statusDot = getPlatformStatusDot(platformPosts);
+                return (
+                  <Popover key={platform}>
+                    <PopoverTrigger asChild>
+                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold cursor-pointer transition-all hover:scale-[1.02] ${getBrandBg(platform)} text-white`} onClick={(e) => e.stopPropagation()}>
+                        <Icon className="h-2.5 w-2.5 shrink-0" />
+                        {!mini && <span className="truncate capitalize hidden sm:block">{platform}</span>}
+                        <span className="ml-auto font-bold">{platformPosts.length}</span>
+                        <span className={`h-1.5 w-1.5 rounded-full ${statusDot} hidden sm:inline shrink-0`} />
+                      </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-64 p-2 space-y-1 bg-white dark:bg-background border border-gray-200 dark:border-border shadow-xl rounded-xl" align="start">
+                      <p className="text-xs font-bold mb-2 capitalize text-gray-700 dark:text-foreground">{platform} Posts ({platformPosts.length})</p>
+                      <div className="space-y-1">
+                        {platformPosts.map((post) => (
+                          <CalendarPostChip key={post.id} post={post} dragId={dragId} onReschedule={openReschedule} onDragStart={handleDragStart} />
+                        ))}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                );
+              })}
+              {platKeys.length > (mini ? 2 : 3) && (
+                <span className="text-[10px] text-gray-400 dark:text-muted-foreground px-2">+{platKeys.length - (mini ? 2 : 3)} more</span>
+              )}
+            </>
+          );
+        };
+
+        return (
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-200/80 dark:border-border/30 shadow-sm">
+              {sharedHeader}
+              {loadingPosts ? <Skeleton className="h-80 w-full" /> : (
                 <>
-                  <div className="grid grid-cols-7 gap-px mb-1">
-                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                      <div key={d} className="text-center text-xs font-medium text-muted-foreground py-1">{d}</div>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-7 gap-px bg-border/30 rounded-lg overflow-hidden">
-                    {getCalendarDays().map((day, idx) => {
-                      if (!day) {
-                        return <div key={`empty-${idx}`} className="bg-background min-h-[80px] sm:min-h-[110px] p-1" />;
-                      }
-                      const dayPosts = getPostsForDate(day);
-                      const todayClass = isToday(day) ? "ring-2 ring-primary ring-inset" : "";
-                      const isDraggingActive = dragId !== null;
-
-                      // Group posts by platform/channel
-                      const platformPostsMap: Record<string, ScheduledPost[]> = {};
-                      for (const post of dayPosts) {
-                        const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
-                        for (const p of platforms) {
-                          if (!platformPostsMap[p]) {
-                            platformPostsMap[p] = [];
-                          }
-                          platformPostsMap[p].push(post);
-                        }
-                      }
-                      const activePlatforms = Object.keys(platformPostsMap);
-
-                      return (
-                        <div
-                          key={day.toISOString()}
-                          className={`bg-background min-h-[80px] sm:min-h-[110px] p-1 sm:p-1.5 flex flex-col gap-1 ${todayClass} transition-all ${
-                            isDraggingActive ? "border border-dashed border-primary/30 bg-primary/5 hover:border-primary/60 hover:bg-primary/10" : "hover:bg-muted/15"
-                          }`}
-                          onDragOver={handleDragOver}
-                          onDrop={(e) => void handleDrop(e, day)}
-                        >
-                          {/* Day Cell Header */}
-                          <div className="flex items-center justify-between group/cell mb-1 text-[10px] sm:text-xs">
-                            {dayPosts.length > 0 ? (
-                              <span className="text-[10px] font-semibold text-muted-foreground/80">
-                                {dayPosts.length} {dayPosts.length === 1 ? 'Post' : 'Posts'}
-                              </span>
-                            ) : (
-                              <span />
-                            )}
-                            <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 opacity-0 group-hover/cell:opacity-100 transition-opacity p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openCreatePostForDate(day);
-                                }}
-                                title="Add post"
-                              >
-                                <Plus className="h-2.5 w-2.5" />
-                              </Button>
-                              <span className={`font-semibold shrink-0 ${isToday(day) ? "text-primary font-bold" : "text-muted-foreground"}`}>
-                                {day.getDate() < 10 ? `0${day.getDate()}` : day.getDate()}
-                              </span>
+                  {/* ── MONTH VIEW ─────────────────────────────────────────── */}
+                  {calendarView === 'month' && (
+                    <>
+                      <div className="grid grid-cols-7 bg-gray-50/80 dark:bg-muted/5 border-b border-gray-100 dark:border-border/20">
+                        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                          <div key={d} className="text-center text-[11px] font-bold text-gray-400 dark:text-muted-foreground uppercase tracking-wider py-3">{d}</div>
+                        ))}
+                      </div>
+                      <div className="grid grid-cols-7 divide-x divide-y divide-gray-100 dark:divide-border/20">
+                        {getCalendarDays().map((day, idx) => {
+                          if (!day) return <div key={`empty-${idx}`} className="min-h-[130px] bg-gray-50/50 dark:bg-muted/5" />;
+                          const dayPosts = getPostsForDate(day);
+                          const isTodayDate = isToday(day);
+                          const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                          return (
+                            <div
+                              key={day.toISOString()}
+                              className={`min-h-[130px] flex flex-col cursor-pointer group/cell transition-colors ${isWeekend ? "bg-gray-50/70 dark:bg-muted/5" : "bg-white dark:bg-card"} ${dragId !== null ? "bg-primary/5" : "hover:bg-blue-50/40 dark:hover:bg-muted/20"}`}
+                              onDragOver={handleDragOver}
+                              onDrop={(e) => void handleDrop(e, day)}
+                              onClick={() => setSelectedDayForModal(day)}
+                            >
+                              <div className="p-3 pb-2 flex items-center justify-between">
+                                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full transition-colors ${isTodayDate ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-700 dark:text-foreground group-hover/cell:bg-gray-100 dark:group-hover/cell:bg-muted/30"}`}>
+                                  {day.getDate()}
+                                </span>
+                                {dayPosts.length > 0 && <span className="text-[10px] font-semibold bg-primary/10 text-primary rounded-full px-1.5 py-0.5">{dayPosts.length}</span>}
+                              </div>
+                              <div className="px-2 pb-2 flex flex-col gap-1">
+                                <DayCellPosts day={day} />
+                                {dayPosts.length === 0 && (
+                                  <button className="opacity-0 group-hover/cell:opacity-100 transition-opacity mt-1 flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted-foreground hover:text-primary px-1" onClick={(e) => { e.stopPropagation(); openCreatePostForDate(day); }}>
+                                    <Plus className="h-3 w-3" /> Add
+                                  </button>
+                                )}
+                              </div>
                             </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+
+                  {/* ── WEEK VIEW ──────────────────────────────────────────── */}
+                  {calendarView === 'week' && (() => {
+                    const weekStart = new Date(calendarDate);
+                    weekStart.setDate(calendarDate.getDate() - calendarDate.getDay());
+                    const weekDays = Array.from({ length: 7 }, (_, i) => {
+                      const d = new Date(weekStart);
+                      d.setDate(weekStart.getDate() + i);
+                      return d;
+                    });
+                    return (
+                      <>
+                        <div className="grid grid-cols-7 bg-gray-50/80 dark:bg-muted/5 border-b border-gray-100 dark:border-border/20">
+                          {weekDays.map((d) => (
+                            <div key={d.toISOString()} className={`text-center py-3 border-r border-gray-100 dark:border-border/20 last:border-r-0 ${isToday(d) ? 'bg-primary/5' : ''}`}>
+                              <p className="text-[11px] font-bold text-gray-400 dark:text-muted-foreground uppercase tracking-wider">{d.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                              <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full mx-auto mt-0.5 ${isToday(d) ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-foreground'}`}>{d.getDate()}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 divide-x divide-gray-100 dark:divide-border/20">
+                          {weekDays.map((d) => {
+                            const dayPosts = getPostsForDate(d);
+                            return (
+                              <div
+                                key={d.toISOString()}
+                                className="min-h-[400px] flex flex-col p-2 gap-1 cursor-pointer group/cell hover:bg-blue-50/30 dark:hover:bg-muted/10 transition-colors"
+                                onClick={() => { setCalendarDate(d); setSelectedDayForModal(d); }}
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => void handleDrop(e, d)}
+                              >
+                                <DayCellPosts day={d} mini />
+                                {dayPosts.length === 0 && (
+                                  <button className="opacity-0 group-hover/cell:opacity-100 transition-opacity flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted-foreground hover:text-primary p-1" onClick={(e) => { e.stopPropagation(); openCreatePostForDate(d); }}>
+                                    <Plus className="h-3 w-3" /> Add
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    );
+                  })()}
+
+                  {/* ── DAY VIEW ───────────────────────────────────────────── */}
+                  {calendarView === 'day' && (() => {
+                    const dayPosts = getPostsForDate(calendarDate);
+                    return (
+                      <div className="min-h-[400px] p-6">
+                        {dayPosts.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
+                            <div className="h-12 w-12 rounded-full bg-gray-100 dark:bg-muted/30 flex items-center justify-center">
+                              <CalendarDays className="h-6 w-6 text-gray-400 dark:text-muted-foreground" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-gray-700 dark:text-foreground">No posts scheduled</p>
+                              <p className="text-sm text-gray-400 dark:text-muted-foreground mt-0.5">Click below to schedule a post for this day.</p>
+                            </div>
+                            <button
+                              className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                              onClick={() => openCreatePostForDate(calendarDate)}
+                            >
+                              <Plus className="h-4 w-4" /> Create post
+                            </button>
                           </div>
-
-                          {/* Day Cell Content: Grouped Platform Rows */}
-                          <div className="space-y-1 z-10">
-                            {activePlatforms.map((platform) => {
-                              const Icon = channelIcons[platform] || CalendarClock;
-                              const platformPosts = platformPostsMap[platform] || [];
-                              const statusDot = getPlatformStatusDot(platformPosts);
-
+                        ) : (
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between mb-4">
+                              <p className="text-sm font-semibold text-gray-700 dark:text-foreground">{dayPosts.length} post{dayPosts.length !== 1 ? 's' : ''} scheduled</p>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-border/50 text-xs font-medium text-gray-600 dark:text-muted-foreground hover:bg-gray-50 dark:hover:bg-muted/30 transition-colors" onClick={() => openCreatePostForDate(calendarDate)}>
+                                <Plus className="h-3 w-3" /> Add post
+                              </button>
+                            </div>
+                            {dayPosts.map((post) => {
+                              const postPlatforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+                              const timeStr = post.scheduled_at ? new Date(post.scheduled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unscheduled';
                               return (
-                                <Popover key={platform}>
-                                  <PopoverTrigger asChild>
-                                    <div className="flex items-center justify-center sm:justify-between px-0.5 sm:px-1.5 py-0.5 rounded border border-border/40 bg-card hover:bg-muted/15 cursor-pointer text-[10px] font-medium transition-all">
-                                      <div className="flex items-center gap-0.5 sm:gap-1">
-                                        <span className={`flex h-3.5 w-3.5 items-center justify-center rounded text-white text-[8px] font-bold ${getBrandBg(platform)}`}>
-                                          <Icon className="h-2 w-2" />
-                                        </span>
-                                        <span className="text-foreground/90 font-semibold hidden sm:inline">{platformPosts.length}</span>
-                                      </div>
-                                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot} hidden sm:inline`} />
+                                <div key={post.id} className="flex gap-4 p-4 rounded-xl border border-gray-100 dark:border-border/30 bg-gray-50/50 dark:bg-muted/5 hover:border-gray-200 dark:hover:border-border/60 transition-colors">
+                                  <div className="flex flex-col items-center min-w-[52px]">
+                                    <span className="text-xs font-bold text-primary">{timeStr}</span>
+                                    <div className="flex-1 w-px bg-gray-200 dark:bg-border/30 mt-1" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2 mb-2">
+                                      <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{post.title || 'Untitled Post'}</p>
+                                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize shrink-0 ${statusColors[post.status] || 'bg-muted text-muted-foreground'}`}>{post.status}</span>
                                     </div>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-64 p-2 space-y-1" align="start">
-                                    <p className="text-xs font-semibold mb-2 capitalize">{platform} Posts ({platformPosts.length})</p>
-                                    <div className="space-y-1">
-                                      {platformPosts.map((post) => (
-                                        <CalendarPostChip
-                                          key={post.id}
-                                          post={post}
-                                          dragId={dragId}
-                                          onReschedule={openReschedule}
-                                          onDragStart={handleDragStart}
-                                        />
-                                      ))}
+                                    <p className="text-xs text-gray-500 dark:text-muted-foreground line-clamp-2 mb-3" dangerouslySetInnerHTML={{ __html: post.content.replace(/<[^>]*>/g, '') }} />
+                                    <div className="flex items-center gap-1.5">
+                                      {postPlatforms.map((p) => {
+                                        const Icon = channelIcons[p] || CalendarClock;
+                                        return (
+                                          <span key={p} className={`h-5 w-5 rounded-full flex items-center justify-center ${getBrandBg(p)}`}>
+                                            <Icon className="h-2.5 w-2.5 text-white" />
+                                          </span>
+                                        );
+                                      })}
+                                      <button className="ml-auto text-[10px] text-gray-400 dark:text-muted-foreground hover:text-primary transition-colors" onClick={() => openReschedule(post)}>
+                                        Reschedule
+                                      </button>
                                     </div>
-                                  </PopoverContent>
-                                </Popover>
+                                  </div>
+                                </div>
                               );
                             })}
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </>
               )}
-
-              <div className="flex flex-wrap items-center gap-4 mt-3 text-[10px] text-muted-foreground">
-                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-muted-foreground" /> Draft</span>
-                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-blue-500" /> Scheduled</span>
-                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-primary" /> Approved</span>
-                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-green-500" /> Published</span>
-                <span className="ml-auto hidden sm:inline">Drag to move · clock to edit time</span>
-              </div>
-            </CardContent>
-          </Card>
+              {legend}
+            </div>
 
           {unscheduledPosts.length > 0 && (
             <Card className="border-border/50 border-dashed">
@@ -1056,8 +1228,21 @@ const Scheduler = () => {
               </CardContent>
             </Card>
           )}
+          
+          <CalendarDayModal
+            isOpen={!!selectedDayForModal}
+            onClose={() => setSelectedDayForModal(null)}
+            date={selectedDayForModal}
+            posts={selectedDayForModal ? getPostsForDate(selectedDayForModal) : []}
+            workspaceName={activeWorkspaceObj?.name}
+            onCreatePost={(date) => {
+              setSelectedDayForModal(null);
+              openCreatePostForDate(date);
+            }}
+          />
         </div>
-      )}
+        );
+      })()}
 
       {view === "list" && (
         <div className="space-y-3">
@@ -1103,6 +1288,10 @@ const Scheduler = () => {
             visiblePosts.map(renderListPost)
           )}
         </div>
+      )}
+
+      {view === "automations" && (
+        <AutomationSettingsTab />
       )}
 
       <Dialog open={reschedule != null} onOpenChange={(open) => !open && setReschedule(null)}>

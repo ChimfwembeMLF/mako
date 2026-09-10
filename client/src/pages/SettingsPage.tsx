@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Settings as SettingsIcon, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter, Monitor, Moon, Sun } from "lucide-react";
+import { Settings as SettingsIcon, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter, Monitor, Moon, Sun, Key } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

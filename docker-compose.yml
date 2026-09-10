@@ -1,58 +1,42 @@
-# Dokploy: paste env into Compose → Environment.
-#
-
+# Updated docker-compose.yml (no version line)
 services:
-  mako-api:
+  # Vite client – runs in dev mode (hot reload) or serves built assets
+  client:
     build:
       context: .
-      dockerfile: api/Dockerfile
-    ports:
-      - "4000:4000"
-    env_file:
-      - .env
+      dockerfile: client/Dockerfile.dev   # dev Dockerfile in client folder
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PORT=${PORT:-4000}
-    networks:
-      - dokploy-network
-    restart: unless-stopped
-    healthcheck:
-      disable: true
-
-  mako-client:
-    build:
-      context: .
-      dockerfile: client/Dockerfile
-      args:
-        - VITE_API_BASE_URL=${VITE_API_BASE_URL:-}
-        - VITE_ADSENSE_PUBLISHER_ID=${VITE_ADSENSE_PUBLISHER_ID:-ca-pub-6221660864872022}
-        - VITE_ADSENSE_SLOT_GATE=${VITE_ADSENSE_SLOT_GATE:?Set a real AdSense gate slot ID}
-        - VITE_ADSENSE_SLOT_DISCOVER=${VITE_ADSENSE_SLOT_DISCOVER:?Set a real AdSense Discover slot ID}
-        - VITE_ADSENSE_SLOT_TRACK=${VITE_ADSENSE_SLOT_TRACK:?Set a real AdSense Track slot ID}
-        - VITE_ADSENSE_SLOT_ARTIST=${VITE_ADSENSE_SLOT_ARTIST:?Set a real AdSense Artist slot ID}
+      VITE_PORT: 5173
+      BACKEND_PORT: 4000
     ports:
       - "5173:5173"
-    networks:
-      - dokploy-network
-    restart: unless-stopped
+    # The container name is referenced by Nginx as `client`
 
-  # Optional: run TypeORM migrations (Nest). Usage:
-  #   docker compose --profile migrate run --rm migrate
-  mako-migrate:
-    profiles: ["migrate"]
+  # NestJS backend (API)
+  api:
     build:
       context: .
-      dockerfile: api/Dockerfile
-    env_file:
-      - .env
+      dockerfile: api/Dockerfile.dev   # dev Dockerfile in api folder
     environment:
-      - NODE_ENV=production
-    entrypoint: ["sh", "-c", "yarn migrations:run"]
-    networks:
-      - dokploy-network
-    restart: "no"
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    # The container name is referenced by Nginx as `api`
 
-networks:
-  dokploy-network:
-    name: dokploy-network
-    external: true
+  # Nginx reverse‑proxy – handles routing, no TLS for local dev
+  nginx:
+    image: nginx:stable-alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - client
+      - api
+    # No TLS configuration – plain HTTP for development. For production with Dokploy you can enable TLS by
+    # uncommenting the `listen 443 ssl;` lines in nginx.conf and mounting your certs.
+
+# Note:
+# * Ensure that Dockerfiles `Dockerfile.dev` exist for client and api (they can be simple images that run `yarn install && yarn dev`).
+# * When deploying with Dokploy, push this repository and let Dokploy build the services using this compose file.
+# * Environment variables can be overridden via Dokploy UI if needed.

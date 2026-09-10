@@ -965,6 +965,10 @@ export const workspacesApi = {
     update: (id: string, data: Record<string, unknown>) =>
         request<any>(`/api/v1/workspaces/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
     remove: (id: string) => request<any>(`/api/v1/workspaces/${id}`, { method: 'DELETE' }),
+    getAutomationConfig: (id: string) =>
+        request<any>(`/api/v1/workspaces/${id}/automation-config`),
+    updateAutomationConfig: (id: string, data: Record<string, unknown>) =>
+        request<any>(`/api/v1/workspaces/${id}/automation-config`, { method: 'PATCH', body: JSON.stringify(data) }),
 };
 
 export const approvalWorkflowsApi = {

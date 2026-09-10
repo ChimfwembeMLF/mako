@@ -4,39 +4,54 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Key, Trash2, CheckCircle2 } from "lucide-react";
+import { Loader2, Key, Trash2, CheckCircle2, Bot, Gem, Waves, Search } from "lucide-react";
 import { useTenantIntegrationConfigs, TenantIntegrationConfig } from "@/hooks/api/useTenantIntegrationConfigs";
 import { useToast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface IntegrationSettingsProps {
   tenantId: string;
 }
 
 const AI_PROVIDERS = [
-  { id: "MISTRAL", name: "Mistral AI" },
-  { id: "OPENAI", name: "OpenAI" },
-  { id: "GEMINI", name: "Google Gemini" },
+  { id: "mistral", name: "Mistral AI", icon: Waves },
+  { id: "openai", name: "OpenAI", icon: Bot },
+  { id: "gemini", name: "Google Gemini", icon: Gem },
+  { id: "deepseek", name: "DeepSeek", icon: Search },
 ];
 
 export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
   const { configs, isLoading, upsertConfig, isUpserting, deleteConfig, isDeleting } = useTenantIntegrationConfigs(tenantId);
   const { toast } = useToast();
   
-  const [selectedProvider, setSelectedProvider] = useState<string>("MISTRAL");
-  const [apiKey, setApiKey] = useState("");
+  // Track API keys per provider in a simple object map
+  const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
+  // Track which provider is currently being saved for loading spinner
+  const [savingProvider, setSavingProvider] = useState<string | null>(null);
 
-  const handleSave = async () => {
-    if (!apiKey.trim()) {
-      toast({ title: "Error", description: "API Key is required", variant: "destructive" });
+  const handleSave = async (provider: string) => {
+    const key = apiKeys[provider] ?? "";
+    if (!key.trim()) {
+      toast({
+        title: "Error",
+        description: `API Key is required for ${provider}`,
+        variant: "destructive",
+      });
       return;
     }
+    setSavingProvider(provider);
     try {
-      await upsertConfig({ provider: selectedProvider, apiKey });
-      setApiKey("");
-      toast({ title: "Success", description: "API Key saved successfully" });
+      const normalizedProvider = provider.toLowerCase();
+      await upsertConfig({ provider: normalizedProvider as any, apiKey: key });
+      setApiKeys((prev) => ({ ...prev, [provider]: "" }));
+      toast({ title: "Success", description: `${provider} API Key saved successfully` });
     } catch (err: any) {
-      toast({ title: "Failed to save API key", description: err?.response?.data?.message || err.message, variant: "destructive" });
+      toast({
+        title: "Failed to save API key",
+        description: err?.response?.data?.message || err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingProvider(null);
     }
   };
 
@@ -70,38 +85,35 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-[1fr_2fr_auto]">
-            <div className="space-y-2">
-              <Label>Provider</Label>
-              <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {AI_PROVIDERS.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>API Key</Label>
-              <Input
-                type="password"
-                placeholder={`Enter ${AI_PROVIDERS.find(p => p.id === selectedProvider)?.name} API Key`}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-              />
-            </div>
-            
-            <div className="flex items-end">
-              <Button onClick={handleSave} disabled={isUpserting || !apiKey.trim()} className="w-full md:w-auto">
-                {isUpserting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Key
-              </Button>
-            </div>
-          </div>
+          {AI_PROVIDERS.map((p) => {
+            const Icon = p.icon;
+            return (
+              <div key={p.id} className="grid gap-4 md:grid-cols-[1fr_2fr_auto] items-center border rounded-lg p-4">
+                <div className="flex items-center gap-2 font-medium">
+                  <p>{p.name}</p>
+                  <Icon className="h-4 w-4" />
+                </div>
+                <div className="space-y-2">
+                  <Input
+                    type="password"
+                    placeholder={`Enter ${p.name} API Key`}
+                    value={apiKeys[p.id] ?? ""}
+                    onChange={(e) => setApiKeys((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <Button
+                    onClick={() => handleSave(p.id)}
+                    disabled={(savingProvider !== null && savingProvider !== p.id) || !apiKeys[p.id]?.trim()}
+                    className="w-full md:w-auto"
+                  >
+                    {savingProvider === p.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Save Key
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
         </CardContent>
       </Card>
 

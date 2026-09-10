@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Workspaces } from './entities/workspaces.entity';
+import { WorkspaceAutomationConfig } from './entities/workspace-automation-config.entity';
 import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
 import { WorkspacesUpdateDto } from './dto/update-workspaces.dto';
 import { BrandProfilesService } from '../brand_profiles/brand_profiles.service';
@@ -11,6 +12,8 @@ export class WorkspacesService {
   constructor(
     @InjectRepository(Workspaces)
     private readonly repo: Repository<Workspaces>,
+    @InjectRepository(WorkspaceAutomationConfig)
+    private readonly automationRepo: Repository<WorkspaceAutomationConfig>,
     private readonly brandProfiles: BrandProfilesService,
   ) {}
 
@@ -45,5 +48,24 @@ export class WorkspacesService {
   async remove(id: string): Promise<void> {
     const res = await this.repo.delete(id);
     if (res.affected === 0) throw new NotFoundException('Workspaces not found');
+  }
+
+  async getAutomationConfig(workspaceId: string): Promise<WorkspaceAutomationConfig> {
+    const config = await this.automationRepo.findOne({ where: { workspaceId } });
+    if (!config) {
+      // Return default config if none exists
+      return this.automationRepo.create({ workspaceId });
+    }
+    return config;
+  }
+
+  async updateAutomationConfig(workspaceId: string, payload: Partial<WorkspaceAutomationConfig>): Promise<WorkspaceAutomationConfig> {
+    let config = await this.automationRepo.findOne({ where: { workspaceId } });
+    if (!config) {
+      config = this.automationRepo.create({ workspaceId, ...payload });
+      return this.automationRepo.save(config);
+    }
+    await this.automationRepo.update(config.id, payload);
+    return this.automationRepo.findOneOrFail({ where: { workspaceId } });
   }
 }

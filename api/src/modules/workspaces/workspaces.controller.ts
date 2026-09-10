@@ -16,6 +16,7 @@ import { Workspaces } from './entities/workspaces.entity';
 import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
 import { WorkspacesUpdateDto } from './dto/update-workspaces.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { WorkspaceAutomationConfig } from './entities/workspace-automation-config.entity';
 
 interface JwtUser {
   sub: string;
@@ -54,5 +55,18 @@ export class WorkspacesController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);
+  }
+
+  @Get(':id/automation-config')
+  getAutomationConfig(@Param('id') id: string): Promise<WorkspaceAutomationConfig> {
+    return this.service.getAutomationConfig(id);
+  }
+
+  @Patch(':id/automation-config')
+  updateAutomationConfig(
+    @Param('id') id: string,
+    @Body() payload: Partial<WorkspaceAutomationConfig>,
+  ): Promise<WorkspaceAutomationConfig> {
+    return this.service.updateAutomationConfig(id, payload);
   }
 }

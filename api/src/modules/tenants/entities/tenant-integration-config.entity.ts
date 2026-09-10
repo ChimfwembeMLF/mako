@@ -14,6 +14,7 @@ export enum IntegrationProvider {
   OPENAI = 'openai',
   GEMINI = 'gemini',
   MISTRAL = 'mistral',
+  DEEPSEEK = 'deepseek',
 }
 
 @Entity({ name: 'tenant_integration_configs' })

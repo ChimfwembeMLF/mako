@@ -1,0 +1,23 @@
+FROM node:20-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy monorepo package manifests (root and API)
+COPY package.json yarn.lock .yarnrc.yml ./
+COPY api/package.json ./api/package.json
+
+# Install dependencies (including dev dependencies)
+RUN corepack enable && yarn install
+
+# Copy the whole repository (needed for workspace tooling)
+COPY . .
+
+# Switch to the API subdirectory
+WORKDIR /app/api
+
+# Expose NestJS dev port
+EXPOSE 4000
+
+# Run NestJS in development mode
+CMD ["yarn", "start:dev"]

@@ -169,6 +169,8 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
   });
+  // Set global API prefix so client requests match backend routes
+  app.setGlobalPrefix('api/v1');
 
   const corsOptions = buildNestCorsOptions();
   if (corsOptions) {
