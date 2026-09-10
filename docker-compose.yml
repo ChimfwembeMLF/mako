@@ -1,7 +1,7 @@
 # Updated docker-compose.yml (no version line)
 services:
   # Vite client – runs in dev mode (hot reload) or serves built assets
-  client:
+  mako-client:
     build:
       context: .
       dockerfile: client/Dockerfile.dev   # dev Dockerfile in client folder
@@ -10,7 +10,7 @@ services:
       BACKEND_PORT: 4000
     ports:
       - "5173:5173"
-    # The container name is referenced by Nginx as `client`
+    # The container name is referenced by Nginx as `mako-client`
 
   # NestJS backend (API)
   mako-api:
@@ -31,7 +31,7 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - client
+      - mako-client
       - mako-api
     # No TLS configuration – plain HTTP for development. For production with Dokploy you can enable TLS by
     # uncommenting the `listen 443 ssl;` lines in nginx.conf and mounting your certs.
