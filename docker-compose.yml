@@ -42,9 +42,7 @@ services:
       QUEUES_ENABLED: ${QUEUES_ENABLED}
     ports:
       - "4000:4000"
-    # The container name is referenced by Nginx as `api`
-    networks:
-      - mako-network
+  
 
   # Nginx reverse‑proxy – handles routing, no TLS for local dev
   nginx:
@@ -56,14 +54,10 @@ services:
     depends_on:
       - mako-client
       - mako-api
-    networks:
-      - mako-network
     # No TLS configuration – plain HTTP for development. For production with Dokploy you can enable TLS by
     # uncommenting the `listen 443 ssl;` lines in nginx.conf and mounting your certs.
 
-networks:
-  mako-network:
-    driver: bridge
+
 
 # Note:
 # * Ensure that Dockerfiles `Dockerfile.dev` exist for client and api (they can be simple images that run `yarn install && yarn dev`).
