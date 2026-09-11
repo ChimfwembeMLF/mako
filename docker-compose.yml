@@ -6,24 +6,25 @@ services:
   mako-client:
     build:
       context: .
-      dockerfile: client/Dockerfile.dev   # dev Dockerfile in client folder
+      dockerfile: client/Dockerfile   # production Dockerfile in client folder
     environment:
       VITE_PORT: 5173
       BACKEND_PORT: 4000
-    ports:
-      - "80:80"
     # The container name is referenced by Nginx as `mako-client`
 
   # NestJS backend (API)
   mako-api:
     build:
       context: .
-      dockerfile: api/Dockerfile.dev   # dev Dockerfile in api folder
+      dockerfile: api/Dockerfile   # production Dockerfile in api folder
     environment:
       PORT: 4000
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      FACEBOOK_CALLBACK_URL: ${FACEBOOK_CALLBACK_URL}
     ports:
       - "4000:4000"
     # The container name is referenced by Nginx as `api`
