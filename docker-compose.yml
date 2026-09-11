@@ -19,10 +19,31 @@ services:
       dockerfile: api/Dockerfile   # production Dockerfile in api folder
     environment:
       PORT: 4000
-      
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET}
+      FACEBOOK_CALLBACK_URL: ${FACEBOOK_CALLBACK_URL}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      DB_SSL: ${DB_SSL}
+      DB_SYNCHRONIZE: ${DB_SYNCHRONIZE}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_DB: ${REDIS_DB}
+      QUEUE_REDIS_HOST: ${QUEUE_REDIS_HOST}
+      QUEUE_REDIS_PORT: ${QUEUE_REDIS_PORT}
+      QUEUE_PREFIX: ${QUEUE_PREFIX}
+      QUEUES_ENABLED: ${QUEUES_ENABLED}
     ports:
       - "4000:4000"
-  
+    networks:
+      - mako-network
 
   # Nginx reverse‑proxy – handles routing, no TLS for local dev
   nginx:
@@ -34,10 +55,14 @@ services:
     depends_on:
       - mako-client
       - mako-api
+    networks:
+      - mako-network
     # No TLS configuration – plain HTTP for development. For production with Dokploy you can enable TLS by
     # uncommenting the `listen 443 ssl;` lines in nginx.conf and mounting your certs.
 
-
+networks:
+  mako-network:
+    driver: bridge
 
 # Note:
 # * Ensure that Dockerfiles `Dockerfile.dev` exist for client and api (they can be simple images that run `yarn install && yarn dev`).
