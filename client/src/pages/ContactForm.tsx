@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { brandProfilesApi } from "@/lib/api";
 import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
-import { API_BASE_URL } from "@/lib/constants";
+import { API_BASE_URL } from "@/lib/api";
 
 interface Branding {
   name: string;
