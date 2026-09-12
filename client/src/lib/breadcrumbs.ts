@@ -28,7 +28,7 @@ const ROUTE_PATTERNS: RoutePattern[] = [
   { path: '/content/:id', crumbs: [DASH, CONTENT, { label: 'Content' }] },
   { path: '/templates/:id', crumbs: [DASH, TEMPLATES, { label: 'Edit template' }] },
   { path: '/team/:userId/permissions', crumbs: [DASH, TEAM, { label: 'Permissions' }] },
-  { path: '/contact/:sourceId', crumbs: [HOME, { label: 'Contact' }] },
+  { path: '/contact/:tenantId', crumbs: [HOME, { label: 'Contact' }] },
   { path: '/chatbot/knowledge', crumbs: [DASH, CHATBOT, { label: 'Knowledge' }] },
   { path: '/chatbot/sessions', crumbs: [DASH, CHATBOT, { label: 'Chat History' }] },
   { path: '/whatsapp/templates', crumbs: [DASH, WHATSAPP, { label: 'Templates' }] },

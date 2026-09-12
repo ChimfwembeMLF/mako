@@ -131,7 +131,7 @@ const App = () => (
                 <Route path="/auth" element={<PublicOnly><Auth /></PublicOnly>} />
                 <Route path="/auth/callback" element={<LazyPage><SocialCallback /></LazyPage>} />
                 <Route path="/reset-password" element={<LazyPage><ResetPassword /></LazyPage>} />
-                <Route path="/contact/:sourceId" element={<LazyPage><ContactForm /></LazyPage>} />
+                <Route path="/contact/:tenantId" element={<LazyPage><ContactForm /></LazyPage>} />
                 <Route path="/privacy" element={<LazyPage><PrivacyPage /></LazyPage>} />
                 <Route path="/terms" element={<LazyPage><TermsPage /></LazyPage>} />
                 <Route path="/data-deletion" element={<LazyPage><DataDeletionPage /></LazyPage>} />

@@ -458,7 +458,7 @@ const LeadAgent = () => {
   };
 
   const webhookUrl = `${API_BASE_URL}/api/v1/leads/webhook`;
-  const contactFormUrl = `/contact/${user?.id || ""}`;
+  const contactFormUrl = `/contact/${tenant?.id || ""}`;
 
   const copyWebhook = () => {
     navigator.clipboard.writeText(webhookUrl);
@@ -507,7 +507,7 @@ const LeadAgent = () => {
             </p>
             <div className="flex items-center gap-2">
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs">Embeddable contact form: <code className="bg-muted px-1 py-0.5 rounded">/contact/{user?.id?.slice(0, 8)}...</code></span>
+              <span className="text-xs">Embeddable contact form: <code className="bg-muted px-1 py-0.5 rounded">/contact/{tenant?.id?.slice(0, 8)}...</code></span>
             </div>
             {leadSource && (
               <div className="flex items-center gap-2">

@@ -388,7 +388,7 @@ const SettingsPage = () => {
               <p className="text-xs text-muted-foreground mb-3">Copy this iframe snippet to embed your branded contact form on any website:</p>
               <div className="space-y-2">
                 {(() => {
-                  const url = `${window.location.origin}/contact/${user?.id}`;
+                  const url = `${window.location.origin}/contact/${tenant?.id}`;
                   const iframe = `<iframe src="${url}" width="100%" height="600" frameborder="0" style="border:none;border-radius:12px;max-width:480px;"></iframe>`;
                   return (
                     <div className="space-y-1.5">

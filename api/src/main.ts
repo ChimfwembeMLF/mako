@@ -174,7 +174,16 @@ async function bootstrap() {
 
   const corsOptions = buildNestCorsOptions();
   if (corsOptions) {
-    app.enableCors(corsOptions);
+    app.enableCors((req: any, callback: any) => {
+      const url = req.url || req.originalUrl || '';
+      
+      // Allow cross-origin requests for embeddable widgets and public contact forms
+      if (url.startsWith('/api/v1/widget') || url.startsWith('/api/v1/leads/contact-form/')) {
+        return callback(null, { origin: true, credentials: true });
+      }
+      
+      callback(null, corsOptions);
+    });
   }
 
   if (isProduction) {

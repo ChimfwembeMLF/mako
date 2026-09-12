@@ -93,6 +93,43 @@ export class LeadsController {
     return { ok: true, leadId: lead.id, classification: classification.label };
   }
 
+  @Post('contact-form/:tenantId')
+  async contactFormSubmit(
+    @Param('tenantId') tenantId: string,
+    @Body()
+    body: {
+      name?: string;
+      email?: string;
+      message?: string;
+    },
+  ) {
+    if (!tenantId) {
+      throw new UnauthorizedException('tenantId is required');
+    }
+
+    const classification = await this.classify.classify({
+      tenantId,
+      userId: null,
+      name: body.name ?? 'Unknown',
+      email: body.email ?? '',
+      message: body.message ?? '',
+    });
+
+    const lead = await this.service.create({
+      tenantId,
+      userId: null,
+      name: body.name ?? 'Unknown',
+      email: body.email ?? '',
+      source: 'contact_form',
+      message: body.message,
+      classification: classification.label,
+      status: 'new',
+      aiReply: classification.suggestedReply,
+    } as any);
+
+    return { ok: true, leadId: lead.id, ai_reply: classification.suggestedReply };
+  }
+
   @Post('send-email')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

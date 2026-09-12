@@ -8,8 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { brandProfilesApi } from "@/lib/api";
-import { invokeEdgeFunction } from "@/lib/edgeFunctions";
 import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
+import { API_BASE_URL } from "@/lib/constants";
 
 interface Branding {
   name: string;
@@ -28,7 +28,7 @@ const defaultBranding: Branding = {
 };
 
 const ContactForm = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const { tenantId } = useParams<{ tenantId: string }>();
   const [branding, setBranding] = useState<Branding>(defaultBranding);
 
   const [name, setName] = useState("");
@@ -40,12 +40,12 @@ const ContactForm = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!userId) return;
+    if (!tenantId) return;
     (async () => {
       try {
         const all = await brandProfilesApi.findAll();
         const list = Array.isArray(all) ? all : [];
-        const bb = list.find((p: Record<string, unknown>) => p.userId === userId);
+        const bb = list.find((p: Record<string, unknown>) => p.tenantId === tenantId);
         if (bb?.companyName) {
           setBranding({
             name: String(bb.companyName),
@@ -65,15 +65,21 @@ const ContactForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !userId) return;
+    if (!name.trim() || !email.trim() || !tenantId) return;
 
     setSubmitting(true);
     try {
-      const { data, error } = await invokeEdgeFunction("lead-webhook", {
-        body: { name, email, message, source: "contact_form", user_id: userId },
+      const res = await fetch(`${API_BASE_URL}/api/v1/leads/contact-form/${tenantId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, message })
       });
-      if (error) throw error;
-      const result = data as { error?: string; ai_reply?: string } | null;
+      
+      if (!res.ok) {
+        throw new Error("Failed to submit message");
+      }
+      
+      const result = await res.json();
       if (result?.error) throw new Error(result.error);
 
       setSubmitted(true);
@@ -85,7 +91,7 @@ const ContactForm = () => {
     }
   };
 
-  if (!userId) {
+  if (!tenantId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-4">

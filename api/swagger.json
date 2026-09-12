@@ -4571,6 +4571,29 @@
         ]
       }
     },
+    "/api/v1/leads/contact-form/{tenantId}": {
+      "post": {
+        "operationId": "LeadsController_contactFormSubmit",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
     "/api/v1/leads/send-email": {
       "post": {
         "operationId": "LeadsController_sendEmail",
