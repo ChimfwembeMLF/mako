@@ -6,19 +6,19 @@ import { TenantIntegrationConfig, IntegrationProvider } from '../entities/tenant
 import { UpsertIntegrationConfigDto } from '../dto/tenant-integration-config.dto';
 import { EncryptionService } from '../services/encryption.service';
 
-@Controller('tenant-integration-configs')
+@Controller('api/v1/tenant-integration-configs')
 @UseGuards(JwtAuthGuard)
 export class TenantIntegrationConfigsController {
   constructor(
     @InjectRepository(TenantIntegrationConfig)
     private readonly configRepo: Repository<TenantIntegrationConfig>,
     private readonly encryptionService: EncryptionService,
-  ) {}
+  ) { }
 
   @Get(':tenantId')
   async getConfigs(@Param('tenantId') tenantId: string) {
     const configs = await this.configRepo.find({ where: { tenantId } });
-    
+
     // We only return whether the key is configured, NOT the decrypted key!
     return configs.map(config => ({
       id: config.id,
