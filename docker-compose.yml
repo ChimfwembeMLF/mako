@@ -44,6 +44,7 @@ services:
       - "4000:4000"
     networks:
       - mako-network
+      - dokploy-network
 
   # Nginx reverse‑proxy – handles routing, no TLS for local dev
   nginx:
@@ -63,6 +64,8 @@ services:
 networks:
   mako-network:
     driver: bridge
+  dokploy-network:
+    external: true
 
 # Note:
 # * Ensure that Dockerfiles `Dockerfile.dev` exist for client and api (they can be simple images that run `yarn install && yarn dev`).

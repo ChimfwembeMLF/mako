@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Key, Trash2, CheckCircle2, Bot, Gem, Waves, Search } from "lucide-react";
+import { Loader2, Key, Trash2, CheckCircle2 } from "lucide-react";
 import { useTenantIntegrationConfigs, TenantIntegrationConfig } from "@/hooks/api/useTenantIntegrationConfigs";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,11 +12,35 @@ interface IntegrationSettingsProps {
   tenantId: string;
 }
 
+const MistralIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" {...props}>
+    <path d="M4 18l3.5-12h3L7 18H4zm6.5 0l3.5-12h3L13.5 18h-3zm6.5 0l3.5-12h3L20 18h-3z" />
+  </svg>
+);
+
+const OpenAIIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" {...props}>
+    <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 10.528 0a6.012 6.012 0 0 0-4.665 2.21 5.99 5.99 0 0 0-5.466 4.365 6.037 6.037 0 0 0 .52 4.909 6.046 6.046 0 0 0 6.51 2.9A6.065 6.065 0 0 0 12.164 16.5a6.012 6.012 0 0 0 4.665-2.21 5.99 5.99 0 0 0 5.467-4.364A5.985 5.985 0 0 0 22.282 9.82Zm-10.118 5.204a4.57 4.57 0 0 1-2.981-1.096l5.068-2.923v-1.125l-2.087-1.205v5.349Zm-6.26-2.127A4.57 4.57 0 0 1 4.793 10.3l5.067 2.926 1.044.603-2.088 1.205-2.912-2.136Zm8.196-8.986a4.57 4.57 0 0 1 2.98 1.096L12.012 7.931v1.125l2.087 1.205V4.912ZM20.301 10.3a4.57 4.57 0 0 1-1.111 2.598l-5.067-2.926-1.044-.603 2.088-1.205 2.912 2.136h2.222Zm-7.662 2.545-2.088 1.205v-2.41l2.088-1.205v2.41Zm-2.61-3.61l2.088-1.205v2.41l-2.088 1.205v-2.41Z" />
+  </svg>
+);
+
+const GeminiIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" {...props}>
+    <path d="M11.66 0C11.66 6.44 6.44 11.66 0 11.66c6.44 0 11.66 5.22 11.66 11.66 0-6.44 5.22-11.66 11.66-11.66-6.44 0-11.66-5.22-11.66-11.66Z" />
+  </svg>
+);
+
+const DeepSeekIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" fill="currentColor" {...props}>
+    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zM8.5 14.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zm7 0c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+  </svg>
+);
+
 const AI_PROVIDERS = [
-  { id: "mistral", name: "Mistral AI", icon: Waves },
-  { id: "openai", name: "OpenAI", icon: Bot },
-  { id: "gemini", name: "Google Gemini", icon: Gem },
-  { id: "deepseek", name: "DeepSeek", icon: Search },
+  { id: "mistral", name: "Mistral AI", icon: MistralIcon },
+  { id: "openai", name: "OpenAI", icon: OpenAIIcon },
+  { id: "gemini", name: "Google Gemini", icon: GeminiIcon },
+  { id: "deepseek", name: "DeepSeek", icon: DeepSeekIcon },
 ];
 
 export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {

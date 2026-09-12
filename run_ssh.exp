@@ -1,0 +1,14 @@
+#!/usr/bin/expect -f
+set password [lindex $argv 0]
+set host [lindex $argv 1]
+set cmd [lindex $argv 2]
+match_max 100000
+
+spawn ssh -o StrictHostKeyChecking=no root@$host $cmd
+expect {
+    "*assword:*" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
