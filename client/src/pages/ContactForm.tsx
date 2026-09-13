@@ -61,7 +61,7 @@ const ContactForm = () => {
         /* use default branding */
       }
     })();
-  }, [userId]);
+  }, [tenantId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -45,7 +45,6 @@ export function ChatbotIntegrationExamples({
   const key = apiKey ?? "pk_live_YOUR_KEY";
   const widgetHost = widgetOrigin ?? window.location.origin;
   const openapiUrl = `${apiBase.replace(/\/$/, "")}/docs/chatbot-widget.openapi.yaml`;
-  const swaggerUrl = `${apiBase.replace(/\/$/, "")}/documentation`;
 
   const curlConfig = useMemo(
     () => `curl -s "${apiBase}/api/v1/widget/config" \\
@@ -119,12 +118,6 @@ console.log(reply.content);`,
             <a href={openapiUrl} target="_blank" rel="noopener noreferrer">
               <ExternalLink className="h-4 w-4 mr-2" />
               OpenAPI spec
-            </a>
-          </Button>
-          <Button variant="outline" size="sm" asChild>
-            <a href={swaggerUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4 mr-2" />
-              Swagger UI
             </a>
           </Button>
         </div>
