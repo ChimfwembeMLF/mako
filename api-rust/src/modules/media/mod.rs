@@ -1,5 +1,7 @@
 pub mod dto;
 pub mod entity;
+pub mod google_drive_service;
+pub mod google_drive_controller;
 
 use axum::{
     body::Bytes,
@@ -33,6 +35,10 @@ pub fn router() -> Router<AppState> {
         .route("/", get(find_all))
         .route("/upload", post(upload))
         .route("/{id}", delete(remove))
+        .route("/integrations/google-drive/auth-url", get(google_drive_controller::get_auth_url))
+        .route("/integrations/google-drive/callback", get(google_drive_controller::callback))
+        .route("/integrations/google-drive/files", get(google_drive_controller::get_files))
+        .route("/integrations/google-drive/import", post(google_drive_controller::import_file))
 }
 
 #[derive(Deserialize)]

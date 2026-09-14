@@ -41,6 +41,12 @@ export class MediaAssets {
   @Column({ type: 'uuid', nullable: true })
   uploadedBy?: string;
 
+  @Column({ type: 'varchar', nullable: true, default: 'local' })
+  source?: string;
+
+  @Column({ name: 'external_id', type: 'varchar', nullable: true })
+  externalId?: string;
+
   @Column({ type: 'bigint', nullable: true })
   fileSizeBytes?: string;
 

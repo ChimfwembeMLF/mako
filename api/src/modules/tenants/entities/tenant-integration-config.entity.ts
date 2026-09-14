@@ -15,6 +15,7 @@ export enum IntegrationProvider {
   GEMINI = 'gemini',
   MISTRAL = 'mistral',
   DEEPSEEK = 'deepseek',
+  GOOGLE_DRIVE = 'google_drive',
 }
 
 @Entity({ name: 'tenant_integration_configs' })

@@ -5226,6 +5226,106 @@
         ]
       }
     },
+    "/api/v1/integrations/google-drive/auth-url": {
+      "get": {
+        "operationId": "GoogleDriveController_getAuthUrl",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/callback": {
+      "get": {
+        "operationId": "GoogleDriveController_callback",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/files": {
+      "get": {
+        "operationId": "GoogleDriveController_listFiles",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/import": {
+      "post": {
+        "operationId": "GoogleDriveController_importFile",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
     "/api/v1/chatbot/config": {
       "get": {
         "operationId": "ChatbotController_getConfig",
@@ -9719,7 +9819,8 @@
               "openai",
               "gemini",
               "mistral",
-              "deepseek"
+              "deepseek",
+              "google_drive"
             ]
           },
           "apiKey": {

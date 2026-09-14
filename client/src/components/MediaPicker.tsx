@@ -25,6 +25,59 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [urlInput, setUrlInput] = useState('');
+  const [gdriveFiles, setGdriveFiles] = useState<any[]>([]);
+  const [gdriveLoading, setGdriveLoading] = useState(false);
+  const [gdriveError, setGdriveError] = useState<string | null>(null);
+
+  const loadGDriveFiles = useCallback(async () => {
+    if (!tenant) return;
+    setGdriveLoading(true);
+    setGdriveError(null);
+    try {
+      const res = await fetch(`/api/v1/integrations/google-drive/files?tenantId=${tenant.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+      });
+      if (!res.ok) {
+        throw new Error('Google Drive not connected or error fetching files');
+      }
+      const data = await res.json();
+      setGdriveFiles(data);
+    } catch (err: any) {
+      setGdriveError(err.message);
+    } finally {
+      setGdriveLoading(false);
+    }
+  }, [tenant]);
+
+  const importGDriveFile = async (file: any) => {
+    if (!tenant || !activeWorkspace) return;
+    setUploading(true);
+    try {
+      const res = await fetch(`/api/v1/integrations/google-drive/import?tenantId=${tenant.id}`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('access_token')}` 
+        },
+        body: JSON.stringify({
+          fileId: file.id,
+          fileName: file.name,
+          mimeType: file.mimeType,
+          workspaceId: activeWorkspace
+        })
+      });
+      if (!res.ok) throw new Error('Failed to import file');
+      const asset = await res.json();
+      const normalized = normalizeMediaAsset(asset);
+      setAssets((prev) => [normalized, ...prev]);
+      onChange(normalized.mediaUrl);
+      toast({ title: 'Import complete' });
+    } catch (err: any) {
+      toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const loadAssets = useCallback(async () => {
     if (!tenant || !activeWorkspace) return;
@@ -97,6 +150,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
         <TabsList className="h-8">
           <TabsTrigger value="library" className="text-xs">Library</TabsTrigger>
           <TabsTrigger value="upload" className="text-xs">Upload</TabsTrigger>
+          <TabsTrigger value="gdrive" className="text-xs" onClick={loadGDriveFiles}>Google Drive</TabsTrigger>
           <TabsTrigger value="url" className="text-xs">URL</TabsTrigger>
         </TabsList>
 
@@ -169,6 +223,51 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
               {uploading ? 'Uploading…' : 'Click to upload or drag & drop'}
             </span>
           </Button>
+        </TabsContent>
+
+        <TabsContent value="gdrive" className="mt-2">
+          {gdriveLoading ? (
+            <div className="flex items-center justify-center py-8 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </div>
+          ) : gdriveError ? (
+            <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
+              <p>{gdriveError}</p>
+              <Button size="sm" variant="outline" onClick={() => window.open('/settings/integrations', '_blank')}>
+                Connect Google Drive
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 gap-2 max-h-64 overflow-y-auto">
+              {gdriveFiles.map((file) => (
+                <button
+                  key={file.id}
+                  type="button"
+                  onClick={() => importGDriveFile(file)}
+                  disabled={uploading}
+                  className="relative aspect-square rounded overflow-hidden border-2 border-transparent hover:border-muted-foreground bg-muted"
+                >
+                  {file.thumbnailLink ? (
+                    <img src={file.thumbnailLink} alt={file.name} className="w-full h-full object-cover" loading="lazy" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[9px] p-1 text-center">
+                      {file.name}
+                    </div>
+                  )}
+                  {uploading && (
+                    <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    </div>
+                  )}
+                </button>
+              ))}
+              {gdriveFiles.length === 0 && (
+                <div className="col-span-5 py-8 text-center text-xs text-muted-foreground">
+                  No files found in Google Drive.
+                </div>
+              )}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="url" className="mt-2">

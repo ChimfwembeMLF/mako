@@ -141,6 +141,46 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
         </CardContent>
       </Card>
 
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base font-display flex items-center gap-2">
+            Cloud Storage
+          </CardTitle>
+          <CardDescription>
+            Connect your cloud storage providers to import media directly into Mako.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center border rounded-lg p-4">
+            <div className="flex items-center gap-2 font-medium">
+              <p>Google Drive</p>
+            </div>
+            <div className="flex items-end">
+              <Button
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`/api/v1/integrations/google-drive/auth-url?tenantId=${tenantId}`, {
+                      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` }
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      window.location.href = data.url;
+                    } else {
+                      toast({ title: "Failed to connect", variant: "destructive" });
+                    }
+                  } catch (err) {
+                    toast({ title: "Failed to connect", variant: "destructive" });
+                  }
+                }}
+                className="w-full md:w-auto"
+              >
+                Connect Google Drive
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {configs.length > 0 && (
         <Card className="border-border/50">
           <CardHeader>

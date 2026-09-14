@@ -18,6 +18,10 @@ pub struct Model {
     #[sea_orm(column_type = "Text", nullable, array)]
     pub tags: Option<Vec<String>>,
     pub uploaded_by: Option<Uuid>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub source: Option<String>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub external_id: Option<String>,
     pub file_size_bytes: Option<i64>,
     pub width_px: Option<i32>,
     pub height_px: Option<i32>,
