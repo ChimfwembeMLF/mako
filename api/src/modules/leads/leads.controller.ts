@@ -30,6 +30,8 @@ interface JwtUser {
   sub: string;
 }
 
+import { TenantsService } from '../tenants/tenants.service';
+
 @ApiTags('Leads')
 @Controller('api/v1/leads')
 export class LeadsController {
@@ -40,6 +42,7 @@ export class LeadsController {
     @InjectRepository(LeadSources)
     private readonly sourcesRepo: Repository<LeadSources>,
     private readonly queueDispatch: QueueDispatchService,
+    private readonly tenantsService: TenantsService,
   ) {}
 
   @Post('webhook')
@@ -105,6 +108,11 @@ export class LeadsController {
   ) {
     if (!tenantId) {
       throw new UnauthorizedException('tenantId is required');
+    }
+
+    const tenant = await this.tenantsService.findOne(tenantId);
+    if (!tenant) {
+      throw new UnauthorizedException('Invalid tenant');
     }
 
     const classification = await this.classify.classify({

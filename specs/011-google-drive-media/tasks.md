@@ -118,3 +118,7 @@
 - [X] T022 [US2] Implement Google Drive files list and import in NestJS per US2/FR-008 (missing)
 - [X] T023 [US2] Implement Google Drive files list and import in Rust per US2/FR-008 (missing)
 - [X] T024 [US2] Add Google Drive UI tab to `MediaLibrary.tsx` per US2/FR-008 (missing)
+
+## Phase 7: Convergence
+
+- [ ] T025 Add Google Drive UI tab and import functionality to `MediaLibraryPage.tsx` and `MediaPicker.tsx` per US2/FR-003 (missing)
