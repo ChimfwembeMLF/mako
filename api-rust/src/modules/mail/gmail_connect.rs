@@ -123,7 +123,7 @@ async fn gmail_connect(
     };
     let oauth_state = encode_link_state(&link_state);
     let redirect_url =
-        GoogleAuthService::authorization_url_with_redirect(&state, Some(&oauth_state), &redirect_uri);
+        GoogleAuthService::authorization_url_with_redirect(&state, Some(&oauth_state), &redirect_uri).await;
 
     Ok(Json(json!({
         "redirectUrl": redirect_url,

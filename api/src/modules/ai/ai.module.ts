@@ -15,12 +15,14 @@ import { MistralWorkflowsService } from './services/mistral-workflows.service';
 import { StorageModule } from '../media/storage.module';
 import { TenantIntegrationConfig } from '../tenants/entities/tenant-integration-config.entity';
 import { EncryptionService } from '../tenants/services/encryption.service';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
 
 @Module({
   imports: [
     AiUsageModule,
     SubscriptionsModule,
     StorageModule,
+    SystemSettingsModule,
     TypeOrmModule.forFeature([BrandProfiles, TenantIntegrationConfig]),
   ],
   controllers: [AiController],

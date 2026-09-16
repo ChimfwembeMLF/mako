@@ -98,7 +98,7 @@ async fn build_reply_text(
     if rule.ai_generate {
         let brand = load_brand_profile(state, tenant_id, workspace_id).await?;
         let (data, _, _) = MistralService::complete_json(
-            &state.config.mistral,
+            &state,
             vec![
                 ChatMessage {
                     role: "system".into(),
@@ -111,7 +111,7 @@ async fn build_reply_text(
                     ),
                 },
             ],
-            Some(MistralService::default_model(&state.config.mistral)),
+            Some(MistralService::default_model(&state)),
         )
         .await?;
         return Ok(data

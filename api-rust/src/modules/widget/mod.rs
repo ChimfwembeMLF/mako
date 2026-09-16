@@ -115,7 +115,7 @@ async fn get_suggestions(
         .unwrap_or(false)
     {
         generate_follow_up_suggestions(
-            &state.config.mistral,
+            &state,
             &config,
             dto.last_assistant_message.as_deref().unwrap_or(""),
         )
@@ -191,8 +191,8 @@ async fn send_message(
             });
         }
     }
-    let mistral = &state.config.mistral;
-    let completion = MistralService::complete(mistral, messages, Some(config.model.clone()), false, Some(1000)).await;
+    let mistral = &state;
+    let completion = MistralService::complete(&state, messages, Some(config.model.clone()), false, Some(1000)).await;
     let (assistant_text, tokens_used, model_name) = match completion {
         Ok(v) => (v.content, Some(v.tokens_used), Some(v.model)),
         Err(_) => (
@@ -298,7 +298,7 @@ fn starter_suggestions(config: &ConfigModel) -> Vec<String> {
 }
 
 async fn generate_follow_up_suggestions(
-    mistral: &crate::config::MistralConfig,
+    state: &crate::app_state::AppState,
     config: &ConfigModel,
     last_assistant_message: &str,
 ) -> Option<Vec<String>> {
@@ -316,7 +316,7 @@ async fn generate_follow_up_suggestions(
             ),
         },
     ];
-    let (data, _, _) = MistralService::complete_json(mistral, messages, Some(config.model.clone()))
+    let (data, _, _) = MistralService::complete_json(&state, messages, Some(config.model.clone()))
         .await
         .ok()?;
     let suggestions = data

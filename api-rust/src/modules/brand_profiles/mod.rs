@@ -83,7 +83,7 @@ async fn scrape_website(
     let clipped = text.chars().take(24_000).collect::<String>();
     let mistral = &state.config.mistral;
     let (data, tokens_used, _model) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -96,7 +96,7 @@ async fn scrape_website(
                 ),
             },
         ],
-        Some(MistralService::premium_model(mistral)),
+        Some(MistralService::premium_model(&state)),
     )
     .await?;
 
@@ -185,7 +185,7 @@ async fn parse_document(
     let clipped = extracted.chars().take(24_000).collect::<String>();
     let mistral = &state.config.mistral;
     let (data, tokens_used, _model) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -198,7 +198,7 @@ async fn parse_document(
                 ),
             },
         ],
-        Some(MistralService::premium_model(mistral)),
+        Some(MistralService::premium_model(&state)),
     )
     .await?;
 

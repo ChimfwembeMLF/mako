@@ -8,9 +8,10 @@ import { GoogleDriveService } from './google-drive.service';
 import { GoogleDriveController } from './google-drive.controller';
 import { TenantsModule } from '../tenants/tenants.module';
 import { TenantIntegrationConfig } from '../tenants/entities/tenant-integration-config.entity';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([MediaAssets, TenantIntegrationConfig]), StorageModule, TenantsModule],
+  imports: [SystemSettingsModule, TypeOrmModule.forFeature([MediaAssets, TenantIntegrationConfig]), StorageModule, TenantsModule],
   providers: [MediaService, GoogleDriveService],
   controllers: [MediaController, GoogleDriveController],
   exports: [MediaService, StorageModule, GoogleDriveService],

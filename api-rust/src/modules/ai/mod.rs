@@ -41,9 +41,9 @@ async fn health(
     State(state): State<AppState>,
 ) -> Json<Value> {
     let mistral = &state.config.mistral;
-    let (ok, model) = MistralService::health_check(mistral)
+    let (ok, model) = MistralService::health_check(&state)
         .await
-        .unwrap_or((false, MistralService::default_model(mistral)));
+        .unwrap_or((false, MistralService::default_model(&state)));
     Json(json!({ "status": if ok { "ok" } else { "degraded" }, "model": model }))
 }
 
@@ -51,7 +51,7 @@ async fn models(
     AuthUser { .. }: AuthUser,
     State(state): State<AppState>,
 ) -> ApiResult<Json<Value>> {
-    let data = MistralService::list_models(&state.config.mistral).await?;
+    let data = MistralService::list_models(&state).await?;
     Ok(Json(data))
 }
 
@@ -97,7 +97,7 @@ Rules:
 
     let mistral = &state.config.mistral;
     let (raw, tokens_used, _model) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -108,13 +108,13 @@ Rules:
                 content: user_prompt,
             },
         ],
-        Some(MistralService::default_model(mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await
     .unwrap_or((
         json!({ "suggestions": {} }),
         0,
-        MistralService::default_model(mistral),
+        MistralService::default_model(&state),
     ));
 
     let suggestions = normalize_suggestions(&dto.form, &fields, raw.get("suggestions"));

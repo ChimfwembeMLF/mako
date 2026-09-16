@@ -224,9 +224,9 @@ async fn ask(
             .join("\n")
     );
 
-    let mistral = &state.config.mistral;
+    let mistral = &state;
     let (data, tokens_used, _model) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -237,10 +237,10 @@ async fn ask(
                 content: format!("User question: {term}\n\nContext:\n{context}"),
             },
         ],
-        Some(MistralService::default_model(mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await
-    .unwrap_or((json!({"answer": ""}), 0, MistralService::default_model(mistral)));
+    .unwrap_or((json!({"answer": ""}), 0, MistralService::default_model(&state)));
 
     if tokens_used > 0 {
         let _ = AiUsageActiveModel {

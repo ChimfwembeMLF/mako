@@ -5,6 +5,7 @@ import { google, Auth } from 'googleapis';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { SocialAuthRegisterDto } from './dtos/social-auth.dto';
+import { PlatformIntegrationsService } from '../system_settings/services/platform-integrations.service';
 
 type GoogleUserData = {
   email?: string | null;
@@ -21,17 +22,21 @@ export type GoogleOAuthTokens = {
 
 @Injectable()
 export class GoogleAuthService {
-  private readonly oauthClient: Auth.OAuth2Client;
   private readonly logger = new Logger(GoogleAuthService.name);
 
   constructor(
     private readonly userService: UserService,
     private readonly config: ConfigService,
-  ) {
-    const clientId = this.config.getOrThrow<string>('GOOGLE_CLIENT_ID');
-    const clientSecret = this.config.getOrThrow<string>('GOOGLE_CLIENT_SECRET');
+    private readonly integrations: PlatformIntegrationsService,
+  ) {}
 
-    this.oauthClient = new google.auth.OAuth2(clientId, clientSecret);
+  private async getOAuthClient(): Promise<Auth.OAuth2Client> {
+    const clientId = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_CLIENT_ID');
+    const clientSecret = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_CLIENT_SECRET');
+    if (!clientId || !clientSecret) {
+      throw new BadRequestException('Google Auth credentials are not configured');
+    }
+    return new google.auth.OAuth2(clientId, clientSecret);
   }
 
   login(req: { user?: unknown }) {
@@ -90,11 +95,11 @@ export class GoogleAuthService {
 
   async getUserData(token: string): Promise<GoogleUserData> {
     const oauth2 = google.oauth2('v2');
-
-    this.oauthClient.setCredentials({ access_token: token });
+    const oauthClient = await this.getOAuthClient();
+    oauthClient.setCredentials({ access_token: token });
 
     const { data } = await oauth2.userinfo.get({
-      auth: this.oauthClient,
+      auth: oauthClient,
     });
 
     return data;
@@ -105,8 +110,9 @@ export class GoogleAuthService {
     expiresAt?: Date;
     refreshToken?: string;
   }> {
-    this.oauthClient.setCredentials({ refresh_token: refreshToken });
-    const { credentials } = await this.oauthClient.refreshAccessToken();
+    const oauthClient = await this.getOAuthClient();
+    oauthClient.setCredentials({ refresh_token: refreshToken });
+    const { credentials } = await oauthClient.refreshAccessToken();
     if (!credentials.access_token) {
       throw new BadRequestException('Failed to refresh Google access token');
     }

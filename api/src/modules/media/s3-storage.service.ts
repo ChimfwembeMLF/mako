@@ -15,12 +15,17 @@ export interface StorageUploadResult {
   storagePath: string;
 }
 
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
+
 @Injectable()
 export class S3StorageService {
   private readonly logger = new Logger(S3StorageService.name);
   private client: S3Client | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    private readonly integrations: PlatformIntegrationsService,
+  ) {}
 
   isEnabled(): boolean {
     const bucket = this.config.get<string>('AWS_S3_BUCKET_NAME')?.trim();
@@ -51,20 +56,27 @@ export class S3StorageService {
     }
   }
 
-  private getClient(): S3Client {
-    this.assertConfigured();
-    if (this.client) return this.client;
-    
+  private async getClient(): Promise<S3Client> {
     const region = this.config.get<string>('AWS_S3_BUCKET_NAME_REGION')!.trim();
     const endpoint = this.config.get<string>('AWS_S3_ENDPOINT')?.trim();
     
+    // Check if we have DB overrides for AWS keys, or fallback to env.
+    const accessKeyId = await this.integrations.getIntegrationWithEnvFallback('S3_ACCESS_KEY_ID') 
+      || this.config.get<string>('AWS_ACCESS_KEY_ID')?.trim();
+    const secretAccessKey = await this.integrations.getIntegrationWithEnvFallback('S3_SECRET_ACCESS_KEY') 
+      || this.config.get<string>('AWS_SECRET_ACCESS_KEY')?.trim();
+
+    if (!accessKeyId || !secretAccessKey) {
+      throw new ServiceUnavailableException('S3 storage credentials are not configured');
+    }
+
     this.client = new S3Client({
       region,
       endpoint: endpoint || undefined,
-      forcePathStyle: !!endpoint, // Usually true for S3 compatible endpoints
+      forcePathStyle: !!endpoint,
       credentials: {
-        accessKeyId: this.config.get<string>('AWS_ACCESS_KEY_ID')!.trim(),
-        secretAccessKey: this.config.get<string>('AWS_SECRET_ACCESS_KEY')!.trim(),
+        accessKeyId,
+        secretAccessKey,
       },
     });
     
@@ -97,7 +109,7 @@ export class S3StorageService {
       ext,
     });
 
-    const client = this.getClient();
+    const client = await this.getClient();
     try {
       await client.send(
         new PutObjectCommand({
@@ -211,7 +223,7 @@ export class S3StorageService {
   }
 
   async deleteByPath(storagePath: string): Promise<void> {
-    const client = this.getClient();
+    const client = await this.getClient();
     try {
       await client.send(
         new DeleteObjectCommand({
@@ -227,7 +239,7 @@ export class S3StorageService {
   }
 
   async downloadBuffer(storagePath: string): Promise<Buffer> {
-    const client = this.getClient();
+    const client = await this.getClient();
     try {
       const response = await client.send(
         new GetObjectCommand({

@@ -4,6 +4,8 @@ use serde_json::{json, Value};
 
 use crate::common::ApiError;
 use crate::config::MistralConfig;
+use crate::app_state::AppState;
+use crate::modules::system_settings::integrations::get_integration_with_env_fallback;
 
 const MISTRAL_CHAT_URL: &str = "https://api.mistral.ai/v1/chat/completions";
 const MISTRAL_IMAGE_URL: &str = "https://api.mistral.ai/v1/images/generations";
@@ -30,17 +32,17 @@ pub struct ImageResult {
 pub struct MistralService;
 
 impl MistralService {
-    pub fn default_model(config: &MistralConfig) -> String {
-        config.text_model.clone()
+    pub fn default_model(state: &AppState) -> String {
+        state.config.mistral.text_model.clone()
     }
 
-    pub fn premium_model(config: &MistralConfig) -> String {
-        config.premium_model.clone()
+    pub fn premium_model(state: &AppState) -> String {
+        state.config.mistral.premium_model.clone()
     }
 
-    pub async fn health_check(config: &MistralConfig) -> Result<(bool, String), ApiError> {
+    pub async fn health_check(state: &AppState) -> Result<(bool, String), ApiError> {
         let result = Self::complete(
-            config,
+            state,
             vec![ChatMessage {
                 role: "user".into(),
                 content: "Reply with exactly: ok".into(),
@@ -54,20 +56,20 @@ impl MistralService {
     }
 
     pub async fn complete_json(
-        config: &MistralConfig,
+        state: &AppState,
         messages: Vec<ChatMessage>,
         model: Option<String>,
     ) -> Result<(Value, i32, String), ApiError> {
-        Self::complete_json_with_key(config, messages, model, None).await
+        Self::complete_json_with_key(state, messages, model, None).await
     }
 
     pub async fn complete_json_with_key(
-        config: &MistralConfig,
+        state: &AppState,
         messages: Vec<ChatMessage>,
         model: Option<String>,
         custom_api_key: Option<String>,
     ) -> Result<(Value, i32, String), ApiError> {
-        let result = Self::complete_with_key(config, messages, model, true, None, custom_api_key).await?;
+        let result = Self::complete_with_key(state, messages, model, true, None, custom_api_key).await?;
         let cleaned = result
             .content
             .trim()
@@ -82,24 +84,27 @@ impl MistralService {
     }
 
     pub async fn complete(
-        config: &MistralConfig,
+        state: &AppState,
         messages: Vec<ChatMessage>,
         model: Option<String>,
         json_mode: bool,
         max_tokens: Option<i32>,
     ) -> Result<ChatResult, ApiError> {
-        Self::complete_with_key(config, messages, model, json_mode, max_tokens, None).await
+        Self::complete_with_key(state, messages, model, json_mode, max_tokens, None).await
     }
 
     pub async fn complete_with_key(
-        config: &MistralConfig,
+        state: &AppState,
         messages: Vec<ChatMessage>,
         model: Option<String>,
         json_mode: bool,
         max_tokens: Option<i32>,
         custom_api_key: Option<String>,
     ) -> Result<ChatResult, ApiError> {
-        let api_key = custom_api_key.unwrap_or_else(|| config.api_key.clone());
+        let api_key = match custom_api_key {
+            Some(k) => k,
+            None => get_integration_with_env_fallback(state, "MISTRAL_API_KEY").await.unwrap_or_else(|| "".to_string()),
+        };
 
         if api_key.trim().is_empty() {
             return Err(ApiError::BadRequest(
@@ -107,7 +112,7 @@ impl MistralService {
             ));
         }
 
-        let model = model.unwrap_or_else(|| Self::default_model(config));
+        let model = model.unwrap_or_else(|| Self::default_model(state));
         let body = json!({
             "model": model,
             "messages": messages,
@@ -189,8 +194,9 @@ impl MistralService {
         })
     }
 
-    pub async fn generate_image(config: &MistralConfig, prompt: &str) -> Result<ImageResult, ApiError> {
-        if config.api_key.trim().is_empty() {
+    pub async fn generate_image(state: &AppState, prompt: &str) -> Result<ImageResult, ApiError> {
+        let api_key = get_integration_with_env_fallback(state, "MISTRAL_API_KEY").await.unwrap_or_else(|| "".to_string());
+        if api_key.trim().is_empty() {
             return Err(ApiError::BadRequest(
                 "MISTRAL_API_KEY is not configured on the server".into(),
             ));
@@ -207,7 +213,7 @@ impl MistralService {
         let client = reqwest::Client::new();
         let response = client
             .post(MISTRAL_IMAGE_URL)
-            .header(AUTHORIZATION, format!("Bearer {}", config.api_key.trim()))
+            .header(AUTHORIZATION, format!("Bearer {}", api_key.trim()))
             .header(CONTENT_TYPE, "application/json")
             .json(&body)
             .send()
@@ -254,12 +260,13 @@ impl MistralService {
         })
     }
 
-    pub async fn list_models(config: &MistralConfig) -> Result<Value, ApiError> {
-        if config.api_key.trim().is_empty() {
+    pub async fn list_models(state: &AppState) -> Result<Value, ApiError> {
+        let api_key = get_integration_with_env_fallback(state, "MISTRAL_API_KEY").await.unwrap_or_else(|| "".to_string());
+        if api_key.trim().is_empty() {
             return Ok(json!({
                 "models": [
-                    { "id": Self::default_model(config), "type": "text", "default": true },
-                    { "id": Self::premium_model(config), "type": "text", "premium": true }
+                    { "id": Self::default_model(state), "type": "text", "default": true },
+                    { "id": Self::premium_model(state), "type": "text", "premium": true }
                 ]
             }));
         }
@@ -267,7 +274,7 @@ impl MistralService {
         let client = reqwest::Client::new();
         let response = client
             .get("https://api.mistral.ai/v1/models")
-            .header(AUTHORIZATION, format!("Bearer {}", config.api_key.trim()))
+            .header(AUTHORIZATION, format!("Bearer {}", api_key.trim()))
             .send()
             .await
             .map_err(|e| ApiError::BadRequest(format!("Failed to list models: {e}")))?;

@@ -157,7 +157,7 @@ async fn classify_lead_async(
     message: String,
 ) -> ApiResult<()> {
     let (data, _, _) = MistralService::complete_json(
-        &state.config.mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -168,7 +168,7 @@ async fn classify_lead_async(
                 content: format!("Name: {name}\nEmail: {email}\nMessage: {message}"),
             },
         ],
-        Some(MistralService::default_model(&state.config.mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await?;
 

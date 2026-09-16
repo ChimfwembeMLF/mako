@@ -467,7 +467,7 @@ async fn send_message(
     });
 
     let mistral = &state.config.mistral;
-    let ai = MistralService::complete(mistral, messages, Some(config.model.clone()), false, Some(1200)).await;
+    let ai = MistralService::complete(&state, messages, Some(config.model.clone()), false, Some(1200)).await;
     let (assistant_content, model, tokens_used) = match ai {
         Ok(res) => (res.content, Some(res.model), Some(res.tokens_used)),
         Err(_) => (

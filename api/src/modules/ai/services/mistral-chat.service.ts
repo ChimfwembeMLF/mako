@@ -42,6 +42,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
 import { EncryptionService } from '../../tenants/services/encryption.service';
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
 
 @Injectable()
 export class MistralChatService {
@@ -53,6 +54,7 @@ export class MistralChatService {
     @InjectRepository(TenantIntegrationConfig)
     private readonly configRepo: Repository<TenantIntegrationConfig>,
     private readonly encryptionService: EncryptionService,
+    private readonly integrations: PlatformIntegrationsService,
   ) {}
 
   private async getClient(tenantId?: string): Promise<Mistral> {
@@ -76,16 +78,18 @@ export class MistralChatService {
       }
     }
 
-    const apiKey = this.config.get<string>('MISTRAL_API_KEY');
+    const apiKey = await this.integrations.getIntegrationWithEnvFallback('MISTRAL_API_KEY');
     if (!apiKey?.trim()) {
       throw new ServiceUnavailableException(
         'MISTRAL_API_KEY is not configured on the server',
       );
     }
-    if (!this.client) {
-      this.client = new Mistral({ apiKey: apiKey.trim() });
-    }
-    return this.client;
+    // We recreate the client if we have to, but since we get it async now, we could cache the client itself. 
+    // Wait, if the key changes in DB, we want to pick it up. So we shouldn't cache `this.client` forever.
+    // PlatformIntegrationsService has its own 1 min cache.
+    // Let's just create a new Mistral instance or check if it matches the current one.
+    // Creating a new Mistral instance is cheap.
+    return new Mistral({ apiKey: apiKey.trim() });
   }
 
   get defaultModel(): string {

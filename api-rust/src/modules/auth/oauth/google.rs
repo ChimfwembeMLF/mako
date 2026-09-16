@@ -6,6 +6,7 @@ use crate::app_state::AppState;
 use crate::common::{ApiError, ApiResult};
 use crate::modules::users::entity::Model as UserModel;
 use crate::modules::users::service::{GoogleOAuthTokensInput, UsersService};
+use crate::modules::system_settings::integrations::get_integration_with_env_fallback;
 
 #[derive(Deserialize)]
 struct GoogleUserInfo {
@@ -32,23 +33,26 @@ pub struct GoogleOAuthTokens {
 pub struct GoogleAuthService;
 
 impl GoogleAuthService {
-    pub fn authorization_url(state: &AppState, oauth_state: Option<&str>) -> String {
+    pub async fn authorization_url(state: &AppState, oauth_state: Option<&str>) -> String {
         Self::authorization_url_with_redirect(
             state,
             oauth_state,
             &state.config.oauth.google_callback_url,
-        )
+        ).await
     }
 
-    pub fn authorization_url_with_redirect(
+    pub async fn authorization_url_with_redirect(
         state: &AppState,
         oauth_state: Option<&str>,
         redirect_uri: &str,
     ) -> String {
-        let oauth = &state.config.oauth;
+        let client_id = get_integration_with_env_fallback(state, "GOOGLE_CLIENT_ID")
+            .await
+            .unwrap_or_else(|| state.config.oauth.google_client_id.clone());
+
         let scope = "openid email profile https://www.googleapis.com/auth/gmail.send";
         let mut params = vec![
-            ("client_id", oauth.google_client_id.as_str()),
+            ("client_id", client_id.as_str()),
             ("redirect_uri", redirect_uri),
             ("response_type", "code"),
             ("scope", scope),
@@ -74,14 +78,20 @@ impl GoogleAuthService {
         code: &str,
         redirect_uri: &str,
     ) -> ApiResult<GoogleTokenResponse> {
-        let oauth = &state.config.oauth;
+        let client_id = get_integration_with_env_fallback(state, "GOOGLE_CLIENT_ID")
+            .await
+            .unwrap_or_else(|| state.config.oauth.google_client_id.clone());
+        let client_secret = get_integration_with_env_fallback(state, "GOOGLE_CLIENT_SECRET")
+            .await
+            .unwrap_or_else(|| state.config.oauth.google_client_secret.clone());
+
         let client = Client::new();
         let resp = client
             .post("https://oauth2.googleapis.com/token")
             .form(&[
                 ("code", code),
-                ("client_id", oauth.google_client_id.as_str()),
-                ("client_secret", oauth.google_client_secret.as_str()),
+                ("client_id", client_id.as_str()),
+                ("client_secret", client_secret.as_str()),
                 ("redirect_uri", redirect_uri),
                 ("grant_type", "authorization_code"),
             ])
@@ -165,13 +175,19 @@ impl GoogleAuthService {
         state: &AppState,
         refresh_token: &str,
     ) -> ApiResult<GoogleOAuthTokens> {
-        let oauth = &state.config.oauth;
+        let client_id = get_integration_with_env_fallback(state, "GOOGLE_CLIENT_ID")
+            .await
+            .unwrap_or_else(|| state.config.oauth.google_client_id.clone());
+        let client_secret = get_integration_with_env_fallback(state, "GOOGLE_CLIENT_SECRET")
+            .await
+            .unwrap_or_else(|| state.config.oauth.google_client_secret.clone());
+
         let client = Client::new();
         let resp = client
             .post("https://oauth2.googleapis.com/token")
             .form(&[
-                ("client_id", oauth.google_client_id.as_str()),
-                ("client_secret", oauth.google_client_secret.as_str()),
+                ("client_id", client_id.as_str()),
+                ("client_secret", client_secret.as_str()),
                 ("refresh_token", refresh_token),
                 ("grant_type", "refresh_token"),
             ])

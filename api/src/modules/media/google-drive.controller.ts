@@ -23,9 +23,9 @@ export class GoogleDriveController {
 
   @Get('auth-url')
   @UseGuards(JwtAuthGuard)
-  getAuthUrl(@Query('tenantId') tenantId: string) {
+  async getAuthUrl(@Query('tenantId') tenantId: string) {
     // Generate auth URL
-    const oauth2Client = this.googleDriveService.getOAuthClient();
+    const oauth2Client = await this.googleDriveService.getOAuthClient();
     
     // We pass tenantId in the state so we know which tenant this is for when Google redirects back
     const state = Buffer.from(JSON.stringify({ tenantId })).toString('base64');
@@ -50,7 +50,7 @@ export class GoogleDriveController {
         return res.status(400).send('Invalid state: missing tenantId');
       }
 
-      const oauth2Client = this.googleDriveService.getOAuthClient();
+      const oauth2Client = await this.googleDriveService.getOAuthClient();
       const { tokens } = await oauth2Client.getToken(code);
 
       // Store tokens in tenant_integration_configs
@@ -112,7 +112,7 @@ export class GoogleDriveController {
     );
     const tokens = JSON.parse(tokenString);
 
-    const drive = this.googleDriveService.getDriveClient(tokens.access_token, tokens.refresh_token);
+    const drive = await this.googleDriveService.getDriveClient(tokens.access_token, tokens.refresh_token);
     
     // List only images and videos
     const res = await drive.files.list({
@@ -146,7 +146,7 @@ export class GoogleDriveController {
     );
     const tokens = JSON.parse(tokenString);
 
-    const drive = this.googleDriveService.getDriveClient(tokens.access_token, tokens.refresh_token);
+    const drive = await this.googleDriveService.getDriveClient(tokens.access_token, tokens.refresh_token);
     
     // Download the file from Google Drive
     const response = await drive.files.get(

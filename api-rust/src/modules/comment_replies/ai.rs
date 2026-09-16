@@ -92,7 +92,7 @@ async fn generate_ai_reply(
     );
 
     let (data, tokens_used, _) = MistralService::complete_json(
-        &state.config.mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -103,7 +103,7 @@ async fn generate_ai_reply(
                 content: user,
             },
         ],
-        Some(MistralService::default_model(&state.config.mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await?;
 

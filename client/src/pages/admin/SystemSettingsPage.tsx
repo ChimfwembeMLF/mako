@@ -10,7 +10,8 @@ import { Field, FormSection, FormRow, FormInput } from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, ShieldCheck, Plus, Trash2, Save, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { Palette, ShieldCheck, Plus, Trash2, Save, ChevronDown, ChevronUp, Target, Key } from 'lucide-react';
+import { PlatformIntegrationsForm } from '@/components/admin/PlatformIntegrationsForm';
 
 import { MAKO_THEME } from '@/lib/mako-brand';
 
@@ -160,6 +161,7 @@ export default function SystemSettingsPage() {
             <TabsTrigger value="theme" className="gap-1.5"><Palette className="h-3.5 w-3.5" /> Theme</TabsTrigger>
             <TabsTrigger value="permissions" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Permissions</TabsTrigger>
             <TabsTrigger value="ads" className="gap-1.5"><Target className="h-3.5 w-3.5" /> Ad Platforms</TabsTrigger>
+            <TabsTrigger value="integrations" className="gap-1.5"><Key className="h-3.5 w-3.5" /> Integrations</TabsTrigger>
           </TabsList>
 
           <TabsContent value="theme" className="space-y-6 mt-4">
@@ -316,6 +318,12 @@ export default function SystemSettingsPage() {
               </Button>
             </FormSection>
           </TabsContent>
+
+          {isSuperAdmin && (
+            <TabsContent value="integrations" className="space-y-4 mt-4">
+              <PlatformIntegrationsForm />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </PermissionGate>

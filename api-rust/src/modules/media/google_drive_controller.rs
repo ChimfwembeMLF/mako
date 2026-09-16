@@ -22,9 +22,9 @@ use crate::{
         },
     },
     services::{
-        encryption_service::EncryptionService,
         s3_storage::S3StorageService,
     },
+    common::encryption::EncryptionService,
 };
 use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
 
@@ -40,7 +40,7 @@ pub struct CallbackQuery {
     pub state: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct StatePayload {
     #[serde(rename = "tenantId")]
     tenant_id: Uuid,
@@ -90,12 +90,14 @@ pub async fn callback(
     let tokens = service
         .exchange_code(&query.code)
         .await
-        .map_err(|e| ApiError::InternalServerError(format!("Failed to exchange code: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Failed to exchange code: {}", e)))?;
 
     let token_json = serde_json::to_string(&tokens).unwrap();
     
-    let encryption_service = EncryptionService::new(&state.config.encryption_key);
-    let (encrypted_data, iv, auth_tag) = encryption_service.encrypt(&token_json);
+    let enc_key = std::env::var("ENCRYPTION_KEY").unwrap_or_else(|_| "default-secret-key-32-chars-long".to_string());
+    let encryption_service = EncryptionService::new(&enc_key);
+    let (encrypted_data, iv, auth_tag) = encryption_service.encrypt(&token_json)
+        .map_err(|e| ApiError::Internal(anyhow::anyhow!("Encryption failed: {}", e)))?;
 
     let existing = IntegrationEntity::find()
         .filter(IntegrationColumn::TenantId.eq(state_payload.tenant_id))
@@ -143,12 +145,13 @@ pub async fn get_files(
 
     let config = existing.ok_or_else(|| ApiError::BadRequest("Google Drive is not connected".into()))?;
 
-    let encryption_service = EncryptionService::new(&state.config.encryption_key);
+    let enc_key = std::env::var("ENCRYPTION_KEY").unwrap_or_else(|_| "default-secret-key-32-chars-long".to_string());
+    let encryption_service = EncryptionService::new(&enc_key);
     let token_json = encryption_service.decrypt(&config.encrypted_api_key, &config.iv, &config.auth_tag)
-        .map_err(|_| ApiError::InternalServerError("Failed to decrypt token".into()))?;
+        .map_err(|_| ApiError::BadRequest("Failed to decrypt token".into()))?;
 
     let tokens: serde_json::Value = serde_json::from_str(&token_json)
-        .map_err(|_| ApiError::InternalServerError("Invalid token format".into()))?;
+        .map_err(|_| ApiError::BadRequest("Invalid token format".into()))?;
 
     let access_token = tokens["access_token"].as_str().unwrap_or_default();
 
@@ -158,12 +161,12 @@ pub async fn get_files(
         .bearer_auth(access_token)
         .send()
         .await
-        .map_err(|e| ApiError::InternalServerError(format!("Google API error: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Google API error: {}", e)))?;
 
     let files: serde_json::Value = response
         .json()
         .await
-        .map_err(|e| ApiError::InternalServerError(format!("Google API JSON error: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Google API JSON error: {}", e)))?;
 
     Ok(Json(files["files"].clone()))
 }
@@ -182,12 +185,13 @@ pub async fn import_file(
 
     let config = existing.ok_or_else(|| ApiError::BadRequest("Google Drive is not connected".into()))?;
 
-    let encryption_service = EncryptionService::new(&state.config.encryption_key);
+    let enc_key = std::env::var("ENCRYPTION_KEY").unwrap_or_else(|_| "default-secret-key-32-chars-long".to_string());
+    let encryption_service = EncryptionService::new(&enc_key);
     let token_json = encryption_service.decrypt(&config.encrypted_api_key, &config.iv, &config.auth_tag)
-        .map_err(|_| ApiError::InternalServerError("Failed to decrypt token".into()))?;
+        .map_err(|_| ApiError::BadRequest("Failed to decrypt token".into()))?;
 
     let tokens: serde_json::Value = serde_json::from_str(&token_json)
-        .map_err(|_| ApiError::InternalServerError("Invalid token format".into()))?;
+        .map_err(|_| ApiError::BadRequest("Invalid token format".into()))?;
 
     let access_token = tokens["access_token"].as_str().unwrap_or_default();
 
@@ -197,12 +201,12 @@ pub async fn import_file(
         .bearer_auth(access_token)
         .send()
         .await
-        .map_err(|e| ApiError::InternalServerError(format!("Google API error: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Google API error: {}", e)))?;
 
     let buffer = response
         .bytes()
         .await
-        .map_err(|e| ApiError::InternalServerError(format!("Failed to download file: {}", e)))?;
+        .map_err(|e| ApiError::BadRequest(format!("Failed to download file: {}", e)))?;
 
     let s3_service = S3StorageService::new(state.config.s3.clone());
     let uploaded = s3_service
@@ -230,7 +234,6 @@ pub async fn import_file(
         source: Set(Some("google_drive".to_string())),
         external_id: Set(Some(payload.file_id.clone())),
         created_at: Set(now),
-        updated_at: Set(now),
         ..Default::default()
     };
 

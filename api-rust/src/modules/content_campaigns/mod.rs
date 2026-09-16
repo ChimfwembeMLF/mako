@@ -132,7 +132,7 @@ Rules:
 
     let mistral = &state.config.mistral;
     let (ai_data, tokens_used, _model) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -143,7 +143,7 @@ Rules:
                 content: user_prompt,
             },
         ],
-        Some(MistralService::premium_model(mistral)),
+        Some(MistralService::premium_model(&state)),
     )
     .await?;
 

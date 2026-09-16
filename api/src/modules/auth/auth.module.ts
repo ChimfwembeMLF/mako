@@ -20,12 +20,14 @@ import { RefreshTokenService } from './refresh-token.service';
 import { MailModule } from '../mail/mail.module';
 import { TenantMembersModule } from '../tenant_members/tenant_members.module';
 import { GmailService } from './gmail.service';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
 
 @Module({
   imports: [
     UserModule,
     TenantsModule,
     TenantMembersModule,
+    SystemSettingsModule,
     forwardRef(() => MailModule),
     TypeOrmModule.forFeature([RefreshTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),

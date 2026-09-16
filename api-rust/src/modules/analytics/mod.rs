@@ -143,7 +143,7 @@ async fn get_ai_report(
     );
     let mistral = &state.config.mistral;
     let ai = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -154,7 +154,7 @@ async fn get_ai_report(
                 content: user,
             },
         ],
-        Some(MistralService::premium_model(mistral)),
+        Some(MistralService::premium_model(&state)),
     )
     .await
     .ok()

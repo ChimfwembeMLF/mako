@@ -1,5 +1,6 @@
 pub mod dto;
 pub mod entity;
+pub mod integrations;
 
 use axum::{
     extract::{Path, State},

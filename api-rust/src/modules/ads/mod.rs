@@ -284,7 +284,7 @@ async fn ai_assist(
     ];
 
     let mistral = &state.config.mistral;
-    let ai = MistralService::complete_json(mistral, messages, Some(MistralService::default_model(mistral)))
+    let ai = MistralService::complete_json(&state, messages, Some(MistralService::default_model(&state)))
         .await
         .ok()
         .and_then(|(data, _, _)| {

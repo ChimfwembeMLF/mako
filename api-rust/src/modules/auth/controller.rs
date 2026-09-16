@@ -246,7 +246,7 @@ async fn me(
 
 async fn google_auth(State(state): State<AppState>) -> Response {
     let (oauth_state, cookie_value) = OAuthCookieState::issue_pair(&state);
-    let url = GoogleAuthService::authorization_url(&state, Some(&oauth_state));
+    let url = GoogleAuthService::authorization_url(&state, Some(&oauth_state)).await;
     let mut response = Redirect::temporary(&url).into_response();
     OAuthCookieState::append_set_cookie(&state, &mut response, &cookie_value);
     response

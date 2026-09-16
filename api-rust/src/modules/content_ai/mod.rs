@@ -359,7 +359,7 @@ async fn resolve_brand_profile(
 }
 
 async fn generate_content_with_ai(
-    mistral: &crate::config::MistralConfig,
+    state: &crate::app_state::AppState,
     theme: &str,
     draft: Option<&str>,
     content_type: Option<&str>,
@@ -394,7 +394,7 @@ async fn generate_content_with_ai(
         )
     };
     let (data, tokens_used, _model) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -406,9 +406,9 @@ async fn generate_content_with_ai(
             },
         ],
         Some(if is_reply {
-            MistralService::default_model(mistral)
+            MistralService::default_model(&state)
         } else {
-            MistralService::premium_model(mistral)
+            MistralService::premium_model(&state)
         }),
     )
     .await?;
@@ -579,7 +579,7 @@ async fn execute_generate_content(
     let brand = resolve_brand_profile(state, tenant_id, user_id, workspace_id).await?;
     let mistral = &state.config.mistral;
     let (title, content, tokens_used) = generate_content_with_ai(
-        mistral,
+        state,
         theme,
         payload.get("draft").and_then(|v| v.as_str()),
         payload.get("contentType").and_then(|v| v.as_str()),
@@ -686,7 +686,7 @@ async fn execute_repurpose_content(
             source.title, source.content, platform
         );
         let (data, tokens_used, _model) = MistralService::complete_json(
-            mistral,
+            &state,
             vec![
                 ChatMessage {
                     role: "system".into(),
@@ -697,7 +697,7 @@ async fn execute_repurpose_content(
                     content: user,
                 },
             ],
-            Some(MistralService::default_model(mistral)),
+            Some(MistralService::default_model(&state)),
         )
         .await?;
         tokens_total += tokens_used;
@@ -791,7 +791,7 @@ async fn execute_adapt_platforms(
             platform
         );
         let (data, tokens_used, _model) = MistralService::complete_json(
-            mistral,
+            &state,
             vec![
                 ChatMessage {
                     role: "system".into(),
@@ -802,7 +802,7 @@ async fn execute_adapt_platforms(
                     content: user,
                 },
             ],
-            Some(MistralService::default_model(mistral)),
+            Some(MistralService::default_model(&state)),
         )
         .await?;
         tokens_total += tokens_used;
@@ -866,7 +866,7 @@ async fn execute_generate_image(
     .collect::<Vec<_>>()
     .join(" ");
 
-    let generated = MistralService::generate_image(mistral, &full_prompt).await?;
+    let generated = MistralService::generate_image(&state, &full_prompt).await?;
     let asset = MediaAssetActiveModel {
         id: Set(Uuid::new_v4()),
         tenant_id: Set(tenant_id),
@@ -915,7 +915,7 @@ async fn execute_generate_slideshow(
     let mut slides = Vec::new();
     for i in 1..=count {
         let prompt = format!("{theme} - slide {i} of {count}, cohesive brand slideshow");
-        let generated = MistralService::generate_image(mistral, &prompt).await?;
+        let generated = MistralService::generate_image(&state, &prompt).await?;
         let _asset = MediaAssetActiveModel {
             id: Set(Uuid::new_v4()),
             tenant_id: Set(tenant_id),
@@ -1038,7 +1038,7 @@ async fn execute_daily_workflow(
         .join(". ");
 
         match generate_content_with_ai(
-            &state.config.mistral,
+            &state,
             &theme,
             None,
             Some("content"),

@@ -886,6 +886,13 @@ export const permissionsApi = {
 export const systemSettingsApi = {
     getTheme: () =>
         request<Record<string, string>>('/api/v1/system-settings/theme', { requireAuth: false }),
+    getIntegrations: () => 
+        request<Record<string, string>>('/api/v1/system-settings/integrations'),
+    updateIntegrations: (data: Record<string, string>) =>
+        request<{ ok: boolean }>('/api/v1/system-settings/integrations', {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        }),
     findAll: () => request<any[]>('/api/v1/system-settings'),
     findOne: (key: string) => request<any>(`/api/v1/system-settings/${encodeURIComponent(key)}`),
     upsert: (key: string, data: { value: Record<string, unknown>; description?: string }) =>

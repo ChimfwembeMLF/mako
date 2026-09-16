@@ -34,7 +34,7 @@ pub async fn generate_menu_item_reply(
     );
 
     let (data, _, _) = MistralService::complete_json(
-        &state.config.mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -45,7 +45,7 @@ pub async fn generate_menu_item_reply(
                 content: user,
             },
         ],
-        Some(MistralService::default_model(&state.config.mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await?;
 
@@ -84,7 +84,7 @@ pub async fn generate_free_text_reply(
     );
 
     let (data, _, _) = MistralService::complete_json(
-        &state.config.mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -97,7 +97,7 @@ pub async fn generate_free_text_reply(
                 ),
             },
         ],
-        Some(MistralService::default_model(&state.config.mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await?;
 

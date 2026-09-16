@@ -177,7 +177,7 @@ async fn reindex_document(
     );
     let chunks = split_for_indexing(&seed, 320);
     for (idx, chunk) in chunks.iter().enumerate() {
-        let summary_hint = ai_chunk_hint(&state.config.mistral, chunk)
+        let summary_hint = ai_chunk_hint(&state, chunk)
             .await
             .unwrap_or_else(|| chunk.clone());
         ChunkActiveModel {
@@ -272,12 +272,12 @@ fn split_for_indexing(text: &str, max_chars: usize) -> Vec<String> {
     out
 }
 
-async fn ai_chunk_hint(mistral: &crate::config::MistralConfig, chunk: &str) -> Option<String> {
+async fn ai_chunk_hint(state: &crate::app_state::AppState, chunk: &str) -> Option<String> {
     if chunk.trim().is_empty() {
         return None;
     }
     let (data, _, _) = MistralService::complete_json(
-        mistral,
+        &state,
         vec![
             ChatMessage {
                 role: "system".into(),
@@ -288,7 +288,7 @@ async fn ai_chunk_hint(mistral: &crate::config::MistralConfig, chunk: &str) -> O
                 content: format!("Summarize this document chunk in one short sentence:\n{chunk}"),
             },
         ],
-        Some(MistralService::default_model(mistral)),
+        Some(MistralService::default_model(&state)),
     )
     .await
     .ok()?;
