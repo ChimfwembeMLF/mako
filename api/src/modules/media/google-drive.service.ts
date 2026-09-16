@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { google } from 'googleapis';
 import { OAuth2Client } from 'google-auth-library';
 import { ConfigService } from '@nestjs/config';
-import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
+import { PlatformIntegrationsService } from '../system_settings/services/platform-integrations.service';
 
 @Injectable()
 export class GoogleDriveService {

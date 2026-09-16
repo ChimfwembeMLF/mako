@@ -983,6 +983,32 @@
         ]
       }
     },
+    "/api/v1/system-settings/integrations": {
+      "get": {
+        "operationId": "SystemSettingsController_getIntegrations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "SystemSettings"
+        ]
+      },
+      "put": {
+        "operationId": "SystemSettingsController_updateIntegrations",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "SystemSettings"
+        ]
+      }
+    },
     "/api/v1/system-settings": {
       "get": {
         "operationId": "SystemSettingsController_findAll",

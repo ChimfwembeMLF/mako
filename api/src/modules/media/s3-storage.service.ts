@@ -15,7 +15,7 @@ export interface StorageUploadResult {
   storagePath: string;
 }
 
-import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
+import { PlatformIntegrationsService } from '../system_settings/services/platform-integrations.service';
 
 @Injectable()
 export class S3StorageService {

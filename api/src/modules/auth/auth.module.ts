@@ -27,7 +27,7 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     UserModule,
     TenantsModule,
     TenantMembersModule,
-    SystemSettingsModule,
+    forwardRef(() => SystemSettingsModule),
     forwardRef(() => MailModule),
     TypeOrmModule.forFeature([RefreshTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
