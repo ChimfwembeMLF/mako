@@ -29,6 +29,7 @@ interface PlatformPreviewCarouselProps {
   onEditPayload?: (platform: string, patch: Partial<PlatformPayload>) => void;
   onApplyMediaToAll?: (platform: string) => void;
   onApplyAssetsToAll?: (assets: MediaAsset[]) => void;
+  onLibraryUpdate?: () => void;
   editable?: boolean;
   className?: string;
 }
@@ -42,6 +43,7 @@ export function PlatformPreviewCarousel({
   onEditPayload,
   onApplyMediaToAll,
   onApplyAssetsToAll,
+  onLibraryUpdate,
   editable = false,
   className,
 }: PlatformPreviewCarouselProps) {
@@ -205,6 +207,7 @@ export function PlatformPreviewCarousel({
               onApplyMediaToAll ? () => onApplyMediaToAll(activePlatform) : undefined
             }
             onApplyAssetsToAll={onApplyAssetsToAll}
+            onLibraryUpdate={onLibraryUpdate}
           />
         </div>
       )}

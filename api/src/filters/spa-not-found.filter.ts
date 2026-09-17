@@ -53,7 +53,7 @@ export class SpaNotFoundFilter implements ExceptionFilter {
 
     res.status(404).json({
       statusCode: 404,
-      message: 'Not Found',
+      message: _exception.message || 'Not Found',
       path,
     });
   }

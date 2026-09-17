@@ -110,7 +110,13 @@ export class LeadsController {
       throw new UnauthorizedException('tenantId is required');
     }
 
-    const tenant = await this.tenantsService.findOne(tenantId);
+    let tenant;
+    try {
+      tenant = await this.tenantsService.findOne(tenantId);
+    } catch (e) {
+      throw new UnauthorizedException('Invalid tenant');
+    }
+
     if (!tenant) {
       throw new UnauthorizedException('Invalid tenant');
     }

@@ -11,7 +11,7 @@ import { Upload, Search, Check, X, Loader2 } from 'lucide-react';
 
 interface Props {
   value?: string;
-  onChange: (url: string | undefined) => void;
+  onChange: (url: string | undefined, asset?: MediaAsset) => void;
   accept?: string;
 }
 
@@ -70,7 +70,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
       const asset = await res.json();
       const normalized = normalizeMediaAsset(asset);
       setAssets((prev) => [normalized, ...prev]);
-      onChange(normalized.mediaUrl);
+      onChange(normalized.mediaUrl, normalized);
       toast({ title: 'Import complete' });
     } catch (err: any) {
       toast({ title: 'Import failed', description: err.message, variant: 'destructive' });
@@ -113,7 +113,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
       const asset = await mediaApi.upload(file, tenant.id, undefined, activeWorkspace);
       const normalized = normalizeMediaAsset(asset as Record<string, unknown>);
       setAssets((prev) => [normalized, ...prev]);
-      onChange(normalized.mediaUrl);
+      onChange(normalized.mediaUrl, normalized);
       toast({ title: 'Upload complete' });
     } catch (err: unknown) {
       toast({
@@ -138,7 +138,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
           />
           <button
             type="button"
-            onClick={() => onChange(undefined)}
+            onClick={() => onChange(undefined, undefined)}
             className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-0.5"
           >
             <X className="h-3.5 w-3.5" />
@@ -174,7 +174,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
                 <button
                   key={asset.id}
                   type="button"
-                  onClick={() => onChange(asset.mediaUrl)}
+                  onClick={() => onChange(asset.mediaUrl, asset)}
                   className={`relative aspect-square rounded overflow-hidden border-2 transition-all
                     ${value === asset.mediaUrl ? 'border-primary' : 'border-transparent hover:border-muted-foreground'}`}
                 >
@@ -282,7 +282,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
               size="sm"
               disabled={!urlInput.trim()}
               onClick={() => {
-                onChange(urlInput.trim());
+                onChange(urlInput.trim(), undefined);
                 setUrlInput('');
               }}
             >

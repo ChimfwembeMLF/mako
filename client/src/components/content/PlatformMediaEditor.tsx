@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { ImagePlus, X, AlertTriangle, Check, ChevronUp, ChevronDown } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { MediaPicker } from '@/components/MediaPicker';
 import {
   PlatformMediaAttachment,
   platformOf,
@@ -18,6 +20,7 @@ interface PlatformMediaEditorProps {
   onChange: (media: PlatformMediaAttachment[]) => void;
   onApplyToAll?: () => void;
   onApplyAssetsToAll?: (assets: MediaAsset[]) => void;
+  onLibraryUpdate?: () => void;
   className?: string;
 }
 
@@ -28,6 +31,7 @@ export function PlatformMediaEditor({
   onChange,
   onApplyToAll,
   onApplyAssetsToAll,
+  onLibraryUpdate,
   className,
 }: PlatformMediaEditorProps) {
   const def = platformOf(platform);
@@ -35,6 +39,7 @@ export function PlatformMediaEditor({
   const media = payload.media ?? [];
   const validation = validatePlatformPayload(platform, payload);
   const [selectedLibraryIds, setSelectedLibraryIds] = useState<Set<string>>(new Set());
+  const [importOpen, setImportOpen] = useState(false);
 
   function addAsset(asset: MediaAsset) {
     if (media.some((m) => m.url === asset.mediaUrl)) return;
@@ -123,6 +128,29 @@ export function PlatformMediaEditor({
           </span>
         </div>
         <div className="flex items-center gap-1 flex-wrap">
+          <Dialog open={importOpen} onOpenChange={setImportOpen}>
+            <DialogTrigger asChild>
+              <Button type="button" variant="outline" size="sm" className="h-7 text-xs">
+                Import Media
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-3xl">
+              <DialogHeader>
+                <DialogTitle>Import Media</DialogTitle>
+              </DialogHeader>
+              <MediaPicker
+                onChange={(url, asset) => {
+                  if (asset) {
+                    addAsset(asset);
+                  }
+                  if (onLibraryUpdate) {
+                    onLibraryUpdate();
+                  }
+                  setImportOpen(false);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
           {onApplyToAll && media.length > 0 && (
             <Button type="button" variant="ghost" size="sm" className="h-7 text-xs" onClick={onApplyToAll}>
               Copy {def.label} attachments to all

@@ -602,6 +602,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           onEditPayload={updatePayload}
           onApplyMediaToAll={applyMediaToAll}
           onApplyAssetsToAll={applyAssetsToAll}
+          onLibraryUpdate={loadLibrary}
           editable
         />
 
