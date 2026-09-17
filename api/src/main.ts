@@ -172,18 +172,31 @@ async function bootstrap() {
   // Set global API prefix so client requests match backend routes
   // app.setGlobalPrefix('api/v1');
 
+  app.use((req: any, res: any, next: any) => {
+    const url = req.url || req.originalUrl || '';
+    if (url.startsWith('/api/v1/widget') || url.startsWith('/api/v1/leads/contact-form/')) {
+      const origin = req.headers.origin;
+      if (typeof origin === 'string' && origin.length > 0) {
+        if (!res.getHeader('Access-Control-Allow-Origin')) {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+        }
+        res.setHeader('Vary', 'Origin');
+      } else if (!res.getHeader('Access-Control-Allow-Origin')) {
+        res.setHeader('Access-Control-Allow-Origin', '*');
+      }
+      res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,PATCH,OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Visitor-Id, Accept');
+      if (req.method === 'OPTIONS') {
+        res.status(204).end();
+        return;
+      }
+    }
+    next();
+  });
+
   const corsOptions = buildNestCorsOptions();
   if (corsOptions) {
-    app.enableCors((req: any, callback: any) => {
-      const url = req.url || req.originalUrl || '';
-      
-      // Allow cross-origin requests for embeddable widgets and public contact forms
-      if (url.startsWith('/api/v1/widget') || url.startsWith('/api/v1/leads/contact-form/')) {
-        return callback(null, { origin: true, credentials: true });
-      }
-      
-      callback(null, corsOptions);
-    });
+    app.enableCors(corsOptions);
   }
 
   if (isProduction) {
@@ -194,6 +207,7 @@ async function bootstrap() {
       helmet({
         contentSecurityPolicy: false,
         crossOriginEmbedderPolicy: false,
+        crossOriginResourcePolicy: false,
       }),
     );
 
