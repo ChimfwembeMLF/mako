@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { brandProfilesApi } from "@/lib/api";
-import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
+
 import { API_BASE_URL } from "@/lib/api";
 
 interface Branding {
@@ -93,86 +93,77 @@ const ContactForm = () => {
 
   if (!tenantId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md space-y-4">
-          <AppBreadcrumbs />
-          <Card className="w-full">
-            <CardContent className="p-6 text-center text-muted-foreground">
-              Invalid contact form link.
-            </CardContent>
-          </Card>
-        </div>
+      <div className="w-full">
+        <Card className="w-full">
+          <CardContent className="p-6 text-center text-muted-foreground">
+            Invalid contact form link.
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md space-y-4">
-          <AppBreadcrumbs />
-          <Card className="w-full overflow-hidden">
-            <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
-              <CheckCircle2 className="h-12 w-12 mx-auto mb-3" />
-              <h2 className="text-xl font-bold">Thank you!</h2>
-              <p className="text-sm opacity-90 mt-1">We've received your message</p>
-            </div>
-            <CardContent className="p-6 space-y-4">
-              <p className="text-muted-foreground text-sm text-center">
-                We'll get back to you as soon as possible.
-              </p>
-              {aiReply && (
-                <div className={`${branding.bgClass} border rounded-lg p-4 text-left`}>
-                  <p className="text-xs text-muted-foreground mb-1">Quick response:</p>
-                  <p className="text-sm">{aiReply}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+      <div className="w-full">
+        <Card className="w-full overflow-hidden">
+          <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
+            <CheckCircle2 className="h-12 w-12 mx-auto mb-3" />
+            <h2 className="text-xl font-bold">Thank you!</h2>
+            <p className="text-sm opacity-90 mt-1">We've received your message</p>
+          </div>
+          <CardContent className="p-6 space-y-4">
+            <p className="text-muted-foreground text-sm text-center">
+              We'll get back to you as soon as possible.
+            </p>
+            {aiReply && (
+              <div className={`${branding.bgClass} border rounded-lg p-4 text-left`}>
+                <p className="text-xs text-muted-foreground mb-1">Quick response:</p>
+                <p className="text-sm">{aiReply}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-4">
-        <AppBreadcrumbs />
-        <Card className="w-full shadow-card overflow-hidden">
-        <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
-          <Send className="h-10 w-10 mx-auto mb-3" />
-          <h1 className="text-xl font-bold">{branding.name}</h1>
-          <p className="text-sm opacity-90 mt-1">{branding.tagline}</p>
-        </div>
-        <CardContent className="p-6">
-          <p className="text-sm text-muted-foreground mb-4">{branding.description}</p>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100} />
-            </div>
-            <div className="space-y-2">
-              <Label>Email *</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required maxLength={255} />
-            </div>
-            <div className="space-y-2">
-              <Label>Message</Label>
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="How can we help you?"
-                rows={4}
-                maxLength={1000}
-              />
-            </div>
-            <Button type="submit" disabled={submitting} className={`w-full bg-gradient-to-r ${branding.gradient} text-white border-0 hover:opacity-90`}>
-              <Send className="mr-2 h-4 w-4" />
-              {submitting ? "Sending..." : "Send Message"}
-            </Button>
-          </form>
-        </CardContent>
-        </Card>
+    <div className="w-full">
+      <Card className="w-full shadow-card overflow-hidden">
+      <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
+        <Send className="h-10 w-10 mx-auto mb-3" />
+        <h1 className="text-xl font-bold">{branding.name}</h1>
+        <p className="text-sm opacity-90 mt-1">{branding.tagline}</p>
       </div>
+      <CardContent className="p-6">
+        <p className="text-sm text-muted-foreground mb-4">{branding.description}</p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Name *</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100} />
+          </div>
+          <div className="space-y-2">
+            <Label>Email *</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required maxLength={255} />
+          </div>
+          <div className="space-y-2">
+            <Label>Message</Label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="How can we help you?"
+              rows={4}
+              maxLength={1000}
+            />
+          </div>
+          <Button type="submit" disabled={submitting} className={`w-full bg-gradient-to-r ${branding.gradient} text-white border-0 hover:opacity-90`}>
+            <Send className="mr-2 h-4 w-4" />
+            {submitting ? "Sending..." : "Send Message"}
+          </Button>
+        </form>
+      </CardContent>
+      </Card>
     </div>
   );
 };
