@@ -31,10 +31,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       const clientSecret = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_CLIENT_SECRET');
       if (clientId && clientSecret) {
         const oauth2 = (this as any)._oauth2;
+        console.log('GoogleStrategy fallback: replacing client_id with', clientId, !!oauth2);
         if (oauth2) {
           oauth2._clientId = clientId;
           oauth2._clientSecret = clientSecret;
         }
+      } else {
+        console.log('GoogleStrategy fallback: clientId or clientSecret is empty!', { clientId, clientSecret });
       }
     } catch (e) {
       // Ignore error and fall back to default credentials

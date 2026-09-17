@@ -12,6 +12,7 @@ use crate::{
     app_state::AppState,
     common::{ApiError, ApiResult, guards::AuthUser},
     modules::{
+        system_settings::integrations::get_integration_with_env_fallback,
         media::google_drive_service::GoogleDriveService,
         media::entity::{
             ActiveModel as MediaActiveModel, Column as MediaColumn, Entity as MediaEntity,
@@ -58,9 +59,16 @@ pub struct ImportPayload {
     pub workspace_id: Option<Uuid>,
 }
 
-pub async fn get_auth_url(Query(query): Query<AuthUrlQuery>) -> ApiResult<Json<serde_json::Value>> {
+pub async fn get_auth_url(
+    State(state): State<AppState>,
+    Query(query): Query<AuthUrlQuery>
+) -> ApiResult<Json<serde_json::Value>> {
+    let client_id = get_integration_with_env_fallback(&state, "GOOGLE_CLIENT_ID")
+        .await
+        .unwrap_or_else(|| state.config.oauth.google_client_id.clone());
+
     let service = GoogleDriveService::new();
-    let auth_url = service.get_auth_url();
+    let auth_url = service.get_auth_url(&client_id);
 
     let state_payload = StatePayload {
         tenant_id: query.tenant_id,
@@ -86,9 +94,16 @@ pub async fn callback(
     let state_payload: StatePayload = serde_json::from_slice(&state_json)
         .map_err(|_| ApiError::BadRequest("Invalid state payload".into()))?;
 
+    let client_id = get_integration_with_env_fallback(&state, "GOOGLE_CLIENT_ID")
+        .await
+        .unwrap_or_else(|| state.config.oauth.google_client_id.clone());
+    let client_secret = get_integration_with_env_fallback(&state, "GOOGLE_CLIENT_SECRET")
+        .await
+        .unwrap_or_else(|| state.config.oauth.google_client_secret.clone());
+
     let service = GoogleDriveService::new();
     let tokens = service
-        .exchange_code(&query.code)
+        .exchange_code(&query.code, &client_id, &client_secret)
         .await
         .map_err(|e| ApiError::BadRequest(format!("Failed to exchange code: {}", e)))?;
 

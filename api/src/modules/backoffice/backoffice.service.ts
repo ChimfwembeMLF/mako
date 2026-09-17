@@ -73,7 +73,7 @@ export class BackofficeService {
     private readonly refundRequestsRepo: Repository<RefundRequests>,
     private readonly plans: PlansService,
     private readonly paymentsService: PaymentsService,
-  ) {}
+  ) { }
 
   async getOverview() {
     const weekAgo = new Date();
@@ -200,11 +200,11 @@ export class BackofficeService {
     return {
       company: {
         name: 'Mako ',
-        product: 'Tekrem Innvation Solutions Mako ',
+        product: 'Tekrem Innovation Solutions Mako ',
         tagline: 'Grow Smarter, Sell Stronger',
         description:
           'AI-powered marketing suite for brands — content generation, multi-platform publishing, lead capture, comment automation, and RAG chatbots with embeddable widgets.',
-        operator: 'Tekrem Innvation Solutions',
+        operator: 'Tekrem Innovation Solutions',
         region: 'Zambia · Southern Africa',
         supportEmail: process.env.SUPPORT_EMAIL ?? 'support@agriwide.co',
         website: process.env.COMPANY_WEBSITE ?? 'https://agriwide.co',
@@ -465,10 +465,10 @@ export class BackofficeService {
       createdAt: tenant.created_at,
       subscription: sub
         ? {
-            plan: sub.plan,
-            status: sub.status,
-            billingPeriodEnd: sub.billingPeriodEnd,
-          }
+          plan: sub.plan,
+          status: sub.status,
+          billingPeriodEnd: sub.billingPeriodEnd,
+        }
         : { plan: 'free', status: 'active', billingPeriodEnd: null },
       stats: {
         members,
@@ -479,24 +479,24 @@ export class BackofficeService {
       },
       chatbot: chatbotConfig
         ? {
-            name: chatbotConfig.name,
-            widgetEnabled: chatbotConfig.widgetEnabled,
-            ragEnabled: chatbotConfig.ragEnabled,
-            useMistralLibrary: chatbotConfig.useMistralLibrary,
-            widgetTtsEnabled: chatbotConfig.widgetTtsEnabled,
-            isActive: chatbotConfig.isActive,
-            sessions: chatSessions,
-            sessionsLast7Days: chatSessionsWeek,
-            messages: chatMessages,
-            knowledgeDocuments: knowledgeDocs,
-            knowledgeReady,
-            knowledgeFailed,
-            knowledgeChunks,
-            activeApiKeys: activeKeys,
-            sessionsByChannel: Object.fromEntries(
-              sessionsByChannel.map((r) => [r.channel, parseInt(r.count, 10)]),
-            ),
-          }
+          name: chatbotConfig.name,
+          widgetEnabled: chatbotConfig.widgetEnabled,
+          ragEnabled: chatbotConfig.ragEnabled,
+          useMistralLibrary: chatbotConfig.useMistralLibrary,
+          widgetTtsEnabled: chatbotConfig.widgetTtsEnabled,
+          isActive: chatbotConfig.isActive,
+          sessions: chatSessions,
+          sessionsLast7Days: chatSessionsWeek,
+          messages: chatMessages,
+          knowledgeDocuments: knowledgeDocs,
+          knowledgeReady,
+          knowledgeFailed,
+          knowledgeChunks,
+          activeApiKeys: activeKeys,
+          sessionsByChannel: Object.fromEntries(
+            sessionsByChannel.map((r) => [r.channel, parseInt(r.count, 10)]),
+          ),
+        }
         : null,
       socialAccounts: socialAccounts.map((s) => ({
         id: s.id,

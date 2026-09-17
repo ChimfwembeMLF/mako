@@ -16,6 +16,7 @@ import {
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { backofficeApi } from '@/lib/api';
 import { BackofficePlansTab } from './BackofficePlansTab';
+import { PlatformIntegrationsForm } from '@/components/admin/PlatformIntegrationsForm';
 
 type Overview = Awaited<ReturnType<typeof backofficeApi.getOverview>>;
 type TenantRow = Awaited<ReturnType<typeof backofficeApi.listTenants>>[number];
@@ -294,6 +295,7 @@ function BackofficeContent() {
           <TabsTrigger value="chatbot">Chatbot ({stats.chatSessions})</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="health">Platform Health</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
           <TabsTrigger value="company">About Mako </TabsTrigger>
         </TabsList>
 
@@ -438,6 +440,10 @@ function BackofficeContent() {
 
         <TabsContent value="plans" className="mt-6">
           <BackofficePlansTab onSaved={setPricingPlans} />
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-6">
+          <PlatformIntegrationsForm />
         </TabsContent>
 
         <TabsContent value="ai" className="space-y-6 mt-6">

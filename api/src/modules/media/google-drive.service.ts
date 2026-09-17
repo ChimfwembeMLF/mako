@@ -12,8 +12,8 @@ export class GoogleDriveService {
   ) {}
 
   async getOAuthClient(): Promise<OAuth2Client> {
-    const clientId = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_DRIVE_CLIENT_ID');
-    const clientSecret = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_DRIVE_CLIENT_SECRET');
+    const clientId = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_CLIENT_ID');
+    const clientSecret = await this.integrations.getIntegrationWithEnvFallback('GOOGLE_CLIENT_SECRET');
     const redirectUrl = this.configService.get<string>('API_BASE_URL') + '/api/v1/integrations/google-drive/callback';
 
     return new google.auth.OAuth2(clientId, clientSecret, redirectUrl);

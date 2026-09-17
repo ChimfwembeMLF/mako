@@ -119,11 +119,11 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       const fromLocal =
         localResult.status === 'fulfilled' && Array.isArray(localResult.value)
           ? localResult.value
-              .filter((t) => String(t.status ?? '').toUpperCase() === 'APPROVED')
-              .map((t) => ({
-                name: String(t.name),
-                language: String(t.language ?? 'en'),
-              }))
+            .filter((t) => String(t.status ?? '').toUpperCase() === 'APPROVED')
+            .map((t) => ({
+              name: String(t.name),
+              language: String(t.language ?? 'en'),
+            }))
           : [];
 
       const meta =
@@ -288,14 +288,14 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       setPlatformPayloads((prev) => {
         const next = { ...prev };
         for (const p of selectedPlatforms) {
-        if (payloads[p]) {
-          next[p] = {
-            ...next[p],
-            title: payloads[p].title,
-            content: plainToHtml(payloads[p].content),
-            media: next[p]?.media,
-          };
-        }
+          if (payloads[p]) {
+            next[p] = {
+              ...next[p],
+              title: payloads[p].title,
+              content: plainToHtml(payloads[p].content),
+              media: next[p]?.media,
+            };
+          }
         }
         return next;
       });
@@ -526,7 +526,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           <div className="pr-6 sm:pr-8 min-w-0">
             <h2 className="font-display text-lg sm:text-xl font-semibold">Publish content</h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-1.5 leading-relaxed">
-              Grow Smarter, Sell Stronger with Tekrem Innvation Solutions — pick platforms and preview before publishing.
+              Grow Smarter, Sell Stronger with Tekrem Innovation Solutions — pick platforms and preview before publishing.
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="shrink-0 -mr-1">
