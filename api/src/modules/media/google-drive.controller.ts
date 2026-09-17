@@ -86,11 +86,11 @@ export class GoogleDriveController {
 
       // Redirect back to frontend settings page
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      return res.redirect(`${frontendUrl}/settings/integrations?success=google_drive`);
+      return res.redirect(`${frontendUrl}/settings?success=google_drive`);
     } catch (error) {
       console.error('Google Drive OAuth callback error:', error);
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      return res.redirect(`${frontendUrl}/settings/integrations?error=google_drive_failed`);
+      return res.redirect(`${frontendUrl}/settings?error=google_drive_failed`);
     }
   }
 

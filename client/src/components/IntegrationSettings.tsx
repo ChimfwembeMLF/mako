@@ -36,6 +36,14 @@ const DeepSeekIcon = (props: any) => (
   </svg>
 );
 
+const GoogleDriveIcon = (props: any) => (
+  <svg viewBox="0 0 24 24" width="1em" height="1em" {...props}>
+    <path fill="#FFC107" d="M17.09 17.584L24 5.617H10.18L3.269 17.584h13.821z" />
+    <path fill="#4CAF50" d="M10.18 5.617L3.27 17.584 0 11.967l6.91-11.967h6.911l-3.641 5.617z" />
+    <path fill="#1976D2" d="M20.73 11.967l-6.91 11.967H0l6.91-11.967h13.82z" />
+  </svg>
+);
+
 const AI_PROVIDERS = [
   { id: "mistral", name: "Mistral AI", icon: MistralIcon },
   { id: "openai", name: "OpenAI", icon: OpenAIIcon },
@@ -154,6 +162,7 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
           <div className="grid gap-4 md:grid-cols-[1fr_auto] items-center border rounded-lg p-4">
             <div className="flex items-center gap-2 font-medium">
               <p>Google Drive</p>
+              <GoogleDriveIcon className="h-4 w-4" />
             </div>
             <div className="flex items-end">
               <Button
@@ -190,11 +199,17 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
             <div className="space-y-3">
               {configs.map((config: TenantIntegrationConfig) => {
                 const providerInfo = AI_PROVIDERS.find(p => p.id === config.provider);
+                const isGoogleDrive = config.provider === 'google_drive';
+                const Icon = isGoogleDrive ? GoogleDriveIcon : (providerInfo?.icon || Key);
+                
                 return (
                   <div key={config.id} className="flex items-center justify-between py-3 border-b last:border-0 last:pb-0">
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="font-medium text-sm">{providerInfo ? providerInfo.name : config.provider}</p>
+                        <p className="font-medium text-sm flex items-center gap-2">
+                          {providerInfo ? providerInfo.name : (isGoogleDrive ? 'Google Drive' : config.provider)}
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        </p>
                         <p className="text-xs text-muted-foreground">
                           Last updated: {new Date(config.updatedAt).toLocaleDateString()}
                         </p>

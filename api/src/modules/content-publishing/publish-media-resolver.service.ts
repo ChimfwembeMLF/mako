@@ -6,7 +6,7 @@ import { MediaAttachment } from './interfaces/publish-result.interface';
 export class PublishMediaResolverService {
   constructor(private readonly storage: S3StorageService) {}
 
-  /** Ensure all publish attachments use Supabase public HTTPS URLs. */
+  /** Ensure all publish attachments use public HTTPS URLs. */
   async resolveForPublish(
     media: MediaAttachment[],
     tenantId: string,

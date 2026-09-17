@@ -26,7 +26,6 @@ use crate::modules::media::entity::{
     Model as MediaModel,
 };
 use crate::services::s3_storage::S3StorageService;
-use crate::services::supabase_storage::SupabaseStorageService;
 
 const MAX_UPLOAD_BYTES: usize = 50 * 1024 * 1024;
 
@@ -241,7 +240,6 @@ async fn save_media_asset(state: &AppState, params: SaveMediaParams) -> ApiResul
         .ok_or_else(|| ApiError::BadRequest("file is required".into()))?;
 
     let s3 = S3StorageService::new(state.config.s3.clone());
-    let supabase = SupabaseStorageService::new(state.config.supabase.clone());
 
     let (media_url, tags) = if s3.is_enabled() {
         let uploaded = s3
@@ -254,21 +252,6 @@ async fn save_media_asset(state: &AppState, params: SaveMediaParams) -> ApiResul
             )
             .await?;
         tracing::debug!(storage_path = %uploaded.storage_path, "Uploaded media to S3");
-        (
-            uploaded.public_url,
-            Some(vec![format!("storage_path:{}", uploaded.storage_path)]),
-        )
-    } else if supabase.is_enabled() {
-        let uploaded = supabase
-            .upload_buffer(
-                &params.tenant_id.to_string(),
-                bytes,
-                &params.content_type,
-                params.name.as_deref(),
-                Some("uploads"),
-            )
-            .await?;
-        tracing::debug!(storage_path = %uploaded.storage_path, "Uploaded media to Supabase");
         (
             uploaded.public_url,
             Some(vec![format!("storage_path:{}", uploaded.storage_path)]),
@@ -419,7 +402,6 @@ async fn remove(
         .ok_or_else(|| ApiError::NotFound("Media not found".into()))?;
 
     let s3 = S3StorageService::new(state.config.s3.clone());
-    let supabase = SupabaseStorageService::new(state.config.supabase.clone());
 
     if s3.is_enabled() && s3.is_s3_url(&asset.media_url) {
         let storage_path = asset.tags.as_ref().and_then(|tags| {
@@ -438,24 +420,6 @@ async fn remove(
                 error = %err,
                 "Failed to delete S3 media object"
             );
-        }
-    } else if supabase.is_enabled() && supabase.is_supabase_url(&asset.media_url) {
-        let storage_path = asset
-            .tags
-            .as_ref()
-            .and_then(|tags| {
-                tags.iter()
-                    .find_map(|tag| tag.strip_prefix("storage_path:").map(str::to_string))
-            });
-        if let Some(path) = storage_path {
-            if let Err(err) = supabase.delete_object(&path).await {
-                tracing::warn!(
-                    media_id = %asset.id,
-                    storage_path = %path,
-                    error = %err,
-                    "Failed to delete Supabase media object"
-                );
-            }
         }
     }
 

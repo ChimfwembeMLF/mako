@@ -26,6 +26,7 @@ import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity
 import { KnowledgeChunk } from '../chatbot/entities/knowledge-chunk.entity';
 import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
 import { RefundRequests } from '../payments/entities/refund_requests.entity';
+import { MediaAssets } from '../content_items/entities/media_assets.entity';
 
 import { PaymentsModule } from '../payments/payments.module';
 
@@ -55,6 +56,7 @@ import { PaymentsModule } from '../payments/payments.module';
       KnowledgeChunk,
       ChatbotApiKey,
       RefundRequests,
+      MediaAssets,
     ]),
   ],
   providers: [BackofficeService, SuperAdminGuard],

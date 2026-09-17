@@ -12,6 +12,7 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { socialAccountsApi, SocialAccount } from "@/lib/api";
 import { capabilityOf } from "@/lib/platform-capabilities";
 import { Badge } from "@/components/ui/badge";
+import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   AlertDialog,
@@ -755,6 +756,8 @@ const PublisherConnect = () => {
           </p>
         </CardContent>
       </Card>
+
+      {tenant?.id && <IntegrationSettings tenantId={tenant.id} />}
 
       <Sheet
         open={

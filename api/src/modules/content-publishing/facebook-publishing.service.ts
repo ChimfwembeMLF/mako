@@ -105,7 +105,7 @@ export class FacebookPublishingService {
         return {
           published: false,
           message:
-            'Facebook could not upload media attachments. Ensure images are public HTTPS URLs or enable Supabase storage.',
+            'Facebook could not upload media attachments. Ensure images are public HTTPS URLs or enable AWS S3 storage.',
         };
       }
 

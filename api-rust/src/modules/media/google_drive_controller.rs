@@ -144,7 +144,7 @@ pub async fn callback(
     }
 
     let frontend_url = std::env::var("FRONTEND_URL").unwrap_or_else(|_| "http://localhost:5173".into());
-    Ok(Redirect::to(&format!("{}/settings/integrations?success=google_drive", frontend_url)))
+    Ok(Redirect::to(&format!("{}/settings?success=google_drive", frontend_url)))
 }
 
 pub async fn get_files(

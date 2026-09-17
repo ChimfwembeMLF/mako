@@ -22,12 +22,14 @@ use crate::modules::lead_sources::entity::{Entity as SourceEntity, Model as Sour
 use crate::modules::leads::entity::{
     ActiveModel as LeadActiveModel, Column as LeadColumn, Entity as LeadEntity, Model as LeadModel,
 };
+use crate::modules::ai::mistral::{MistralService, ChatMessage};
 
 use self::dto::{CreateLeadDto, UpdateLeadDto, WebhookLeadDto};
 use self::lead_email::{LeadEmailService, SendLeadEmailDto};
 
 pub fn router() -> Router<AppState> {
     Router::new()
+        .route("/contact-form/:tenant_id", post(contact_form_submit))
         .route("/webhook", post(webhook))
         .route("/send-email", post(send_email))
         .route("/", post(create).get(find_all))
@@ -40,6 +42,80 @@ struct ListQuery {
     tenant_id: Option<Uuid>,
     #[serde(rename = "workspaceId")]
     workspace_id: Option<Uuid>,
+}
+
+#[derive(Deserialize)]
+pub struct ContactFormDto {
+    pub name: Option<String>,
+    pub email: Option<String>,
+    pub message: Option<String>,
+}
+
+async fn contact_form_submit(
+    Path(tenant_id): Path<Uuid>,
+    State(state): State<AppState>,
+    Json(payload): Json<ContactFormDto>,
+) -> ApiResult<Json<Value>> {
+    let name = payload.name.unwrap_or_else(|| "Unknown".into());
+    let email = payload.email.unwrap_or_default();
+    let message = payload.message.unwrap_or_default();
+
+    let ai_result = MistralService::complete_json(
+        &state,
+        vec![
+            ChatMessage {
+                role: "system".into(),
+                content: "Classify inbound leads as hot, warm, or cold. Return JSON: {\"label\":\"hot|warm|cold\",\"suggestedReply\":\"short reply\"}".into(),
+            },
+            ChatMessage {
+                role: "user".into(),
+                content: format!("Name: {name}\nEmail: {email}\nMessage: {message}"),
+            },
+        ],
+        Some(MistralService::default_model(&state)),
+    )
+    .await;
+
+    let (label, ai_reply) = match ai_result {
+        Ok((data, _, _)) => {
+            let l = data.get("label").and_then(|v| v.as_str()).map(str::to_string);
+            let r = data.get("suggestedReply").and_then(|v| v.as_str()).map(str::to_string);
+            (l, r)
+        }
+        Err(e) => {
+            tracing::warn!("Mistral AI classification failed: {}", e);
+            (None, None)
+        }
+    };
+
+    let now = Utc::now().fixed_offset();
+
+    let lead = LeadActiveModel {
+        id: Set(Uuid::new_v4()),
+        tenant_id: Set(tenant_id),
+        workspace_id: Set(None),
+        user_id: Set(None),
+        name: Set(name),
+        email: Set(email),
+        source: Set("contact_form".into()),
+        message: Set(Some(message)),
+        classification: Set(label),
+        status: Set(Some("new".into())),
+        ai_reply: Set(ai_reply.clone()),
+        unsubscribed: Set(None),
+        unsubscribe_token: Set(None),
+        deleted_at: Set(None),
+        created_at: Set(now),
+        updated_at: Set(now),
+    }
+    .insert(&state.db)
+    .await?;
+
+    Ok(Json(json!({
+        "ok": true,
+        "leadId": lead.id,
+        "ai_reply": ai_reply,
+    })))
 }
 
 async fn webhook(

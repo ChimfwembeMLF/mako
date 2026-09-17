@@ -4,4 +4,4 @@ pub mod mistral;
 pub mod mistral_tts;
 pub mod pawapay;
 pub mod s3_storage;
-pub mod supabase_storage;
+

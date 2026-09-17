@@ -371,6 +371,7 @@ function BackofficeContent() {
                     <th className="pb-2 pr-4">Plan</th>
                     <th className="pb-2 pr-4">Members</th>
                     <th className="pb-2 pr-4">Content</th>
+                    <th className="pb-2 pr-4">Storage</th>
                     <th className="pb-2 pr-4">Widget</th>
                     <th className="pb-2 pr-4">Sessions</th>
                     <th className="pb-2">Joined</th>
@@ -388,6 +389,9 @@ function BackofficeContent() {
                       <td className="py-3 pr-4"><Badge variant="outline" className="capitalize">{t.plan}</Badge></td>
                       <td className="py-3 pr-4">{t.members}</td>
                       <td className="py-3 pr-4">{t.contentItems}</td>
+                      <td className="py-3 pr-4">
+                        {t.storageUsedBytes ? `${(t.storageUsedBytes / 1024 / 1024).toFixed(1)} MB` : '0 MB'}
+                      </td>
                       <td className="py-3 pr-4">
                         {t.widgetEnabled ? (
                           <CheckCircle2 className="h-4 w-4 text-emerald-500" />
@@ -602,7 +606,7 @@ function BackofficeContent() {
               <CardContent className="space-y-2">
                 <div className="flex justify-between text-sm"><span>Environment</span><Badge variant="outline">{env.nodeEnv}</Badge></div>
                 <EnvRow label="Mistral AI" ok={env.mistralConfigured} />
-                <EnvRow label="Supabase storage" ok={env.supabaseConfigured} />
+
                 <EnvRow label="Meta (Facebook/IG)" ok={env.metaConfigured} />
                 <EnvRow label="LinkedIn OAuth" ok={env.linkedInConfigured} />
                 <EnvRow label="PawaPay billing" ok={env.pawapayConfigured} />

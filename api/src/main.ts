@@ -226,14 +226,6 @@ async function bootstrap() {
 
   app.useStaticAssets(join(process.cwd(), 'public'));
 
-  if (
-    !process.env.SUPABASE_URL?.trim() ||
-    !process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()
-  ) {
-    console.warn(
-      'WARNING: SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for media uploads and publishing',
-    );
-  }
 
   const uploadsDir = join(process.cwd(), 'uploads');
   if (existsSync(uploadsDir)) {

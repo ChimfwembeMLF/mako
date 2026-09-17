@@ -23,6 +23,7 @@ import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity
 import { KnowledgeChunk } from '../chatbot/entities/knowledge-chunk.entity';
 import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
 import { IsNull, MoreThanOrEqual } from 'typeorm';
+import { MediaAssets } from '../content_items/entities/media_assets.entity';
 import { PlansService } from '../subscriptions/plans.service';
 import { UpdatePlansDto } from '../subscriptions/dto/update-plans.dto';
 import { RefundRequests } from '../payments/entities/refund_requests.entity';
@@ -71,6 +72,8 @@ export class BackofficeService {
     private readonly chatbotKeyRepo: Repository<ChatbotApiKey>,
     @InjectRepository(RefundRequests)
     private readonly refundRequestsRepo: Repository<RefundRequests>,
+    @InjectRepository(MediaAssets)
+    private readonly mediaAssetsRepo: Repository<MediaAssets>,
     private readonly plans: PlansService,
     private readonly paymentsService: PaymentsService,
   ) { }
@@ -302,9 +305,7 @@ export class BackofficeService {
         nodeEnv: process.env.NODE_ENV ?? 'development',
         apiPublicUrl: process.env.API_PUBLIC_URL ?? '',
         clientUrl: process.env.CLIENT_URL ?? process.env.FRONTEND_URL ?? '',
-        supabaseConfigured: Boolean(
-          process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY,
-        ),
+
         mistralConfigured: Boolean(process.env.MISTRAL_API_KEY),
         metaConfigured: Boolean(
           process.env.META_APP_ID && process.env.META_APP_SECRET,
@@ -370,6 +371,16 @@ export class BackofficeService {
       sessionCounts.map((r) => [r.tenantId, parseInt(r.count, 10)]),
     );
 
+    const storageCounts = await this.mediaAssetsRepo
+      .createQueryBuilder('m')
+      .select('m.tenant_id', 'tenantId')
+      .addSelect('SUM(CAST(m.fileSizeBytes AS BIGINT))', 'totalBytes')
+      .groupBy('m.tenant_id')
+      .getRawMany<{ tenantId: string; totalBytes: string }>();
+    const storageMap = new Map(
+      storageCounts.map((r) => [r.tenantId, parseInt(r.totalBytes, 10) || 0]),
+    );
+
     return tenants.map((t) => ({
       id: t.id,
       name: t.name,
@@ -383,6 +394,7 @@ export class BackofficeService {
       widgetEnabled: widgetMap.get(t.id) ?? false,
       ragEnabled: ragMap.get(t.id) ?? false,
       chatSessions: sessionsMap.get(t.id) ?? 0,
+      storageUsedBytes: storageMap.get(t.id) ?? 0,
       createdAt: t.created_at,
     }));
   }

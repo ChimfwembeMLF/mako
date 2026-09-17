@@ -164,23 +164,6 @@ impl S3Config {
     }
 }
 
-#[derive(Clone)]
-pub struct SupabaseConfig {
-    pub url: String,
-    pub service_role_key: String,
-    pub storage_bucket: String,
-}
-
-impl SupabaseConfig {
-    pub fn from_env() -> Self {
-        Self {
-            url: env::var("SUPABASE_URL").unwrap_or_default(),
-            service_role_key: env::var("SUPABASE_SERVICE_ROLE_KEY").unwrap_or_default(),
-            storage_bucket: env::var("SUPABASE_STORAGE_BUCKET")
-                .unwrap_or_else(|_| "media".to_string()),
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct PawaPayConfig {
@@ -222,7 +205,7 @@ pub struct AppConfig {
     pub mail: MailConfig,
     pub mistral: MistralConfig,
     pub s3: S3Config,
-    pub supabase: SupabaseConfig,
+
     pub pawapay: PawaPayConfig,
     pub queues_enabled: bool,
     pub redis_url: Option<String>,
@@ -274,7 +257,7 @@ impl AppConfig {
             mail: MailConfig::from_env(),
             mistral: MistralConfig::from_env(),
             s3: S3Config::from_env(),
-            supabase: SupabaseConfig::from_env(),
+
             pawapay: PawaPayConfig::from_env(),
             queues_enabled: env_flag("QUEUES_ENABLED"),
             redis_url: redis_url_from_env(),
