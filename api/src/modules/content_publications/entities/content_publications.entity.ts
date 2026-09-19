@@ -87,7 +87,7 @@ export class ContentPublications {
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenants;
 
-  @ManyToOne(() => ContentItems, { nullable: false })
+  @ManyToOne(() => ContentItems, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'content_id' })
   content: ContentItems;
 

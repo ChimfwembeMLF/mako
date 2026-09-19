@@ -66,7 +66,7 @@ export class MediaAssets {
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenants;
 
-  @ManyToOne(() => ContentItems, { nullable: true })
+  @ManyToOne(() => ContentItems, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'content_id' })
   content?: ContentItems;
 

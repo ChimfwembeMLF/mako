@@ -62,7 +62,7 @@ export class CommentReplies {
   @ManyToOne(() => Tenants, { nullable: false })
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenants;
-  @ManyToOne(() => ContentItems, { nullable: false })
+  @ManyToOne(() => ContentItems, { nullable: false, onDelete: 'CASCADE' })
   @JoinColumn({ name: 'content_id' })
   content: ContentItems;
   @ManyToOne(() => AutoReplyRules, { nullable: true })
