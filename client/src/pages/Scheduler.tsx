@@ -7,7 +7,6 @@ import {
   AlertCircle, RotateCcw, Clock, Eye, Youtube, MessageCircle, Users, User, Bot,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -152,79 +151,7 @@ function getPlatformBorderColor(p: string) {
   }
 }
 
-function CalendarPostChip({
-  post,
-  dragId,
-  onReschedule,
-  onDragStart,
-}: {
-  post: ScheduledPost;
-  dragId: string | null;
-  onReschedule: (post: ScheduledPost) => void;
-  onDragStart: (e: DragEvent, postId: string) => void;
-}) {
-  const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
-  const timeLabel = formatTimeDisplay(post.scheduled_time);
 
-  return (
-    <TooltipProvider>
-      <Tooltip delayDuration={200}>
-        <TooltipTrigger asChild>
-          <div
-            draggable
-            onDragStart={(e) => onDragStart(e, post.id)}
-            className={`flex items-center justify-between gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium border cursor-grab active:cursor-grabbing bg-card hover:shadow-sm transition-all ${
-              getPlatformBorderColor(platforms[0] ?? "")
-            } ${dragId === post.id ? "opacity-40 scale-95" : ""}`}
-          >
-            <Link
-              to={`/content/${post.id}`}
-              className="flex items-center gap-1 min-w-0 flex-1 cursor-pointer"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${statusDots[post.status] || "bg-muted-foreground"}`} />
-              {platforms.map((p) => {
-                const Icon = channelIcons[p] || CalendarClock;
-                return <Icon key={p} className="h-2.5 w-2.5 shrink-0 text-muted-foreground" />;
-              })}
-              <span className="truncate font-semibold text-foreground/90">
-                {timeLabel || post.title?.replace(/<[^>]*>/g, "").slice(0, 12) || "Untitled"}
-              </span>
-            </Link>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onReschedule(post);
-              }}
-              className="shrink-0 rounded p-0.5 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-              title="Set date & time"
-            >
-              <Clock className="h-2.5 w-2.5" />
-            </button>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent side="top" align="start" className="w-72 p-3 space-y-2 text-xs">
-          <div className="flex items-center justify-between border-b pb-1.5 mb-1.5">
-            <span className="font-semibold text-primary truncate max-w-[160px]">
-              {post.title || "Draft Post"}
-            </span>
-            <Badge variant="outline" className={`text-[9px] capitalize font-medium ${statusColors[post.status] || ""}`}>
-              {post.status}
-            </Badge>
-          </div>
-          <p className="line-clamp-3 leading-relaxed text-muted-foreground italic">
-            "{post.content ? post.content.replace(/<[^>]*>/g, "").slice(0, 150) : "No content"}"
-          </p>
-          <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-1.5 border-t mt-1.5">
-            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {timeLabel || "All day"}</span>
-            <span className="font-semibold uppercase text-[9px] tracking-wider">{platforms.join(", ")}</span>
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-}
 
 function PostMediaPreview({ post }: { post: ScheduledPost }) {
   if (!post.media_url) return null;
@@ -1001,37 +928,29 @@ const Scheduler = () => {
             }
           }
           const platKeys = Object.keys(platformPostsMap);
+          if (platKeys.length === 0) return null;
+
           return (
-            <>
+            <div className="space-y-1">
               {platKeys.slice(0, mini ? 2 : 3).map((platform) => {
                 const Icon = channelIcons[platform] || CalendarClock;
                 const platformPosts = platformPostsMap[platform] || [];
                 const statusDot = getPlatformStatusDot(platformPosts);
                 return (
-                  <Popover key={platform}>
-                    <PopoverTrigger asChild>
-                      <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold cursor-pointer transition-all hover:scale-[1.02] ${getBrandBg(platform)} text-white`} onClick={(e) => e.stopPropagation()}>
-                        <Icon className="h-2.5 w-2.5 shrink-0" />
-                        {!mini && <span className="truncate capitalize hidden sm:block">{platform}</span>}
-                        <span className="ml-auto font-bold">{platformPosts.length}</span>
-                        <span className={`h-1.5 w-1.5 rounded-full ${statusDot} hidden sm:inline shrink-0`} />
-                      </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-64 p-2 space-y-1 bg-white dark:bg-background border border-gray-200 dark:border-border shadow-xl rounded-xl" align="start">
-                      <p className="text-xs font-bold mb-2 capitalize text-gray-700 dark:text-foreground">{platform} Posts ({platformPosts.length})</p>
-                      <div className="space-y-1">
-                        {platformPosts.map((post) => (
-                          <CalendarPostChip key={post.id} post={post} dragId={dragId} onReschedule={openReschedule} onDragStart={handleDragStart} />
-                        ))}
-                      </div>
-                    </PopoverContent>
-                  </Popover>
+                  <div key={platform} className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-all shadow-sm border border-black/5 dark:border-white/5 hover:scale-[1.02] ${getBrandBg(platform)} text-white`}>
+                    <Icon className="h-3 w-3 shrink-0 opacity-90" />
+                    {!mini && <span className="truncate capitalize tracking-wide hidden sm:block">{platform}</span>}
+                    <div className="ml-auto flex items-center gap-1.5 bg-black/10 dark:bg-white/20 px-1.5 rounded-full">
+                      <span className="font-bold">{platformPosts.length}</span>
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot} shrink-0 hidden sm:inline`} />
+                    </div>
+                  </div>
                 );
               })}
               {platKeys.length > (mini ? 2 : 3) && (
-                <span className="text-[10px] text-gray-400 dark:text-muted-foreground px-2">+{platKeys.length - (mini ? 2 : 3)} more</span>
+                <span className="text-[10px] text-gray-400 dark:text-muted-foreground px-2 font-medium">+{platKeys.length - (mini ? 2 : 3)} more</span>
               )}
-            </>
+            </div>
           );
         };
 

@@ -314,14 +314,14 @@ export default function CampaignsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
                 <Label>Number of posts</Label>
-                <Select value={postCount} onValueChange={setPostCount}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {[3, 5, 7, 10, 14].map((n) => (
-                      <SelectItem key={n} value={String(n)}>{n} posts</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Input 
+                  type="number" 
+                  min="1" 
+                  max="50" 
+                  value={postCount} 
+                  onChange={(e) => setPostCount(e.target.value)} 
+                  placeholder="e.g. 7" 
+                />
               </div>
               <div className="space-y-2">
                 <Label>Start date</Label>
