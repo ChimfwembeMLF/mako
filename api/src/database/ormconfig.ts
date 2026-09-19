@@ -1,6 +1,6 @@
 import { SnakeNamingStrategy } from '../snake-naming.strategy';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { UserSubscriber } from 'src/entity-subscribers';
+import { UserSubscriber } from '../entity-subscribers';
 import { ConfigService } from '@nestjs/config';
 import { resolveDatabaseName, resolveDbSsl } from './db-env.util';
 

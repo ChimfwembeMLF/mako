@@ -11,6 +11,7 @@ import { FxService } from './fx.service';
 import { PaymentsController } from './payments.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { RefundRequests } from './entities/refund_requests.entity';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { RefundRequests } from './entities/refund_requests.entity';
     SubscriptionsModule,
     TenantMembersModule,
     NotificationsModule,
+    SystemSettingsModule,
   ],
   providers: [PaymentsService, SubscriptionRenewalService, FxService],
   controllers: [PaymentsController],

@@ -19,6 +19,7 @@ import { EmbedAdsController } from './embed-ads.controller';
 import { SocialAccountsModule } from '../social_accounts/social_accounts.module';
 import { AiModule } from '../ai/ai.module';
 import { TenantMembersModule } from '../tenant_members/tenant_members.module';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { TenantMembersModule } from '../tenant_members/tenant_members.module';
     SocialAccountsModule,
     AiModule,
     TenantMembersModule,
+    SystemSettingsModule,
   ],
   controllers: [AdsController, EmbedAdsController],
   providers: [
