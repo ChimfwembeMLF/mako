@@ -42,6 +42,7 @@ import {
   buildPaymentFxPayload,
   resolveAdsCreditZmw,
 } from './payment-fx.util';
+import { PlatformIntegrationsService } from '../system_settings/services/platform-integrations.service';
 
 export interface ClientPaymentRecord {
   id: string;
@@ -74,6 +75,7 @@ export class PaymentsService {
     private readonly tenantMembers: TenantMembersService,
     private readonly config: ConfigService,
     private readonly fx: FxService,
+    private readonly platformIntegrations: PlatformIntegrationsService,
     @Optional() private readonly notifications?: NotificationsService,
   ) {}
 
@@ -143,7 +145,7 @@ export class PaymentsService {
 
     const isRenewal = params.isRenewal ?? false;
 
-    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    const token = await this.platformIntegrations.getIntegrationWithEnvFallback('PAWAPAY_API_TOKEN');
     if (token) {
       try {
         const pawapayResult = await postPawaPayDeposit(this.config, {
@@ -248,7 +250,7 @@ export class PaymentsService {
       }),
     );
 
-    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    const token = await this.platformIntegrations.getIntegrationWithEnvFallback('PAWAPAY_API_TOKEN');
     if (token) {
       try {
         const pawapayResult = await postPawaPayDeposit(this.config, {
@@ -410,7 +412,7 @@ export class PaymentsService {
       return { status: 'COMPLETED', activated: true };
     }
 
-    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    const token = await this.platformIntegrations.getIntegrationWithEnvFallback('PAWAPAY_API_TOKEN');
     if (!token) {
       this.logger.warn('PAWAPAY_API_TOKEN not configured, skipping status check');
       return { status: deposit.status, activated: false };
@@ -588,7 +590,7 @@ export class PaymentsService {
       return refundReq;
     }
 
-    const token = this.config.get<string>('PAWAPAY_API_TOKEN');
+    const token = await this.platformIntegrations.getIntegrationWithEnvFallback('PAWAPAY_API_TOKEN');
     if (!token) throw new BadRequestException('PAWAPAY_API_TOKEN is not configured');
     
     const pawapayRefundId = randomUUID();

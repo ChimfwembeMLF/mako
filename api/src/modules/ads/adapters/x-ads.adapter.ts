@@ -17,8 +17,8 @@ export class XAdsAdapter implements AdsProviderAdapter {
     tenantId: string,
     userId: string,
   ): Promise<{ accountId: string; accessToken: string }> {
-    const accountId = this.adsAccount.optionalConfig('X_ADS_ACCOUNT_ID');
-    const envToken = this.adsAccount.optionalConfig('X_ADS_ACCESS_TOKEN');
+    const accountId = await this.adsAccount.optionalConfig('X_ADS_ACCOUNT_ID');
+    const envToken = await this.adsAccount.optionalConfig('X_ADS_ACCESS_TOKEN');
     if (accountId && envToken) {
       return { accountId, accessToken: envToken };
     }
@@ -38,7 +38,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
       accountId:
         accountId ??
         account.externalId ??
-        this.adsAccount.requireConfig('X_ADS_ACCOUNT_ID'),
+        (await this.adsAccount.requireConfig('X_ADS_ACCOUNT_ID')),
       accessToken: envToken ?? account.accessToken,
     };
   }
@@ -56,7 +56,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
       `${this.apiBase}/accounts/${accountId}/campaigns`,
       {
         name: payload.campaign.name,
-        funding_instrument_id: this.adsAccount.optionalConfig(
+        funding_instrument_id: await this.adsAccount.optionalConfig(
           'X_ADS_FUNDING_INSTRUMENT_ID',
         ),
         daily_budget_amount_local_micro: Math.round(

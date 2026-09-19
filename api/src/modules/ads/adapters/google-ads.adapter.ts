@@ -16,32 +16,32 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
     private readonly adsAccount: AdsAccountService,
   ) {}
 
-  private client(): GoogleAdsApi {
+  private async client(): Promise<GoogleAdsApi> {
     return new GoogleAdsApi({
-      client_id: this.adsAccount.requireConfig(
+      client_id: await this.adsAccount.requireConfig(
         'GOOGLE_CLIENT_ID',
         'GOOGLE_CLIENT_ID is required for Google Ads',
       ),
-      client_secret: this.adsAccount.requireConfig(
+      client_secret: await this.adsAccount.requireConfig(
         'GOOGLE_CLIENT_SECRET',
         'GOOGLE_CLIENT_SECRET is required for Google Ads',
       ),
-      developer_token: this.adsAccount.requireConfig(
+      developer_token: await this.adsAccount.requireConfig(
         'GOOGLE_ADS_DEVELOPER_TOKEN',
         'GOOGLE_ADS_DEVELOPER_TOKEN is required for Google Ads',
       ),
     });
   }
 
-  private customer(refreshToken: string) {
-    const customerId = this.adsAccount
+  private async customer(refreshToken: string) {
+    const customerId = (await this.adsAccount
       .requireConfig(
         'GOOGLE_ADS_CUSTOMER_ID',
         'GOOGLE_ADS_CUSTOMER_ID is required for Google Ads',
-      )
+      ))
       .replace(/-/g, '');
 
-    return this.client().Customer({
+    return (await this.client()).Customer({
       customer_id: customerId,
       refresh_token: refreshToken,
     });
@@ -62,7 +62,7 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
       );
     }
 
-    const customer = this.customer(account.refreshToken);
+    const customer = await this.customer(account.refreshToken);
     const amountMicros = Math.max(
       1_000_000,
       Math.round(Number(payload.campaign.dailyBudget) * 1_000_000),
@@ -113,9 +113,9 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
     );
     if (!account.refreshToken) return;
 
-    const customer = this.customer(account.refreshToken);
-    const customerId = this.adsAccount
-      .requireConfig('GOOGLE_ADS_CUSTOMER_ID')
+    const customer = await this.customer(account.refreshToken);
+    const customerId = (await this.adsAccount
+      .requireConfig('GOOGLE_ADS_CUSTOMER_ID'))
       .replace(/-/g, '');
     await customer.campaigns.update([
       {
@@ -139,7 +139,7 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
     );
     if (!account.refreshToken) return { spend: 0, impressions: 0, clicks: 0 };
 
-    const customer = this.customer(account.refreshToken);
+    const customer = await this.customer(account.refreshToken);
     const rows = await customer.query(`
       SELECT
         metrics.cost_micros,

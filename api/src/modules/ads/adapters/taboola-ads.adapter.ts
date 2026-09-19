@@ -13,11 +13,11 @@ export class TaboolaAdsAdapter implements AdsProviderAdapter {
   constructor(private readonly adsAccount: AdsAccountService) {}
 
   private async getAccessToken(): Promise<string> {
-    const clientId = this.adsAccount.requireConfig(
+    const clientId = await this.adsAccount.requireConfig(
       'TABOOLA_CLIENT_ID',
       'TABOOLA_CLIENT_ID is required for Taboola Ads',
     );
-    const clientSecret = this.adsAccount.requireConfig(
+    const clientSecret = await this.adsAccount.requireConfig(
       'TABOOLA_CLIENT_SECRET',
       'TABOOLA_CLIENT_SECRET is required for Taboola Ads',
     );
@@ -38,8 +38,8 @@ export class TaboolaAdsAdapter implements AdsProviderAdapter {
     return data.access_token;
   }
 
-  private accountId(): string {
-    return this.adsAccount.requireConfig(
+  private async accountId(): Promise<string> {
+    return await this.adsAccount.requireConfig(
       'TABOOLA_ACCOUNT_ID',
       'TABOOLA_ACCOUNT_ID is required for Taboola Ads',
     );
@@ -50,7 +50,7 @@ export class TaboolaAdsAdapter implements AdsProviderAdapter {
     payload: AdsPublishPayload,
   ): Promise<string> {
     const token = await this.getAccessToken();
-    const accountId = this.accountId();
+    const accountId = await this.accountId();
 
     const { data } = await axios.post<{ id?: string }>(
       `https://backstage.taboola.com/backstage/api/1.0/${accountId}/campaigns`,
@@ -86,7 +86,7 @@ export class TaboolaAdsAdapter implements AdsProviderAdapter {
     platformCampaignId: string,
   ): Promise<void> {
     const token = await this.getAccessToken();
-    const accountId = this.accountId();
+    const accountId = await this.accountId();
 
     await axios.post(
       `https://backstage.taboola.com/backstage/api/1.0/${accountId}/campaigns/${platformCampaignId}`,
@@ -105,7 +105,7 @@ export class TaboolaAdsAdapter implements AdsProviderAdapter {
     platformCampaignId: string,
   ): Promise<AdMetrics> {
     const token = await this.getAccessToken();
-    const accountId = this.accountId();
+    const accountId = await this.accountId();
 
     const { data } = await axios.get(
       `https://backstage.taboola.com/backstage/api/1.0/${accountId}/reports/campaign-summary/dimensions/campaign_breakdown`,

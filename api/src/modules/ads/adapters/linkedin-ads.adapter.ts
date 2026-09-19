@@ -12,15 +12,15 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
 
   constructor(private readonly adsAccount: AdsAccountService) {}
 
-  private sponsoredAccountUrn(account: {
+  private async sponsoredAccountUrn(account: {
     externalId?: string | null;
     metadata?: Record<string, unknown>;
-  }): string {
+  }): Promise<string> {
     const fromMeta = account.metadata?.sponsored_account_id;
     const id =
       (typeof fromMeta === 'string' && fromMeta.trim()) ||
       account.externalId?.trim() ||
-      this.adsAccount.optionalConfig('LINKEDIN_AD_ACCOUNT_ID');
+      (await this.adsAccount.optionalConfig('LINKEDIN_AD_ACCOUNT_ID'));
     if (!id) {
       throw new Error(
         'LinkedIn ad account id missing — reconnect LinkedIn or set LINKEDIN_AD_ACCOUNT_ID',
@@ -42,7 +42,7 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
     const { data, headers } = await axios.post<{ id?: string }>(
       'https://api.linkedin.com/rest/adCampaigns',
       {
-        account: this.sponsoredAccountUrn(account),
+        account: await this.sponsoredAccountUrn(account),
         name: payload.campaign.name,
         status: 'PAUSED',
         type: 'TEXT_AD',

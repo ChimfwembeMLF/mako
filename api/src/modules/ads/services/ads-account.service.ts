@@ -10,6 +10,8 @@ import {
   fetchMetaAdAccountId,
 } from '../utils/meta-graph.util';
 
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
+
 const PLATFORM_TO_SOCIAL: Partial<Record<AdPlatform, string>> = {
   [AdPlatform.META]: 'facebook',
   [AdPlatform.GOOGLE]: 'google',
@@ -25,14 +27,15 @@ export class AdsAccountService {
     private readonly repo: Repository<SocialAccounts>,
     private readonly socialAccounts: SocialAccountsService,
     private readonly config: ConfigService,
+    private readonly platformIntegrations: PlatformIntegrationsService,
   ) {}
 
   socialPlatform(platform: AdPlatform): string | null {
     return PLATFORM_TO_SOCIAL[platform] ?? null;
   }
 
-  requireConfig(key: string, hint?: string): string {
-    const value = this.config.get<string>(key)?.trim();
+  async requireConfig(key: string, hint?: string): Promise<string> {
+    const value = (await this.platformIntegrations.getIntegrationWithEnvFallback(key))?.trim();
     if (!value) {
       throw new BadRequestException(
         hint ?? `${key} is not configured on the server`,
@@ -41,8 +44,8 @@ export class AdsAccountService {
     return value;
   }
 
-  optionalConfig(key: string): string | undefined {
-    return this.config.get<string>(key)?.trim() || undefined;
+  async optionalConfig(key: string): Promise<string | undefined> {
+    return (await this.platformIntegrations.getIntegrationWithEnvFallback(key))?.trim() || undefined;
   }
 
   async getConnectedAccount(
@@ -93,7 +96,7 @@ export class AdsAccountService {
   }
 
   async resolveMetaAdAccountId(accessToken: string): Promise<string> {
-    const configured = this.optionalConfig('META_AD_ACCOUNT_ID');
+    const configured = await this.optionalConfig('META_AD_ACCOUNT_ID');
     if (configured) {
       return configured.startsWith('act_') ? configured : `act_${configured}`;
     }

@@ -13,15 +13,15 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
 
   constructor(private readonly adsAccount: AdsAccountService) {}
 
-  private accessToken(): string {
-    return this.adsAccount.requireConfig(
+  private async accessToken(): Promise<string> {
+    return await this.adsAccount.requireConfig(
       'PINTEREST_ADS_ACCESS_TOKEN',
       'PINTEREST_ADS_ACCESS_TOKEN is required for Pinterest Ads',
     );
   }
 
-  private adAccountId(): string {
-    return this.adsAccount.requireConfig(
+  private async adAccountId(): Promise<string> {
+    return await this.adsAccount.requireConfig(
       'PINTEREST_AD_ACCOUNT_ID',
       'PINTEREST_AD_ACCOUNT_ID is required for Pinterest Ads',
     );
@@ -31,8 +31,10 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
     tenantId: string,
     payload: AdsPublishPayload,
   ): Promise<string> {
+    const token = await this.accessToken();
+    const accountId = await this.adAccountId();
     const { data } = await axios.post<{ id?: string }>(
-      `${this.apiBase}/ad_accounts/${this.adAccountId()}/campaigns`,
+      `${this.apiBase}/ad_accounts/${accountId}/campaigns`,
       {
         name: payload.campaign.name,
         status: 'PAUSED',
@@ -43,7 +45,7 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
       },
       {
         headers: {
-          Authorization: `Bearer ${this.accessToken()}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       },
@@ -63,14 +65,14 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
     _tenantId: string,
     platformCampaignId: string,
   ): Promise<void> {
+    const token = await this.accessToken();
+    const accountId = await this.adAccountId();
     await axios.patch(
-      `${
-        this.apiBase
-      }/ad_accounts/${this.adAccountId()}/campaigns/${platformCampaignId}`,
+      `${this.apiBase}/ad_accounts/${accountId}/campaigns/${platformCampaignId}`,
       { status: 'PAUSED' },
       {
         headers: {
-          Authorization: `Bearer ${this.accessToken()}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
       },
@@ -81,12 +83,14 @@ export class PinterestAdsAdapter implements AdsProviderAdapter {
     _tenantId: string,
     platformCampaignId: string,
   ): Promise<AdMetrics> {
+    const accountId = await this.adAccountId();
+    const token = await this.accessToken();
     const { data } = await axios.get(
       `${
         this.apiBase
-      }/ad_accounts/${this.adAccountId()}/campaigns/${platformCampaignId}/analytics`,
+      }/ad_accounts/${accountId}/campaigns/${platformCampaignId}/analytics`,
       {
-        headers: { Authorization: `Bearer ${this.accessToken()}` },
+        headers: { Authorization: `Bearer ${token}` },
         params: {
           columns: 'SPEND_IN_MICRO_DOLLAR,IMPRESSION,CLICKTHROUGH',
           granularity: 'TOTAL',

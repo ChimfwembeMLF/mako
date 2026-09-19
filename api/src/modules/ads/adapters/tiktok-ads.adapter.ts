@@ -13,12 +13,12 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
 
   constructor(private readonly adsAccount: AdsAccountService) {}
 
-  private advertiserId(account: {
+  private async advertiserId(account: {
     metadata?: Record<string, unknown>;
-  }): string {
+  }): Promise<string> {
     const fromMeta = account.metadata?.advertiser_id;
     if (typeof fromMeta === 'string' && fromMeta.trim()) return fromMeta.trim();
-    return this.adsAccount.requireConfig(
+    return await this.adsAccount.requireConfig(
       'TIKTOK_ADVERTISER_ID',
       'TIKTOK_ADVERTISER_ID is required for TikTok Ads',
     );
@@ -33,7 +33,7 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
       payload.userId,
       AdPlatform.TIKTOK,
     );
-    const advertiserId = this.advertiserId(account);
+    const advertiserId = await this.advertiserId(account);
 
     const { data } = await axios.post(
       `${this.apiBase}/campaign/create/`,
@@ -81,7 +81,7 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
     await axios.post(
       `${this.apiBase}/campaign/update/`,
       {
-        advertiser_id: this.advertiserId(account),
+        advertiser_id: await this.advertiserId(account),
         campaign_id: platformCampaignId,
         operation_status: 'DISABLE',
       },
@@ -110,7 +110,7 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
     const { data } = await axios.get(`${this.apiBase}/report/integrated/get/`, {
       headers: { 'Access-Token': account.accessToken! },
       params: {
-        advertiser_id: this.advertiserId(account),
+        advertiser_id: await this.advertiserId(account),
         report_type: 'BASIC',
         data_level: 'AUCTION_CAMPAIGN',
         dimensions: JSON.stringify(['campaign_id']),
