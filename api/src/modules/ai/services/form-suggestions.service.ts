@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MistralChatService } from './mistral-chat.service';
+import { AiProviderRouter } from './ai-provider-router.service';
 import { PromptBuilderService } from './prompt-builder.service';
 import { AiUsageTrackerService } from './ai-usage-tracker.service';
 import { BrandProfiles } from '../../brand_profiles/entities/brand_profiles.entity';
@@ -191,7 +191,7 @@ const FALLBACK_BY_FORM: Partial<
 @Injectable()
 export class FormSuggestionsService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     @InjectRepository(BrandProfiles)
@@ -239,7 +239,7 @@ export class FormSuggestionsService {
       `${Date.now().toString(36)}-${params.fieldKey}`;
 
     try {
-      const { data, tokensUsed } = await this.mistral.completeJson<{ text?: string }>(
+      const { data, tokensUsed } = await this.aiRouter.completeJson<{ text?: string }>(
         [
           {
             role: 'system',
@@ -269,7 +269,9 @@ Rules:
             ].join('\n\n'),
           },
         ],
-        { model: this.mistral.defaultModel, temperature: CREATIVE_TEMPERATURE },
+        { model: this.aiRouter.defaultModel, temperature: CREATIVE_TEMPERATURE,
+            tenantId: params.tenantId
+        },
       );
 
       await this.usage.record({
@@ -340,7 +342,7 @@ Rules:
       `${Date.now().toString(36)}-${params.form}`;
 
     try {
-      const { data, tokensUsed } = await this.mistral.completeJson<{
+      const { data, tokensUsed } = await this.aiRouter.completeJson<{
         suggestions?: Record<string, string[]>;
       }>(
         [
@@ -380,7 +382,9 @@ Rules:
             ].join('\n\n'),
           },
         ],
-        { model: this.mistral.defaultModel, temperature: CREATIVE_TEMPERATURE },
+        { model: this.aiRouter.defaultModel, temperature: CREATIVE_TEMPERATURE,
+            tenantId: params.tenantId
+        },
       );
 
       await this.usage.record({

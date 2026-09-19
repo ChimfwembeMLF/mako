@@ -15,6 +15,8 @@ pub struct Model {
     pub owner_id: Uuid,
     #[sea_orm(column_type = "JsonBinary")]
     pub theme_config: Option<Json>,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub preferred_ai_provider: Option<String>,
     #[sea_orm(column_type = "Decimal(Some((10, 2)))")]
     pub ads_balance: Decimal,
     pub created_at: DateTimeWithTimeZone,

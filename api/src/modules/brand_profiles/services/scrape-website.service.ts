@@ -2,7 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import {
   brandExtractionSystemPrompt,
@@ -26,7 +26,7 @@ export class ScrapeWebsiteService {
 
   constructor(
     private readonly config: ConfigService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly usage: AiUsageTrackerService,
   ) {}
 
@@ -60,7 +60,7 @@ export class ScrapeWebsiteService {
       throw new BadRequestException('Could not extract text from the website');
     }
 
-    const { data, tokensUsed } = await this.mistral.completeJson<
+    const { data, tokensUsed } = await this.aiRouter.completeJson<
       Record<string, unknown>
     >(
       [
@@ -70,7 +70,9 @@ export class ScrapeWebsiteService {
           content: `Website URL: ${normalized}\n\nExtract a complete brand profile from this content. Fill every JSON key.\n\nPage content:\n${combined}`,
         },
       ],
-      { model: this.mistral.premiumModel },
+      { model: this.aiRouter.premiumModel,
+          tenantId: params.tenantId
+    },
     );
 
     await this.usage.record({

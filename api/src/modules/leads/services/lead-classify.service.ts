@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { SubscriptionsService } from '../../subscriptions/subscriptions.service';
 
 @Injectable()
 export class LeadClassifyService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly usage: AiUsageTrackerService,
     private readonly subscriptions: SubscriptionsService,
   ) {}
@@ -20,7 +20,7 @@ export class LeadClassifyService {
   }) {
     await this.subscriptions.assertCanUseAi(params.tenantId);
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{
+    const { data, tokensUsed } = await this.aiRouter.completeJson<{
       label?: string;
       suggestedReply?: string;
     }>(
@@ -35,7 +35,9 @@ export class LeadClassifyService {
           content: `Name: ${params.name}\nEmail: ${params.email}\nMessage: ${params.message}`,
         },
       ],
-      { model: this.mistral.defaultModel },
+      { model: this.aiRouter.defaultModel,
+          tenantId: params.tenantId
+    },
     );
 
     await this.usage.record({

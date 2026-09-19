@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { UserEntity } from '../../user/user.entity';
+import { IntegrationProvider } from './tenant-integration-config.entity';
 
 @Entity({ name: 'tenants' })
 export class Tenants {
@@ -28,6 +29,13 @@ export class Tenants {
 
   @Column({ type: 'jsonb', nullable: true })
   themeConfig?: Record<string, unknown>;
+
+  @Column({
+    type: 'enum',
+    enum: IntegrationProvider,
+    nullable: true,
+  })
+  preferredAiProvider?: IntegrationProvider;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   adsBalance: number;

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { ContentItems } from '../entities/content_items.entity';
@@ -17,7 +17,7 @@ const REPURPOSE_PLATFORMS = [
 @Injectable()
 export class RepurposeContentService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     @InjectRepository(ContentItems)
@@ -52,7 +52,7 @@ export class RepurposeContentService {
     let totalTokens = 0;
 
     for (const platform of targets) {
-      const { data, tokensUsed } = await this.mistral.completeJson<{
+      const { data, tokensUsed } = await this.aiRouter.completeJson<{
         title?: string;
         content?: string;
       }>([
@@ -64,7 +64,7 @@ export class RepurposeContentService {
           role: 'user',
           content: `Original title: ${source.title}\nOriginal content:\n${source.content}\n\nAdapt for ${platform}.`,
         },
-      ]);
+      ], { tenantId: source.tenantId });
 
       totalTokens += tokensUsed;
       await this.contentRepo.save(

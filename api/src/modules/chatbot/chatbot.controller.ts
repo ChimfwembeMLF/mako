@@ -15,7 +15,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import type { Response } from 'express';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { MistralTtsService } from '../ai/services/mistral-tts.service';
 import { ChatbotTtsVoiceService } from './services/chatbot-tts-voice.service';
 import { stripMarkdownForSpeech } from './utils/strip-markdown.util';
@@ -48,7 +48,7 @@ export class ChatbotController {
     private readonly sessions: ChatSessionService,
     private readonly apiKeys: ChatApiKeyService,
     private readonly access: ChatbotAccessService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly mistralTts: MistralTtsService,
     private readonly ttsVoices: ChatbotTtsVoiceService,
   ) {}
@@ -380,7 +380,7 @@ export class ChatbotController {
       messageId,
     );
     const plainText = stripMarkdownForSpeech(message.content);
-    const { audioData } = await this.mistral.speak(plainText, {
+    const { audioData } = await this.aiRouter.speak(plainText, {
       voiceId: config.mistralVoiceId,
     });
 

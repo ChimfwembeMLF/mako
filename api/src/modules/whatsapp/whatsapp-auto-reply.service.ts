@@ -4,7 +4,7 @@ import { IsNull, Repository } from 'typeorm';
 import { AutoReplyRulesService } from '../auto_reply_rules/auto_reply_rules.service';
 import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { WhatsappMessagingService } from './whatsapp-messaging.service';
 import { WhatsappAccountAuthService } from './whatsapp-account-auth.service';
@@ -19,7 +19,7 @@ export class WhatsappAutoReplyService {
     private readonly rules: AutoReplyRulesService,
     private readonly messaging: WhatsappMessagingService,
     private readonly waAuth: WhatsappAccountAuthService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     @InjectRepository(BrandProfiles)
     private readonly brandRepo: Repository<BrandProfiles>,
@@ -105,7 +105,7 @@ export class WhatsappAutoReplyService {
             })
         : null;
       const brandCtx = this.prompts.brandFromEntity(brand);
-      const { data } = await this.mistral.completeJson<{ content?: string }>(
+      const { data } = await this.aiRouter.completeJson<{ content?: string }>(
         [
           { role: 'system', content: this.prompts.replySystem(brandCtx) },
           {
@@ -113,7 +113,9 @@ export class WhatsappAutoReplyService {
             content: `Customer WhatsApp message:\n${inboundText}\n\nWrite a helpful reply.`,
           },
         ],
-        { model: this.mistral.defaultModel },
+        { model: this.aiRouter.defaultModel,
+            tenantId: tenantId
+        },
       );
       return data.content?.trim() ?? '';
     }

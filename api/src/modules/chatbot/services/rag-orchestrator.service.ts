@@ -2,9 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
-  MistralChatService,
+  AiProviderRouter,
   ChatMessage as LlmMessage,
-} from '../../ai/services/mistral-chat.service';
+} from '../../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { BrandProfilesService } from '../../brand_profiles/brand_profiles.service';
@@ -32,7 +32,7 @@ export class RagOrchestratorService {
   private readonly logger = new Logger(RagOrchestratorService.name);
 
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     private readonly brandProfiles: BrandProfilesService,
@@ -83,7 +83,7 @@ export class RagOrchestratorService {
       GREETING_PATTERN.test(params.userMessage.trim());
 
     if (!skipRetrieval) {
-      const queryEmbedding = await this.mistral.embed(params.userMessage);
+      const queryEmbedding = await this.aiRouter.embed(params.userMessage);
       const chunks = await this.vectorStore.search({
         tenantId: params.tenantId,
         embedding: queryEmbedding,
@@ -118,9 +118,10 @@ export class RagOrchestratorService {
     }
     messages.push({ role: 'user', content: params.userMessage });
 
-    const result = await this.mistral.complete(messages, {
-      model: params.config.model || this.mistral.defaultModel,
+    const result = await this.aiRouter.complete(messages, {
+      model: params.config.model || this.aiRouter.defaultModel,
       maxTokens: 2048,
+        tenantId: params.tenantId
     });
 
     await this.usage.record({

@@ -5,7 +5,7 @@ import { AutoReplyRules } from '../auto_reply_rules/entities/auto_reply_rules.en
 import { AutoReplyRulesService } from '../auto_reply_rules/auto_reply_rules.service';
 import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { UserService } from '../user/user.service';
 import { GmailClientService } from './gmail-client.service';
@@ -20,7 +20,7 @@ export class GmailAutoReplyService {
     private readonly rules: AutoReplyRulesService,
     private readonly gmailClient: GmailClientService,
     private readonly userService: UserService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     @InjectRepository(BrandProfiles)
     private readonly brandRepo: Repository<BrandProfiles>,
@@ -176,7 +176,7 @@ export class GmailAutoReplyService {
             }))
         : null;
       const brandCtx = this.prompts.brandFromEntity(brand);
-      const { data } = await this.mistral.completeJson<{ content?: string }>(
+      const { data } = await this.aiRouter.completeJson<{ content?: string }>(
         [
           { role: 'system', content: this.prompts.emailReplySystem(brandCtx) },
           {
@@ -188,7 +188,9 @@ export class GmailAutoReplyService {
             }),
           },
         ],
-        { model: this.mistral.defaultModel },
+        { model: this.aiRouter.defaultModel,
+            tenantId: tenantId
+        },
       );
       return data.content?.trim() ?? '';
     }

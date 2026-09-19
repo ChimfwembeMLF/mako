@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { ContentItemsService } from '../content_items/content_items.service';
 import { ContentItems } from '../content_items/entities/content_items.entity';
 import { AuditLogsService } from '../audit_logs/audit_logs.service';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../ai/services/ai-usage-tracker.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { Leads } from '../leads/entities/leads.entity';
@@ -92,7 +92,7 @@ export class SearchService {
   constructor(
     private readonly contentItems: ContentItemsService,
     private readonly auditLogs: AuditLogsService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly usage: AiUsageTrackerService,
     private readonly prompts: PromptBuilderService,
     @InjectRepository(Leads)
@@ -254,7 +254,7 @@ export class SearchService {
       .filter(Boolean)
       .join('\n\n');
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{
+    const { data, tokensUsed } = await this.aiRouter.completeJson<{
       answer: string;
       links?: Array<{ title: string; url: string }>;
     }>(
@@ -272,7 +272,9 @@ Use relative paths starting with /. Include 0–4 links when helpful.`,
           content: `User question: ${term}\n\nContext:\n${contextBlock}`,
         },
       ],
-      { model: this.mistral.defaultModel },
+      { model: this.aiRouter.defaultModel,
+          tenantId: tenantId
+    },
     );
 
     await this.usage.record({

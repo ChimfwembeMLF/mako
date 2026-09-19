@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { MistralChatService } from './services/mistral-chat.service';
+import { AiProviderRouter } from './services/ai-provider-router.service';
 import { FormSuggestionsService } from './services/form-suggestions.service';
 import { FormSuggestionsDto } from './dto/form-suggestions.dto';
 import { EnhanceFieldDto } from './dto/enhance-field.dto';
@@ -14,7 +14,7 @@ interface JwtUser {
 @Controller('api/v1/ai')
 export class AiController {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly formSuggestions: FormSuggestionsService,
   ) {}
 
@@ -22,7 +22,7 @@ export class AiController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async health() {
-    const result = await this.mistral.healthCheck();
+    const result = await this.aiRouter.healthCheck();
     return { status: result.ok ? 'ok' : 'degraded', model: result.model };
   }
 

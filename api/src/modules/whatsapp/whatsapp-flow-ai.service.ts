@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { WhatsappMenuItem } from './whatsapp-menu.types';
 
@@ -12,7 +12,7 @@ export class WhatsappFlowAiService {
   private readonly logger = new Logger(WhatsappFlowAiService.name);
 
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     @InjectRepository(BrandProfiles)
     private readonly brandRepo: Repository<BrandProfiles>,
@@ -31,7 +31,7 @@ export class WhatsappFlowAiService {
       params.item.response?.trim() ||
       `Explain "${params.item.title}" briefly and helpfully.`;
 
-    const { data } = await this.mistral.completeJson<{ content?: string }>(
+    const { data } = await this.aiRouter.completeJson<{ content?: string }>(
       [
         {
           role: 'system',
@@ -48,7 +48,9 @@ export class WhatsappFlowAiService {
             `\n\nStaff guidance / facts to include:\n${guidance}\n\nWrite the WhatsApp reply.`,
         },
       ],
-      { model: this.mistral.defaultModel },
+      { model: this.aiRouter.defaultModel,
+          tenantId: params.tenantId
+    },
     );
 
     return data.content?.trim() || guidance.slice(0, 600);
@@ -68,7 +70,7 @@ export class WhatsappFlowAiService {
         )}. Mention they can reply "menu" to see options.`
       : '\nThey can reply "menu" to see options.';
 
-    const { data } = await this.mistral.completeJson<{ content?: string }>(
+    const { data } = await this.aiRouter.completeJson<{ content?: string }>(
       [
         {
           role: 'system',
@@ -81,7 +83,9 @@ export class WhatsappFlowAiService {
           content: `Customer message:\n${params.inboundText}\n\nWrite a helpful WhatsApp reply.`,
         },
       ],
-      { model: this.mistral.defaultModel },
+      { model: this.aiRouter.defaultModel,
+          tenantId: params.tenantId
+    },
     );
 
     return (

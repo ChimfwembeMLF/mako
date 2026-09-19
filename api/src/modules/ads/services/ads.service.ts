@@ -24,7 +24,7 @@ import { LinkedinAdsAdapter } from '../adapters/linkedin-ads.adapter';
 import { PinterestAdsAdapter } from '../adapters/pinterest-ads.adapter';
 import { TaboolaAdsAdapter } from '../adapters/taboola-ads.adapter';
 import { XAdsAdapter } from '../adapters/x-ads.adapter';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { TenantMembersService } from '../../tenant_members/tenant_members.service';
 import { resolveApiPublicUrl } from '../../../common/env-urls.util';
 import { AdsPublishPayload } from '../adapters/ads-provider.types';
@@ -52,7 +52,7 @@ export class AdsService {
     private readonly pinterestAdsAdapter: PinterestAdsAdapter,
     private readonly taboolaAdsAdapter: TaboolaAdsAdapter,
     private readonly xAdsAdapter: XAdsAdapter,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
   ) {
     this.adapters.set(AdPlatform.META, metaAdsAdapter);
     this.adapters.set(AdPlatform.GOOGLE, googleAdsAdapter);
@@ -159,9 +159,11 @@ export class AdsService {
     let body = 'This AI generated ad is amazing.';
 
     try {
-      const response = await this.mistral.complete(
+      const response = await this.aiRouter.complete(
         [{ role: 'user', content: aiPrompt }],
-        { jsonMode: true },
+        { jsonMode: true,
+            tenantId: tenantId
+        },
       );
       const parsed = JSON.parse(response.content);
       if (parsed.headline && parsed.body) {
@@ -440,12 +442,14 @@ export class AdsService {
       "ageRange": "Suggested age range (e.g., '18-35')"
     }`;
 
-    const response = await this.mistral.complete(
+    const response = await this.aiRouter.complete(
       [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: prompt },
       ],
-      { jsonMode: true },
+      { jsonMode: true,
+          tenantId: tenantId
+    },
     );
 
     try {

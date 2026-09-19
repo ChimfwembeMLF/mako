@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import {
   brandExtractionSystemPrompt,
@@ -11,7 +11,7 @@ import {
 @Injectable()
 export class ParseDocumentService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly usage: AiUsageTrackerService,
   ) {}
 
@@ -33,7 +33,7 @@ export class ParseDocumentService {
       throw new BadRequestException('No readable text found in document');
     }
 
-    const { data, tokensUsed } = await this.mistral.completeJson<
+    const { data, tokensUsed } = await this.aiRouter.completeJson<
       Record<string, unknown>
     >(
       [
@@ -48,7 +48,9 @@ export class ParseDocumentService {
           )}`,
         },
       ],
-      { model: this.mistral.premiumModel },
+      { model: this.aiRouter.premiumModel,
+          tenantId: params.tenantId
+    },
     );
 
     await this.usage.record({

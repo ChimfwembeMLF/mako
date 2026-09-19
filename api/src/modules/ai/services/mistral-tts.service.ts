@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
-import { MistralChatService } from './mistral-chat.service';
+import { AiProviderRouter } from './ai-provider-router.service';
 
 export type TtsVoiceOption = {
   id: string;
@@ -45,7 +45,7 @@ export class MistralTtsService {
 
   constructor(
     private readonly config: ConfigService,
-    private readonly mistralChat: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
   ) {}
 
   private getClient(): Mistral {
@@ -154,6 +154,6 @@ export class MistralTtsService {
   }
 
   speak(text: string, voiceId?: string) {
-    return this.mistralChat.speak(text, { voiceId });
+    return this.aiRouter.speak(text, { voiceId });
   }
 }

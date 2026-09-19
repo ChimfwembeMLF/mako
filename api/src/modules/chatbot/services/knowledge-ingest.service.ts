@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { KnowledgeDocument } from '../entities/knowledge-document.entity';
 import { ParseDocumentService } from '../../brand_profiles/services/parse-document.service';
 import { S3StorageService } from '../../media/s3-storage.service';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { VectorStoreService } from './vector-store.service';
 import { ChatbotConfigService } from './chatbot-config.service';
@@ -22,7 +22,7 @@ export class KnowledgeIngestService {
     private readonly docRepo: Repository<KnowledgeDocument>,
     private readonly parseDocument: ParseDocumentService,
     private readonly storage: S3StorageService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly usage: AiUsageTrackerService,
     private readonly vectorStore: VectorStoreService,
     private readonly chatbotConfig: ChatbotConfigService,
@@ -91,7 +91,7 @@ export class KnowledgeIngestService {
 
       for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
         const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
-        const embeddings = await this.mistral.embedBatch(batch);
+        const embeddings = await this.aiRouter.embedBatch(batch);
 
         for (let j = 0; j < batch.length; j++) {
           const content = batch[j];

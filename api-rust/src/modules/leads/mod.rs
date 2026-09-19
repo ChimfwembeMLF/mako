@@ -22,7 +22,8 @@ use crate::modules::lead_sources::entity::{Entity as SourceEntity, Model as Sour
 use crate::modules::leads::entity::{
     ActiveModel as LeadActiveModel, Column as LeadColumn, Entity as LeadEntity, Model as LeadModel,
 };
-use crate::modules::ai::mistral::{MistralService, ChatMessage};
+use crate::services::mistral::{MistralService, ChatMessage};
+use crate::modules::tenants::entity::Entity as TenantEntity;
 
 use self::dto::{CreateLeadDto, UpdateLeadDto, WebhookLeadDto};
 use self::lead_email::{LeadEmailService, SendLeadEmailDto};
@@ -88,13 +89,18 @@ async fn contact_form_submit(
         }
     };
 
+    let tenant = TenantEntity::find_by_id(tenant_id)
+        .one(&state.db)
+        .await?
+        .ok_or_else(|| ApiError::NotFound("Tenant not found".into()))?;
+
     let now = Utc::now().fixed_offset();
 
     let lead = LeadActiveModel {
         id: Set(Uuid::new_v4()),
         tenant_id: Set(tenant_id),
         workspace_id: Set(None),
-        user_id: Set(None),
+        user_id: Set(tenant.owner_id),
         name: Set(name),
         email: Set(email),
         source: Set("contact_form".into()),

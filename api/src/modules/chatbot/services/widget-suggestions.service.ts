@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { BrandProfilesService } from '../../brand_profiles/brand_profiles.service';
@@ -15,7 +15,7 @@ const DEFAULT_STARTERS = [
 @Injectable()
 export class WidgetSuggestionsService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     private readonly brandProfiles: BrandProfilesService,
@@ -50,7 +50,7 @@ export class WidgetSuggestionsService {
     const brandBlock = brandContextBlock(brand);
 
     try {
-      const { data, tokensUsed } = await this.mistral.completeJson<{
+      const { data, tokensUsed } = await this.aiRouter.completeJson<{
         suggestions?: string[];
       }>(
         [
@@ -74,7 +74,9 @@ Each suggestion: under 55 characters, phrased as a natural question or request, 
               .join('\n\n'),
           },
         ],
-        { model: this.mistral.defaultModel },
+        { model: this.aiRouter.defaultModel,
+            tenantId: params.tenantId
+        },
       );
 
       await this.usage.record({

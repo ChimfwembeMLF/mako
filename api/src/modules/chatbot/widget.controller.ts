@@ -21,7 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { randomBytes } from 'crypto';
 import type { Response } from 'express';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { WidgetApiKeyGuard } from './guards/widget-api-key.guard';
 import { ChatSessionService } from './services/chat-session.service';
 import { CreateWidgetSessionDto, SendMessageDto } from './dto/send-message.dto';
@@ -40,7 +40,7 @@ import { WidgetSuggestionsDto } from './dto/widget-suggestions.dto';
 export class WidgetController {
   constructor(
     private readonly sessions: ChatSessionService,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly widgetSuggestions: WidgetSuggestionsService,
   ) {}
 
@@ -203,7 +203,7 @@ export class WidgetController {
       messageId,
     );
     const plainText = stripMarkdownForSpeech(message.content);
-    const { audioData } = await this.mistral.speak(plainText, {
+    const { audioData } = await this.aiRouter.speak(plainText, {
       voiceId: config.mistralVoiceId,
     });
 

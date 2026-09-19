@@ -4,6 +4,7 @@ import { AiUsageService } from '../../ai_usage/ai_usage.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
+import { Tenants } from '../../tenants/entities/tenants.entity';
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -15,6 +16,8 @@ export class AiUsageTrackerService {
     private readonly subscriptions: SubscriptionsService,
     @InjectRepository(TenantIntegrationConfig)
     private readonly configRepo: Repository<TenantIntegrationConfig>,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
   ) {}
 
   async record(params: {
@@ -35,8 +38,14 @@ export class AiUsageTrackerService {
   }
 
   async assertWithinLimit(tenantId: string, _userId: string): Promise<void> {
+    const tenant = await this.tenantsRepo.findOne({
+      where: { id: tenantId },
+    });
+
+    const provider = tenant?.preferredAiProvider || IntegrationProvider.MISTRAL;
+
     const customConfig = await this.configRepo.findOne({
-      where: { tenantId, provider: IntegrationProvider.MISTRAL },
+      where: { tenantId, provider },
     });
     
     if (customConfig) {

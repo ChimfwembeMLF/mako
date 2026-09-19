@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SocialInsights } from './entities/social_insights.entity';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity';
 import { scopeWhere } from '../../common/workspace-scope.util';
@@ -27,7 +27,7 @@ export class AiAnalyticsService {
     private readonly publicationsRepo: Repository<ContentPublications>,
     @InjectRepository(BrandProfiles)
     private readonly brandRepo: Repository<BrandProfiles>,
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly promptBuilder: PromptBuilderService,
   ) {}
 
@@ -72,12 +72,14 @@ ${topPosts.map((p) => `Platform: ${p.platform}, Score: ${p.engagementScore}, Lik
     `;
 
     try {
-      const result = await this.mistral.completeJson<AiAnalyticsReport>(
+      const result = await this.aiRouter.completeJson<AiAnalyticsReport>(
         [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userMessage }
         ],
-        { model: 'mistral-large-latest' }
+        { model: 'mistral-large-latest',
+            tenantId: tenantId
+        }
       );
 
       return result.data;

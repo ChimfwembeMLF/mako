@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { BrandProfilesService } from '../../brand_profiles/brand_profiles.service';
@@ -31,7 +31,7 @@ interface CampaignPlan {
 @Injectable()
 export class GenerateCampaignService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     @InjectRepository(ContentCampaigns)
@@ -76,7 +76,7 @@ export class GenerateCampaignService {
     const brandCtx = this.prompts.brandFromEntity(brand);
     const start = this.parseStartDate(params.startDate);
 
-    const { data, tokensUsed } = await this.mistral.completeJson<CampaignPlan>(
+    const { data, tokensUsed } = await this.aiRouter.completeJson<CampaignPlan>(
       [
         {
           role: 'system',
@@ -99,7 +99,9 @@ export class GenerateCampaignService {
             .join('\n\n'),
         },
       ],
-      { model: this.mistral.premiumModel },
+      { model: this.aiRouter.premiumModel,
+          tenantId: params.tenantId
+    },
     );
 
     await this.usage.record({

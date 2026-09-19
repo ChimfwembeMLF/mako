@@ -7,6 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Key, Trash2, CheckCircle2 } from "lucide-react";
 import { useTenantIntegrationConfigs, TenantIntegrationConfig } from "@/hooks/api/useTenantIntegrationConfigs";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { tenantsApi } from "@/lib/api";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface IntegrationSettingsProps {
   tenantId: string;
@@ -54,7 +63,30 @@ const AI_PROVIDERS = [
 export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
   const { configs, isLoading, upsertConfig, isUpserting, deleteConfig, isDeleting } = useTenantIntegrationConfigs(tenantId);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
+  const { data: tenant } = useQuery({
+    queryKey: ['tenant', tenantId],
+    queryFn: () => tenantsApi.findOne(tenantId),
+    enabled: !!tenantId,
+  });
+
+  const { mutate: updateTenant, isPending: isUpdatingTenant } = useMutation({
+    mutationFn: (preferredAiProvider: string | null) => 
+      tenantsApi.update(tenantId, { preferredAiProvider }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenant', tenantId] });
+      toast({ title: "Success", description: "Preferred AI Provider updated" });
+    },
+    onError: (err: any) => {
+      toast({ 
+        title: "Failed to update", 
+        description: err?.response?.data?.message || err.message, 
+        variant: "destructive" 
+      });
+    }
+  });
+
   // Track API keys per provider in a simple object map
   const [apiKeys, setApiKeys] = useState<Record<string, string>>({});
   // Track which provider is currently being saved for loading spinner
@@ -146,6 +178,45 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
               </div>
             );
           })}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base font-display flex items-center gap-2">
+            Preferred AI Provider
+          </CardTitle>
+          <CardDescription>
+            Select which AI provider should be used by default for generating content, chatbot responses, and other AI features.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 max-w-sm">
+            <Select 
+              value={tenant?.preferredAiProvider || "mistral"} 
+              onValueChange={(val) => updateTenant(val)}
+              disabled={isUpdatingTenant}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select provider" />
+              </SelectTrigger>
+              <SelectContent>
+                {AI_PROVIDERS.map((p) => {
+                  const isConfigured = configs?.some((c: any) => c.provider === p.id);
+                  const Icon = p.icon;
+                  return (
+                    <SelectItem key={p.id} value={p.id}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-4 w-4" />
+                        {p.name} {isConfigured ? "(Custom Key)" : ""}
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+            {isUpdatingTenant && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          </div>
         </CardContent>
       </Card>
 

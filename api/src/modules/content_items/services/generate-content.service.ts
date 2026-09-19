@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { Workspaces } from '../../workspaces/entities/workspaces.entity';
@@ -17,7 +17,7 @@ import { BrandProfilesService } from '../../brand_profiles/brand_profiles.servic
 @Injectable()
 export class GenerateContentService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     private readonly templates: TemplatesService,
@@ -93,7 +93,7 @@ export class GenerateContentService {
           tractionBlock,
         );
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{
+    const { data, tokensUsed } = await this.aiRouter.completeJson<{
       title?: string;
       content?: string;
     }>(
@@ -102,7 +102,8 @@ export class GenerateContentService {
         { role: 'user', content: userPrompt },
       ],
       {
-        model: isReply ? this.mistral.defaultModel : this.mistral.premiumModel,
+        model: isReply ? 'mistral-small' : 'mistral-large',
+        tenantId,
       },
     );
 

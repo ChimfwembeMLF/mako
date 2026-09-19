@@ -1,4 +1,5 @@
-import { IsString, IsOptional } from 'class-validator';
+import { IsString, IsOptional, IsEnum } from 'class-validator';
+import { IntegrationProvider } from '../entities/tenant-integration-config.entity';
 
 export class UpdateTenantDto {
   @IsString()
@@ -12,4 +13,8 @@ export class UpdateTenantDto {
   @IsString()
   @IsOptional()
   description?: string;
+
+  @IsEnum(IntegrationProvider)
+  @IsOptional()
+  preferredAiProvider?: IntegrationProvider;
 }

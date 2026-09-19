@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { MistralChatService } from '../../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { platformPublishGuide } from '../platform-publish.constants';
@@ -19,7 +19,7 @@ export type AdaptedPlatformPayload = {
 @Injectable()
 export class AdaptPlatformsService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     private readonly templates: TemplatesService,
@@ -86,6 +86,7 @@ export class AdaptPlatformsService {
         params.title,
         undefined,
         templateByPlatform.get(params.platforms[0]),
+        params.tenantId,
       );
       totalTokens += tokensUsed;
       payloads[params.platforms[0]] = payload;
@@ -95,6 +96,7 @@ export class AdaptPlatformsService {
         platformGuides,
         plainSource,
         params.title,
+        params.tenantId,
       );
       totalTokens += batch.tokensUsed;
       payloads = batch.payloads;
@@ -110,6 +112,7 @@ export class AdaptPlatformsService {
           params.title,
           payloads,
           templateByPlatform.get(platform),
+          params.tenantId,
         );
         totalTokens += tokensUsed;
         payloads[platform] = payload;
@@ -126,7 +129,7 @@ export class AdaptPlatformsService {
           .join('\n');
         const guide = platformPublishGuide(platform);
         const template = templateByPlatform.get(platform);
-        const { data, tokensUsed } = await this.mistral.completeJson<{
+        const { data, tokensUsed } = await this.aiRouter.completeJson<{
           title?: string;
           content?: string;
         }>([
@@ -154,7 +157,7 @@ export class AdaptPlatformsService {
               `Write a DISTINCT ${platform} version.`,
             ].join('\n\n'),
           },
-        ]);
+        ], { tenantId: params.tenantId });
         totalTokens += tokensUsed;
         payloads[platform] = this.normalizeEntry(
           platform,
@@ -183,8 +186,9 @@ export class AdaptPlatformsService {
     }>,
     plainSource: string,
     title?: string,
+    tenantId?: string,
   ) {
-    const { data, tokensUsed } = await this.mistral.completeJson<
+    const { data, tokensUsed } = await this.aiRouter.completeJson<
       Record<string, { title?: string; content?: string }>
     >([
       {
@@ -204,7 +208,7 @@ export class AdaptPlatformsService {
             .join(', ')}.`,
         ].join('\n\n'),
       },
-    ]);
+    ], { tenantId });
 
     const payloads: Record<string, AdaptedPlatformPayload> = {};
     for (const { platform } of platformGuides) {
@@ -229,6 +233,7 @@ export class AdaptPlatformsService {
     title?: string,
     existing?: Record<string, AdaptedPlatformPayload>,
     template?: ContentTemplates | null,
+    tenantId?: string,
   ) {
     const guide = platformPublishGuide(platform);
     const otherSummaries = existing
@@ -247,7 +252,7 @@ export class AdaptPlatformsService {
         )
       : this.prompts.platformAdaptSystem(brandCtx, platform, guide, template);
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{
+    const { data, tokensUsed } = await this.aiRouter.completeJson<{
       title?: string;
       content?: string;
     }>([
@@ -260,7 +265,7 @@ export class AdaptPlatformsService {
           `Adapt specifically for ${platform}. Follow current ${platform} content trends.`,
         ].join('\n\n'),
       },
-    ]);
+    ], { tenantId });
 
     return {
       payload: this.normalizeEntry(platform, data, title, plainSource),

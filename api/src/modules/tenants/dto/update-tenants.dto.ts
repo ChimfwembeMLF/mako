@@ -4,7 +4,9 @@ import {
   IsUUID,
   IsDate,
   IsObject,
+  IsEnum,
 } from 'class-validator';
+import { IntegrationProvider } from '../entities/tenant-integration-config.entity';
 
 export class TenantsUpdateDto {
   @IsOptional()
@@ -26,6 +28,10 @@ export class TenantsUpdateDto {
   @IsOptional()
   @IsObject()
   themeConfig?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsEnum(IntegrationProvider)
+  preferredAiProvider?: IntegrationProvider;
 
   @IsOptional()
   @IsDate()

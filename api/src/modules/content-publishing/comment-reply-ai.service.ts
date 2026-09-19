@@ -6,7 +6,7 @@ import { ContentItems } from '../content_items/entities/content_items.entity';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
 import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
-import { MistralChatService } from '../ai/services/mistral-chat.service';
+import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { AiUsageTrackerService } from '../ai/services/ai-usage-tracker.service';
 
@@ -21,7 +21,7 @@ export type CommentReplyContext = {
 @Injectable()
 export class CommentReplyAiService {
   constructor(
-    private readonly mistral: MistralChatService,
+    private readonly aiRouter: AiProviderRouter,
     private readonly prompts: PromptBuilderService,
     private readonly usage: AiUsageTrackerService,
     @InjectRepository(CommentReplies)
@@ -82,7 +82,7 @@ export class CommentReplyAiService {
     const ctx = await this.loadContext(comment);
     const brandCtx = await this.loadBrand(comment);
 
-    const { data, tokensUsed } = await this.mistral.completeJson<{
+    const { data, tokensUsed } = await this.aiRouter.completeJson<{
       content?: string;
     }>(
       [
@@ -95,7 +95,9 @@ export class CommentReplyAiService {
           content: this.prompts.commentReplyUser(ctx),
         },
       ],
-      { model: this.mistral.defaultModel },
+      { model: this.aiRouter.defaultModel,
+          tenantId: comment.tenantId
+    },
     );
 
     await this.usage.record({
