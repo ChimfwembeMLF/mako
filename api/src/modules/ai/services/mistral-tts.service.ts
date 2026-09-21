@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { AiProviderRouter } from './ai-provider-router.service';
+import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
+import { EncryptionService } from '../../tenants/services/encryption.service';
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
 
 export type TtsVoiceOption = {
   id: string;
@@ -46,19 +51,39 @@ export class MistralTtsService {
   constructor(
     private readonly config: ConfigService,
     private readonly aiRouter: AiProviderRouter,
+    @InjectRepository(TenantIntegrationConfig)
+    private readonly configRepo: Repository<TenantIntegrationConfig>,
+    private readonly encryptionService: EncryptionService,
+    private readonly integrations: PlatformIntegrationsService,
   ) {}
 
-  private getClient(): Mistral {
-    const apiKey = this.config.get<string>('MISTRAL_API_KEY');
+  private async getClient(tenantId?: string): Promise<Mistral> {
+    if (tenantId) {
+      try {
+        const customConfig = await this.configRepo.findOne({
+          where: { tenantId, provider: IntegrationProvider.MISTRAL },
+        });
+
+        if (customConfig) {
+          const decryptedKey = this.encryptionService.decrypt(
+            customConfig.encryptedApiKey,
+            customConfig.iv,
+            customConfig.authTag,
+          );
+          return new Mistral({ apiKey: decryptedKey.trim() });
+        }
+      } catch (err) {
+        this.logger.error(`Failed to load custom Mistral key for tenant ${tenantId}`, err);
+      }
+    }
+
+    const apiKey = await this.integrations.getIntegrationWithEnvFallback('MISTRAL_API_KEY');
     if (!apiKey?.trim()) {
       throw new ServiceUnavailableException(
         'MISTRAL_API_KEY is not configured on the server',
       );
     }
-    if (!this.client) {
-      this.client = new Mistral({ apiKey: apiKey.trim() });
-    }
-    return this.client;
+    return new Mistral({ apiKey: apiKey.trim() });
   }
 
   async listPresetVoices(): Promise<TtsVoiceOption[]> {
@@ -67,7 +92,7 @@ export class MistralTtsService {
       return this.presetCache.voices;
     }
     try {
-      const client = this.getClient();
+      const client = await this.getClient();
       const res = await client.audio.voices.list({
         type: 'preset',
         limit: 100,
@@ -113,7 +138,7 @@ export class MistralTtsService {
     if (!name) throw new BadRequestException('Voice name is required');
 
     try {
-      const client = this.getClient();
+      const client = await this.getClient(params.tenantTag);
       const created = await client.audio.voices.create({
         name,
         sampleAudio: params.sampleBuffer.toString('base64'),
@@ -138,9 +163,9 @@ export class MistralTtsService {
     }
   }
 
-  async deleteCustomVoice(mistralVoiceId: string): Promise<void> {
+  async deleteCustomVoice(tenantId: string, mistralVoiceId: string): Promise<void> {
     try {
-      const client = this.getClient();
+      const client = await this.getClient(tenantId);
       await client.audio.voices.delete({ voiceId: mistralVoiceId });
     } catch (err) {
       this.logger.error(

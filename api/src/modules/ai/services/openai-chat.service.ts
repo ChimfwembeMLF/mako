@@ -148,10 +148,16 @@ export class OpenAIChatService {
     }
     try {
       const client = await this.getClient(options?.tenantId);
+      let voice = (options?.voiceId?.trim() || 'alloy') as string;
+      const validOpenAiVoices = ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+      if (!validOpenAiVoices.includes(voice)) {
+        voice = 'alloy';
+      }
+
       const response = await client.audio.speech.create({
         model: options?.model || 'tts-1',
         input,
-        voice: (options?.voiceId?.trim() || 'alloy') as any,
+        voice: voice as any,
         response_format: 'mp3',
       });
 

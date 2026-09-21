@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Loader2, Square, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   messageId: string;
@@ -13,6 +14,7 @@ export function MessageListenButton({ messageId, onSpeak, onSpeechAudio }: Props
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const urlRef = useRef<string | null>(null);
+  const { toast } = useToast();
 
   const stop = () => {
     if (audioRef.current) {
@@ -48,7 +50,12 @@ export function MessageListenButton({ messageId, onSpeak, onSpeechAudio }: Props
       setLoading(false);
       onSpeechAudio?.(audio);
       await audio.play();
-    } catch {
+    } catch (err: any) {
+      toast({
+        title: "Voice Error",
+        description: err.message || "Failed to load speech. Check your AI Provider settings.",
+        variant: "destructive"
+      });
       stop();
     }
   };
