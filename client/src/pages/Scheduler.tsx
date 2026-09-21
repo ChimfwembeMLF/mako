@@ -1174,7 +1174,8 @@ const Scheduler = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                  <SelectItem value="needs_approval">Needs Approval</SelectItem>
+                  <SelectItem value="unscheduled">Unscheduled drafts</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
                   <SelectItem value="all">All</SelectItem>

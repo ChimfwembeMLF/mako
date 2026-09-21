@@ -12,6 +12,8 @@ import { MailModule } from '../mail/mail.module';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 import { QueuesModule } from '../queues/queues.module';
 import { TenantsModule } from '../tenants/tenants.module';
+import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
+import { ChatbotModule } from '../chatbot/chatbot.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { TenantsModule } from '../tenants/tenants.module';
     AuthModule,
     SubscriptionsModule,
     TenantsModule,
+    BrandProfilesModule,
+    ChatbotModule,
     forwardRef(() => QueuesModule),
   ],
   providers: [LeadsService, LeadClassifyService, LeadEmailService],

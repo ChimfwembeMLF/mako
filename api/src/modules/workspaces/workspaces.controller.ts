@@ -17,6 +17,7 @@ import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
 import { WorkspacesUpdateDto } from './dto/update-workspaces.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkspaceAutomationConfig } from './entities/workspace-automation-config.entity';
+import { UpdateAutomationConfigDto } from './dto/update-automation-config.dto';
 
 interface JwtUser {
   sub: string;
@@ -65,7 +66,7 @@ export class WorkspacesController {
   @Patch(':id/automation-config')
   updateAutomationConfig(
     @Param('id') id: string,
-    @Body() payload: Partial<WorkspaceAutomationConfig>,
+    @Body() payload: UpdateAutomationConfigDto,
   ): Promise<WorkspaceAutomationConfig> {
     return this.service.updateAutomationConfig(id, payload);
   }

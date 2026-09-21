@@ -5,6 +5,7 @@ import { NotificationPreferences } from './entities/notification_preferences.ent
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { NotificationCron } from './notification.cron';
+import { ContentItems } from '../content_items/entities/content_items.entity';
 import { PushService } from './push.service';
 import { UserEntity } from '../user/user.entity';
 import { DevicePushTokenEntity } from '../user/device-push-token.entity';
@@ -29,6 +30,7 @@ import { QueuesModule } from '../queues/queues.module';
     TypeOrmModule.forFeature([
       Notifications,
       NotificationPreferences,
+      ContentItems,
       UserEntity,
       DevicePushTokenEntity,
       TenantMembers,

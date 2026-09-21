@@ -2617,6 +2617,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateAutomationConfigDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": ""
@@ -9929,6 +9939,44 @@
       "WorkspacesUpdateDto": {
         "type": "object",
         "properties": {}
+      },
+      "UpdateAutomationConfigDto": {
+        "type": "object",
+        "properties": {
+          "isActive": {
+            "type": "boolean"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "generateAt": {
+            "type": "string"
+          },
+          "postsPerCycle": {
+            "type": "number"
+          },
+          "planAheadDays": {
+            "type": "number"
+          },
+          "publishingDays": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "postingTimes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "platforms": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
       },
       "RolesCreateDto": {
         "type": "object",

@@ -217,6 +217,7 @@ export function AutomationSettingsTab() {
                   <div className="flex bg-muted/40 p-1 rounded-md border border-border/50">
                     {DAYS.map(day => (
                       <button
+                        type="button"
                         key={day}
                         onClick={() => toggleDay(day)}
                         className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${
@@ -234,7 +235,7 @@ export function AutomationSettingsTab() {
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <label className="text-xs font-semibold">Posting times</label>
-                    <Button variant="ghost" size="sm" onClick={handleAddPostingTime} className="h-6 text-xs px-2 hover:bg-muted/50">
+                    <Button type="button" variant="ghost" size="sm" onClick={handleAddPostingTime} className="h-6 text-xs px-2 hover:bg-muted/50">
                       <Plus className="h-3 w-3 mr-1" /> Add time
                     </Button>
                   </div>
@@ -251,6 +252,7 @@ export function AutomationSettingsTab() {
                           />
                         </div>
                         <Button 
+                          type="button"
                           variant="ghost" 
                           size="icon" 
                           onClick={() => handleRemovePostingTime(index)}

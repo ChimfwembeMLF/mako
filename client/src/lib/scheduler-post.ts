@@ -26,7 +26,7 @@ export interface ScheduledPost {
   user_id?: string;
 }
 
-export type ListFilter = 'upcoming' | 'unscheduled' | 'published' | 'failed' | 'all';
+export type ListFilter = 'upcoming' | 'unscheduled' | 'published' | 'failed' | 'needs_approval' | 'all';
 
 export function mapApiItemToPost(item: Record<string, unknown>): ScheduledPost {
   const preview = item.previewMedia as Record<string, unknown> | null | undefined;
@@ -95,6 +95,8 @@ export function filterPosts(
       return list.filter((p) => p.status === 'published');
     case 'failed':
       return list.filter((p) => Boolean(p.publish_failed_reason));
+    case 'needs_approval':
+      return list.filter((p) => p.status === 'draft' && Boolean(p.scheduled_date));
     default:
       return list;
   }

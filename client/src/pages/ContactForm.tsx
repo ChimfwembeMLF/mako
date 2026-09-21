@@ -43,20 +43,36 @@ const ContactForm = () => {
     if (!tenantId) return;
     (async () => {
       try {
-        const all = await brandProfilesApi.findAll();
-        const list = Array.isArray(all) ? all : [];
-        const bb = list.find((p: Record<string, unknown>) => p.tenantId === tenantId);
+        const res = await fetch(`${API_BASE_URL}/api/v1/leads/contact-form/${tenantId}/config`);
+        if (!res.ok) throw new Error('Failed to load config');
+        
+        const { brandProfile: bb, chatbotConfig: cb } = await res.json();
+        
+        let updated = { ...defaultBranding };
+
         if (bb?.companyName) {
-          setBranding({
-            name: String(bb.companyName),
-            tagline: bb.toneOfVoice
-              ? `${bb.toneOfVoice} — reach out today`
-              : "We'd love to hear from you",
-            gradient: "from-primary to-primary/80",
-            bgClass: "bg-primary/5",
-            description: String(bb.description || defaultBranding.description),
-          });
+          updated.name = String(bb.companyName);
+          updated.tagline = bb.toneOfVoice
+            ? `${bb.toneOfVoice} — reach out today`
+            : "We'd love to hear from you";
+          updated.description = String(bb.description || defaultBranding.description);
         }
+
+        if (cb) {
+          if (cb.name) updated.name = cb.name;
+          if (cb.welcomeMessage) updated.description = cb.welcomeMessage;
+          if (cb.widgetTheme) {
+            const theme = cb.widgetTheme;
+            if (theme.gradientFrom || theme.gradientTo) {
+              updated.gradient = `linear-gradient(${theme.gradientAngle || 135}deg, ${theme.gradientFrom || '#6366f1'}, ${theme.gradientTo || '#a855f7'})`;
+            }
+            if (theme.avatarUrl) {
+              (updated as any).avatarUrl = theme.avatarUrl;
+            }
+          }
+        }
+        
+        setBranding(updated);
       } catch {
         /* use default branding */
       }
@@ -107,8 +123,15 @@ const ContactForm = () => {
     return (
       <div className="w-full">
         <Card className="w-full overflow-hidden">
-          <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
-            <CheckCircle2 className="h-12 w-12 mx-auto mb-3" />
+          <div 
+            className={`p-6 text-center text-white ${branding.gradient?.startsWith('linear-gradient') ? '' : `bg-gradient-to-r ${branding.gradient}`}`}
+            style={branding.gradient?.startsWith('linear-gradient') ? { background: branding.gradient } : undefined}
+          >
+            {(branding as any).avatarUrl ? (
+              <img src={(branding as any).avatarUrl} alt="Avatar" className="h-12 w-12 mx-auto mb-3 rounded-full object-cover shadow-sm bg-white" />
+            ) : (
+              <CheckCircle2 className="h-12 w-12 mx-auto mb-3" />
+            )}
             <h2 className="text-xl font-bold">Thank you!</h2>
             <p className="text-sm opacity-90 mt-1">We've received your message</p>
           </div>
@@ -131,8 +154,15 @@ const ContactForm = () => {
   return (
     <div className="w-full">
       <Card className="w-full shadow-card overflow-hidden">
-      <div className={`bg-gradient-to-r ${branding.gradient} p-6 text-center text-white`}>
-        <Send className="h-10 w-10 mx-auto mb-3" />
+      <div 
+        className={`p-6 text-center text-white ${branding.gradient?.startsWith('linear-gradient') ? '' : `bg-gradient-to-r ${branding.gradient}`}`}
+        style={branding.gradient?.startsWith('linear-gradient') ? { background: branding.gradient } : undefined}
+      >
+        {(branding as any).avatarUrl ? (
+          <img src={(branding as any).avatarUrl} alt="Avatar" className="h-10 w-10 mx-auto mb-3 rounded-full object-cover shadow-sm bg-white" />
+        ) : (
+          <Send className="h-10 w-10 mx-auto mb-3" />
+        )}
         <h1 className="text-xl font-bold">{branding.name}</h1>
         <p className="text-sm opacity-90 mt-1">{branding.tagline}</p>
       </div>
@@ -157,7 +187,12 @@ const ContactForm = () => {
               maxLength={1000}
             />
           </div>
-          <Button type="submit" disabled={submitting} className={`w-full bg-gradient-to-r ${branding.gradient} text-white border-0 hover:opacity-90`}>
+          <Button 
+            type="submit" 
+            disabled={submitting} 
+            className={`w-full text-white border-0 hover:opacity-90 ${branding.gradient?.startsWith('linear-gradient') ? '' : `bg-gradient-to-r ${branding.gradient}`}`}
+            style={branding.gradient?.startsWith('linear-gradient') ? { background: branding.gradient } : undefined}
+          >
             <Send className="mr-2 h-4 w-4" />
             {submitting ? "Sending..." : "Send Message"}
           </Button>

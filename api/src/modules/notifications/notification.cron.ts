@@ -41,4 +41,19 @@ export class NotificationCron {
       this.logger.error('Weekly digest cron error', err);
     }
   }
+
+  /** Hourly — Send approval reminders for scheduled posts waiting in draft */
+  @Cron('0 * * * *')
+  async approvalReminders(): Promise<void> {
+    if (this.config.get<string>('APPROVAL_REMINDER_CRON_ENABLED') === 'false')
+      return;
+    try {
+      const sent = await this.notifications.sendApprovalReminders();
+      if (sent > 0) {
+        this.logger.log(`Approval reminders sent to ${sent} tenant(s)`);
+      }
+    } catch (err) {
+      this.logger.error('Approval reminders cron error', err);
+    }
+  }
 }

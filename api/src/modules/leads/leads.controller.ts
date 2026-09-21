@@ -25,6 +25,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LeadSources } from '../lead_sources/entities/lead_sources.entity';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
+import { BrandProfilesService } from '../brand_profiles/brand_profiles.service';
+import { ChatbotConfigService } from '../chatbot/services/chatbot-config.service';
 
 interface JwtUser {
   sub: string;
@@ -43,6 +45,8 @@ export class LeadsController {
     private readonly sourcesRepo: Repository<LeadSources>,
     private readonly queueDispatch: QueueDispatchService,
     private readonly tenantsService: TenantsService,
+    private readonly brandProfiles: BrandProfilesService,
+    private readonly chatbotConfig: ChatbotConfigService,
   ) {}
 
   @Post('webhook')
@@ -142,6 +146,45 @@ export class LeadsController {
     } as any);
 
     return { ok: true, leadId: lead.id, ai_reply: classification.suggestedReply };
+  }
+
+  @Get('contact-form/:tenantId/config')
+  async getContactFormConfig(@Param('tenantId') tenantId: string) {
+    if (!tenantId) {
+      throw new UnauthorizedException('tenantId is required');
+    }
+
+    let brandProfile = null;
+    try {
+      const profiles = await this.brandProfiles.findForTenant(tenantId);
+      brandProfile = profiles?.[0] || null;
+    } catch {
+      // Ignore
+    }
+
+    let chatbotConfig = null;
+    try {
+      chatbotConfig = await this.chatbotConfig.getOrCreate(tenantId);
+    } catch {
+      // Ignore
+    }
+
+    return {
+      brandProfile: brandProfile
+        ? {
+            companyName: brandProfile.companyName,
+            toneOfVoice: brandProfile.toneOfVoice,
+            description: brandProfile.description,
+          }
+        : null,
+      chatbotConfig: chatbotConfig
+        ? {
+            name: chatbotConfig.name,
+            welcomeMessage: chatbotConfig.welcomeMessage,
+            widgetTheme: chatbotConfig.widgetTheme,
+          }
+        : null,
+    };
   }
 
   @Post('send-email')

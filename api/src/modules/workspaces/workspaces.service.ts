@@ -5,6 +5,7 @@ import { Workspaces } from './entities/workspaces.entity';
 import { WorkspaceAutomationConfig } from './entities/workspace-automation-config.entity';
 import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
 import { WorkspacesUpdateDto } from './dto/update-workspaces.dto';
+import { UpdateAutomationConfigDto } from './dto/update-automation-config.dto';
 import { BrandProfilesService } from '../brand_profiles/brand_profiles.service';
 
 @Injectable()
@@ -59,7 +60,7 @@ export class WorkspacesService {
     return config;
   }
 
-  async updateAutomationConfig(workspaceId: string, payload: Partial<WorkspaceAutomationConfig>): Promise<WorkspaceAutomationConfig> {
+  async updateAutomationConfig(workspaceId: string, payload: UpdateAutomationConfigDto): Promise<WorkspaceAutomationConfig> {
     let config = await this.automationRepo.findOne({ where: { workspaceId } });
     if (!config) {
       config = this.automationRepo.create({ workspaceId, ...payload });

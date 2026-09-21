@@ -42,8 +42,11 @@ export class ContentItems {
   status?: string;
   @Column({ type: 'text', array: true, nullable: true })
   platforms?: string[];
-  @Column({ type: 'jsonb', nullable: true })
-  platformPayloads?: Record<string, unknown>;
+  @Column({ name: 'platform_payloads', type: 'jsonb', nullable: true })
+  platformPayloads?: Record<string, PlatformPayload>;
+
+  @Column({ name: 'approval_reminder_sent', type: 'boolean', default: false })
+  approvalReminderSent?: boolean;
   @Column({ type: 'date', nullable: true })
   scheduledDate?: Date;
   @Column({ type: 'timetz', nullable: true })

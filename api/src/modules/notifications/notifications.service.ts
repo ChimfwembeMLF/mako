@@ -1,8 +1,9 @@
 import { Injectable, Logger, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual, Between, IsNull } from 'typeorm';
+import { Repository, MoreThanOrEqual, Between, IsNull, LessThanOrEqual } from 'typeorm';
 import { Notifications } from './entities/notifications.entity';
 import { NotificationPreferences } from './entities/notification_preferences.entity';
+import { ContentItems } from '../content_items/entities/content_items.entity';
 import { UserEntity } from '../user/user.entity';
 import { TenantMembers } from '../tenant_members/entities/tenant_members.entity';
 import { TenantSubscriptions } from '../subscriptions/entities/tenant_subscriptions.entity';
@@ -12,7 +13,6 @@ import { PushService } from './push.service';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
 import { CommentReplies } from '../comment_replies/entities/comment_replies.entity';
 import { Leads } from '../leads/entities/leads.entity';
-import { ContentItems } from '../content_items/entities/content_items.entity';
 import { AiUsage } from '../ai_usage/entities/ai_usage.entity';
 import { Deposits } from '../deposits/entities/deposits.entity';
 import { ChatSession } from '../chatbot/entities/chat-session.entity';
@@ -75,6 +75,8 @@ export class NotificationsService {
     private readonly notificationsRepo: Repository<Notifications>,
     @InjectRepository(NotificationPreferences)
     private readonly prefsRepo: Repository<NotificationPreferences>,
+    @InjectRepository(ContentItems)
+    private readonly contentRepo: Repository<ContentItems>,
     @InjectRepository(UserEntity)
     private readonly usersRepo: Repository<UserEntity>,
     @InjectRepository(TenantMembers)
@@ -88,7 +90,6 @@ export class NotificationsService {
     @InjectRepository(Leads)
     private readonly leadsRepo: Repository<Leads>,
     @InjectRepository(ContentItems)
-    private readonly contentRepo: Repository<ContentItems>,
     @InjectRepository(AiUsage)
     private readonly aiUsageRepo: Repository<AiUsage>,
     @InjectRepository(Deposits)
@@ -106,7 +107,7 @@ export class NotificationsService {
     private readonly mail: MailService,
     private readonly pushService: PushService,
     @Optional() private readonly queueDispatch?: QueueDispatchService,
-  ) {}
+  ) { }
 
   async notify(input: NotifyInput): Promise<Notifications | null> {
     const prefs = await this.getPreferences(input.userId, input.tenantId);
@@ -241,9 +242,8 @@ export class NotificationsService {
       userId: params.userId,
       type: 'publish_success',
       title: 'Content published',
-      body: `"${
-        params.title ?? 'Your post'
-      }" was published to ${platformList}.`,
+      body: `"${params.title ?? 'Your post'
+        }" was published to ${platformList}.`,
       link: `/content/${params.contentId}`,
       metadata: { contentId: params.contentId, platforms: params.platforms },
       email: true,
@@ -281,9 +281,8 @@ export class NotificationsService {
     await this.notifyTenantAdmins(params.tenantId, {
       type: 'billing_payment',
       title: 'Payment received',
-      body: `Your ${params.plan} plan is now active${
-        params.amount ? ` (ZMW ${params.amount})` : ''
-      }. Auto-renew is enabled for your saved mobile money number.`,
+      body: `Your ${params.plan} plan is now active${params.amount ? ` (ZMW ${params.amount})` : ''
+        }. Auto-renew is enabled for your saved mobile money number.`,
       link: '/billing',
       metadata: { plan: params.plan, autoRenew: true },
       email: true,
@@ -299,9 +298,8 @@ export class NotificationsService {
     await this.notifyTenantAdmins(params.tenantId, {
       type: 'subscription_renewal',
       title: 'Subscription renewed',
-      body: `Your ${params.plan} plan was renewed successfully${
-        params.amount ? ` (ZMW ${params.amount})` : ''
-      }.`,
+      body: `Your ${params.plan} plan was renewed successfully${params.amount ? ` (ZMW ${params.amount})` : ''
+        }.`,
       link: '/billing',
       metadata: { plan: params.plan, renewed: true },
       email: true,
@@ -405,7 +403,7 @@ export class NotificationsService {
       if (sub.plan === 'free') continue;
       const daysLeft = Math.ceil(
         (sub.billingPeriodEnd.getTime() - now.getTime()) /
-          (1000 * 60 * 60 * 24),
+        (1000 * 60 * 60 * 24),
       );
       const remindDays = [7, 3, 1];
       if (!remindDays.includes(daysLeft)) continue;
@@ -831,5 +829,44 @@ export class NotificationsService {
     if (notificationId) {
       await this.notificationsRepo.update(notificationId, { emailSent: true });
     }
+  }
+
+  async sendApprovalReminders(): Promise<number> {
+    const futureLimit = new Date();
+    futureLimit.setHours(futureLimit.getHours() + 48);
+
+    const posts = await this.contentRepo.find({
+      where: {
+        status: 'draft',
+        approvalReminderSent: false,
+        scheduledDate: LessThanOrEqual(futureLimit),
+      },
+    });
+
+    if (posts.length === 0) return 0;
+
+    const byTenant = new Map<string, typeof posts>();
+    for (const post of posts) {
+      if (!post.tenantId) continue;
+      const arr = byTenant.get(post.tenantId) || [];
+      arr.push(post);
+      byTenant.set(post.tenantId, arr);
+    }
+
+    let sent = 0;
+    for (const [tenantId, tenantPosts] of byTenant.entries()) {
+      await this.notifyTenantAdmins(tenantId, {
+        type: 'content_requires_action' as NotificationType,
+        title: 'Posts Awaiting Approval',
+        body: `You have ${tenantPosts.length} post(s) scheduled to publish soon that are waiting for your approval.`,
+        link: '/scheduler',
+      });
+      sent++;
+
+      const postIds = tenantPosts.map((p) => p.id);
+      await this.contentRepo.update(postIds, { approvalReminderSent: true });
+    }
+
+    return sent;
   }
 }
