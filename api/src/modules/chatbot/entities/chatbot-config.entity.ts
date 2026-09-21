@@ -75,6 +75,9 @@ export class ChatbotConfig {
   @Column({ type: 'varchar', length: 64, nullable: true })
   mistralVoiceId?: string;
 
+  @Column({ type: 'text', nullable: true })
+  parlerVoiceDescription?: string;
+
   @CreateDateColumn({ type: 'timestamptz' })
   created_at: Date;
 

@@ -17,6 +17,7 @@ import {
 import type { Response } from 'express';
 import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { MistralTtsService } from '../ai/services/mistral-tts.service';
+import { SttService } from '../ai/services/stt.service';
 import { ChatbotTtsVoiceService } from './services/chatbot-tts-voice.service';
 import { stripMarkdownForSpeech } from './utils/strip-markdown.util';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -50,6 +51,7 @@ export class ChatbotController {
     private readonly access: ChatbotAccessService,
     private readonly aiRouter: AiProviderRouter,
     private readonly mistralTts: MistralTtsService,
+    private readonly sttService: SttService,
     private readonly ttsVoices: ChatbotTtsVoiceService,
   ) {}
 
@@ -310,6 +312,28 @@ export class ChatbotController {
     });
   }
 
+  @Post('tts/voices/parler')
+  async createParlerVoice(
+    @Req() req: { user: JwtUser },
+    @Query('tenantId') tenantId: string,
+    @Body() body: { name: string; description: string },
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.manage',
+    );
+    if (!body?.name?.trim()) throw new BadRequestException('name is required');
+    if (!body?.description?.trim())
+      throw new BadRequestException('description is required');
+
+    return this.ttsVoices.createParlerVoice(tenantId, String(req.user.sub), {
+      name: body.name.trim(),
+      description: body.description.trim(),
+    });
+  }
+
   @Delete('tts/voices/:id')
   async deleteTtsVoice(
     @Req() req: { user: JwtUser },
@@ -329,12 +353,12 @@ export class ChatbotController {
   async previewTtsVoice(
     @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,
-    @Body() body: { voiceId: string; text?: string },
+    @Body() body: { voiceId?: string; description?: string; text?: string },
     @Res() res: Response,
   ) {
     if (!tenantId) throw new BadRequestException('tenantId is required');
-    if (!body?.voiceId?.trim())
-      throw new BadRequestException('voiceId is required');
+    if (!body?.voiceId?.trim() && !body?.description?.trim())
+      throw new BadRequestException('voiceId or description is required');
     await this.access.assertPermission(
       String(req.user.sub),
       tenantId,
@@ -343,10 +367,14 @@ export class ChatbotController {
     const text =
       body.text?.trim() ||
       'Hello! This is a preview of how your chatbot agent will sound.';
-    const { audioData } = await this.mistralTts.speak(
-      text,
-      body.voiceId.trim(),
-    );
+      
+    // Use the AI router so it routes to either Mistral or Parler correctly depending on params/tenant context
+    const { audioData } = await this.aiRouter.speak(text, {
+      voiceId: body.voiceId?.trim(),
+      description: body.description?.trim(),
+      tenantId,
+    });
+    
     const buffer = Buffer.from(audioData, 'base64');
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'no-store');
@@ -382,12 +410,38 @@ export class ChatbotController {
     const plainText = stripMarkdownForSpeech(message.content);
     const { audioData } = await this.aiRouter.speak(plainText, {
       voiceId: config.mistralVoiceId,
+      description: config.parlerVoiceDescription,
+      tenantId,
     });
 
     const buffer = Buffer.from(audioData, 'base64');
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Cache-Control', 'private, max-age=3600');
     res.send(buffer);
+  }
+
+  @Post('stt/transcribe')
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('audio'))
+  async transcribeAudio(
+    @Req() req: { user: JwtUser },
+    @UploadedFile() file: Express.Multer.File,
+    @Query('tenantId') tenantId: string,
+  ) {
+    if (!tenantId) throw new BadRequestException('tenantId is required');
+    await this.access.assertPermission(
+      String(req.user.sub),
+      tenantId,
+      'chatbot.use',
+    );
+    if (!file) throw new BadRequestException('audio file is required');
+
+    const text = await this.sttService.transcribe(
+      file.buffer,
+      file.mimetype,
+      file.originalname || 'audio.webm',
+    );
+    return { text };
   }
 
   @Delete('sessions/:id')

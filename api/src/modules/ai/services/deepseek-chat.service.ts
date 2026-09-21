@@ -138,7 +138,7 @@ export class DeepseekChatService {
 
   async speak(
     text: string,
-    options?: { voiceId?: string; model?: string; tenantId?: string },
+    options?: { voiceId?: string; model?: string; tenantId?: string; description?: string },
   ): Promise<{ audioData: string; format: 'mp3' }> {
     this.logger.log(`DeepSeek TTS not supported, falling back to Mistral for tenant ${options?.tenantId}`);
     return this.mistralService.speak(text, options);

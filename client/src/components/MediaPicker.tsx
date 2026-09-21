@@ -1,13 +1,13 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
-import { mediaApi } from '@/lib/api';
+import { mediaApi, contentAiApi } from '@/lib/api';
 import { normalizeMediaAsset, resolveMediaUrl, type MediaAsset } from '@/lib/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Search, Check, X, Loader2 } from 'lucide-react';
+import { Upload, Search, Check, X, Loader2, Sparkles } from 'lucide-react';
 
 interface Props {
   value?: string;
@@ -28,6 +28,9 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
   const [gdriveFiles, setGdriveFiles] = useState<any[]>([]);
   const [gdriveLoading, setGdriveLoading] = useState(false);
   const [gdriveError, setGdriveError] = useState<string | null>(null);
+
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generating, setGenerating] = useState(false);
 
   const loadGDriveFiles = useCallback(async () => {
     if (!tenant) return;
@@ -127,6 +130,39 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
     }
   }
 
+  async function handleGenerateAi() {
+    if (!aiPrompt.trim() || !tenant || !activeWorkspace) return;
+    setGenerating(true);
+    try {
+      const res = await contentAiApi.generateImage({
+        tenantId: tenant.id,
+        prompt: aiPrompt,
+      });
+      // reload assets to get the newly saved one
+      await loadAssets();
+      
+      const newAsset = {
+        id: res.mediaAssetId,
+        mediaUrl: res.media_url,
+        mediaType: res.media_type,
+        name: aiPrompt.slice(0, 120),
+        fileSizeBytes: 0,
+      };
+      
+      const normalized = normalizeMediaAsset(newAsset as Record<string, unknown>);
+      onChange(normalized.mediaUrl, normalized);
+      toast({ title: 'Image generated and saved!' });
+    } catch (err: unknown) {
+      toast({
+        title: 'Generation failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   return (
     <div className="space-y-3">
       {value && (
@@ -151,6 +187,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
           <TabsTrigger value="library" className="text-xs">Library</TabsTrigger>
           <TabsTrigger value="upload" className="text-xs">Upload</TabsTrigger>
           <TabsTrigger value="gdrive" className="text-xs" onClick={loadGDriveFiles}>Google Drive</TabsTrigger>
+          <TabsTrigger value="generate" className="text-xs">AI Generate</TabsTrigger>
           <TabsTrigger value="url" className="text-xs">URL</TabsTrigger>
         </TabsList>
 
@@ -268,6 +305,36 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
               )}
             </div>
           )}
+        </TabsContent>
+
+        <TabsContent value="generate" className="mt-2 space-y-3">
+          <div className="flex gap-2">
+            <Input
+              className="text-sm flex-1"
+              placeholder="Describe a mockup to generate..."
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleGenerateAi();
+              }}
+            />
+          </div>
+          <Button
+            size="sm"
+            className="w-full gap-2"
+            disabled={!aiPrompt.trim() || generating}
+            onClick={handleGenerateAi}
+          >
+            {generating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {generating ? 'Generating image...' : 'Generate with Brand Profile'}
+          </Button>
+          <p className="text-xs text-muted-foreground text-center">
+            Mako will automatically append your brand identity to the prompt.
+          </p>
         </TabsContent>
 
         <TabsContent value="url" className="mt-2">

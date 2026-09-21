@@ -14,7 +14,6 @@ import { TenantSubscriptions } from '../subscriptions/entities/tenant_subscripti
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
 import { CommentReplies } from '../comment_replies/entities/comment_replies.entity';
 import { Leads } from '../leads/entities/leads.entity';
-import { ContentItems } from '../content_items/entities/content_items.entity';
 import { AiUsage } from '../ai_usage/entities/ai_usage.entity';
 import { Deposits } from '../deposits/entities/deposits.entity';
 import { ChatSession } from '../chatbot/entities/chat-session.entity';

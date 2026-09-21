@@ -42,6 +42,38 @@ services:
     # No TLS configuration – plain HTTP for development. For production with Dokploy you can enable TLS by
     # uncommenting the `listen 443 ssl;` lines in nginx.conf and mounting your certs.
 
+  # Parler-TTS Python Microservice
+  mako-tts:
+    build:
+      context: ./tts-service
+      dockerfile: Dockerfile
+    # Optional: If you have a GPU on your Dokploy server, you can uncomment this to enable GPU acceleration
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    networks:
+      - mako-network
+
+  # Whisper STT Python Microservice
+  mako-stt:
+    build:
+      context: ./stt-service
+      dockerfile: Dockerfile
+    # Optional: uncomment if you have a GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    networks:
+      - mako-network
+
 networks:
   mako-network:
     driver: bridge

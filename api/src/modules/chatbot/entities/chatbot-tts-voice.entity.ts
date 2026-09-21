@@ -13,8 +13,11 @@ export class ChatbotTtsVoice {
   @Column({ type: 'uuid' })
   tenantId: string;
 
-  @Column({ type: 'varchar', length: 64 })
-  mistralVoiceId: string;
+  @Column({ type: 'varchar', length: 64, nullable: true })
+  mistralVoiceId?: string;
+
+  @Column({ type: 'text', nullable: true })
+  parlerVoiceDescription?: string;
 
   @Column({ type: 'varchar', length: 120 })
   name: string;

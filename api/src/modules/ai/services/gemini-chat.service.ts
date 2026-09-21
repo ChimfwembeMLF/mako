@@ -155,7 +155,7 @@ export class GeminiChatService {
 
   async speak(
     text: string,
-    options?: { voiceId?: string; model?: string; tenantId?: string },
+    options?: { voiceId?: string; model?: string; tenantId?: string; description?: string },
   ): Promise<{ audioData: string; format: 'mp3' }> {
     // Gemini does not have a public TTS API via this SDK. Fallback to Mistral.
     this.logger.log(`Gemini TTS not supported, falling back to Mistral for tenant ${options?.tenantId}`);

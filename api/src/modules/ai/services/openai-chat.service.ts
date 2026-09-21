@@ -140,7 +140,7 @@ export class OpenAIChatService {
 
   async speak(
     text: string,
-    options?: { voiceId?: string; model?: string; tenantId?: string },
+    options?: { voiceId?: string; model?: string; tenantId?: string; description?: string },
   ): Promise<{ audioData: string; format: 'mp3' }> {
     const input = text.trim().slice(0, 4096);
     if (!input) {

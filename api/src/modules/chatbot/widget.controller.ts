@@ -205,6 +205,8 @@ export class WidgetController {
     const plainText = stripMarkdownForSpeech(message.content);
     const { audioData } = await this.aiRouter.speak(plainText, {
       voiceId: config.mistralVoiceId,
+      description: config.parlerVoiceDescription,
+      tenantId: key.tenantId,
     });
 
     const buffer = Buffer.from(audioData, 'base64');

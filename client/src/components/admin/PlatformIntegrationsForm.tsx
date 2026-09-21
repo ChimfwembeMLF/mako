@@ -17,6 +17,7 @@ const INTEGRATION_GROUPS = [
       { key: 'MISTRAL_API_KEY', label: 'Mistral API Key', placeholder: '...' },
       { key: 'GEMINI_API_KEY', label: 'Gemini API Key', placeholder: '...' },
       { key: 'DEEPSEEK_API_KEY', label: 'DeepSeek API Key', placeholder: '...' },
+      { key: 'PARLER_TTS_URL', label: 'Self-Hosted Parler TTS URL', placeholder: 'http://mako-tts:8000' },
     ],
   },
   {

@@ -92,4 +92,8 @@ export class UpdateChatbotConfigDto {
   @IsOptional()
   @IsString()
   mistralVoiceId?: string;
+
+  @IsOptional()
+  @IsString()
+  parlerVoiceDescription?: string;
 }

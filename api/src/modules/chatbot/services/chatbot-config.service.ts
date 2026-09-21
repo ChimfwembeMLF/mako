@@ -141,6 +141,9 @@ export class ChatbotConfigService {
     if (patch.mistralVoiceId === '') {
       config.mistralVoiceId = undefined;
     }
+    if (patch.parlerVoiceDescription === '') {
+      config.parlerVoiceDescription = undefined;
+    }
     let saved = await this.repo.save(config);
 
     if (saved.useMistralLibrary) {

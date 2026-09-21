@@ -8,6 +8,11 @@ import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
 import axios from 'axios';
 import { S3StorageService } from '../../media/s3-storage.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
+import { EncryptionService } from '../../tenants/services/encryption.service';
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
 
 @Injectable()
 export class MistralAgentsService {
@@ -18,19 +23,45 @@ export class MistralAgentsService {
   constructor(
     private readonly config: ConfigService,
     private readonly storage: S3StorageService,
+    @InjectRepository(TenantIntegrationConfig)
+    private readonly configRepo: Repository<TenantIntegrationConfig>,
+    private readonly encryptionService: EncryptionService,
+    private readonly integrations: PlatformIntegrationsService,
   ) {}
 
-  private getClient(): Mistral {
-    const apiKey = this.config.get<string>('MISTRAL_API_KEY');
-    if (!apiKey?.trim()) {
-      throw new ServiceUnavailableException(
-        'MISTRAL_API_KEY is not configured',
-      );
+  private async getClient(tenantId?: string): Promise<{ client: Mistral; apiKey: string }> {
+    let resolvedKey = '';
+
+    if (tenantId) {
+      try {
+        const customConfig = await this.configRepo.findOne({
+          where: { tenantId, provider: IntegrationProvider.MISTRAL },
+        });
+
+        if (customConfig) {
+          resolvedKey = this.encryptionService.decrypt(
+            customConfig.encryptedApiKey,
+            customConfig.iv,
+            customConfig.authTag,
+          ).trim();
+        }
+      } catch (err) {
+        this.logger.error(`Failed to load custom Mistral key for tenant ${tenantId}`, err);
+      }
     }
-    if (!this.client) {
-      this.client = new Mistral({ apiKey: apiKey.trim() });
+
+    if (!resolvedKey) {
+      const fallbackKey = await this.integrations.getIntegrationWithEnvFallback('MISTRAL_API_KEY');
+      if (!fallbackKey?.trim()) {
+        throw new ServiceUnavailableException('MISTRAL_API_KEY is not configured');
+      }
+      resolvedKey = fallbackKey.trim();
     }
-    return this.client;
+
+    return {
+      client: new Mistral({ apiKey: resolvedKey }),
+      apiKey: resolvedKey,
+    };
   }
 
   private get imageModel(): string {
@@ -40,12 +71,10 @@ export class MistralAgentsService {
     );
   }
 
-  private async getOrCreateImageAgent(): Promise<string> {
+  private async getOrCreateImageAgent(client: Mistral): Promise<string> {
     const fromEnv = this.config.get<string>('MISTRAL_IMAGE_AGENT_ID');
     if (fromEnv?.trim()) return fromEnv.trim();
     if (this.cachedAgentId) return this.cachedAgentId;
-
-    const client = this.getClient();
     const agent = await client.beta.agents.create({
       model: this.imageModel,
       name: 'Mako  Image Generator',
@@ -65,8 +94,8 @@ export class MistralAgentsService {
     prompt: string,
     options?: { tenantId?: string },
   ): Promise<{ filePath: string; publicUrl: string; fileId: string }> {
-    const client = this.getClient();
-    const agentId = await this.getOrCreateImageAgent();
+    const { client, apiKey } = await this.getClient(options?.tenantId);
+    const agentId = await this.getOrCreateImageAgent(client);
 
     const response = await client.beta.conversations.start({
       agentId,
@@ -92,7 +121,6 @@ export class MistralAgentsService {
     }
 
     const fileId = fileIds[0];
-    const apiKey = this.config.getOrThrow<string>('MISTRAL_API_KEY');
     const fileRes = await axios.get<ArrayBuffer>(
       `https://api.mistral.ai/v1/files/${fileId}/content`,
       {

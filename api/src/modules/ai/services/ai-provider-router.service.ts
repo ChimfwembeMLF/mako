@@ -5,6 +5,7 @@ import { MistralChatService, ChatMessage, ChatResult } from './mistral-chat.serv
 import { OpenAIChatService } from './openai-chat.service';
 import { GeminiChatService } from './gemini-chat.service';
 import { DeepseekChatService } from './deepseek-chat.service';
+import { ParlerTtsService } from './parler-tts.service';
 export { ChatMessage, ChatResult };
 import { Tenants } from '../../tenants/entities/tenants.entity';
 import { IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
@@ -18,6 +19,7 @@ export class AiProviderRouter {
     private readonly openAiService: OpenAIChatService,
     private readonly geminiService: GeminiChatService,
     private readonly deepseekService: DeepseekChatService,
+    private readonly parlerTtsService: ParlerTtsService,
     @InjectRepository(Tenants)
     private readonly tenantsRepo: Repository<Tenants>,
   ) {}
@@ -116,13 +118,18 @@ export class AiProviderRouter {
 
   async speak(
     text: string,
-    options?: { voiceId?: string; model?: string; tenantId?: string },
+    options?: { voiceId?: string | null; model?: string; tenantId?: string; description?: string | null },
   ): Promise<{ audioData: string; format: 'mp3' }> {
+    if (options?.description && !options?.voiceId) {
+      return this.parlerTtsService.speak(text, { description: options.description, tenantId: options.tenantId });
+    }
+
     const provider = await this.getProvider(options?.tenantId);
     
-    if (provider === IntegrationProvider.OPENAI) return this.openAiService.speak(text, options);
+    if (provider === IntegrationProvider.OPENAI) return this.openAiService.speak(text, options as any);
     if (provider === IntegrationProvider.GEMINI) return this.geminiService.speak(text, options);
     if (provider === IntegrationProvider.DEEPSEEK) return this.deepseekService.speak(text, options);
+    if (provider === IntegrationProvider.SELF_HOSTED_PARLER) return this.parlerTtsService.speak(text, options);
 
     return this.mistralService.speak(text, options);
   }

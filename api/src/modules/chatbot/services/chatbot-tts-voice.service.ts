@@ -24,6 +24,7 @@ export class ChatbotTtsVoiceService {
     const custom = customRows.map((row) => ({
       id: row.id,
       mistralVoiceId: row.mistralVoiceId,
+      parlerVoiceDescription: row.parlerVoiceDescription,
       name: row.name,
       created_at: row.created_at,
     }));
@@ -65,10 +66,39 @@ export class ChatbotTtsVoiceService {
       voice: {
         id: row.id,
         mistralVoiceId: row.mistralVoiceId,
+        parlerVoiceDescription: row.parlerVoiceDescription,
         name: row.name,
         created_at: row.created_at,
       },
       selectedVoiceId: mistralVoiceId,
+    };
+  }
+
+  async createParlerVoice(
+    tenantId: string,
+    userId: string,
+    params: { name: string; description: string },
+  ) {
+    const row = await this.repo.save(
+      this.repo.create({
+        tenantId,
+        name: params.name,
+        parlerVoiceDescription: params.description,
+        createdBy: userId,
+      }),
+    );
+
+    await this.configService.update(tenantId, { parlerVoiceDescription: params.description });
+
+    return {
+      voice: {
+        id: row.id,
+        mistralVoiceId: row.mistralVoiceId,
+        parlerVoiceDescription: row.parlerVoiceDescription,
+        name: row.name,
+        created_at: row.created_at,
+      },
+      selectedDescription: params.description,
     };
   }
 
@@ -78,12 +108,16 @@ export class ChatbotTtsVoiceService {
     });
     if (!row) throw new NotFoundException('Voice not found');
 
-    await this.mistralTts.deleteCustomVoice(row.mistralVoiceId);
-    await this.repo.delete({ id: row.id, tenantId });
+    if (row.mistralVoiceId) {
+      await this.mistralTts.deleteCustomVoice(tenantId, row.mistralVoiceId);
+    }
+    await this.repo.remove(row);
 
     const config = await this.configService.getOrCreate(tenantId);
-    if (config.mistralVoiceId === row.mistralVoiceId) {
+    if (row.mistralVoiceId && config.mistralVoiceId === row.mistralVoiceId) {
       await this.configService.update(tenantId, { mistralVoiceId: '' });
+    } else if (row.parlerVoiceDescription && config.parlerVoiceDescription === row.parlerVoiceDescription) {
+      await this.configService.update(tenantId, { parlerVoiceDescription: '' });
     }
 
     return { success: true };

@@ -22,6 +22,7 @@ type Props = {
   onSpeak?: (messageId: string) => Promise<Blob>;
   botName?: string;
   avatarTheme?: ChatAvatarTheme;
+  onTranscribe?: (audioBlob: Blob) => Promise<string>;
 };
 
 export function ChatPanel({
@@ -34,10 +35,15 @@ export function ChatPanel({
   onSpeak,
   botName,
   avatarTheme,
+  onTranscribe,
 }: Props) {
   const [input, setInput] = useState("");
   const [inputFocused, setInputFocused] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const avatarController = useRef<AvatarControllerHandle | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -46,9 +52,9 @@ export function ChatPanel({
 
   const avatarState: AvatarState = speaking
     ? "speaking"
-    : sending
+    : sending || isTranscribing
       ? "thinking"
-      : inputFocused && input.trim()
+      : inputFocused && input.trim() || isRecording
         ? "listening"
         : "idle";
 
@@ -77,6 +83,59 @@ export function ChatPanel({
     if (!text || sending) return;
     setInput("");
     await onSend(text);
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const options = MediaRecorder.isTypeSupported('audio/webm') 
+        ? { mimeType: 'audio/webm' }
+        : undefined;
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        const mimeType = mediaRecorder.mimeType || 'audio/mp4';
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+        audioChunksRef.current = [];
+        
+        // Stop all tracks to turn off the microphone indicator
+        stream.getTracks().forEach((track) => track.stop());
+
+        if (onTranscribe) {
+          setIsTranscribing(true);
+          try {
+            const text = await onTranscribe(audioBlob);
+            if (text) {
+              setInput((prev) => (prev ? `${prev} ${text}` : text));
+            }
+          } catch (e) {
+            console.error("Transcription failed", e);
+          } finally {
+            setIsTranscribing(false);
+          }
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+    } catch (e) {
+      console.error("Microphone access denied", e);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
   };
 
   return (
@@ -167,10 +226,34 @@ export function ChatPanel({
             }
           }}
         />
+        {onTranscribe && (
+          <Button
+            size="icon"
+            variant={isRecording ? "destructive" : "secondary"}
+            className={cn("shrink-0 self-end", isRecording && "animate-pulse")}
+            disabled={sending || isTranscribing}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              void startRecording();
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              stopRecording();
+            }}
+            onPointerLeave={stopRecording}
+            title="Hold to talk"
+          >
+            {isTranscribing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+            )}
+          </Button>
+        )}
         <Button
           size="icon"
           className="shrink-0 self-end"
-          disabled={!input.trim() || sending}
+          disabled={!input.trim() || sending || isRecording || isTranscribing}
           onClick={() => void handleSend()}
         >
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

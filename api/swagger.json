@@ -4630,6 +4630,29 @@
         ]
       }
     },
+    "/api/v1/leads/contact-form/{tenantId}/config": {
+      "get": {
+        "operationId": "LeadsController_getContactFormConfig",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
     "/api/v1/leads/send-email": {
       "post": {
         "operationId": "LeadsController_sendEmail",
@@ -4809,556 +4832,6 @@
         ],
         "tags": [
           "Leads"
-        ]
-      }
-    },
-    "/api/v1/queues/queues": {
-      "get": {
-        "operationId": "QueueJobsController_listQueues",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Queue Jobs"
-        ]
-      }
-    },
-    "/api/v1/queues/{queue}/stats": {
-      "get": {
-        "operationId": "QueueJobsController_getQueueStats",
-        "parameters": [
-          {
-            "name": "queue",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Queue Jobs"
-        ]
-      }
-    },
-    "/api/v1/queues/{queue}/jobs": {
-      "get": {
-        "operationId": "QueueJobsController_listJobs",
-        "parameters": [
-          {
-            "name": "queue",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "state",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "start",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "end",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Queue Jobs"
-        ]
-      }
-    },
-    "/api/v1/queues/{queue}/jobs/{jobId}": {
-      "get": {
-        "operationId": "QueueJobsController_getJob",
-        "parameters": [
-          {
-            "name": "queue",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "jobId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Queue Jobs"
-        ]
-      }
-    },
-    "/api/v1/queues/{queue}/jobs/{jobId}/retry": {
-      "post": {
-        "operationId": "QueueJobsController_retryJob",
-        "parameters": [
-          {
-            "name": "queue",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "jobId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Queue Jobs"
-        ]
-      }
-    },
-    "/api/v1/queues/{queue}/retry-failed": {
-      "post": {
-        "operationId": "QueueJobsController_retryAllFailed",
-        "parameters": [
-          {
-            "name": "queue",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Queue Jobs"
-        ]
-      }
-    },
-    "/api/v1/content-publications": {
-      "get": {
-        "operationId": "ContentPublicationsController_findByTenant",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Content Publications"
-        ]
-      }
-    },
-    "/api/v1/content-publications/content/{contentId}": {
-      "get": {
-        "operationId": "ContentPublicationsController_findByContent",
-        "parameters": [
-          {
-            "name": "contentId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Content Publications"
-        ]
-      }
-    },
-    "/api/v1/content-publications/top-performing": {
-      "get": {
-        "operationId": "ContentPublicationsController_topPerforming",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "limit",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Content Publications"
-        ]
-      }
-    },
-    "/api/v1/content-publications/sync-engagement": {
-      "post": {
-        "operationId": "ContentPublicationsController_syncEngagement",
-        "parameters": [],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Content Publications"
-        ]
-      }
-    },
-    "/api/v1/media": {
-      "get": {
-        "operationId": "MediaController_findAll",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Media"
-        ]
-      }
-    },
-    "/api/v1/media/upload": {
-      "post": {
-        "operationId": "MediaController_upload",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "contentId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "workspaceId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Media"
-        ]
-      }
-    },
-    "/api/v1/media/{id}": {
-      "delete": {
-        "operationId": "MediaController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Media"
-        ]
-      }
-    },
-    "/api/v1/integrations/google-drive/auth-url": {
-      "get": {
-        "operationId": "GoogleDriveController_getAuthUrl",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "GoogleDrive"
-        ]
-      }
-    },
-    "/api/v1/integrations/google-drive/callback": {
-      "get": {
-        "operationId": "GoogleDriveController_callback",
-        "parameters": [
-          {
-            "name": "code",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "state",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "GoogleDrive"
-        ]
-      }
-    },
-    "/api/v1/integrations/google-drive/files": {
-      "get": {
-        "operationId": "GoogleDriveController_listFiles",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "GoogleDrive"
-        ]
-      }
-    },
-    "/api/v1/integrations/google-drive/import": {
-      "post": {
-        "operationId": "GoogleDriveController_importFile",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "GoogleDrive"
         ]
       }
     },
@@ -5788,6 +5261,34 @@
       },
       "post": {
         "operationId": "ChatbotController_cloneTtsVoice",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/tts/voices/parler": {
+      "post": {
+        "operationId": "ChatbotController_createParlerVoice",
         "parameters": [
           {
             "name": "tenantId",
@@ -6390,6 +5891,556 @@
         "summary": "Text-to-speech for an assistant message",
         "tags": [
           "Widget"
+        ]
+      }
+    },
+    "/api/v1/media": {
+      "get": {
+        "operationId": "MediaController_findAll",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/media/upload": {
+      "post": {
+        "operationId": "MediaController_upload",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "contentId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/media/{id}": {
+      "delete": {
+        "operationId": "MediaController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Media"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/auth-url": {
+      "get": {
+        "operationId": "GoogleDriveController_getAuthUrl",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/callback": {
+      "get": {
+        "operationId": "GoogleDriveController_callback",
+        "parameters": [
+          {
+            "name": "code",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/files": {
+      "get": {
+        "operationId": "GoogleDriveController_listFiles",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/integrations/google-drive/import": {
+      "post": {
+        "operationId": "GoogleDriveController_importFile",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "GoogleDrive"
+        ]
+      }
+    },
+    "/api/v1/queues/queues": {
+      "get": {
+        "operationId": "QueueJobsController_listQueues",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Queue Jobs"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/stats": {
+      "get": {
+        "operationId": "QueueJobsController_getQueueStats",
+        "parameters": [
+          {
+            "name": "queue",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Queue Jobs"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/jobs": {
+      "get": {
+        "operationId": "QueueJobsController_listJobs",
+        "parameters": [
+          {
+            "name": "queue",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "start",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "end",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Queue Jobs"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/jobs/{jobId}": {
+      "get": {
+        "operationId": "QueueJobsController_getJob",
+        "parameters": [
+          {
+            "name": "queue",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Queue Jobs"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/jobs/{jobId}/retry": {
+      "post": {
+        "operationId": "QueueJobsController_retryJob",
+        "parameters": [
+          {
+            "name": "queue",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "jobId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Queue Jobs"
+        ]
+      }
+    },
+    "/api/v1/queues/{queue}/retry-failed": {
+      "post": {
+        "operationId": "QueueJobsController_retryAllFailed",
+        "parameters": [
+          {
+            "name": "queue",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Queue Jobs"
+        ]
+      }
+    },
+    "/api/v1/content-publications": {
+      "get": {
+        "operationId": "ContentPublicationsController_findByTenant",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Publications"
+        ]
+      }
+    },
+    "/api/v1/content-publications/content/{contentId}": {
+      "get": {
+        "operationId": "ContentPublicationsController_findByContent",
+        "parameters": [
+          {
+            "name": "contentId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Publications"
+        ]
+      }
+    },
+    "/api/v1/content-publications/top-performing": {
+      "get": {
+        "operationId": "ContentPublicationsController_topPerforming",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Publications"
+        ]
+      }
+    },
+    "/api/v1/content-publications/sync-engagement": {
+      "post": {
+        "operationId": "ContentPublicationsController_syncEngagement",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Publications"
         ]
       }
     },
@@ -9856,7 +9907,8 @@
               "gemini",
               "mistral",
               "deepseek",
-              "google_drive"
+              "google_drive",
+              "self_hosted_parler"
             ]
           },
           "apiKey": {

@@ -16,6 +16,7 @@ import { preloadAvatarModel } from "@/lib/chat-avatar";
 import { preloadGltfAvatar } from "@/components/chatbot/avatar/gltf-setup";
 import { ChatPanel } from "@/components/chatbot/ChatPanel";
 import { TtsVoiceSettings } from "@/components/chatbot/TtsVoiceSettings";
+import { ParlerVoiceSettings } from "@/components/chatbot/ParlerVoiceSettings";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
@@ -238,6 +239,11 @@ export default function ChatbotPage() {
                     onSpeak={
                       sessionId
                         ? (messageId) => chatbotApi.fetchSpeech(tenantId, sessionId, messageId)
+                        : undefined
+                    }
+                    onTranscribe={
+                      tenantId
+                        ? (blob) => chatbotApi.transcribeAudio(tenantId, blob)
                         : undefined
                     }
                   />
@@ -533,16 +539,31 @@ export default function ChatbotPage() {
                     />
                   </div>
                   {(draft.widgetTtsEnabled ?? false) && tenantId && (
-                    <TtsVoiceSettings
-                      tenantId={tenantId}
-                      selectedVoiceId={draft.mistralVoiceId ?? ""}
-                      onVoiceChange={(voiceId) =>
-                        setDraft((d) => ({
-                          ...d,
-                          mistralVoiceId: voiceId === "" ? "" : voiceId,
-                        }))
-                      }
-                    />
+                    <div className="space-y-4 pt-4 border-t">
+                      {tenant?.preferredAiProvider === "self_hosted_parler" ? (
+                        <ParlerVoiceSettings
+                          tenantId={tenantId}
+                          selectedDescription={draft.parlerVoiceDescription ?? ""}
+                          onDescriptionChange={(desc) =>
+                            setDraft((d) => ({
+                              ...d,
+                              parlerVoiceDescription: desc === "" ? "" : desc,
+                            }))
+                          }
+                        />
+                      ) : (
+                        <TtsVoiceSettings
+                          tenantId={tenantId}
+                          selectedVoiceId={draft.mistralVoiceId ?? ""}
+                          onVoiceChange={(voiceId) =>
+                            setDraft((d) => ({
+                              ...d,
+                              mistralVoiceId: voiceId === "" ? "" : voiceId,
+                            }))
+                          }
+                        />
+                      )}
+                    </div>
                   )}
                 </CardContent>
               </Card>

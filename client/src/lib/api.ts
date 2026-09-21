@@ -2375,6 +2375,7 @@ export type ChatbotConfig = {
     mistralAgentId?: string;
     widgetTtsEnabled?: boolean;
     mistralVoiceId?: string;
+    parlerVoiceDescription?: string;
 };
 
 export type ChatCitation = {
@@ -2403,7 +2404,13 @@ export type TtsPresetVoice = {
 
 export type TtsVoiceList = {
     presets: TtsPresetVoice[];
-    custom: Array<{ id: string; mistralVoiceId: string; name: string; created_at: string }>;
+    custom: Array<{
+        id: string;
+        mistralVoiceId?: string;
+        parlerVoiceDescription?: string;
+        name: string;
+        created_at: string;
+    }>;
     selectedVoiceId: string | null;
 };
 
@@ -2455,6 +2462,7 @@ export const chatbotApi = {
             'useMistralLibrary',
             'widgetTtsEnabled',
             'mistralVoiceId',
+            'parlerVoiceDescription',
         ] as const;
         for (const key of optionalKeys) {
             const value = data[key];
@@ -2464,6 +2472,9 @@ export const chatbotApi = {
         }
         if ('mistralVoiceId' in data && data.mistralVoiceId === '') {
             body.mistralVoiceId = '';
+        }
+        if ('parlerVoiceDescription' in data && data.parlerVoiceDescription === '') {
+            body.parlerVoiceDescription = '';
         }
         return request<ChatbotConfig>('/api/v1/chatbot/config', {
             method: 'PATCH',
@@ -2571,6 +2582,15 @@ export const chatbotApi = {
         });
     },
 
+    addParlerVoice: (tenantId: string, name: string, description: string) =>
+        request<{
+            voice: { id: string; parlerVoiceDescription: string; name: string; created_at: string };
+            selectedDescription: string;
+        }>(`/api/v1/chatbot/tts/voices/parler?tenantId=${encodeURIComponent(tenantId)}`, {
+            method: 'POST',
+            body: JSON.stringify({ name, description }),
+        }),
+
     deleteTtsVoice: (tenantId: string, voiceRowId: string) =>
         request<void>(
             `/api/v1/chatbot/tts/voices/${voiceRowId}?tenantId=${encodeURIComponent(tenantId)}`,
@@ -2579,7 +2599,8 @@ export const chatbotApi = {
 
     previewTtsVoice: async (
         tenantId: string,
-        voiceId: string,
+        voiceId?: string,
+        description?: string,
         text?: string,
     ): Promise<Blob> => {
         const token = getAuthToken();
@@ -2592,7 +2613,7 @@ export const chatbotApi = {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ voiceId, text }),
+                body: JSON.stringify({ voiceId, description, text }),
             },
         );
         if (!res.ok) {
@@ -2614,6 +2635,29 @@ export const chatbotApi = {
             throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
         }
         return res.blob();
+    },
+
+    transcribeAudio: async (tenantId: string, audioBlob: Blob): Promise<string> => {
+        const token = getAuthToken();
+        if (!token) throw new ApiError('Not authenticated', { status: 401, isAuthError: true });
+        
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'speech.webm');
+
+        const res = await fetch(
+            `${API_BASE_URL}/api/v1/chatbot/stt/transcribe?tenantId=${encodeURIComponent(tenantId)}`,
+            {
+                method: 'POST',
+                headers: { Authorization: `Bearer ${token}` },
+                body: formData,
+            },
+        );
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new ApiError(body.message || `HTTP ${res.status}`, { status: res.status });
+        }
+        const data = await res.json() as { text: string };
+        return data.text;
     },
 
     deleteSession: (tenantId: string, sessionId: string) =>

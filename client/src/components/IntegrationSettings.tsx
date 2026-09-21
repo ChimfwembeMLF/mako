@@ -58,6 +58,7 @@ const AI_PROVIDERS = [
   { id: "openai", name: "OpenAI", icon: OpenAIIcon },
   { id: "gemini", name: "Google Gemini", icon: GeminiIcon },
   { id: "deepseek", name: "DeepSeek", icon: DeepSeekIcon },
+  { id: "self_hosted_parler", name: "Self-Hosted Parler (TTS Only)", icon: MistralIcon }, // Reusing Mistral icon for simplicity
 ];
 
 export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {

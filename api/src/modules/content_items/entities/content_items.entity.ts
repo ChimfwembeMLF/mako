@@ -14,6 +14,8 @@ import { Workspaces } from '../../workspaces/entities/workspaces.entity';
 import { UserEntity } from '../../user/user.entity';
 import { BrandProfiles } from '../../brand_profiles/entities/brand_profiles.entity';
 
+export type PlatformPayload = Record<string, any>;
+
 @Index(['tenantId', 'status', 'scheduledDate'])
 @Index(['workspaceId', 'status'])
 @Entity({ name: 'content_items' })

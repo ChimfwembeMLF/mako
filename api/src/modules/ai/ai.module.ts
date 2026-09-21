@@ -15,6 +15,8 @@ import { AiUsageTrackerService } from './services/ai-usage-tracker.service';
 import { FormSuggestionsService } from './services/form-suggestions.service';
 import { MistralWorkflowsService } from './services/mistral-workflows.service';
 import { AiProviderRouter } from './services/ai-provider-router.service';
+import { ParlerTtsService } from './services/parler-tts.service';
+import { SttService } from './services/stt.service';
 import { Tenants } from '../tenants/entities/tenants.entity';
 
 import { StorageModule } from '../media/storage.module';
@@ -44,6 +46,8 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     FormSuggestionsService,
     MistralWorkflowsService,
     AiProviderRouter,
+    ParlerTtsService,
+    SttService,
   ],
   exports: [
     MistralChatService,
@@ -57,6 +61,8 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     FormSuggestionsService,
     MistralWorkflowsService,
     AiProviderRouter,
+    ParlerTtsService,
+    SttService,
   ],
 })
 export class AiModule {}

@@ -5,6 +5,11 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Mistral } from '@mistralai/mistralai';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
+import { EncryptionService } from '../../tenants/services/encryption.service';
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
 
 export interface SupportEscalationInput {
   tenantId: string;
@@ -27,23 +32,55 @@ export class MistralWorkflowsService {
   private readonly logger = new Logger(MistralWorkflowsService.name);
   private client: Mistral | null = null;
 
-  constructor(private readonly config: ConfigService) {}
+  constructor(
+    private readonly config: ConfigService,
+    @InjectRepository(TenantIntegrationConfig)
+    private readonly configRepo: Repository<TenantIntegrationConfig>,
+    private readonly encryptionService: EncryptionService,
+    private readonly integrations: PlatformIntegrationsService,
+  ) {}
 
-  isEnabled(): boolean {
-    return Boolean(this.config.get<string>('MISTRAL_API_KEY')?.trim());
+  async isEnabled(tenantId?: string): Promise<boolean> {
+    if (tenantId) {
+      const customConfig = await this.configRepo.findOne({
+        where: { tenantId, provider: IntegrationProvider.MISTRAL },
+      });
+      if (customConfig) return true;
+    }
+    const fallbackKey = await this.integrations.getIntegrationWithEnvFallback('MISTRAL_API_KEY');
+    return Boolean(fallbackKey?.trim());
   }
 
-  private getClient(): Mistral {
-    const apiKey = this.config.get<string>('MISTRAL_API_KEY');
-    if (!apiKey?.trim()) {
-      throw new ServiceUnavailableException(
-        'MISTRAL_API_KEY is not configured',
-      );
+  private async getClient(tenantId?: string): Promise<Mistral> {
+    let resolvedKey = '';
+
+    if (tenantId) {
+      try {
+        const customConfig = await this.configRepo.findOne({
+          where: { tenantId, provider: IntegrationProvider.MISTRAL },
+        });
+
+        if (customConfig) {
+          resolvedKey = this.encryptionService.decrypt(
+            customConfig.encryptedApiKey,
+            customConfig.iv,
+            customConfig.authTag,
+          ).trim();
+        }
+      } catch (err) {
+        this.logger.error(`Failed to load custom Mistral key for tenant ${tenantId}`, err);
+      }
     }
-    if (!this.client) {
-      this.client = new Mistral({ apiKey: apiKey.trim() });
+
+    if (!resolvedKey) {
+      const fallbackKey = await this.integrations.getIntegrationWithEnvFallback('MISTRAL_API_KEY');
+      if (!fallbackKey?.trim()) {
+        throw new ServiceUnavailableException('MISTRAL_API_KEY is not configured');
+      }
+      resolvedKey = fallbackKey.trim();
     }
-    return this.client;
+
+    return new Mistral({ apiKey: resolvedKey });
   }
 
   private deploymentName(): string {
@@ -59,8 +96,9 @@ export class MistralWorkflowsService {
     executionId?: string;
     waitForResult?: boolean;
     timeoutSeconds?: number;
+    tenantId?: string;
   }): Promise<WorkflowExecutionRef> {
-    const client = this.getClient();
+    const client = await this.getClient(params.tenantId);
     const response = await client.workflows.executeWorkflow({
       workflowIdentifier: params.workflowIdentifier,
       workflowExecutionRequest: {
@@ -97,6 +135,7 @@ export class MistralWorkflowsService {
 
     return this.executeWorkflow({
       workflowIdentifier: 'support-escalation',
+      tenantId: input.tenantId,
       executionId: `escalation-${input.tenantId}-${input.sessionId}`,
       input: {
         tenant_id: input.tenantId,
