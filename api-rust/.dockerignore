@@ -1,9 +1,0 @@
-target/
-.env
-logs/
-.git/
-*.md
-deploy/
-scripts/
-ecosystem.config.json
-swagger.json

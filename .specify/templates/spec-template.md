@@ -85,7 +85,6 @@
   Fill them out with the right functional requirements.
   Align with Mako Constitution (.specify/memory/constitution.md):
   - Multi-tenant / workspace isolation when data is tenant-scoped
-  - Live API behavior assumed on Rust (api-rust); note Nest migration needs
   - No secrets in this file
 -->
 
@@ -96,8 +95,7 @@
 - **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
-- **FR-006**: When the feature touches the live API, System MUST implement the behavior in **BOTH** the NestJS (`api/`) and Rust (`api-rust/`) runtimes unless the spec explicitly scopes it.
-- **FR-007**: When the feature stores tenant or workspace data, System MUST enforce
+- **FR-006**: When the feature stores tenant or workspace data, System MUST enforce
   tenant/workspace isolation and RBAC
 
 *Example of marking unclear requirements:*

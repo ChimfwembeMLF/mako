@@ -18,7 +18,7 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]
+**Language/Version**: [e.g., Python 3.11, Swift 5.9, TypeScript 5.5 or NEEDS CLARIFICATION]
 
 **Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]
 
@@ -40,15 +40,13 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [ ] **I. Nest–Rust parity**: Live API changes targeted at **BOTH** `api/` (NestJS) and `api-rust/` (Rust) for strict parity.
-- [ ] **II. Tenancy**: Tenant/workspace scoping and RBAC identified for every
+- [ ] **I. Tenancy**: Tenant/workspace scoping and RBAC identified for every
       data path
-- [ ] **III. Secrets**: No secrets in spec/plan; OAuth/webhook URLs listed
+- [ ] **II. Secrets**: No secrets in spec/plan; OAuth/webhook URLs listed
       explicitly; Dokploy env remains parser-safe
-- [ ] **IV. Contracts**: Smoke/contract verification path named for new HTTP,
+- [ ] **III. Contracts**: Smoke/contract verification path named for new HTTP,
       webhook, or publish surfaces
-- [ ] **V. Background work**: Cron/queue ownership single-process; no dual Nest+Rust
-      workers in the target environment
+- [ ] **IV. Background work**: Cron/queue ownership single-process
 - [ ] **Stack**: Migrations (if any) planned via Nest TypeORM; Docker/Dokploy
       impact noted
 
@@ -71,16 +69,14 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```text
-api/                 # NestJS (migrations + Nest reference)
-api-rust/            # Axum production API (Dokploy `api` service)
+api/                 # NestJS production API & migrations
 client/              # React + Vite SPA
-docker-compose.yml   # Dokploy: Rust api + client (+ optional migrate profile)
-docs/                # Deploy / Dokploy / cutover docs
+docker-compose.yml   # Dokploy: API + client (+ optional migrate profile)
+docs/                # Deploy / Dokploy docs
 specs/               # Spec Kit feature specs
 ```
 
-**Structure Decision**: Mako Yarn monorepo — implement live API in `api-rust/`,
-schema in `api/database/migrations`, UI in `client/`. Do not invent a parallel
+**Structure Decision**: Mako Yarn monorepo — implement live API and schema in `api/`, UI in `client/`. Do not invent a parallel
 `src/` tree at repo root.
 
 ## Complexity Tracking

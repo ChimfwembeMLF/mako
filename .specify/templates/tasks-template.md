@@ -21,7 +21,7 @@ description: "Task list template for feature implementation"
 
 ## Path Conventions
 
-- **Mako monorepo (default)**: `api-rust/src/`, `api/src/`, `client/src/`
+- **Mako monorepo (default)**: `api/src/`, `client/src/`
 - **Migrations**: `api/database/migrations/`
 - **Deploy / env docs**: `docs/`, `docker-compose.yml`
 - Adjust paths in generated tasks from `plan.md` structure — do not assume a
@@ -42,9 +42,8 @@ description: "Task list template for feature implementation"
   - Tested independently
   - Delivered as an MVP increment
 
-  For Mako API work, prefer tasks under api-rust/ for runtime behavior and
-  api/database/migrations/ for schema. Include smoke-parity or webhook CRC
-  checks when Constitution Principle I or IV applies.
+  For Mako API work, prefer tasks under api/ for runtime behavior and schema.
+  Include webhook CRC checks when Constitution Principle III applies.
 
   DO NOT keep these sample tasks in the generated tasks.md file.
   ============================================================================
