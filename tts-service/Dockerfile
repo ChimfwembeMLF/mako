@@ -10,7 +10,7 @@ COPY requirements.txt .
 # Install dependencies.
 # Note: In a production Dokploy environment with GPU, you would want a specific PyTorch CUDA wheel.
 # For CPU or generic compatibility, this installs the standard pip package.
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+RUN pip install --no-cache-dir --upgrade pip "setuptools<70.0.0" wheel && \
     pip install --no-cache-dir -r requirements.txt
 
 COPY . .
