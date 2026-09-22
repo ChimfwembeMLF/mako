@@ -25,7 +25,7 @@ export const dashboardTourConfig: TourConfig = {
       element: '#tour-dashboard-stats',
       popover: {
         title: 'Quick Stats',
-        description: 'Get a quick overview of your brand\\'s performance and content generation metrics here.',
+        description: "Get a quick overview of your brand's performance and content generation metrics here.",
         side: 'bottom',
         align: 'center',
       },
