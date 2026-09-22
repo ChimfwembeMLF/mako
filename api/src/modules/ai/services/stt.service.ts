@@ -20,7 +20,7 @@ export class SttService {
 
     try {
       const formData = new FormData();
-      const blob = new Blob([audioBuffer], { type: mimetype });
+      const blob = new Blob([new Uint8Array(audioBuffer)], { type: mimetype });
       formData.append('file', blob, filename);
 
       const response = await fetch(`${baseUrl}/transcribe`, {

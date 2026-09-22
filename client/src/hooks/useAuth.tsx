@@ -23,6 +23,7 @@ export interface User {
   tenantId?: string;
   roles?: string[];
   permissions?: string[];
+  preferences?: Record<string, any>;
 }
 
 export interface Session {
@@ -92,6 +93,7 @@ function normalizeUser(data: AuthUser | Record<string, unknown>): User {
     email: String(data.email ?? ""),
     firstName: data.firstName as string | undefined,
     lastName: data.lastName as string | undefined,
+    preferences: data.preferences as Record<string, any> | undefined,
     role: role && Object.values(UserRole).includes(role as UserRole)
       ? (role as UserRole)
       : undefined,

@@ -24,6 +24,7 @@ pub struct Model {
     pub google_access_token_enc: Option<String>,
     pub google_refresh_token_enc: Option<String>,
     pub google_token_expires_at: Option<DateTimeWithTimeZone>,
+    pub preferences: Option<sea_orm::prelude::Json>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Req, HttpCode, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Req, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { PageMetaDto, PageOptionsDto } from 'src/common/dtos';
 import { RoleType } from 'src/constants';
 import { Auth } from 'src/decorators';
@@ -36,5 +36,17 @@ export class UserController {
     const user = req.user as UserEntity;
     await this.userService.registerPushToken(user.id, dto.token, dto.deviceName, dto.platform);
     return { success: true, message: 'Push token registered successfully' };
+  }
+
+  @Auth([RoleType.USER])
+  @Patch('me/preferences')
+  @HttpCode(HttpStatus.OK)
+  async updatePreferences(
+    @Req() req: any,
+    @Body() preferences: Record<string, any>,
+  ) {
+    const user = req.user as UserEntity;
+    const updatedUser = await this.userService.updatePreferences(user.id, preferences);
+    return { success: true, message: 'Preferences updated successfully', preferences: updatedUser.preferences };
   }
 }

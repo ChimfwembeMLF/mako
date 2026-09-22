@@ -75,4 +75,7 @@ export class UserEntity {
 
   @Column({ type: 'timestamptz', nullable: true })
   googleTokenExpiresAt?: Date;
+
+  @Column({ type: 'jsonb', default: {} })
+  preferences?: Record<string, any>;
 }

@@ -226,4 +226,40 @@ impl UsersService {
 
         Ok(())
     }
+
+    pub async fn update_preferences(
+        state: &AppState,
+        user_id: Uuid,
+        preferences: sea_orm::prelude::Json,
+    ) -> ApiResult<UserModel> {
+        let user = UserEntity::find_by_id(user_id)
+            .one(&state.db)
+            .await?
+            .ok_or_else(|| ApiError::NotFound("User not found".into()))?;
+
+        let mut current_prefs = user.preferences.clone().unwrap_or_else(|| serde_json::json!({}));
+        
+        fn merge_json(a: &mut serde_json::Value, b: serde_json::Value) {
+            match (a, b) {
+                (serde_json::Value::Object(a_obj), serde_json::Value::Object(b_obj)) => {
+                    for (k, v) in b_obj {
+                        if let Some(a_v) = a_obj.get_mut(&k) {
+                            merge_json(a_v, v);
+                        } else {
+                            a_obj.insert(k, v);
+                        }
+                    }
+                }
+                (a, b) => *a = b,
+            }
+        }
+        
+        merge_json(&mut current_prefs, preferences);
+
+        let mut active: UserActiveModel = user.into();
+        active.preferences = Set(Some(current_prefs));
+        active.updated_at = Set(Utc::now().fixed_offset());
+        let updated = active.update(&state.db).await?;
+        Ok(updated)
+    }
 }

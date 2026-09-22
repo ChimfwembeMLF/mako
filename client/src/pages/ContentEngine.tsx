@@ -20,6 +20,8 @@ import { PLATFORMS, platformOf } from '@/lib/platforms';
 import { ContentItem } from '@/components/content/types';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { PublishPanel } from '@/components/content/PublishPanel';
+import { TourService } from '@/services/tour.service';
+import { contentEngineTourConfig } from '@/config/tours/content-engine.tour';
 
 const PAGE_SIZE = 6;
 
@@ -295,6 +297,15 @@ const ContentEngine = () => {
   }, [page, loadContent, user, activeWorkspace]);
 
   useEffect(() => {
+    if (user && !user.preferences?.tours?.content_engine?.completed) {
+      const timer = setTimeout(() => {
+        TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  useEffect(() => {
     const editId = searchParams.get('edit');
     const publishId = searchParams.get('publish');
     if (!editId && !publishId) return;
@@ -404,7 +415,7 @@ const ContentEngine = () => {
   return (
     <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+      <div id="tour-ce-header" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
             <Pen size={18} className="text-primary" />
@@ -461,7 +472,7 @@ const ContentEngine = () => {
 
       {/* Main layout: compose always visible + library */}
       <div className="grid gap-5 sm:gap-6 lg:grid-cols-5 lg:items-start">
-        <div className={`lg:col-span-2 lg:sticky lg:top-4 min-w-0 ${mobileView === 'compose' ? 'block' : 'hidden lg:block'}`}>
+        <div id="tour-ce-controls" className={`lg:col-span-2 lg:sticky lg:top-4 min-w-0 ${mobileView === 'compose' ? 'block' : 'hidden lg:block'}`}>
           <ContentEditor
             item={activeItem}
             workspaceId={activeWorkspace}
@@ -470,7 +481,7 @@ const ContentEngine = () => {
           />
         </div>
 
-        <div className={`lg:col-span-3 space-y-3 min-w-0 ${mobileView === 'library' ? 'block' : 'hidden lg:block'}`}>
+        <div id="tour-ce-results" className={`lg:col-span-3 space-y-3 min-w-0 ${mobileView === 'library' ? 'block' : 'hidden lg:block'}`}>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-sm font-semibold">Content library</h2>

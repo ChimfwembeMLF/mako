@@ -674,6 +674,25 @@
         ]
       }
     },
+    "/api/v1/users/me/preferences": {
+      "patch": {
+        "operationId": "UserController_updatePreferences",
+        "parameters": [],
+        "responses": {
+          "401": {
+            "description": "Unauthorized"
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "User"
+        ]
+      }
+    },
     "/api/v1/tenants": {
       "post": {
         "operationId": "TenantsController_create",
@@ -5398,6 +5417,34 @@
               "type": "string"
             }
           },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Chatbot"
+        ]
+      }
+    },
+    "/api/v1/chatbot/stt/transcribe": {
+      "post": {
+        "operationId": "ChatbotController_transcribeAudio",
+        "parameters": [
           {
             "name": "tenantId",
             "required": true,

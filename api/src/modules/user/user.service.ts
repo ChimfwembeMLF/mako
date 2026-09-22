@@ -156,4 +156,18 @@ export class UserService {
       await this.pushTokenRepository.save(newToken);
     }
   }
+
+  async updatePreferences(userId: string, preferences: Record<string, any>): Promise<UserEntity> {
+    const user = await this.userRepository.findOneBy({ id: userId });
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    // Perform a deep merge of the provided JSON with the existing preferences
+    // Need to require lodash here or import it at the top
+    const lodashMerge = require('lodash/merge');
+    user.preferences = lodashMerge(user.preferences || {}, preferences);
+    
+    return this.userRepository.save(user);
+  }
 }

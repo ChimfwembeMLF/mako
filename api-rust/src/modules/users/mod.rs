@@ -21,6 +21,7 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(list_users))
         .route("/push-tokens", axum::routing::post(register_push_token))
+        .route("/me/preferences", axum::routing::patch(update_preferences))
 }
 
 async fn list_users(
@@ -75,5 +76,19 @@ async fn register_push_token(
     Ok(Json(json!({
         "success": true,
         "message": "Push token registered successfully",
+    })))
+}
+
+async fn update_preferences(
+    AuthUser { id: user_id, .. }: AuthUser,
+    State(state): State<AppState>,
+    Json(payload): Json<Value>,
+) -> ApiResult<Json<Value>> {
+    let updated_user = UsersService::update_preferences(&state, user_id, payload).await?;
+    
+    Ok(Json(json!({
+        "success": true,
+        "message": "Preferences updated successfully",
+        "preferences": updated_user.preferences,
     })))
 }

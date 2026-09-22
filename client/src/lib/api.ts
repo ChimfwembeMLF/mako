@@ -77,6 +77,7 @@ export interface AuthUser {
     firstName?: string;
     lastName?: string;
     role?: UserRole;
+    preferences?: Record<string, any>;
     avatar?: string;
     phone?: string;
 }
@@ -449,6 +450,12 @@ export const authApi = {
 export const usersApi = {
     getUsers: (order: 'ASC' | 'DESC' = 'ASC', page: number = 1, take: number = 10) =>
         request<any>(`/api/v1/users?order=${order}&page=${page}&take=${take}`),
+    
+    updatePreferences: (preferences: Record<string, any>) =>
+        request<any>('/api/v1/users/me/preferences', {
+            method: 'PATCH',
+            body: JSON.stringify(preferences),
+        }),
 };
 
 // ==================== Social Accounts ====================

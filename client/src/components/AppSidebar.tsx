@@ -56,7 +56,7 @@ export function AppSidebar() {
     workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name ?? "Workspace";
 
   return (
-    <Sidebar collapsible="icon" className="min-h-0">
+    <Sidebar collapsible="icon" className="min-h-0" id="tour-dashboard-nav">
       <SidebarHeader className="shrink-0 p-3 border-b border-sidebar-border space-y-2">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -222,6 +222,41 @@ export function AppSidebar() {
           <NavItem title="Export Data" url="/export" icon={Download} />
           <NavItem title="Billing" url="/billing" icon={CreditCard} />
           <NavItem title="Settings" url="/settings" icon={Settings} />
+          
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="flex items-center gap-2 w-full rounded-md hover:bg-sidebar-accent px-2 py-1.5 transition-colors text-sidebar-foreground text-sm"
+                >
+                  <MessageCircle className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span className="flex-1 text-left font-medium">Help & Tours</span>}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Replay Tours</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => {
+                  import("@/services/tour.service").then(({ TourService }) => {
+                    import("@/config/tours/dashboard.tour").then(({ dashboardTourConfig }) => {
+                      TourService.startTour('dashboard', dashboardTourConfig.steps, undefined, dashboardTourConfig.driverConfig);
+                    });
+                  });
+                }}>
+                  Replay Dashboard Tour
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => {
+                  import("@/services/tour.service").then(({ TourService }) => {
+                    import("@/config/tours/content-engine.tour").then(({ contentEngineTourConfig }) => {
+                      TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
+                    });
+                  });
+                }}>
+                  Replay Content Engine Tour
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </Sidebar>

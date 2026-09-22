@@ -7,6 +7,11 @@ import { P, type PermissionKey } from "@/lib/permissions";
 import { canAccessSocialShell } from "@/lib/social-shell";
 import { cn } from "@/lib/utils";
 
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { TourService } from "@/services/tour.service";
+import { dashboardTourConfig } from "@/config/tours/dashboard.tour";
+
 type DashboardModule = {
   title: string;
   description: string;
@@ -113,15 +118,25 @@ const modules: DashboardModule[] = [
 
 const Dashboard = () => {
   const { can, canAny, loading } = usePermissions();
+  const { user } = useAuth();
   const visibleModules = loading
     ? modules
     : modules.filter((mod) => !mod.permission || can(mod.permission));
   const showSocialEntry = loading || canAccessSocialShell(canAny);
 
+  useEffect(() => {
+    if (user && !user.preferences?.tours?.dashboard?.completed) {
+      const timer = setTimeout(() => {
+        TourService.startTour('dashboard', dashboardTourConfig.steps, undefined, dashboardTourConfig.driverConfig);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       {/* Hero */}
-      <div className="relative overflow-hidden rounded-md bg-primary p-6 sm:p-8 shadow-elevated">
+      <div id="tour-dashboard-welcome" className="relative overflow-hidden rounded-md bg-primary p-6 sm:p-8 shadow-elevated">
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="h-5 w-5 text-primary-foreground" />
@@ -169,7 +184,7 @@ const Dashboard = () => {
       )}
 
       {/* Module cards */}
-      <div>
+      <div id="tour-dashboard-stats">
         <h2 className="text-lg font-semibold font-display mb-3">Quick links</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {visibleModules.map((mod) => (
