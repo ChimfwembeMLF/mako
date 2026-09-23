@@ -216,12 +216,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const completeOAuthLogin = async (token: string) => {
+  const completeOAuthLogin = async (token: string, refreshToken?: string) => {
     setLoading(true);
     try {
       setAuthToken(token);
       const profile = await authApi.getMe() as AuthProfile;
-      setAuthData(token, applyProfile(profile));
+      setAuthData(token, applyProfile(profile), refreshToken);
     } catch (error) {
       if (!isNetworkError(error)) clearAuthData();
       throw error;

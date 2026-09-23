@@ -283,7 +283,7 @@ async function request<T>(
         } catch {
             // ignore non-JSON error bodies
         }
-        const isAuthError = response.status === 401 || response.status === 403;
+        const isAuthError = response.status === 401;
 
         if (isAuthError && requireAuth && !options._isRetry) {
             console.error(`[API] Received 401/403 for ${endpoint}, attempting token refresh...`);

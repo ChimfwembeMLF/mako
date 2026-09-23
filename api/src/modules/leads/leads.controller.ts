@@ -128,7 +128,7 @@ export class LeadsController {
 
     const classification = await this.classify.classify({
       tenantId,
-      userId: null,
+      userId: tenant.ownerId,
       name: body.name ?? 'Unknown',
       email: body.email ?? '',
       message: body.message ?? '',
@@ -136,7 +136,7 @@ export class LeadsController {
 
     const lead = await this.service.create({
       tenantId,
-      userId: null,
+      userId: tenant.ownerId,
       name: body.name ?? 'Unknown',
       email: body.email ?? '',
       source: 'contact_form',

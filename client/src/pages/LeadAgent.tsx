@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2 } from "lucide-react";
+import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2, Eye } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { API_BASE_URL, leadsApi, leadSourcesApi, whatsappContactsApi, whatsappApi } from "@/lib/api";
@@ -505,9 +506,33 @@ const LeadAgent = () => {
               Include header <code>X-Webhook-Secret: {leadSource ? "••••••••" : "(loading)"}</code>.
               AI will auto-classify and generate a reply.
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ExternalLink className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-xs">Embeddable contact form: <code className="bg-muted px-1 py-0.5 rounded">/contact/{tenant?.id?.slice(0, 8)}...</code></span>
+              <span className="text-xs flex items-center gap-2">
+                Embeddable contact form: 
+                <code className="bg-muted px-1 py-0.5 rounded max-w-[200px] truncate" title={`${window.location.origin}/contact/${tenant?.id}`}>
+                  {window.location.origin}/contact/{tenant?.id}
+                </code>
+              </span>
+              <Button
+                size="sm" variant="ghost" className="h-6 text-xs text-primary p-0 ml-1"
+                onClick={() => {
+                  navigator.clipboard.writeText(`${window.location.origin}/contact/${tenant?.id}`);
+                  toast({ title: "Contact form URL copied!" });
+                }}
+              >
+                Copy URL
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button size="sm" variant="ghost" className="h-6 text-xs text-primary p-0 ml-1">
+                    <Eye className="h-3.5 w-3.5 mr-1" /> Preview
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-md p-0 border-none bg-transparent shadow-none">
+                  <iframe src={`${window.location.origin}/contact/${tenant?.id}`} width="100%" height="650" className="border-none rounded-xl" />
+                </DialogContent>
+              </Dialog>
             </div>
             {leadSource && (
               <div className="flex items-center gap-2">

@@ -171,10 +171,10 @@ export class AuthController {
       const mobileReturn = req.cookies?.['mako.oauth.mobile_return'];
       if (mobileReturn && isAllowedMobileOAuthReturnUrl(String(mobileReturn))) {
         res.clearCookie('mako.oauth.mobile_return', { path: '/' });
-        return res.redirect(`${mobileReturn}?token=${encodeURIComponent(tokens.token)}`);
+        return res.redirect(`${mobileReturn}?token=${encodeURIComponent(tokens.token)}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`);
       }
       return res.redirect(
-        `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+        `${this.frontendUrl}/auth/callback?token=${tokens.token}&refreshToken=${tokens.refreshToken}`,
       );
     } catch (err) {
       const message =
@@ -221,7 +221,7 @@ export class AuthController {
     );
     const tokens = await this.authService.completeAuthentication(user);
     return res.redirect(
-      `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+      `${this.frontendUrl}/auth/callback?token=${tokens.token}&refreshToken=${tokens.refreshToken}`,
     );
   }
 
@@ -266,7 +266,7 @@ export class AuthController {
     );
     const tokens = await this.authService.completeAuthentication(user);
     return res.redirect(
-      `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+      `${this.frontendUrl}/auth/callback?token=${tokens.token}&refreshToken=${tokens.refreshToken}`,
     );
   }
 
@@ -314,7 +314,7 @@ export class AuthController {
       );
       const tokens = await this.authService.completeAuthentication(user);
       return res.redirect(
-        `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+        `${this.frontendUrl}/auth/callback?token=${tokens.token}&refreshToken=${tokens.refreshToken}`,
       );
     } catch (err) {
       const message =
@@ -371,7 +371,7 @@ export class AuthController {
       );
       const tokens = await this.authService.completeAuthentication(user);
       return res.redirect(
-        `${this.frontendUrl}/auth/callback?token=${tokens.token}`,
+        `${this.frontendUrl}/auth/callback?token=${tokens.token}&refreshToken=${tokens.refreshToken}`,
       );
     } catch (err) {
       const message =

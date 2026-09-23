@@ -18,9 +18,12 @@ export default function SocialCallback() {
     const params = new URLSearchParams(location.search);
     let token = params.get("token");
 
+    let refreshToken = params.get("refreshToken");
+
     if (!token && location.hash) {
       const hashParams = new URLSearchParams(location.hash.substring(1));
       token = hashParams.get("access_token") || hashParams.get("token");
+      if (!refreshToken) refreshToken = hashParams.get("refreshToken");
     }
 
     const error = params.get("error");
@@ -37,7 +40,7 @@ export default function SocialCallback() {
       return;
     }
 
-    completeOAuthLogin(token)
+    completeOAuthLogin(token, refreshToken || undefined)
       .then(() => {
         toast({ title: "Success", description: "You are now logged in" });
         navigate("/dashboard", { replace: true });
