@@ -14,7 +14,7 @@ import { UserEntity } from './user.entity';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Auth([RoleType.USER])
+  @Auth([RoleType.USER, RoleType.ADMIN])
   @Get()
   @HttpCode(HttpStatus.OK)
   async getUsers(@Query() pageOptionsDto: PageOptionsDto) {
@@ -26,7 +26,7 @@ export class UserController {
     return userDto;
   }
 
-  @Auth([RoleType.USER])
+  @Auth([RoleType.USER, RoleType.ADMIN])
   @Post('push-tokens')
   @HttpCode(HttpStatus.OK)
   async registerPushToken(
@@ -38,7 +38,7 @@ export class UserController {
     return { success: true, message: 'Push token registered successfully' };
   }
 
-  @Auth([RoleType.USER])
+  @Auth([RoleType.USER, RoleType.ADMIN])
   @Patch('me/preferences')
   @HttpCode(HttpStatus.OK)
   async updatePreferences(

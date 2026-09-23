@@ -11,6 +11,7 @@ import {
   UseGuards,
   Headers,
   UnauthorizedException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { LeadsService } from './leads.service';
@@ -102,7 +103,7 @@ export class LeadsController {
 
   @Post('contact-form/:tenantId')
   async contactFormSubmit(
-    @Param('tenantId') tenantId: string,
+    @Param('tenantId', new ParseUUIDPipe()) tenantId: string,
     @Body()
     body: {
       name?: string;
@@ -149,7 +150,7 @@ export class LeadsController {
   }
 
   @Get('contact-form/:tenantId/config')
-  async getContactFormConfig(@Param('tenantId') tenantId: string) {
+  async getContactFormConfig(@Param('tenantId', new ParseUUIDPipe()) tenantId: string) {
     if (!tenantId) {
       throw new UnauthorizedException('tenantId is required');
     }
