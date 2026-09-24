@@ -1,3 +1,4 @@
+import { confirmModal } from "@/components/ConfirmModal";
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -77,7 +78,8 @@ export default function MediaLibraryPage() {
 
   async function deleteAsset(asset: MediaAsset) {
     if (!tenant || !activeWorkspace) return;
-    if (!window.confirm(`Delete "${asset.name ?? 'this asset'}"?`)) return;
+    const confirmed = await confirmModal(`Delete "${asset.name ?? 'this asset'}"?`);
+    if (!confirmed) return;
     setDeletingId(asset.id);
     try {
       await mediaApi.remove(asset.id, tenant.id, activeWorkspace);

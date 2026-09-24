@@ -1,3 +1,4 @@
+import { confirmModal } from "@/components/ConfirmModal";
 import { driver, DriveStep, Config } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { usersApi } from '@/lib/api';
@@ -31,9 +32,19 @@ export class TourService {
       nextBtnText: 'Next',
       prevBtnText: 'Previous',
       ...driverConfig,
-      onDestroyStarted: () => {
+      onDestroyStarted: async () => {
         const hasNext = tourDriver.hasNextStep();
-        if (!hasNext || confirm("Are you sure you want to skip the rest of the tour?")) {
+        if (!hasNext) {
+          tourDriver.destroy();
+          this.activeTourId = null;
+          this.markTourCompleted(tourId).then(() => {
+            if (onComplete) onComplete();
+          });
+          return;
+        }
+
+        const confirmed = await confirmModal("Are you sure you want to skip the rest of the tour?");
+        if (confirmed) {
           tourDriver.destroy();
           this.activeTourId = null;
           // Mark as completed regardless of skip or finish

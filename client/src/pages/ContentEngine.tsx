@@ -1,3 +1,4 @@
+import { confirmModal } from "@/components/ConfirmModal";
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -211,7 +212,8 @@ const ContentEngine = () => {
 
   const handleBulkDelete = async () => {
     if (!selectedIds.length) return;
-    if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} selected items?`)) return;
+    const confirmed = await confirmModal(`Are you sure you want to delete ${selectedIds.length} selected items?`);
+    if (!confirmed) return;
     setDeletingBulk(true);
     try {
       await contentItemsApi.bulkDelete(selectedIds);

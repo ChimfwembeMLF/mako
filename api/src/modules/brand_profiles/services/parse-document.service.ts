@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PDFParse } from 'pdf-parse';
-import mammoth from 'mammoth';
+import * as mammoth from 'mammoth';
 import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import {

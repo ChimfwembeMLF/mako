@@ -2,9 +2,7 @@
 
 **Input**: Design documents from `/specs/014-system-tours/`
 
-**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
-
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, quickstart.md
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
@@ -14,20 +12,12 @@
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 
-## Path Conventions
-
-- **Mako monorepo (default)**: `api-rust/src/`, `api/src/`, `client/src/`
-- **Migrations**: `api/database/migrations/`
-- **Deploy / env docs**: `docs/`, `docker-compose.yml`
-- Adjust paths in generated tasks from `plan.md` structure — do not assume a single root `src/` tree
-
----
-
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: Project initialization and basic structure
 
-- [x] T001 Add `driver.js` dependency to `client/package.json`
+- [ ] T001 Update `client/src/services/tour.service.ts` to implement `onHighlightStarted` wait/retry logic for dynamic elements, using `MutationObserver` or polling.
+- [ ] T002 Add/update TS interfaces (`TourConfig`, `TourCompletionState`) in `client/src/services/tour.service.ts` based on `data-model.md`.
 
 ---
 
@@ -37,47 +27,57 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [x] T002 Add `preferences` JSONB column to NestJS `UserEntity` in `api/src/modules/user/user.entity.ts`
-- [x] T003 Generate TypeORM migration for the new column in `api/database/migrations/`
-- [x] T004 [P] Add `preferences` JSONB column to Rust `Model` in `api-rust/src/modules/users/entity.rs`
-- [x] T005 Implement `PATCH /api/v1/users/me/preferences` endpoint in NestJS `api/src/modules/user/user.controller.ts` and `user.service.ts`
-- [x] T006 [P] Implement `PATCH /api/v1/users/me/preferences` endpoint in Rust `api-rust/src/modules/users/routes.rs` and `service.rs`
-- [x] T007 Add `preferences` to frontend `User` interface in `client/src/types/user.ts` (or relevant API types file) and API client helper
+- [ ] T003 Implement `TourService.autoStartTour()` logic in `client/src/services/tour.service.ts`. This method must check if `user.preferences.tours[tourId].completed` is true before calling `driver.drive()`. If preferences are not already loaded in context, it may need to use a React Context or an API call.
 
-**Checkpoint**: Foundation ready - Backend parity achieved for storing tour state.
+**Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
 ---
 
 ## Phase 3: User Story 1 - New User Onboarding Tour (Priority: P1) 🎯 MVP
 
-**Goal**: As a new user, I want a step-by-step tour of the main dashboard so I understand the system.
+**Goal**: As a new user logging into the platform for the first time, I want to be guided through a step-by-step tour of the main interface, so that I can quickly understand how to navigate and use the system.
 
-**Independent Test**: Log in as a new user, reach the dashboard, verify the tour starts automatically.
+**Independent Test**: Login with a fresh user; dashboard tour should automatically start. Complete it, refresh, and verify it doesn't start again.
 
 ### Implementation for User Story 1
 
-- [x] T008 [US1] Create `TourService` utility in `client/src/services/tour.service.ts` to wrap `driver.js` initialization and API syncing.
-- [x] T009 [US1] Define Dashboard tour configuration steps in `client/src/config/tours/dashboard.tour.ts`
-- [x] T010 [US1] Integrate `TourService` into `client/src/pages/Dashboard.tsx` to automatically trigger the tour if `user.preferences.tours.dashboard.completed` is false.
-- [x] T011 [US1] Attach relevant CSS IDs/classes to elements in Dashboard components (e.g. Navigation, Quick Actions) mapped by the tour config.
+- [ ] T004 [US1] Create tour configuration for Dashboard in `client/src/pages/Dashboard.tour.ts`. Define steps highlighting sidebar, main header, and summary cards.
+- [ ] T005 [US1] Update `client/src/pages/Index.tsx` (Dashboard) to call `TourService.autoStartTour(DashboardTourConfig)` on component mount.
 
-**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently.
+**Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
 ---
 
 ## Phase 4: User Story 2 - Feature Discovery Tours (Priority: P2)
 
-**Goal**: As a user navigating to a complex page like Content Engine, I want a tour explaining capabilities.
+**Goal**: As a user navigating to a complex page, I want to see a tour explaining the page's capabilities, so that I can utilize advanced features without confusion.
 
-**Independent Test**: Open Content Engine for the first time, verify the contextual tour starts.
+**Independent Test**: Navigate to Content Engine and Brand Brain; tours should auto-start the first time but not subsequently.
 
 ### Implementation for User Story 2
 
-- [x] T012 [P] [US2] Define Content Engine tour configuration steps in `client/src/config/tours/content-engine.tour.ts`
-- [x] T013 [US2] Integrate `TourService` into `client/src/pages/ContentEngine.tsx` to trigger if `content_engine` tour is not completed.
-- [x] T014 [US2] Attach relevant CSS IDs/classes to elements in Content Engine components (e.g., Publisher, Scheduler).
+- [ ] T006 [P] [US2] Create `client/src/pages/ContentEngine.tour.ts` defining steps for the Content Engine page (Publisher, Scheduler, AI Generation).
+- [ ] T007 [P] [US2] Create `client/src/pages/BrandBrain.tour.ts` defining steps for Brand Brain (uploading assets, defining voice).
+- [ ] T008 [US2] Update `client/src/pages/ContentEngine.tsx` to call `TourService.autoStartTour(ContentEngineTourConfig)` on component mount.
+- [ ] T009 [US2] Update `client/src/pages/BrandBrain.tsx` to call `TourService.autoStartTour(BrandBrainTourConfig)` on component mount.
 
-**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently.
+**Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
+
+---
+
+## Phase 5: User Story 3 - Micro-Tours for Modals and Sheets
+
+**Goal**: Deep UI components like Modals and Sheets should have manual "Help/Tour" triggers instead of auto-starting.
+
+**Independent Test**: Open a targeted modal/sheet, click the help button, and verify the tour guides the inner elements correctly, waiting for data if necessary.
+
+### Implementation for User Story 3
+
+- [ ] T010 [P] [US3] Create `client/src/pages/MediaLibrary.tour.ts` defining steps for the media upload modal or asset view.
+- [ ] T011 [P] [US3] Add a manual "Tour" button (e.g., an icon button with a `?` or info icon) to `client/src/pages/MediaLibraryPage.tsx`.
+- [ ] T012 [US3] Wire the manual button in `client/src/pages/MediaLibraryPage.tsx` to `TourService.startTour(MediaLibraryTourConfig)`.
+
+**Checkpoint**: All user stories should now be independently functional
 
 ---
 
@@ -85,8 +85,8 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [x] T015 [P] Add a manual "Help" / "Tour" restart button to the layout header or user dropdown to allow replaying tours.
-- [x] T016 Run `quickstart.md` validation to verify Nest/Rust parity and frontend state persistence.
+- [ ] T013 [P] Run quickstart.md validation scenarios to ensure all functionality behaves correctly (auto-start, manual triggers, and dynamic element wait).
+- [ ] T014 Review and clean up `driver.js` unmounts or stray highlight boxes on React route changes.
 
 ---
 
@@ -97,25 +97,12 @@
 - **Setup (Phase 1)**: No dependencies - can start immediately
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Stories (Phase 3+)**: All depend on Foundational phase completion
+  - User stories can then proceed in parallel (if staffed)
+  - Or sequentially in priority order (P1 → P2 → P3)
 - **Polish (Final Phase)**: Depends on all desired user stories being complete
-
-### User Story Dependencies
-
-- **User Story 1 (P1)**: Can start after Foundational (Phase 2).
-- **User Story 2 (P2)**: Can start after Foundational (Phase 2).
 
 ### Parallel Opportunities
 
-- Rust and NestJS foundational tasks (T004, T006 vs T002, T003, T005) can be developed in parallel since they are completely independent implementations.
-
----
-
-## Implementation Strategy
-
-### MVP First (User Story 1 Only)
-
-1. Complete Phase 1: Setup
-2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
-3. Complete Phase 3: User Story 1
-4. **STOP and VALIDATE**: Test User Story 1 independently
-5. Deploy/demo if ready
+- All Setup tasks marked [P] can run in parallel
+- Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
+- T006, T007 and T010 can be created in parallel.

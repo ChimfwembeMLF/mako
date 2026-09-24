@@ -1,21 +1,18 @@
 # Phase 0: Outline & Research
 
-## Unknowns & Clarifications
+## Research Areas
 
-1. **Tour State Storage**: Should completed tour state be saved globally in the database per user, or locally in the browser's localStorage for simplicity?
-   - **Decision**: Save globally in the database per user.
-   - **Rationale**: User answered this via clarification. Ensures that when a user logs in from a different device, they don't see the same tour again.
-   - **Alternatives considered**: Local storage was considered but rejected because it would trigger the tour again on new devices or incognito mode.
+### 1. Dynamic Element Wait Strategy for `driver.js`
+**Decision**: We will implement a custom `waitForElement` utility function that will be called in `onHighlightStarted`. This utility will use a `MutationObserver` (or simple polling via `requestAnimationFrame` / `setTimeout`) to wait for a maximum of 3000ms for an element to appear in the DOM. If the element does not appear, the tour gracefully skips the step or stops. 
+**Rationale**: `driver.js` does not natively wait for elements if they are deeply dynamic (e.g. relying on a slow API call before rendering). By explicitly awaiting the element before calling `tourDriver.moveNext()` or during `onHighlightStarted`, we can guarantee the element exists before the highlight box tries to draw.
+**Alternatives considered**: Passing a global boolean `isReady` state to the tour service, which is too highly coupled and pollutes component state.
 
-2. **Initial Scope**: Which specific pages/flows should have tours configured in this initial implementation?
-   - **Decision**: Dashboard and Content Engine.
-   - **Rationale**: User answered this via clarification. These are the core engagement pages for the application.
+### 2. Decentralized Configuration Architecture
+**Decision**: Each section (Dashboard, Content Engine, etc.) will define a `[Component].tour.ts` file containing a `TourConfig` object.
+When a component mounts, it can optionally `useEffect` to call `TourService.autoStartTour(ComponentTourConfig)` which checks `usersApi.preferences` to see if the tour has been seen. For micro-tours (modals, sheets), we will just use a "Tour" button that calls `TourService.startTour(ComponentTourConfig)`.
+**Rationale**: Keeps tour definitions co-located with their corresponding components, making it easier to update selectors when the UI changes.
+**Alternatives considered**: A massive centralized `tours.config.ts`, which would become unmaintainable as the application scales.
 
-3. **Database Schema Integration**: How do we store this data without creating too much overhead?
-   - **Decision**: Add a `preferences` JSONB column to the `users` table.
-   - **Rationale**: A JSONB column provides flexibility for future user preferences without requiring schema changes every time. It's natively supported by PostgreSQL, TypeORM, and SeaORM.
-   - **Alternatives considered**: A dedicated `user_preferences` table (overkill for just tour state) or a dedicated `tourState` JSONB column (less flexible for future generic preferences).
-
-4. **Nest-Rust Parity**: How do we implement the update endpoint?
-   - **Decision**: Expose `PATCH /api/v1/users/me/preferences` in both NestJS and Rust.
-   - **Rationale**: Required by Constitution Principle I (Nest-Rust Parity).
+### 3. Tour State Persistence
+**Decision**: The `preferences` JSONB column on the `users` table already exists and the frontend API `updatePreferences` is wired to `PATCH /api/v1/users/me/preferences`. The `TourService` already implements the `markTourCompleted` logic. We will ensure this is properly tied to all auto-started tours.
+**Rationale**: Native, zero-setup way to maintain cross-device state without adding a new database table.

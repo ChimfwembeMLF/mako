@@ -134,17 +134,33 @@ export class LeadsController {
       message: body.message ?? '',
     });
 
-    const lead = await this.service.create({
-      tenantId,
-      userId: tenant.ownerId,
-      name: body.name ?? 'Unknown',
-      email: body.email ?? '',
-      source: 'contact_form',
-      message: body.message,
-      classification: classification.label,
-      status: 'new',
-      aiReply: classification.suggestedReply,
-    } as any);
+    const existingLead = body.email ? await this.service.findByEmail(tenantId, body.email) : null;
+
+    let lead;
+    if (existingLead) {
+      const updatedMessage = existingLead.message 
+        ? `${existingLead.message}\n\n---\nNew message:\n${body.message}`
+        : body.message;
+
+      lead = await this.service.update(existingLead.id, {
+        message: updatedMessage,
+        classification: classification.label,
+        status: 'new',
+        aiReply: classification.suggestedReply,
+      } as any);
+    } else {
+      lead = await this.service.create({
+        tenantId,
+        userId: tenant.ownerId,
+        name: body.name ?? 'Unknown',
+        email: body.email ?? '',
+        source: 'contact_form',
+        message: body.message,
+        classification: classification.label,
+        status: 'new',
+        aiReply: classification.suggestedReply,
+      } as any);
+    }
 
     return { ok: true, leadId: lead.id, ai_reply: classification.suggestedReply };
   }

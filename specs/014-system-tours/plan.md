@@ -1,24 +1,22 @@
 # Implementation Plan: System Wide Tours
 
-**Branch**: `014-system-tours` | **Date**: 2026-09-22 | **Spec**: [spec.md](file:///Users/thecodefather/Documents/personal/projects/mako/specs/014-system-tours/spec.md)
+**Branch**: `014-system-tours` | **Date**: 2026-09-23 | **Spec**: [spec.md](file:///Users/thecodefather/Documents/personal/projects/mako/specs/014-system-tours/spec.md)
 
 **Input**: Feature specification from `/specs/014-system-tours/spec.md`
 
-**Note**: This template is filled in by the `/speckit-plan` command; its definition describes the execution workflow.
-
 ## Summary
 
-Implement system-wide interactive user tours using `driver.js` to guide users through the Dashboard and Content Engine. Tour completion state will be persisted in the database via a new `preferences` JSONB column on the `users` table to ensure the tour doesn't trigger repeatedly across different devices.
+Implement system-wide interactive user tours using `driver.js` to guide users through the application (main pages like Dashboard, Content Engine, Brand Brain, as well as micro-tours for modals and sheets). Tour completion state is persisted in the database via the `preferences` JSONB column on the `users` table to ensure the tour doesn't trigger repeatedly across different devices. Tour steps will be defined in a decentralized manner, co-located with their respective components. Dynamic elements will be handled via `driver.js` hooks.
 
 ## Technical Context
 
-**Language/Version**: TypeScript / React / Node.js (NestJS) / Rust (Axum)
+**Language/Version**: TypeScript / React / Node.js (NestJS)
 
-**Primary Dependencies**: `driver.js`, `react`, `@nestjs/common`, `sea-orm`
+**Primary Dependencies**: `driver.js`, `react`, `@nestjs/common`, `typeorm`
 
-**Storage**: PostgreSQL (adding JSONB column to `users` table)
+**Storage**: PostgreSQL (`preferences` JSONB column on `users` table already exists and `PATCH /api/v1/users/me/preferences` is functional)
 
-**Testing**: Jest (NestJS), Cargo Test (Rust)
+**Testing**: Jest
 
 **Target Platform**: Web Client / Dokploy Server
 
@@ -26,20 +24,18 @@ Implement system-wide interactive user tours using `driver.js` to guide users th
 
 **Performance Goals**: Negligible rendering impact; lazy loading for `driver.js`.
 
-**Constraints**: Tours must gracefully handle missing DOM elements and not break the UI.
+**Constraints**: Tours must gracefully handle missing DOM elements (e.g. dynamic modal content) and not break the UI.
 
-**Scale/Scope**: 2 initial tours (Dashboard, Content Engine).
+**Scale/Scope**: System-wide tours (Pages, Modals, Sheets, Filters).
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- [x] **I. Nest–Rust parity**: Live API changes targeted at **BOTH** `api/` (NestJS) and `api-rust/` (Rust) for strict parity. (Adding `PATCH /api/v1/users/me/preferences`).
-- [x] **II. Tenancy**: Tenant/workspace scoping and RBAC identified for every data path. (Preferences are per-user, `me` endpoint relies on JWT auth).
-- [x] **III. Secrets**: No secrets in spec/plan; OAuth/webhook URLs listed explicitly; Dokploy env remains parser-safe.
-- [x] **IV. Contracts**: Smoke/contract verification path named for new HTTP, webhook, or publish surfaces. (Quickstart covers parity test).
-- [x] **V. Background work**: Cron/queue ownership single-process; no dual Nest+Rust workers in the target environment. (N/A).
-- [x] **Stack**: Migrations (if any) planned via Nest TypeORM; Docker/Dokploy impact noted. (NestJS TypeORM migration required for `users.preferences`).
+- [x] **I. Tenant & Workspace Isolation**: Tour state is saved globally on the user preferences (`users` table), bypassing workspace boundaries since it's a UI preference. The `me` endpoint relies on JWT auth.
+- [x] **II. Secrets & External Integrations Safety**: No secrets in spec/plan.
+- [x] **III. Testable Contracts Over Speculative Abstraction**: Parity test covered in quickstart via UI verification and API inspection.
+- [x] **IV. Simplicity, Observability & Safe Background Work**: Decentralized tour definitions prevent bloating a single configuration file.
 
 Violations require an entry in Complexity Tracking below.
 
@@ -60,17 +56,9 @@ specs/[###-feature]/
 ### Source Code (repository root)
 
 ```text
-api/                 # NestJS (migrations + Nest reference)
-api-rust/            # Axum production API (Dokploy `api` service)
+api/                 # NestJS 
 client/              # React + Vite SPA
-docker-compose.yml   # Dokploy: Rust api + client (+ optional migrate profile)
-docs/                # Deploy / Dokploy / cutover docs
-specs/               # Spec Kit feature specs
 ```
-
-**Structure Decision**: Mako Yarn monorepo — implement live API in `api-rust/`,
-schema in `api/database/migrations`, UI in `client/`. Do not invent a parallel
-`src/` tree at repo root.
 
 ## Complexity Tracking
 
@@ -78,5 +66,3 @@ schema in `api/database/migrations`, UI in `client/`. Do not invent a parallel
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| [e.g., 4th project] | [current need] | [why 3 projects insufficient] |
-| [e.g., Repository pattern] | [specific problem] | [why direct DB access insufficient] |

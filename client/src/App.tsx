@@ -1,5 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
+import { ConfirmModalProvider } from "@/components/ConfirmModal";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -121,6 +122,7 @@ const App = () => (
             <WorkspaceProvider>
             <ErrorBoundary label="Application">
             <Toaster />
+      <ConfirmModalProvider />
             <Sonner />
             <BrowserRouter>
               <OfflineGate>

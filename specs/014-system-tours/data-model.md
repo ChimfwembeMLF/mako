@@ -1,36 +1,33 @@
 # Phase 1: Data Model
 
-## `users` Table Updates
+## Frontend Interfaces
 
-We will add a new JSONB column to the existing `users` table to track arbitrary user preferences, including the completion status of system tours.
+```typescript
+// Core driver.js type imports
+import { DriveStep, Config } from 'driver.js';
 
-### Fields
+export interface TourConfig {
+  id: string; // e.g., 'dashboard', 'content-engine', 'lead-agent'
+  steps: DriveStep[];
+  driverConfig?: Partial<Config>;
+}
 
-- `preferences`: `JSONB` (Nullable, Default: `{}`)
-  - **Structure**:
-    ```typescript
-    type UserPreferences = {
-      tours: {
-        [tourId: string]: {
-          completed: boolean;
-          completedAt?: string; // ISO DateTime
-          dismissed?: boolean;
-        }
-      }
-      // Future preferences can be added here
-    }
-    ```
+export interface UserPreferences {
+  // Existing fields...
+  tours?: Record<string, TourCompletionState>;
+}
 
-### Relationships
+export interface TourCompletionState {
+  completed: boolean;
+  completedAt: string; // ISO String
+}
+```
 
-- None added. Modifies the existing `User` entity.
+## Backend Data Model
 
-### NestJS Entity Update (`UserEntity`)
-- Add `@Column({ type: 'jsonb', default: {} }) preferences?: Record<string, any>;`
+There are no new backend tables required.
+We rely on the existing `users` table:
 
-### Rust Entity Update (`Model`)
-- Add `pub preferences: Option<sea_orm::prelude::Json>;`
-
-### Validation Rules
-- The preferences object should be a valid JSON object.
-- The `PATCH` endpoint should accept a partial preferences object and perform a deep merge to avoid overwriting unrelated preferences.
+- **Entity**: `User`
+- **Field**: `preferences` (Type: `jsonb`, nullable: `true`)
+- **API**: `PATCH /api/v1/users/me/preferences` accepts `Record<string, any>` and deeply merges or overwrites the `preferences` jsonb.

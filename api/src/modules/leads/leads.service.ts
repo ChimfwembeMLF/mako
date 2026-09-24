@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { Leads } from './entities/leads.entity';
 import { LeadsCreateDto } from './dto/create-leads.dto';
 import { LeadsUpdateDto } from './dto/update-leads.dto';
-import { scopeWhere } from '../../common/workspace-scope.util';
+import { scopeWhere, scopeWhereIncludingTenantWide } from '../../common/workspace-scope.util';
 
 @Injectable()
 export class LeadsService {
@@ -18,10 +18,14 @@ export class LeadsService {
     return this.repo.save(ent as Leads);
   }
 
+  async findByEmail(tenantId: string, email: string): Promise<Leads | null> {
+    return this.repo.findOne({ where: { tenantId, email } });
+  }
+
   async findAll(tenantId?: string, workspaceId?: string): Promise<Leads[]> {
     if (tenantId) {
       return this.repo.find({
-        where: scopeWhere<Leads>(tenantId, workspaceId),
+        where: scopeWhereIncludingTenantWide<Leads>(tenantId, workspaceId),
       });
     }
     return this.repo.find();
