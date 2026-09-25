@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { TourService } from "@/services/tour.service";
-import { dashboardTourConfig } from "@/config/tours/dashboard.tour";
+import { dashboardTourConfig } from "./Dashboard.tour";
 
 type DashboardModule = {
   title: string;
@@ -125,9 +125,9 @@ const Dashboard = () => {
   const showSocialEntry = loading || canAccessSocialShell(canAny);
 
   useEffect(() => {
-    if (user && !user.preferences?.tours?.dashboard?.completed) {
+    if (user) {
       const timer = setTimeout(() => {
-        TourService.startTour('dashboard', dashboardTourConfig.steps, undefined, dashboardTourConfig.driverConfig);
+        TourService.autoStartTour('dashboard', dashboardTourConfig.steps, undefined, dashboardTourConfig.driverConfig);
       }, 500);
       return () => clearTimeout(timer);
     }

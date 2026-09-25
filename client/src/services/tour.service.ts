@@ -1,7 +1,12 @@
 import { confirmModal } from "@/components/ConfirmModal";
 import { driver, DriveStep, Config } from 'driver.js';
 import 'driver.js/dist/driver.css';
-import { usersApi } from '@/lib/api';
+import { usersApi, authApi } from '@/lib/api';
+
+export interface TourCompletionState {
+  completed: boolean;
+  completedAt: string;
+}
 
 export interface TourConfig {
   id: string; // e.g. 'dashboard', 'content_engine'
@@ -13,7 +18,27 @@ export class TourService {
   private static activeTourId: string | null = null;
 
   /**
-   * Starts a tour if it hasn't been completed yet.
+   * Automatically starts a tour if the user hasn't completed it.
+   */
+  static async autoStartTour(
+    tourId: string,
+    steps: DriveStep[],
+    onComplete?: () => void,
+    driverConfig?: Partial<Config>
+  ) {
+    try {
+      const user = await authApi.getMe();
+      if (user?.preferences?.tours?.[tourId]?.completed) {
+        return;
+      }
+      this.startTour(tourId, steps, onComplete, driverConfig);
+    } catch (e) {
+      console.error('Failed to check tour preferences for auto-start', e);
+    }
+  }
+
+  /**
+   * Starts a tour unconditionally.
    */
   static async startTour(
     tourId: string,
@@ -32,6 +57,25 @@ export class TourService {
       nextBtnText: 'Next',
       prevBtnText: 'Previous',
       ...driverConfig,
+      onHighlightStarted: (el, step, options) => {
+        if (driverConfig?.onHighlightStarted) {
+          driverConfig.onHighlightStarted(el, step, options);
+        }
+        if (!el && typeof step?.element === 'string') {
+          const selector = step.element;
+          let attempts = 0;
+          const interval = setInterval(() => {
+            attempts++;
+            if (document.querySelector(selector)) {
+              clearInterval(interval);
+              const activeIndex = tourDriver.getActiveIndex();
+              if (activeIndex !== undefined) tourDriver.drive(activeIndex);
+            } else if (attempts >= 30) {
+              clearInterval(interval);
+            }
+          }, 100);
+        }
+      },
       onDestroyStarted: async () => {
         const hasNext = tourDriver.hasNextStep();
         if (!hasNext) {

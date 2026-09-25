@@ -108,6 +108,7 @@ export class LeadsController {
     body: {
       name?: string;
       email?: string;
+      phone?: string;
       message?: string;
     },
   ) {
@@ -147,6 +148,7 @@ export class LeadsController {
         classification: classification.label,
         status: 'new',
         aiReply: classification.suggestedReply,
+        ...(body.phone && { phone: body.phone }),
       } as any);
     } else {
       lead = await this.service.create({
@@ -154,6 +156,7 @@ export class LeadsController {
         userId: tenant.ownerId,
         name: body.name ?? 'Unknown',
         email: body.email ?? '',
+        phone: body.phone,
         source: 'contact_form',
         message: body.message,
         classification: classification.label,

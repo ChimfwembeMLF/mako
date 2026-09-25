@@ -33,6 +33,7 @@ const ContactForm = () => {
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -81,14 +82,17 @@ const ContactForm = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim() || !tenantId) return;
+    if (!name.trim() || (!email.trim() && !phone.trim()) || !tenantId) {
+      toast({ title: "Required", description: "Please provide a name and either an email or phone number.", variant: "destructive" });
+      return;
+    }
 
     setSubmitting(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/leads/contact-form/${tenantId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message })
+        body: JSON.stringify({ name, email, phone, message })
       });
       
       if (!res.ok) {
@@ -174,8 +178,12 @@ const ContactForm = () => {
             <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" required maxLength={100} />
           </div>
           <div className="space-y-2">
-            <Label>Email *</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" required maxLength={255} />
+            <Label>Email</Label>
+            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" maxLength={255} />
+          </div>
+          <div className="space-y-2">
+            <Label>Phone</Label>
+            <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" maxLength={20} />
           </div>
           <div className="space-y-2">
             <Label>Message</Label>

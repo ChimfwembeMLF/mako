@@ -16,8 +16,8 @@
 
 **Purpose**: Project initialization and basic structure
 
-- [ ] T001 Update `client/src/services/tour.service.ts` to implement `onHighlightStarted` wait/retry logic for dynamic elements, using `MutationObserver` or polling.
-- [ ] T002 Add/update TS interfaces (`TourConfig`, `TourCompletionState`) in `client/src/services/tour.service.ts` based on `data-model.md`.
+- [x] T001 Update `client/src/services/tour.service.ts` to implement `onHighlightStarted` wait/retry logic for dynamic elements, using `MutationObserver` or polling.
+- [x] T002 Add/update TS interfaces (`TourConfig`, `TourCompletionState`) in `client/src/services/tour.service.ts` based on `data-model.md`.
 
 ---
 
@@ -27,7 +27,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Implement `TourService.autoStartTour()` logic in `client/src/services/tour.service.ts`. This method must check if `user.preferences.tours[tourId].completed` is true before calling `driver.drive()`. If preferences are not already loaded in context, it may need to use a React Context or an API call.
+- [x] T003 Implement `TourService.autoStartTour()` logic in `client/src/services/tour.service.ts`. This method must check if `user.preferences.tours[tourId].completed` is true before calling `driver.drive()`. If preferences are not already loaded in context, it may need to use a React Context or an API call.
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -41,8 +41,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Create tour configuration for Dashboard in `client/src/pages/Dashboard.tour.ts`. Define steps highlighting sidebar, main header, and summary cards.
-- [ ] T005 [US1] Update `client/src/pages/Index.tsx` (Dashboard) to call `TourService.autoStartTour(DashboardTourConfig)` on component mount.
+- [x] T004 [US1] Create tour configuration for Dashboard in `client/src/pages/Dashboard.tour.ts`. Define steps highlighting sidebar, main header, and summary cards.
+- [x] T005 [US1] Update `client/src/pages/Index.tsx` (Dashboard) to call `TourService.autoStartTour(DashboardTourConfig)` on component mount.
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -56,10 +56,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T006 [P] [US2] Create `client/src/pages/ContentEngine.tour.ts` defining steps for the Content Engine page (Publisher, Scheduler, AI Generation).
-- [ ] T007 [P] [US2] Create `client/src/pages/BrandBrain.tour.ts` defining steps for Brand Brain (uploading assets, defining voice).
-- [ ] T008 [US2] Update `client/src/pages/ContentEngine.tsx` to call `TourService.autoStartTour(ContentEngineTourConfig)` on component mount.
-- [ ] T009 [US2] Update `client/src/pages/BrandBrain.tsx` to call `TourService.autoStartTour(BrandBrainTourConfig)` on component mount.
+- [x] T006 [P] [US2] Create `client/src/pages/ContentEngine.tour.ts` defining steps for the Content Engine page (Publisher, Scheduler, AI Generation).
+- [x] T007 [P] [US2] Create `client/src/pages/BrandBrain.tour.ts` defining steps for Brand Brain (uploading assets, defining voice).
+- [x] T008 [US2] Update `client/src/pages/ContentEngine.tsx` to call `TourService.autoStartTour(ContentEngineTourConfig)` on component mount.
+- [x] T009 [US2] Update `client/src/pages/BrandBrain.tsx` to call `TourService.autoStartTour(BrandBrainTourConfig)` on component mount.
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 
@@ -73,9 +73,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T010 [P] [US3] Create `client/src/pages/MediaLibrary.tour.ts` defining steps for the media upload modal or asset view.
-- [ ] T011 [P] [US3] Add a manual "Tour" button (e.g., an icon button with a `?` or info icon) to `client/src/pages/MediaLibraryPage.tsx`.
-- [ ] T012 [US3] Wire the manual button in `client/src/pages/MediaLibraryPage.tsx` to `TourService.startTour(MediaLibraryTourConfig)`.
+- [x] T010 [P] [US3] Create `client/src/pages/MediaLibrary.tour.ts` defining steps for the media upload modal or asset view.
+- [x] T011 [P] [US3] Add a manual "Tour" button (e.g., an icon button with a `?` or info icon) to `client/src/pages/MediaLibraryPage.tsx`.
+- [x] T012 [US3] Wire the manual button in `client/src/pages/MediaLibraryPage.tsx` to `TourService.startTour(MediaLibraryTourConfig)`.
 
 **Checkpoint**: All user stories should now be independently functional
 
@@ -85,8 +85,8 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T013 [P] Run quickstart.md validation scenarios to ensure all functionality behaves correctly (auto-start, manual triggers, and dynamic element wait).
-- [ ] T014 Review and clean up `driver.js` unmounts or stray highlight boxes on React route changes.
+- [x] T013 [P] Run quickstart.md validation scenarios to ensure all functionality behaves correctly (auto-start, manual triggers, and dynamic element wait).
+- [x] T014 Review and clean up `driver.js` unmounts or stray highlight boxes on React route changes.
 
 ---
 
@@ -101,8 +101,34 @@
   - Or sequentially in priority order (P1 → P2 → P3)
 - **Polish (Final Phase)**: Depends on all desired user stories being complete
 
+### User Story Dependencies
+
+- **User Story 1 (P1)**: Can start after Foundational (Phase 2)
+- **User Story 2 (P2)**: Can start after Foundational (Phase 2)
+- **User Story 3**: Can start after Foundational (Phase 2)
+
 ### Parallel Opportunities
 
 - All Setup tasks marked [P] can run in parallel
 - Once Foundational phase completes, all user stories can start in parallel (if team capacity allows)
 - T006, T007 and T010 can be created in parallel.
+
+---
+
+## Implementation Strategy
+
+### MVP First (User Story 1 Only)
+
+1. Complete Phase 1: Setup
+2. Complete Phase 2: Foundational (CRITICAL - blocks all stories)
+3. Complete Phase 3: User Story 1
+4. **STOP and VALIDATE**: Test User Story 1 independently
+5. Deploy/demo if ready
+
+### Incremental Delivery
+
+1. Complete Setup + Foundational → Foundation ready
+2. Add User Story 1 → Test independently → Deploy/Demo (MVP!)
+3. Add User Story 2 → Test independently → Deploy/Demo
+4. Add User Story 3 → Test independently → Deploy/Demo
+5. Each story adds value without breaking previous stories

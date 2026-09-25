@@ -22,7 +22,7 @@ import { ContentItem } from '@/components/content/types';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { PublishPanel } from '@/components/content/PublishPanel';
 import { TourService } from '@/services/tour.service';
-import { contentEngineTourConfig } from '@/config/tours/content-engine.tour';
+import { contentEngineTourConfig } from './ContentEngine.tour';
 
 const PAGE_SIZE = 6;
 
@@ -299,9 +299,9 @@ const ContentEngine = () => {
   }, [page, loadContent, user, activeWorkspace]);
 
   useEffect(() => {
-    if (user && !user.preferences?.tours?.content_engine?.completed) {
+    if (user) {
       const timer = setTimeout(() => {
-        TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
+        TourService.autoStartTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
       }, 500);
       return () => clearTimeout(timer);
     }

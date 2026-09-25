@@ -13,6 +13,8 @@ import { useWorkspace } from "@/hooks/useWorkspace";
 import { FormFieldAi } from "@/components/form/FormFieldAi";
 import { brandProfilesApi } from "@/lib/api";
 import { DocumentUpload } from "@/components/DocumentUpload";
+import { TourService } from "@/services/tour.service";
+import { brandBrainTourConfig } from "./BrandBrain.tour";
 
 interface BrandData {
   brandType: string;
@@ -186,6 +188,15 @@ const BrandBrainInner = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        TourService.autoStartTour('brand_brain', brandBrainTourConfig.steps, undefined, brandBrainTourConfig.driverConfig);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!user || !tenant || workspaceLoading) return;
     if (workspaces.length > 0 && !activeWorkspace) return;
 
@@ -312,7 +323,7 @@ const BrandBrainInner = () => {
 
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
-      <div className="flex items-center justify-between mb-2">
+      <div id="tour-bb-header" className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
             <Brain className="h-6 w-6 text-primary-foreground" />
@@ -346,7 +357,7 @@ const BrandBrainInner = () => {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div id="tour-bb-autofill" className="grid gap-4 md:grid-cols-2">
         <Card className="border-border/50 border-dashed">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
@@ -383,7 +394,7 @@ const BrandBrainInner = () => {
         </Card>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs id="tour-bb-tabs" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start overflow-x-auto bg-card border">
           {sections.map((s) => (
             <TabsTrigger key={s.id} value={s.id} className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">

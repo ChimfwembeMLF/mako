@@ -15,7 +15,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionGate } from '@/components/PermissionGate';
-import { Image, Upload, Search, Trash2, Loader2 } from 'lucide-react';
+import { Image, Upload, Search, Trash2, Loader2, HelpCircle } from 'lucide-react';
+import { TourService } from "@/services/tour.service";
+import { mediaLibraryTourConfig } from "./MediaLibrary.tour";
 
 export default function MediaLibraryPage() {
   const { tenant } = useTenant();
@@ -100,7 +102,7 @@ export default function MediaLibraryPage() {
     <PermissionGate require={P.media.view} fallback={true}>
       <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
         <div className="flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-3">
+          <div id="tour-ml-header" className="flex items-center gap-3">
             <Image className="h-6 w-6 text-primary" />
             <div>
               <h1 className="text-2xl font-semibold">Media</h1>
@@ -109,25 +111,35 @@ export default function MediaLibraryPage() {
               </p>
             </div>
           </div>
-          <PermissionGate require={P.media.upload}>
-            <div>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*,video/*"
-                className="hidden"
-                multiple
-                onChange={handleUpload}
-              />
-              <Button onClick={() => fileRef.current?.click()} disabled={uploading} className="gap-2">
-                {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {uploading ? 'Uploading…' : 'Upload Asset'}
-              </Button>
-            </div>
-          </PermissionGate>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => TourService.startTour('media_library', mediaLibraryTourConfig.steps, undefined, mediaLibraryTourConfig.driverConfig)}
+              title="Help/Tour"
+            >
+              <HelpCircle className="h-4 w-4" />
+            </Button>
+            <PermissionGate require={P.media.upload}>
+              <div id="tour-ml-upload">
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*,video/*"
+                  className="hidden"
+                  multiple
+                  onChange={handleUpload}
+                />
+                <Button onClick={() => fileRef.current?.click()} disabled={uploading} className="gap-2">
+                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                  {uploading ? 'Uploading…' : 'Upload Asset'}
+                </Button>
+              </div>
+            </PermissionGate>
+          </div>
         </div>
 
-        <div className="relative max-w-sm">
+        <div id="tour-ml-search" className="relative max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
@@ -151,7 +163,7 @@ export default function MediaLibraryPage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div id="tour-ml-grid" className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {filtered.map((asset) => (
               <div key={asset.id} className="group relative rounded-lg border bg-card overflow-hidden">
                 <div className="aspect-square bg-muted">

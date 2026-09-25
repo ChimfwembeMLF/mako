@@ -30,6 +30,8 @@ export class Leads {
   @Column({ type: 'text' })
   source: string;
   @Column({ type: 'text', nullable: true })
+  phone?: string;
+  @Column({ type: 'text', nullable: true })
   message?: string;
   @Column({ type: 'text', nullable: true })
   classification?: string;

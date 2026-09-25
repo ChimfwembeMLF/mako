@@ -28,6 +28,7 @@ interface Lead {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   source: string;
   message: string | null;
   classification: string;
@@ -451,7 +452,22 @@ const LeadAgent = () => {
     await leadsApi.update(id, { status } as any);
     loadLeads();
     if (status === "meeting_booked") {
-      toast({ title: "Meeting booked!", description: "Lead marked as meeting booked." });
+      const lead = leads.find(l => l.id === id);
+      if (lead) {
+        const title = encodeURIComponent(`Meeting with ${lead.name || 'Lead'}`);
+        let details = `Source: ${lead.source || 'Unknown'}\n`;
+        
+        const phone = whatsappPhoneFromLead(lead) || lead.phone;
+        if (phone) details += `Phone: ${formatWhatsappPhoneDisplay(phone)}\n`;
+        
+        if (lead.email && !lead.email.endsWith('@inbox.mako')) details += `Email: ${lead.email}\n`;
+        if (lead.message) details += `\nMessage:\n${lead.message}\n`;
+        const encodedDetails = encodeURIComponent(details);
+        
+        const gcalUrl = `https://calendar.google.com/calendar/r/eventedit?text=${title}&details=${encodedDetails}`;
+        window.open(gcalUrl, '_blank');
+      }
+      toast({ title: "Meeting booked!", description: "Opening Google Calendar to schedule the event." });
     }
     if (status === "escalated") {
       toast({ title: "Lead escalated", description: "High-value lead flagged for manual review." });
