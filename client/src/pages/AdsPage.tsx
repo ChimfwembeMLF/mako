@@ -27,6 +27,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { TenantBillingRecords } from '@/components/TenantBillingRecords';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const DEFAULT_ADS_TOPUP_ZMW = 500;
 
@@ -195,7 +197,7 @@ export default function AdsPage() {
     <PageContainer>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-primary">
             Ad Campaigns
           </h1>
           <p className="text-gray-500 mt-2">Manage and track your AI-generated ad campaigns.</p>
@@ -203,7 +205,7 @@ export default function AdsPage() {
         <div className="flex items-center gap-4">
           <div className="bg-white px-4 py-2 rounded-md shadow-sm border flex flex-col items-end">
             <span className="text-xs text-gray-500 font-medium">Ads Balance</span>
-            <span className="font-bold text-lg text-emerald-600">{balance.toFixed(2)} ZMW</span>
+            <span className="font-bold text-lg text-primary">{balance.toFixed(2)} ZMW</span>
           </div>
           <Button variant="outline" className="shadow-sm" onClick={() => setIsTopUpOpen(true)}>
             <DollarSign className="w-4 h-4 mr-2" />
@@ -211,7 +213,7 @@ export default function AdsPage() {
           </Button>
           <Button
             onClick={() => setIsCreateOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md"
+            className="shadow-md"
           >
             <Plus className="w-4 h-4 mr-2" />
             Create Campaign
@@ -227,7 +229,7 @@ export default function AdsPage() {
                 <p className="text-sm font-medium text-gray-500">Active Campaigns</p>
                 <h3 className="text-2xl font-bold mt-1">{stats.activeCampaigns}</h3>
               </div>
-              <div className="p-3 bg-blue-100 text-blue-600 rounded-full">
+              <div className="p-3 bg-primary/10 text-primary rounded-full">
                 <Target className="w-5 h-5" />
               </div>
             </div>
@@ -241,7 +243,7 @@ export default function AdsPage() {
                 <p className="text-sm font-medium text-gray-500">Total Spend</p>
                 <h3 className="text-2xl font-bold mt-1">{stats.totalSpend.toFixed(2)} ZMW</h3>
               </div>
-              <div className="p-3 bg-emerald-100 text-emerald-600 rounded-full">
+              <div className="p-3 bg-primary/10 text-primary rounded-full">
                 <DollarSign className="w-5 h-5" />
               </div>
             </div>
@@ -255,7 +257,7 @@ export default function AdsPage() {
                 <p className="text-sm font-medium text-gray-500">Total Impressions</p>
                 <h3 className="text-2xl font-bold mt-1">{stats.totalImpressions.toLocaleString()}</h3>
               </div>
-              <div className="p-3 bg-purple-100 text-purple-600 rounded-full">
+              <div className="p-3 bg-primary/10 text-primary rounded-full">
                 <Activity className="w-5 h-5" />
               </div>
             </div>
@@ -263,8 +265,15 @@ export default function AdsPage() {
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm">
-        <CardHeader>
+      <Tabs defaultValue="campaigns" className="mt-8">
+        <TabsList>
+          <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
+          <TabsTrigger value="history">Top Up History</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="campaigns" className="mt-4">
+          <Card className="border-none shadow-sm">
+            <CardHeader>
           <CardTitle>Recent Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
@@ -340,10 +349,10 @@ export default function AdsPage() {
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-medium ${
                         c.status === 'FAILED'
-                          ? 'bg-red-100 text-red-800'
+                          ? 'bg-destructive/10 text-destructive'
                           : c.status === 'ACTIVE'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-blue-100 text-blue-800'
+                            ? 'bg-primary/10 text-primary'
+                            : 'bg-secondary text-secondary-foreground'
                       }`}
                     >
                       {c.status}
@@ -354,7 +363,13 @@ export default function AdsPage() {
             </div>
           )}
         </CardContent>
-      </Card>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="history" className="mt-4">
+          {tenant?.id && <TenantBillingRecords tenantId={tenant.id} filterPlan="ADS_TOPUP" />}
+        </TabsContent>
+      </Tabs>
 
       <CreateCampaignSheet
         open={isCreateOpen}
@@ -407,7 +422,7 @@ export default function AdsPage() {
             <Button variant="outline" onClick={() => setIsTopUpOpen(false)} disabled={isToppingUp}>
               Cancel
             </Button>
-            <Button onClick={handleTopUpSubmit} disabled={isToppingUp} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleTopUpSubmit} disabled={isToppingUp}>
               {isToppingUp ? 'Processing...' : 'Confirm Top Up'}
             </Button>
           </DialogFooter>

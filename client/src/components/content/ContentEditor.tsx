@@ -56,7 +56,7 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   >([]);
   const [pendingSlides, setPendingSlides] = useState<string[]>([]);
   const [editingImageUrl, setEditingImageUrl] = useState<string | null>(null);
-  const [templates, setTemplates] = useState<Array<{ id: string; name: string; isActive: boolean }>>([]);
+  const [templates, setTemplates] = useState<Array<{ id: string; name: string; isActive: boolean; mediaUrls?: string[] }>>([]);
   const [templateId, setTemplateId] = useState<string>('');
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
       .findAll(tenant.id, workspaceId ?? undefined)
       .then((rows) => {
         const active = (Array.isArray(rows) ? rows : []).filter((t) => t.isActive !== false);
-        setTemplates(active.map((t) => ({ id: t.id, name: t.name, isActive: t.isActive })));
+        setTemplates(active.map((t) => ({ id: t.id, name: t.name, isActive: t.isActive, mediaUrls: t.mediaUrls })));
       })
       .catch(() => setTemplates([]));
   }, [tenant?.id, workspaceId]);
@@ -109,6 +109,24 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
         if (!result.error) {
           if (result.content) setContent(plainToHtml(result.content));
           if (result.title) setTitle(result.title);
+          
+          // Attach template media if any
+          if (templateId) {
+            const tmpl = templates.find(t => t.id === templateId);
+            if (tmpl?.mediaUrls?.length) {
+              const newMedia = tmpl.mediaUrls.map(url => ({
+                url,
+                type: url.match(/\.(mp4|webm|mov)/i) ? 'video' : 'image'
+              }));
+              // Only add media that isn't already attached
+              setPendingMedia(prev => {
+                const existingUrls = new Set(prev.map(p => p.url));
+                const added = newMedia.filter(m => !existingUrls.has(m.url));
+                return [...prev, ...added];
+              });
+            }
+          }
+          
           toast({ title: 'Content generated' });
           return;
         }

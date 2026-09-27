@@ -40,6 +40,9 @@ export class ContentTemplates {
   @Column({ type: 'text', array: true, nullable: true })
   platforms?: string[];
 
+  @Column({ type: 'text', array: true, nullable: true })
+  mediaUrls?: string[];
+
   @Column({ type: 'boolean', default: true })
   isActive: boolean;
 

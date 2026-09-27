@@ -47,4 +47,40 @@ export class TemplateSeedService {
     }
     return created;
   }
+
+  async ensureSeededForWorkspace(
+    tenantId: string,
+    workspaceId: string,
+    userId: string,
+  ): Promise<number> {
+    let created = 0;
+    for (const seed of DEFAULT_CONTENT_TEMPLATE_SEEDS) {
+      const existing = await this.repo.findOne({
+        where: { tenantId, workspaceId, name: seed.name },
+      });
+      if (existing) continue;
+
+      await this.repo.save(
+        this.repo.create({
+          tenantId,
+          workspaceId,
+          userId,
+          name: seed.name,
+          description: seed.description,
+          contentType: seed.contentType,
+          body: seed.body,
+          platforms: seed.platforms,
+          isActive: true,
+        }),
+      );
+      created++;
+    }
+
+    if (created > 0) {
+      this.logger.log(
+        `Seeded ${created} content templates for workspace ${workspaceId}`,
+      );
+    }
+    return created;
+  }
 }

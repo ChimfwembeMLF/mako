@@ -705,7 +705,7 @@ const Scheduler = () => {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0" id="tour-scheduler-welcome">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div>
@@ -773,7 +773,7 @@ const Scheduler = () => {
 
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
-              <Button size="sm" className="rounded-full bg-white text-black hover:bg-white/90 h-9 font-medium shadow-sm"><Plus className="mr-1 h-4 w-4" /> Schedule</Button>
+              <Button size="sm" className="rounded-full bg-white text-black hover:bg-white/90 h-9 font-medium shadow-sm" id="tour-scheduler-create"><Plus className="mr-1 h-4 w-4" /> Schedule</Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
               <SheetHeader>
@@ -956,7 +956,7 @@ const Scheduler = () => {
 
         return (
           <div className="space-y-4">
-            <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-200/80 dark:border-border/30 shadow-sm">
+            <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-200/80 dark:border-border/30 shadow-sm" id="tour-scheduler-calendar">
               {sharedHeader}
               {loadingPosts ? <Skeleton className="h-80 w-full" /> : (
                 <>

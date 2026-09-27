@@ -13,8 +13,17 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useTheme, type ColorMode } from "@/hooks/useTheme";
-import { socialAccountsApi, notificationsApi, SocialAccount } from "@/lib/api";
+import { socialAccountsApi, notificationsApi, tenantsApi, SocialAccount } from "@/lib/api";
 import { cn } from "@/lib/utils";
+
+const PREDEFINED_THEMES = [
+  { id: 'mako-orange', label: 'Warm Orange', primary: '14 72% 54%', radius: '0.5rem' },
+  { id: 'ocean-blue', label: 'Ocean Blue', primary: '199 89% 48%', radius: '0.75rem' },
+  { id: 'emerald', label: 'Emerald Green', primary: '160 84% 39%', radius: '0.3rem' },
+  { id: 'royal', label: 'Royal Purple', primary: '258 90% 66%', radius: '1rem' },
+  { id: 'slate', label: 'Slate', primary: '215 19% 35%', radius: '0.25rem' },
+  { id: 'rose', label: 'Rose', primary: '347 77% 50%', radius: '0.5rem' },
+];
 
 interface Profile {
   display_name: string | null;
@@ -194,31 +203,71 @@ const SettingsPage = () => {
 
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-base font-display">Appearance</CardTitle>
+              <CardTitle className="text-base font-display">Appearance & Brand Theme</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Choose light, dark, or follow your device setting.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {(
-                  [
-                    { id: "light" as ColorMode, label: "Light", icon: Sun },
-                    { id: "dark" as ColorMode, label: "Dark", icon: Moon },
-                    { id: "system" as ColorMode, label: "System", icon: Monitor },
-                  ] as const
-                ).map(({ id, label, icon: Icon }) => (
-                  <Button
-                    key={id}
-                    type="button"
-                    variant={colorMode === id ? "default" : "outline"}
-                    className={cn("min-h-11 gap-2 rounded-xl")}
-                    onClick={() => setColorMode(id)}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {label}
-                  </Button>
-                ))}
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Color Mode: Choose light, dark, or follow your device setting.
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { id: "light" as ColorMode, label: "Light", icon: Sun },
+                      { id: "dark" as ColorMode, label: "Dark", icon: Moon },
+                      { id: "system" as ColorMode, label: "System", icon: Monitor },
+                    ] as const
+                  ).map(({ id, label, icon: Icon }) => (
+                    <Button
+                      key={id}
+                      type="button"
+                      variant={colorMode === id ? "default" : "outline"}
+                      className={cn("min-h-11 gap-2 rounded-xl")}
+                      onClick={() => setColorMode(id)}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Brand Theme: Select a primary color and corner style for this workspace.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {PREDEFINED_THEMES.map((theme) => {
+                    const isSelected = tenant?.themeConfig?.primary === theme.primary;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={async () => {
+                          if (!tenant) return;
+                          try {
+                            await tenantsApi.update(tenant.id, {
+                              themeConfig: {
+                                primary: theme.primary,
+                                radius: theme.radius
+                              }
+                            });
+                            window.location.reload();
+                          } catch (e) {
+                            toast({ title: "Failed to update theme", variant: "destructive" });
+                          }
+                        }}
+                        className={cn(
+                          "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all shadow-sm cursor-pointer",
+                          isSelected ? "border-primary scale-110 ring-2 ring-primary/20" : "border-transparent hover:scale-105"
+                        )}
+                        style={{ backgroundColor: `hsl(${theme.primary})`, borderRadius: theme.radius }}
+                        title={theme.label}
+                      >
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </CardContent>
           </Card>

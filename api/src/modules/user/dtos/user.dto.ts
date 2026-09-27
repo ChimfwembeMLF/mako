@@ -34,6 +34,11 @@ export class UserDto extends AbstractDto {
   @ApiPropertyOptional()
   @Expose()
   phone?: string;
+
+  @ApiPropertyOptional()
+  @Expose()
+  preferences?: Record<string, any>;
+
   constructor(entity: any) {
     super(entity);
     this.id = entity.id;
@@ -43,6 +48,7 @@ export class UserDto extends AbstractDto {
     this.email = entity.email;
     this.avatar = entity.avatar;
     this.phone = entity.phone;
+    this.preferences = entity.preferences;
     this.createdAt = entity.createdAt;
   }
 }

@@ -103,7 +103,7 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
     comments: false,
     messaging: false,
     oauth: true,
-    status: 'coming_soon',
+    status: 'available',
   },
   {
     id: 'email',

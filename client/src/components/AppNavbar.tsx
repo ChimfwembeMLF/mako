@@ -34,128 +34,7 @@ function isActivePath(pathname: string, url: string, exact = false) {
   return pathname === url || pathname.startsWith(`${url}/`);
 }
 
-function isGroupActive(pathname: string, group: NavGroup) {
-  return group.items.some((item) => isActivePath(pathname, item.url));
-}
 
-function NavLinkItem({
-  to,
-  children,
-  end,
-  className,
-}: {
-  to: string;
-  children: React.ReactNode;
-  end?: boolean;
-  className?: string;
-}) {
-  return (
-    <NavLink
-      to={to}
-      end={end}
-      className={cn(
-        "relative px-2.5 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground",
-        className,
-      )}
-      activeClassName="!text-foreground after:absolute after:bottom-0 after:inset-x-2 after:h-0.5 after:bg-primary after:rounded-full"
-    >
-      {children}
-    </NavLink>
-  );
-}
-
-function AppsMenu() {
-  const { pathname } = useLocation();
-  const { canAny, isSuperAdmin, loading } = usePermissions();
-  const shell = resolveProductShell(pathname);
-  const source = shell === "social" ? SOCIAL_NAV_GROUPS : NAV_GROUPS;
-  const groups = filterNavGroups(source, canAny, isSuperAdmin, loading);
-  const active = groups.some((group) => isGroupActive(pathname, group));
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className={cn(
-            "relative inline-flex items-center gap-0.5 px-2.5 py-2 text-sm font-medium transition-colors outline-none",
-            active
-              ? "text-foreground after:absolute after:bottom-0 after:inset-x-2 after:h-0.5 after:bg-primary after:rounded-full"
-              : "text-muted-foreground hover:text-foreground",
-          )}
-        >
-          Apps
-          <ChevronRight className="h-3 w-3 rotate-90 opacity-50" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72 p-2 max-h-[min(80vh,32rem)] overflow-y-auto">
-        {groups.map((group, index) => (
-          <div key={group.label} className={cn(index > 0 && "mt-2 pt-2 border-t border-border")}>
-            <p className="px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              {group.label}
-            </p>
-            {group.items.map((item) => (
-              <DropdownMenuItem key={item.url} asChild className="p-0 focus:bg-transparent">
-                <Link
-                  to={item.url}
-                  className={cn(
-                    "flex items-center gap-2.5 rounded-md px-2 py-2 w-full text-sm transition-colors hover:bg-surface-soft",
-                    isActivePath(pathname, item.url) && "bg-surface-soft text-foreground font-medium",
-                  )}
-                >
-                  <item.icon className="h-4 w-4 shrink-0 opacity-70" />
-                  <span className="truncate">{item.title}</span>
-                </Link>
-              </DropdownMenuItem>
-            ))}
-          </div>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
-
-function MoreMenu({ items }: { items: NavItem[] }) {
-  const { pathname } = useLocation();
-  if (items.length === 0) return null;
-
-  const active = items.some((item) => isActivePath(pathname, item.url));
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label="More"
-          className={cn(
-            "relative inline-flex items-center justify-center h-9 w-9 rounded-full transition-colors outline-none",
-            active
-              ? "bg-surface-soft text-foreground"
-              : "text-muted-foreground hover:bg-surface-soft hover:text-foreground",
-          )}
-        >
-          <MoreHorizontal className="h-4 w-4" />
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-52">
-        {items.map((item) => (
-          <DropdownMenuItem key={item.url} asChild>
-            <Link
-              to={item.url}
-              className={cn(
-                "flex items-center gap-2 w-full",
-                isActivePath(pathname, item.url) && "font-medium",
-              )}
-            >
-              <item.icon className="h-4 w-4 opacity-70" />
-              {item.title}
-            </Link>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-}
 
 function UserMenu() {
   const { user, signOut } = useAuth();
@@ -401,17 +280,7 @@ export function AppNavbar() {
             <Logo className="h-11" />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-0.5 min-w-0">
-            <NavLinkItem to={homeTo} end>{homeLabel}</NavLinkItem>
-            <AppsMenu />
-            {shell === "social" ? (
-              <NavLinkItem to="/dashboard" className="text-muted-foreground">Main app</NavLinkItem>
-            ) : (
-              <NavLinkItem to="/social" className="text-muted-foreground">Social</NavLinkItem>
-            )}
-          </nav>
-
-          <div className="hidden md:flex flex-1 justify-center max-w-md mx-2 lg:mx-4">
+          <div className="hidden md:flex flex-1 justify-center max-w-md mx-2 lg:mx-4 lg:ml-12">
             <GlobalSearchTrigger onClick={openSearch} className="max-w-sm w-full" />
           </div>
 
@@ -450,9 +319,6 @@ export function AppNavbar() {
 
             <NotificationBell />
             <ColorModeToggle />
-            <div className="hidden lg:contents">
-              <MoreMenu items={visibleMore} />
-            </div>
             <UserMenu />
           </div>
         </div>

@@ -159,6 +159,26 @@ async function bootstrap() {
   }
   console.log(`Tenant defaults seeded for ${allTenants.length} tenant(s).`);
 
+  console.log('Seeding workspace defaults for all workspaces...');
+  const { Workspaces } = await import('../src/modules/workspaces/entities/workspaces.entity');
+  const workspacesRepo = dataSource.getRepository(Workspaces);
+  const allWorkspaces = await workspacesRepo.find();
+  const workspacesService = app.get(await import('../src/modules/workspaces/workspaces.service').then(m => m.WorkspacesService));
+  const brandProfilesService = app.get(await import('../src/modules/brand_profiles/brand_profiles.service').then(m => m.BrandProfilesService));
+  
+  let wsBackfilled = 0;
+  for (const ws of allWorkspaces) {
+    const tenant = allTenants.find(t => t.id === ws.tenantId);
+    if (tenant && tenant.ownerId) {
+      await templateSeeds.ensureSeededForWorkspace(ws.tenantId, ws.id, tenant.ownerId);
+      await autoReplySeeds.ensureSeededForWorkspace(ws.tenantId, ws.id);
+      await brandProfilesService.ensureForWorkspace(ws.tenantId, ws.id, tenant.ownerId);
+      await workspacesService.getAutomationConfig(ws.id);
+      wsBackfilled++;
+    }
+  }
+  console.log(`Workspace defaults seeded for ${wsBackfilled} workspace(s).`);
+
   const ownerUser = await usersRepo.findOne({ where: { email: 'owner@brandpilot.test' } });
   if (ownerUser) {
     const ownerTenant = await tenantsRepo.findOne({ where: { ownerId: ownerUser.id } });

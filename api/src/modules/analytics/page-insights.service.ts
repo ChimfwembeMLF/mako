@@ -86,7 +86,7 @@ export class PageInsightsService {
       const metricsRes = await axios.get(`${GRAPH_API}/${pageId}/insights`, {
         params: {
           access_token: token,
-          metric: 'page_impressions_unique,page_impressions', // Reach and Impressions
+          metric: 'page_impressions_unique,page_impressions,page_engaged_users', // Reach, Impressions, Engagement
           period: 'day',
         },
       });
@@ -94,6 +94,7 @@ export class PageInsightsService {
       const followersCount = pageRes.data?.followers_count ?? 0;
       let reach = 0;
       let impressions = 0;
+      let engagement = 0;
 
       const data = metricsRes.data?.data ?? [];
       for (const item of data) {
@@ -103,9 +104,12 @@ export class PageInsightsService {
         if (item.name === 'page_impressions') {
           impressions = item.values?.[0]?.value ?? 0;
         }
+        if (item.name === 'page_engaged_users') {
+          engagement = item.values?.[0]?.value ?? 0;
+        }
       }
 
-      return { followersCount, reach, impressions };
+      return { followersCount, reach, impressions, engagement };
     } catch (err) {
       this.logger.warn(`FB Insights fetch failed: ${err}`);
       return {};
@@ -130,7 +134,7 @@ export class PageInsightsService {
       const metricsRes = await axios.get(`${GRAPH_API}/${igId}/insights`, {
         params: {
           access_token: token,
-          metric: 'reach,impressions',
+          metric: 'reach,impressions,profile_views',
           period: 'day',
         },
       });
@@ -138,6 +142,7 @@ export class PageInsightsService {
       const followersCount = pageRes.data?.followers_count ?? 0;
       let reach = 0;
       let impressions = 0;
+      let engagement = 0;
 
       const data = metricsRes.data?.data ?? [];
       for (const item of data) {
@@ -147,9 +152,12 @@ export class PageInsightsService {
         if (item.name === 'impressions') {
           impressions = item.values?.[0]?.value ?? 0;
         }
+        if (item.name === 'profile_views') {
+          engagement = item.values?.[0]?.value ?? 0;
+        }
       }
 
-      return { followersCount, reach, impressions };
+      return { followersCount, reach, impressions, engagement };
     } catch (err) {
       this.logger.warn(`IG Insights fetch failed: ${err}`);
       return {};

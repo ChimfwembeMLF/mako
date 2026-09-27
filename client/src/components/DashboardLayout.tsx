@@ -7,6 +7,8 @@ import { pageWidthClass, resolvePageWidth } from "@/components/layout/PageContai
 import { PageBreadcrumbProvider } from "@/hooks/usePageBreadcrumb";
 import { resolveProductShell } from "@/lib/social-shell";
 import { cn } from "@/lib/utils";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/AppSidebar";
 
 function DashboardMain() {
   const { pathname } = useLocation();
@@ -33,15 +35,18 @@ export function DashboardLayout() {
   const shell = resolveProductShell(pathname);
 
   return (
-    <PageBreadcrumbProvider>
-    <div className="min-h-screen flex flex-col bg-background" data-product-shell={shell}>
-      <AppNavbar />
-      <BackendStatusBanner />
+    <SidebarProvider>
+      <AppSidebar />
+      <PageBreadcrumbProvider>
+        <div className="min-h-screen flex flex-col bg-background flex-1 w-full overflow-hidden" data-product-shell={shell}>
+          <AppNavbar />
+          <BackendStatusBanner />
 
-      <DashboardMain />
+          <DashboardMain />
 
-      {needs && <OnboardingWizard onComplete={dismiss} />}
-    </div>
-    </PageBreadcrumbProvider>
+          {needs && <OnboardingWizard onComplete={dismiss} />}
+        </div>
+      </PageBreadcrumbProvider>
+    </SidebarProvider>
   );
 }

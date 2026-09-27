@@ -63,6 +63,39 @@ export class AutoReplySeedService implements OnModuleInit {
     return created;
   }
 
+  async ensureSeededForWorkspace(tenantId: string, workspaceId: string): Promise<number> {
+    let created = 0;
+
+    for (const seed of DEFAULT_AUTO_REPLY_RULE_SEEDS) {
+      const existing = await this.repo.findOne({
+        where: { tenantId, workspaceId, platform: seed.platform, name: seed.name },
+      });
+      if (existing) continue;
+
+      await this.repo.save(
+        this.repo.create({
+          tenantId,
+          workspaceId,
+          platform: seed.platform,
+          name: seed.name,
+          triggerKeywords: seed.triggerKeywords ?? [],
+          triggerSentiment: seed.triggerSentiment ?? 'any',
+          responseTemplate: seed.responseTemplate,
+          aiGenerate: seed.aiGenerate,
+          isActive: seed.isActive,
+        }),
+      );
+      created++;
+    }
+
+    if (created > 0) {
+      this.logger.log(
+        `Seeded ${created} auto-reply rules for workspace ${workspaceId}`,
+      );
+    }
+    return created;
+  }
+
   /** Backfill tenants that have zero auto-reply rules (existing accounts). */
   async backfillTenantsWithNoRules(): Promise<number> {
     const tenants = await this.tenantsRepo.find({ select: ['id'] });

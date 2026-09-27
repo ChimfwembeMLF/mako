@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Wand2, AlertTriangle } from 'lucide-react';
@@ -151,18 +152,18 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
         <div className="pt-2">
           {step === 1 && (
             <div className="space-y-4">
-              <div className="bg-gradient-to-r from-purple-50 to-indigo-50 p-4 rounded-xl border border-purple-100 mb-6">
+              <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 mb-6">
                 <div className="flex items-center gap-2 mb-2">
-                  <Wand2 className="w-5 h-5 text-purple-600" />
-                  <h3 className="font-semibold text-purple-900">AI Campaign Assist</h3>
+                  <Wand2 className="w-5 h-5 text-primary" />
+                  <h3 className="font-semibold text-primary">AI Campaign Assist</h3>
                 </div>
-                <p className="text-sm text-purple-700 mb-3">
+                <p className="text-sm text-primary/80 mb-3">
                   Describe what you want to promote, and let AI fill out the campaign details for you.
                 </p>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    className="flex-1 border-purple-200 rounded-md p-2 text-sm bg-white"
+                    className="flex-1 border-primary/20 rounded-md p-2 text-sm bg-background"
                     placeholder="e.g. A 3-day flash sale for my new running shoes in Lusaka..."
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
@@ -171,7 +172,7 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
                   <Button
                     onClick={handleAiAssist}
                     disabled={isAiGenerating || !aiPrompt}
-                    className="bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
+                    className="shadow-sm"
                   >
                     {isAiGenerating ? 'Thinking...' : 'Magic Fill'}
                   </Button>
@@ -303,7 +304,7 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
                 <Button variant="outline" onClick={handleBack} className="flex-1">
                   Back
                 </Button>
-                <Button onClick={handleNext} className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600">
+                <Button onClick={handleNext} className="flex-1">
                   Next: Budget
                 </Button>
               </div>
@@ -342,7 +343,7 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
                 </div>
                 <div className="flex justify-between pt-2 border-t mt-2">
                   <span className="font-medium text-gray-900">Total Campaign Cost</span>
-                  <span className="font-bold text-lg text-blue-600">
+                  <span className="font-bold text-lg text-primary">
                     {totalCost.toFixed(2)} ZMW
                   </span>
                 </div>
@@ -355,9 +356,18 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
               )}
 
               {error && (
-                <div className="bg-red-50 text-red-600 p-3 rounded-md flex items-start text-sm">
-                  <AlertTriangle className="w-5 h-5 mr-2 shrink-0" />
-                  <span>{error}</span>
+                <div className="bg-destructive/10 text-destructive p-3 rounded-md flex flex-col gap-2 text-sm">
+                  <div className="flex items-start">
+                    <AlertTriangle className="w-5 h-5 mr-2 shrink-0" />
+                    <span>{error}</span>
+                  </div>
+                  {error.toLowerCase().includes('connect') && (
+                    <Button asChild variant="outline" size="sm" className="w-fit self-end mt-1">
+                      <Link to="/publisher" onClick={() => onOpenChange(false)}>
+                        Go to Connections
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               )}
 
@@ -368,7 +378,7 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
                 <Button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600"
+                  className="flex-1"
                 >
                   {isSubmitting ? 'Launching...' : 'Pay & Launch Campaign'}
                 </Button>

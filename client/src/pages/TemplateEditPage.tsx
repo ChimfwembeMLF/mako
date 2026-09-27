@@ -15,8 +15,9 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionGate } from '@/components/PermissionGate';
 import { templatePlatforms } from '@/lib/platform-capabilities';
-import { ArrowLeft, Save, LayoutTemplate, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, LayoutTemplate, Loader2, X } from 'lucide-react';
 import { usePageBreadcrumb } from '@/hooks/usePageBreadcrumb';
+import { MediaPicker } from '@/components/MediaPicker';
 
 const TEMPLATE_PLATFORM_LIST = templatePlatforms();
 const PLATFORM_LABELS: Record<string, string> = Object.fromEntries(
@@ -40,6 +41,7 @@ interface TemplateForm {
   contentType: string;
   platform: string;
   body: string;
+  mediaUrls: string[];
   isActive: boolean;
 }
 
@@ -58,6 +60,7 @@ export default function TemplateEditPage() {
     contentType: 'social',
     platform: 'facebook',
     body: '',
+    mediaUrls: [],
     isActive: true,
   });
   const [loading, setLoading] = useState(!isNew);
@@ -81,6 +84,7 @@ export default function TemplateEditPage() {
         contentType: row.contentType ?? 'social',
         platform,
         body: row.body ?? '',
+        mediaUrls: row.mediaUrls ?? [],
         isActive: row.isActive ?? true,
       });
     } catch (e: unknown) {
@@ -108,6 +112,7 @@ export default function TemplateEditPage() {
         description: form.description.trim() || null,
         contentType: form.contentType,
         body: form.body.trim(),
+        mediaUrls: form.mediaUrls,
         platforms: [form.platform],
         isActive: form.isActive,
       };
@@ -230,6 +235,43 @@ export default function TemplateEditPage() {
               className="font-mono text-sm resize-y"
             />
             <p className="text-xs text-muted-foreground text-right">{form.body.length} chars</p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>Template Media (Optional)</Label>
+              <p className="text-xs text-muted-foreground">Assets to automatically attach to posts generated from this template.</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {form.mediaUrls.map((url, i) => (
+                <div key={i} className="relative group rounded-md border overflow-hidden aspect-square">
+                  <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => {
+                    const newUrls = [...form.mediaUrls];
+                    newUrls.splice(i, 1);
+                    set('mediaUrls', newUrls);
+                  }}>
+                    <X className="h-4 w-4 text-white" />
+                  </div>
+                  {url.match(/\.(mp4|webm|mov)/i) ? (
+                    <video src={url} className="w-full h-full object-cover" />
+                  ) : (
+                    <img src={url} alt="Template Media" className="w-full h-full object-cover" />
+                  )}
+                </div>
+              ))}
+              {form.mediaUrls.length < 4 && (
+                <div className="aspect-square">
+                  <MediaPicker
+                    value=""
+                    onChange={(url) => {
+                      if (url) {
+                        set('mediaUrls', [...form.mediaUrls, url]);
+                      }
+                    }}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {can(P.templates.activate) && (

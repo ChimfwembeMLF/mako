@@ -249,7 +249,7 @@ export default function CampaignsPage() {
   }
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0" id="tour-campaign-welcome">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-500/30 to-primary/10 border border-primary/30 flex items-center justify-center">
@@ -266,7 +266,7 @@ export default function CampaignsPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Generator */}
-        <div className="rounded-xl border bg-card shadow-sm overflow-hidden lg:col-span-1">
+        <div className="rounded-xl border bg-card shadow-sm overflow-hidden lg:col-span-1" id="tour-campaign-generator">
           <div className="px-5 py-4 border-b bg-muted/30">
             <h2 className="font-semibold text-sm">Create campaign</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
@@ -347,7 +347,7 @@ export default function CampaignsPage() {
         </div>
 
         {/* Campaign list */}
-        <div className="space-y-3">
+        <div className="space-y-3" id="tour-campaign-list">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold">Your campaigns</h2>
             <span className="text-xs text-muted-foreground">{campaigns.length} total</span>

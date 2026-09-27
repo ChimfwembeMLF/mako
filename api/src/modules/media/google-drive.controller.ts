@@ -8,6 +8,7 @@ import { EncryptionService } from '../tenants/services/encryption.service';
 import { Request, Response } from 'express';
 import { S3StorageService } from './s3-storage.service';
 import { MediaAssets } from '../content_items/entities/media_assets.entity';
+import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 
 @Controller('api/v1/integrations/google-drive')
 export class GoogleDriveController {
@@ -19,6 +20,8 @@ export class GoogleDriveController {
     private readonly s3StorageService: S3StorageService,
     @InjectRepository(MediaAssets)
     private readonly mediaRepo: Repository<MediaAssets>,
+    @InjectRepository(SocialAccounts)
+    private readonly socialAccountsRepo: Repository<SocialAccounts>,
   ) {}
 
   @Get('auth-url')
@@ -97,22 +100,37 @@ export class GoogleDriveController {
   @Get('files')
   @UseGuards(JwtAuthGuard)
   async listFiles(@Query('tenantId') tenantId: string) {
+    let access_token: string | undefined;
+    let refresh_token: string | undefined;
+
     const config = await this.configRepo.findOne({
       where: { tenantId, provider: IntegrationProvider.GOOGLE_DRIVE },
     });
 
-    if (!config) {
+    if (config) {
+      const tokenString = this.encryptionService.decrypt(
+        config.encryptedApiKey,
+        config.iv,
+        config.authTag,
+      );
+      const tokens = JSON.parse(tokenString);
+      access_token = tokens.access_token;
+      refresh_token = tokens.refresh_token;
+    } else {
+      const socialAccount = await this.socialAccountsRepo.findOne({
+        where: { tenantId, platform: 'google', connected: true },
+      });
+      if (socialAccount) {
+        access_token = socialAccount.accessToken;
+        refresh_token = socialAccount.refreshToken;
+      }
+    }
+
+    if (!access_token && !refresh_token) {
       throw new Error('Google Drive is not connected');
     }
 
-    const tokenString = this.encryptionService.decrypt(
-      config.encryptedApiKey,
-      config.iv,
-      config.authTag,
-    );
-    const tokens = JSON.parse(tokenString);
-
-    const drive = await this.googleDriveService.getDriveClient(tokens.access_token, tokens.refresh_token);
+    const drive = await this.googleDriveService.getDriveClient(access_token as string, refresh_token as string);
     
     // List only images and videos
     const res = await drive.files.list({
@@ -131,22 +149,37 @@ export class GoogleDriveController {
     @Req() req: any,
     @Body() body: { fileId: string; fileName: string; mimeType: string; workspaceId?: string }
   ) {
+    let access_token: string | undefined;
+    let refresh_token: string | undefined;
+
     const config = await this.configRepo.findOne({
       where: { tenantId, provider: IntegrationProvider.GOOGLE_DRIVE },
     });
 
-    if (!config) {
+    if (config) {
+      const tokenString = this.encryptionService.decrypt(
+        config.encryptedApiKey,
+        config.iv,
+        config.authTag,
+      );
+      const tokens = JSON.parse(tokenString);
+      access_token = tokens.access_token;
+      refresh_token = tokens.refresh_token;
+    } else {
+      const socialAccount = await this.socialAccountsRepo.findOne({
+        where: { tenantId, platform: 'google', connected: true },
+      });
+      if (socialAccount) {
+        access_token = socialAccount.accessToken;
+        refresh_token = socialAccount.refreshToken;
+      }
+    }
+
+    if (!access_token && !refresh_token) {
       throw new Error('Google Drive is not connected');
     }
 
-    const tokenString = this.encryptionService.decrypt(
-      config.encryptedApiKey,
-      config.iv,
-      config.authTag,
-    );
-    const tokens = JSON.parse(tokenString);
-
-    const drive = await this.googleDriveService.getDriveClient(tokens.access_token, tokens.refresh_token);
+    const drive = await this.googleDriveService.getDriveClient(access_token as string, refresh_token as string);
     
     // Download the file from Google Drive
     const response = await drive.files.get(

@@ -49,7 +49,7 @@ function networkLabel(network: string | null, countries: PaymentCountryOption[])
   return providerLabel(countries, network);
 }
 
-export function TenantBillingRecords({ tenantId }: { tenantId: string }) {
+export function TenantBillingRecords({ tenantId, filterPlan }: { tenantId: string, filterPlan?: string }) {
   const { toast } = useToast();
   const [records, setRecords] = React.useState<BillingRecord[]>([]);
   const [countries, setCountries] = React.useState<PaymentCountryOption[]>(FALLBACK_PAYMENT_COUNTRIES);
@@ -66,7 +66,7 @@ export function TenantBillingRecords({ tenantId }: { tenantId: string }) {
     setLoading(true);
     setError(null);
     paymentsApi.listDeposits(tenantId)
-      .then(setRecords)
+      .then((records) => setRecords(filterPlan ? records.filter(r => r.plan === filterPlan) : records))
       .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load billing records.'))
       .finally(() => setLoading(false));
   }, [tenantId]);

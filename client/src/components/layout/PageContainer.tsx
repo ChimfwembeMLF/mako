@@ -37,7 +37,7 @@ const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = [
   { path: '/brand-brain', width: '6xl' },
   { path: '/team', width: '4xl' },
   { path: '/billing', width: '4xl' },
-  { path: '/ads', width: '4xl' },
+  { path: '/ads', width: 'full' },
   { path: '/content/:id', width: '4xl' },
   { path: '/chatbot/knowledge', width: '4xl' },
   { path: '/content', width: '6xl' },

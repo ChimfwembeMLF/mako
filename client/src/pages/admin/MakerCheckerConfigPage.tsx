@@ -64,57 +64,70 @@ export default function MakerCheckerConfigPage() {
   return (
     <PermissionGate require={P.admin.makerChecker} fallback={true}>
       <div className="w-full space-y-5 sm:space-y-6 pb-8 min-w-0">
-        <div className="flex items-center gap-3">
-          <GitPullRequestArrow className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-4 mb-6">
+          <div className="p-3 bg-primary/10 rounded-xl">
+            <GitPullRequestArrow className="h-6 w-6 text-primary" />
+          </div>
           <div>
-            <h1 className="text-2xl font-semibold">Maker-Checker Rules</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-bold text-foreground">Maker-Checker Rules</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Configure which actions require approval before they take effect in {tenant?.name}.
             </p>
           </div>
         </div>
 
         {!canEdit && (
-          <Alert>
+          <Alert className="bg-amber-50 text-amber-800 border-amber-200">
             <Info className="h-4 w-4" />
             <AlertDescription>You need the maker-checker admin permission to modify these rules.</AlertDescription>
           </Alert>
         )}
 
-        {Object.entries(grouped).map(([mod, items]) => (
-          <div key={mod} className="border rounded-lg divide-y">
-            <p className="px-4 py-2 text-xs font-semibold uppercase text-muted-foreground bg-muted/30">{mod}</p>
-            {items.map((cfg) => (
-              <div key={cfg.id} className="p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-sm">{cfg.label}</p>
-                    <p className="text-xs text-muted-foreground">{cfg.actionKey}</p>
-                  </div>
-                  <Switch
-                    checked={cfg.isEnabled}
-                    disabled={!canEdit || saving === cfg.id}
-                    onCheckedChange={(v) => update(cfg.id, { isEnabled: v })}
-                  />
-                </div>
-                {cfg.description && <p className="text-xs text-muted-foreground">{cfg.description}</p>}
-                <div className="flex items-center gap-2">
-                  <Label className="text-xs">Approver role</Label>
-                  <Select
-                    value={cfg.approverRoleId}
-                    disabled={!canEdit || saving === cfg.id}
-                    onValueChange={(v) => update(cfg.id, { approverRoleId: v })}
-                  >
-                    <SelectTrigger className="w-40 h-8"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+        <div className="space-y-6">
+          {Object.entries(grouped).map(([mod, items]) => (
+            <div key={mod} className="border rounded-xl overflow-hidden shadow-sm bg-card">
+              <div className="px-4 py-3 bg-gradient-to-r from-primary/10 to-transparent border-b">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary/60"></span>
+                  {mod}
+                </h3>
               </div>
-            ))}
-          </div>
-        ))}
+              <div className="divide-y">
+                {items.map((cfg) => (
+                  <div key={cfg.id} className="p-4 space-y-3 hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-sm text-foreground">{cfg.label}</p>
+                        <p className="text-xs font-mono text-muted-foreground mt-0.5">{cfg.actionKey}</p>
+                      </div>
+                      <Switch
+                        checked={cfg.isEnabled}
+                        disabled={!canEdit || saving === cfg.id}
+                        onCheckedChange={(v) => update(cfg.id, { isEnabled: v })}
+                      />
+                    </div>
+                    {cfg.description && <p className="text-sm text-muted-foreground">{cfg.description}</p>}
+                    <div className="flex items-center gap-3 pt-2">
+                      <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Approver role</Label>
+                      <Select
+                        value={cfg.approverRoleId}
+                        disabled={!canEdit || saving === cfg.id}
+                        onValueChange={(v) => update(cfg.id, { approverRoleId: v })}
+                      >
+                        <SelectTrigger className="w-48 h-8 text-xs font-medium bg-background border-input">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map((r) => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </PermissionGate>
   );

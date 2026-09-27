@@ -17,4 +17,7 @@ export class UpdateTenantDto {
   @IsEnum(IntegrationProvider)
   @IsOptional()
   preferredAiProvider?: IntegrationProvider;
+
+  @IsOptional()
+  themeConfig?: Record<string, unknown>;
 }

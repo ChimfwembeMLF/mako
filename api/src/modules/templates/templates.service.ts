@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ContentTemplates } from './entities/content_templates.entity';
-import { scopeWhere } from '../../common/workspace-scope.util';
+import { scopeWhere, scopeWhereIncludingTenantWide } from '../../common/workspace-scope.util';
 
 @Injectable()
 export class TemplatesService {
@@ -15,21 +15,24 @@ export class TemplatesService {
     return this.repo.save(this.repo.create(dto));
   }
 
-  findByTenant(tenantId: string, workspaceId?: string) {
-    return this.repo.find({
-      where: scopeWhere<ContentTemplates>(tenantId, workspaceId),
+  async findByTenant(tenantId: string, workspaceId?: string) {
+    const records = await this.repo.find({
+      where: scopeWhereIncludingTenantWide<ContentTemplates>(tenantId, workspaceId),
       order: { updated_at: 'DESC' },
     });
+    if (!workspaceId) return records;
+    const wsNames = new Set(records.filter(r => r.workspaceId === workspaceId).map(r => r.name));
+    return records.filter(r => r.workspaceId === workspaceId || !wsNames.has(r.name));
   }
 
-  findActiveByTenant(tenantId: string, workspaceId?: string) {
-    return this.repo.find({
-      where: {
-        ...scopeWhere<ContentTemplates>(tenantId, workspaceId),
-        isActive: true,
-      },
+  async findActiveByTenant(tenantId: string, workspaceId?: string) {
+    const records = await this.repo.find({
+      where: scopeWhereIncludingTenantWide<ContentTemplates>(tenantId, workspaceId, { isActive: true }),
       order: { updated_at: 'DESC' },
     });
+    if (!workspaceId) return records;
+    const wsNames = new Set(records.filter(r => r.workspaceId === workspaceId).map(r => r.name));
+    return records.filter(r => r.workspaceId === workspaceId || !wsNames.has(r.name));
   }
 
   async findActiveForPlatform(

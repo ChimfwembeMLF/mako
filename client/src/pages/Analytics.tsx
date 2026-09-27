@@ -34,6 +34,7 @@ const Analytics = () => {
   const [statusBreakdown, setStatusBreakdown] = useState<{ name: string; value: number }[]>([]);
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [leadStats, setLeadStats] = useState({ total: 0, hot: 0, warm: 0, cold: 0 });
+  const [dashboardTotals, setDashboardTotals] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [generatingSuggestions, setGeneratingSuggestions] = useState(false);
   const [suggestions, setSuggestions] = useState<{ title: string; description: string; trend: string }[]>([]);
@@ -50,8 +51,18 @@ const Analytics = () => {
   const loadAllData = async () => {
     if (!user) return;
     setLoading(true);
-    await Promise.all([loadContentStats(), loadLeadStats(), loadWeeklyTrend(), loadTopPosts(), loadPageInsights()]);
+    await Promise.all([loadContentStats(), loadLeadStats(), loadWeeklyTrend(), loadTopPosts(), loadPageInsights(), loadDashboardStats()]);
     setLoading(false);
+  };
+
+  const loadDashboardStats = async () => {
+    if (!tenant?.id || !activeWorkspace) return;
+    try {
+      const data = await analyticsApi.getPlatformDashboard(tenant.id, activeWorkspace);
+      if (data && data.totals) setDashboardTotals(data.totals);
+    } catch {
+      // ignore
+    }
   };
 
   const loadPageInsights = async () => {
@@ -233,12 +244,36 @@ const Analytics = () => {
         </div>
       ) : (
         <>
+          {/* Performance Stats from Platform Dashboard */}
+          {dashboardTotals && (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: "Total Views", value: dashboardTotals.views > 1000 ? `${(dashboardTotals.views/1000).toFixed(1)}K` : dashboardTotals.views, icon: Eye, color: "text-foreground" },
+                { label: "Engagement", value: (dashboardTotals.likes + dashboardTotals.comments + dashboardTotals.shares) > 1000 ? `${((dashboardTotals.likes + dashboardTotals.comments + dashboardTotals.shares)/1000).toFixed(1)}K` : (dashboardTotals.likes + dashboardTotals.comments + dashboardTotals.shares), icon: TrendingUp, color: "text-primary" },
+                { label: "Published Posts", value: dashboardTotals.publishedPosts, icon: FileText, color: "text-green-600" },
+                { label: "Pending Replies", value: dashboardTotals.pendingReplies, icon: MessageCircle, color: "text-orange-500" },
+              ].map((s) => (
+                <Card key={s.label} className="border-border/50">
+                  <CardContent className="p-4 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
+                      <p className={`text-2xl font-bold font-display ${s.color}`}>{s.value}</p>
+                    </div>
+                    <div className={`h-8 w-8 rounded-full bg-muted flex items-center justify-center ${s.color}`}>
+                      <s.icon className="h-4 w-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
           {/* Content Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: "Total Content", value: contentStats.total, icon: FileText, color: "text-foreground" },
-              { label: "Published", value: contentStats.published, icon: TrendingUp, color: "text-green-600" },
-              { label: "Approved", value: contentStats.approved, icon: Eye, color: "text-primary" },
+              { label: "Total Content in DB", value: contentStats.total, icon: FileText, color: "text-foreground" },
+              { label: "Published via App", value: contentStats.published, icon: TrendingUp, color: "text-green-600" },
+              { label: "Approved Queue", value: contentStats.approved, icon: Eye, color: "text-primary" },
               { label: "Drafts", value: contentStats.draft, icon: MousePointer, color: "text-muted-foreground" },
             ].map((s) => (
               <Card key={s.label} className="border-border/50">
@@ -311,6 +346,8 @@ const Analytics = () => {
                       <Tooltip labelFormatter={(val) => new Date(val).toLocaleDateString()} />
                       <Line type="monotone" dataKey="followersCount" name="Followers" stroke={COLORS[1]} strokeWidth={2} dot={false} />
                       <Line type="monotone" dataKey="reach" name="Reach" stroke={COLORS[2]} strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="impressions" name="Impressions" stroke={COLORS[3]} strokeWidth={2} dot={false} />
+                      <Line type="monotone" dataKey="engagement" name="Engagement" stroke={COLORS[4] ?? "#DE5C34"} strokeWidth={2} dot={false} />
                     </LineChart>
                   </ResponsiveContainer>
                   </div>

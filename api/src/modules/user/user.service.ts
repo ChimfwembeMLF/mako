@@ -166,7 +166,9 @@ export class UserService {
     // Perform a deep merge of the provided JSON with the existing preferences
     // Need to require lodash here or import it at the top
     const lodashMerge = require('lodash/merge');
-    user.preferences = lodashMerge(user.preferences || {}, preferences);
+    // We MUST pass a new empty object as the first argument so lodashMerge returns a NEW object reference.
+    // Otherwise TypeORM won't detect the change on the jsonb column and won't update the database.
+    user.preferences = lodashMerge({}, user.preferences || {}, preferences);
     
     return this.userRepository.save(user);
   }

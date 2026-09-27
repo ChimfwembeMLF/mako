@@ -41,7 +41,13 @@ export const LINKEDIN_PUBLISHER_SCOPES = [
 ] as const;
 
 /** Identity only — login / legacy Google connect */
-export const GOOGLE_PUBLISHER_SCOPES = ['openid', 'email', 'profile'] as const;
+export const GOOGLE_PUBLISHER_SCOPES = [
+  'openid',
+  'email',
+  'profile',
+  'https://www.googleapis.com/auth/adwords',
+  'https://www.googleapis.com/auth/drive.readonly',
+] as const;
 
 /** YouTube Data API v3 — channel, upload, comments */
 export const YOUTUBE_PUBLISHER_SCOPES = [

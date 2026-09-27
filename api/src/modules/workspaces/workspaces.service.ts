@@ -7,6 +7,8 @@ import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
 import { WorkspacesUpdateDto } from './dto/update-workspaces.dto';
 import { UpdateAutomationConfigDto } from './dto/update-automation-config.dto';
 import { BrandProfilesService } from '../brand_profiles/brand_profiles.service';
+import { TemplateSeedService } from '../templates/template-seed.service';
+import { AutoReplySeedService } from '../auto_reply_rules/auto-reply-seed.service';
 
 @Injectable()
 export class WorkspacesService {
@@ -16,12 +18,20 @@ export class WorkspacesService {
     @InjectRepository(WorkspaceAutomationConfig)
     private readonly automationRepo: Repository<WorkspaceAutomationConfig>,
     private readonly brandProfiles: BrandProfilesService,
+    private readonly templateSeeds: TemplateSeedService,
+    private readonly autoReplySeeds: AutoReplySeedService,
   ) {}
 
   async create(dto: WorkspacesCreateDto, userId: string): Promise<Workspaces> {
     const ent = this.repo.create(dto);
     const saved = await this.repo.save(ent as Workspaces);
+    
+    // Create necessary starter data specific to this workspace
     await this.brandProfiles.ensureForWorkspace(dto.tenantId, saved.id, userId);
+    await this.templateSeeds.ensureSeededForWorkspace(dto.tenantId, saved.id, userId);
+    await this.autoReplySeeds.ensureSeededForWorkspace(dto.tenantId, saved.id);
+    await this.getAutomationConfig(saved.id); // ensures automation config is created
+    
     return saved;
   }
 

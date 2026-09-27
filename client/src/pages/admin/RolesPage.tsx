@@ -111,11 +111,13 @@ export default function RolesPage() {
   return (
     <PermissionGate requireAny={[P.admin.roles, P.team.assignRoles]} fallback={true}>
       <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
-        <div className="flex items-center gap-3">
-          <ShieldCheck className="h-6 w-6 text-primary" />
+        <div className="flex items-center gap-4 mb-6">
+          <div className="p-3 bg-primary/10 rounded-xl">
+            <ShieldCheck className="h-6 w-6 text-primary" />
+          </div>
           <div>
-            <h1 className="text-2xl font-semibold">Roles & Permissions</h1>
-            <p className="text-sm text-muted-foreground">Manage roles and permission assignments for {tenant?.name}.</p>
+            <h1 className="text-2xl font-bold text-foreground">Roles & Permissions</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage roles and permission assignments for {tenant?.name}.</p>
           </div>
         </div>
 
@@ -158,7 +160,7 @@ export default function RolesPage() {
             </FormSection>
           </div>
 
-          <div className="border rounded-lg p-5">
+          <div className="border rounded-xl shadow-sm bg-card p-5">
             {!selected ? (
               <p className="text-sm text-muted-foreground">Select a role to manage its permissions.</p>
             ) : (
@@ -169,16 +171,21 @@ export default function RolesPage() {
                 </div>
                 {MODULES.map((mod) =>
                   grouped[mod]?.length ? (
-                    <div key={mod}>
-                      <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">{mod}</p>
-                      <div className="space-y-2">
+                    <div key={mod} className="border rounded-xl overflow-hidden shadow-sm bg-card mb-6">
+                      <div className="px-4 py-3 bg-gradient-to-r from-primary/10 to-transparent border-b">
+                        <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-primary/60"></span>
+                          {mod}
+                        </h3>
+                      </div>
+                      <div className="divide-y">
                         {grouped[mod].map((perm) => {
                           const has = hasPermission(selected.id, perm.key);
                           return (
-                            <div key={perm.key} className="flex items-center justify-between py-1">
+                            <div key={perm.key} className="flex items-center justify-between p-4 hover:bg-muted/20 transition-colors">
                               <div>
-                                <p className="text-sm font-medium">{perm.label}</p>
-                                <p className="text-xs text-muted-foreground">{perm.key}</p>
+                                <p className="text-sm font-semibold text-foreground">{perm.label}</p>
+                                <p className="text-xs font-mono text-muted-foreground mt-0.5">{perm.key}</p>
                               </div>
                               <Switch
                                 checked={has}

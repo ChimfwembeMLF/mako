@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2, Eye } from "lucide-react";
+import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2, Eye, MoreHorizontal } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import RichTextEditor from "@/components/RichTextEditor";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { API_BASE_URL, leadsApi, leadSourcesApi, whatsappContactsApi, whatsappApi } from "@/lib/api";
@@ -617,64 +618,50 @@ const LeadAgent = () => {
         ) : filtered.map((lead) => (
           <Card key={lead.id} className="border-border/50 hover:shadow-card transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-semibold text-sm">{lead.name}</h3>
-                    <Badge className={`text-[10px] ${classColors[lead.classification] || "bg-muted text-muted-foreground"}`}>
-                      {lead.classification.toUpperCase()}
-                    </Badge>
-                    <Badge className={`text-[10px] ${statusColors[lead.status] || "bg-muted text-muted-foreground"}`}>
-                      {statusLabels[lead.status] || lead.status}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-1">{lead.email} • via {lead.source}</p>
-                  {lead.message && <p className="text-sm text-foreground">{lead.message}</p>}
-                  {lead.ai_reply && (
-                    <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
-                      <p className="text-xs text-muted-foreground mb-0.5">🤖 AI Reply:</p>
-                      <p className="text-sm">{lead.ai_reply}</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h3 className="font-semibold text-sm">{lead.name}</h3>
+                      <Badge className={`text-[10px] ${classColors[lead.classification] || "bg-muted text-muted-foreground"}`}>
+                        {lead.classification.toUpperCase()}
+                      </Badge>
+                      <Badge className={`text-[10px] ${statusColors[lead.status] || "bg-muted text-muted-foreground"}`}>
+                        {statusLabels[lead.status] || lead.status}
+                      </Badge>
+                      {lead.unsubscribed && (
+                        <Badge className="text-[10px] bg-muted text-muted-foreground"><MailX className="h-3 w-3 mr-1" /> Unsubscribed</Badge>
+                      )}
                     </div>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1">{new Date(lead.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mb-1">{lead.email} • via {lead.source}</p>
+                    {lead.message && <p className="text-sm text-foreground mt-2">{lead.message}</p>}
+                    {lead.ai_reply && (
+                      <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
+                        <p className="text-xs text-muted-foreground mb-0.5">🤖 AI Reply:</p>
+                        <p className="text-sm">{lead.ai_reply}</p>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">{new Date(lead.created_at).toLocaleString()}</p>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1 shrink-0">
-                  {lead.unsubscribed && (
-                    <Badge className="text-[10px] bg-muted text-muted-foreground mb-1"><MailX className="h-3 w-3 mr-1" /> Unsubscribed</Badge>
-                  )}
+
+                <div className="flex items-center gap-2 pt-3 mt-1 border-t border-border/50">
                   <Button
                     size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      setSelectedLead(lead);
-                      setEditLeadData({
-                        name: lead.name,
-                        email: lead.email,
-                        status: lead.status,
-                        classification: lead.classification,
-                      });
-                      setEditSheetOpen(true);
-                    }}
-                  >
-                    <Edit2 className="h-3 w-3 mr-1" /> Edit
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs"
+                    variant="default"
+                    className="h-8 text-xs"
                     onClick={() => {
                       setSelectedLead(lead);
                       setReplyText(lead.ai_reply || "");
                       setReplySheetOpen(true);
                     }}
                   >
-                    <Send className="h-3 w-3 mr-1" /> Reply
+                    <Send className="h-3.5 w-3.5 mr-1.5" /> Reply
                   </Button>
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs"
+                    className="h-8 text-xs"
                     disabled={lead.unsubscribed}
                     onClick={() => {
                       setSelectedLead(lead);
@@ -683,33 +670,57 @@ const LeadAgent = () => {
                       setEmailSheetOpen(true);
                     }}
                   >
-                    <Mail className="h-3 w-3 mr-1" /> Email
+                    <Mail className="h-3.5 w-3.5 mr-1.5" /> Email
                   </Button>
                   {isWhatsappLead(lead) && (
                     <Button
                       size="sm"
                       variant="outline"
-                      className="h-7 text-xs text-green-700 border-green-200"
+                      className="h-8 text-xs text-green-700 border-green-200 hover:bg-green-50"
                       onClick={() => messageWhatsAppLead(lead)}
                     >
-                      <Phone className="h-3 w-3 mr-1" /> WhatsApp
+                      <Phone className="h-3.5 w-3.5 mr-1.5" /> WhatsApp
                     </Button>
                   )}
-                  {lead.status !== "meeting_booked" && (
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleStatusChange(lead.id, "meeting_booked")}>
-                      <Clock className="h-3 w-3 mr-1" /> Book
-                    </Button>
-                  )}
-                  {lead.classification !== "hot" && (
-                    <Button size="sm" variant="outline" className="h-7 text-xs text-destructive" onClick={() => handleClassify(lead.id, "hot")}>
-                      <Star className="h-3 w-3 mr-1" /> Hot
-                    </Button>
-                  )}
-                  {lead.status !== "escalated" && lead.classification === "hot" && (
-                    <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handleStatusChange(lead.id, "escalated")}>
-                      <ArrowUpRight className="h-3 w-3 mr-1" /> Escalate
-                    </Button>
-                  )}
+
+                  <div className="flex-1" />
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => {
+                        setSelectedLead(lead);
+                        setEditLeadData({
+                          name: lead.name,
+                          email: lead.email,
+                          status: lead.status,
+                          classification: lead.classification,
+                        });
+                        setEditSheetOpen(true);
+                      }}>
+                        <Edit2 className="h-4 w-4 mr-2" /> Edit Lead
+                      </DropdownMenuItem>
+                      {lead.status !== "meeting_booked" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(lead.id, "meeting_booked")}>
+                          <Clock className="h-4 w-4 mr-2" /> Book Meeting
+                        </DropdownMenuItem>
+                      )}
+                      {lead.classification !== "hot" && (
+                        <DropdownMenuItem onClick={() => handleClassify(lead.id, "hot")} className="text-destructive focus:text-destructive">
+                          <Star className="h-4 w-4 mr-2" /> Mark as Hot
+                        </DropdownMenuItem>
+                      )}
+                      {lead.status !== "escalated" && lead.classification === "hot" && (
+                        <DropdownMenuItem onClick={() => handleStatusChange(lead.id, "escalated")}>
+                          <ArrowUpRight className="h-4 w-4 mr-2" /> Escalate
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardContent>

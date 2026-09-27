@@ -270,7 +270,7 @@ export function MediaPicker({ value, onChange, accept = 'image/*,video/*' }: Pro
           ) : gdriveError ? (
             <div className="py-8 text-center text-xs text-muted-foreground flex flex-col items-center gap-2">
               <p>{gdriveError}</p>
-              <Button size="sm" variant="outline" onClick={() => window.open('/settings/integrations', '_blank')}>
+              <Button size="sm" variant="outline" onClick={() => window.open('/publisher', '_blank')}>
                 Connect Google Drive
               </Button>
             </div>

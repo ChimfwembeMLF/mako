@@ -29,21 +29,24 @@ export class AutoReplyRulesService {
       
       let whereClause: any = { tenantId };
       if (workspaceId) {
-        // Fetch rules specific to the workspace, OR rules that are tenant-wide (seeded defaults)
         whereClause = [
           { tenantId, workspaceId },
           { tenantId, workspaceId: IsNull() },
         ];
       }
       
-      return this.repo.find({
+      const records = await this.repo.find({
         where: whereClause,
       });
+      
+      if (!workspaceId) return records;
+      const wsNames = new Set(records.filter(r => r.workspaceId === workspaceId).map(r => r.name));
+      return records.filter(r => r.workspaceId === workspaceId || !wsNames.has(r.name));
     }
     return this.repo.find();
   }
 
-  findActiveForPlatform(
+  async findActiveForPlatform(
     tenantId: string,
     platform: string,
     workspaceId?: string,
@@ -55,10 +58,14 @@ export class AutoReplyRulesService {
         { tenantId, platform, isActive: true, workspaceId: IsNull() },
       ];
     }
-    return this.repo.find({
+    const records = await this.repo.find({
       where: whereClause,
       order: { created_at: 'ASC' },
     });
+    
+    if (!workspaceId) return records;
+    const wsNames = new Set(records.filter(r => r.workspaceId === workspaceId).map(r => r.name));
+    return records.filter(r => r.workspaceId === workspaceId || !wsNames.has(r.name));
   }
 
   matchKeywordRule(

@@ -78,5 +78,35 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     }
   }
 
-  return [HOME, { label: 'Page not found' }];
+  // Dynamic fallback for any URL not in the list
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length === 0) return [];
+  
+  const crumbs: BreadcrumbItem[] = [DASH];
+  let currentPath = '';
+  
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    // skip repeating the dashboard crumb if it's the first segment
+    if (i === 0 && seg.toLowerCase() === 'dashboard') continue;
+    
+    currentPath += `/${seg}`;
+    
+    // Attempt to format the segment nicely (e.g. "brand-brain" -> "Brand Brain")
+    const formatted = seg
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+      
+    // Truncate UUIDs or long IDs visually
+    const isId = seg.length > 20 || /^\d+$/.test(seg);
+    const label = isId ? 'Details' : formatted;
+    
+    crumbs.push({
+      label,
+      href: i === segments.length - 1 ? undefined : currentPath
+    });
+  }
+  
+  return crumbs;
 }

@@ -5,9 +5,16 @@ import { WorkspaceAutomationConfig } from './entities/workspace-automation-confi
 import { WorkspacesService } from './workspaces.service';
 import { WorkspacesController } from './workspaces.controller';
 import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
+import { TemplatesModule } from '../templates/templates.module';
+import { AutoReplyRulesModule } from '../auto_reply_rules/auto_reply_rules.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Workspaces, WorkspaceAutomationConfig]), BrandProfilesModule],
+  imports: [
+    TypeOrmModule.forFeature([Workspaces, WorkspaceAutomationConfig]),
+    BrandProfilesModule,
+    TemplatesModule,
+    AutoReplyRulesModule,
+  ],
   providers: [WorkspacesService],
   controllers: [WorkspacesController],
   exports: [WorkspacesService],
