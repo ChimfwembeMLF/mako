@@ -16,7 +16,7 @@ const buttonVariants = cva(
         outline:
           "border border-foreground bg-card text-foreground hover:bg-surface-soft",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-primary-pale border-0",
+          "border border-foreground bg-card text-foreground hover:bg-surface-soft",
         ghost: "hover:bg-surface-soft hover:text-foreground",
         link: "text-foreground underline-offset-4 hover:underline",
         pill: "rounded-full bg-primary text-primary-foreground text-button-sm hover:bg-primary-active px-5 py-2.5 h-auto",

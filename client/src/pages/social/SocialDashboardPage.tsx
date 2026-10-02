@@ -133,6 +133,14 @@ export default function SocialDashboardPage() {
     );
   }
 
+  const currentHour = new Date().getHours();
+  let greeting = 'Good morning';
+  if (currentHour >= 12 && currentHour < 17) {
+    greeting = 'Good afternoon';
+  } else if (currentHour >= 17) {
+    greeting = 'Good evening';
+  }
+
   return (
     <div
       className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0"
@@ -143,7 +151,7 @@ export default function SocialDashboardPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
             <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-              Good morning, {user?.firstName || 'Marketing Manager'} <span className="text-lg leading-none">👋</span>
+              {greeting}, {user?.firstName || 'Marketing Manager'} <span className="text-lg leading-none">👋</span>
             </p>
             <h1 className="text-2xl sm:text-[28px] font-display text-foreground tracking-tight mt-1.5 font-medium">
               Here's what's happening with your marketing.

@@ -16,6 +16,7 @@ export interface TourConfig {
 
 export class TourService {
   private static activeTourId: string | null = null;
+  private static completedToursLocalCache: Set<string> = new Set();
 
   /**
    * Automatically starts a tour if the user hasn't completed it.
@@ -26,9 +27,15 @@ export class TourService {
     onComplete?: () => void,
     driverConfig?: Partial<Config>
   ) {
+    if (this.completedToursLocalCache.has(tourId)) {
+      return;
+    }
+
     try {
-      const user = await authApi.getMe();
+      // Add a timestamp cache buster to ensure we don't get a browser-cached response
+      const user = await authApi.getMe().catch(() => null);
       if (user?.preferences?.tours?.[tourId]?.completed) {
+        this.completedToursLocalCache.add(tourId);
         return;
       }
       this.startTour(tourId, steps, onComplete, driverConfig);
@@ -104,6 +111,7 @@ export class TourService {
   }
 
   private static async markTourCompleted(tourId: string) {
+    this.completedToursLocalCache.add(tourId);
     try {
       await usersApi.updatePreferences({
         tours: {

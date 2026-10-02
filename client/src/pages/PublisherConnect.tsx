@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Link2, Facebook, Linkedin, Instagram, Twitter, MessageCircle, CheckCircle2, XCircle, Loader2, Phone, Youtube } from "lucide-react";
+import { Link2, Facebook, Linkedin, Instagram, Twitter, MessageCircle, CheckCircle2, XCircle, Loader2, Phone, Youtube, HelpCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,11 +9,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { useAuth } from "@/hooks/useAuth";
 import { socialAccountsApi, SocialAccount } from "@/lib/api";
 import { capabilityOf } from "@/lib/platform-capabilities";
 import { Badge } from "@/components/ui/badge";
 import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { TourService } from '@/services/tour.service';
+import { publisherConnectTourConfig } from './PublisherConnect.tour';
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -201,6 +204,16 @@ const PublisherConnect = () => {
   const { toast } = useToast();
   const activeWorkspaceName =
     workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name;
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        TourService.autoStartTour('connections', publisherConnectTourConfig.steps, undefined, publisherConnectTourConfig.driverConfig);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   const loadAccounts = async () => {
     if (!tenant || !activeWorkspace) return;
@@ -629,17 +642,24 @@ const PublisherConnect = () => {
 
   return (
     <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0" id="tour-connections-welcome">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-strong text-foreground">
-          <Link2 className="h-5 w-5 text-secondary-foreground" />
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-strong text-foreground">
+            <Link2 className="h-5 w-5 text-secondary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold font-display">Connections</h1>
+            <p className="text-muted-foreground text-sm">
+              {activeWorkspaceName
+                ? `Social and ad accounts for “${activeWorkspaceName}”. Switch workspace in the top navbar.`
+                : "Select a workspace to connect social accounts."}
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold font-display">Connections</h1>
-          <p className="text-muted-foreground text-sm">
-            {activeWorkspaceName
-              ? `Social and ad accounts for “${activeWorkspaceName}”. Switch workspace in the top navbar.`
-              : "Select a workspace to connect social accounts."}
-          </p>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="icon" className="h-9 w-9 hidden lg:flex" onClick={() => TourService.startTour('connections', publisherConnectTourConfig.steps, undefined, publisherConnectTourConfig.driverConfig)} title="Help/Tour">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

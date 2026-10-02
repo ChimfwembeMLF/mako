@@ -359,3 +359,15 @@
   color: hsl(var(--positive-deep));
   text-decoration: underline;
 }
+
+/* Fix driver.js confirm dialog overlay issue */
+.driver-popover, 
+.driver-dialog {
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+#driver-page-overlay,
+.driver-overlay {
+  z-index: 2147483646 !important;
+}

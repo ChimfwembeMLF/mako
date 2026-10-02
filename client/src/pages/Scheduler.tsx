@@ -4,7 +4,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import {
   CalendarClock, Plus, CheckCircle2, XCircle, Send, Facebook, Linkedin, Instagram,
   Twitter, Mail, Megaphone, Zap, Loader2, List, CalendarDays, ChevronLeft, ChevronRight,
-  AlertCircle, RotateCcw, Clock, Eye, Youtube, MessageCircle, Users, User, Bot,
+  AlertCircle, RotateCcw, Clock, Eye, Youtube, MessageCircle, Users, User, Bot, HelpCircle
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
@@ -59,6 +59,8 @@ import {
   countDueToday,
   countOverdue,
 } from "@/lib/scheduler-post";
+import { TourService } from '@/services/tour.service';
+import { schedulerTourConfig } from './Scheduler.tour';
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -236,6 +238,15 @@ const Scheduler = () => {
   const { tenant } = useTenant();
   const { activeWorkspace, workspaces, workspaceVersion, loading: workspaceLoading } = useWorkspace();
   const activeWorkspaceObj = workspaces.find(w => w.id === activeWorkspace) ?? null;
+
+  useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        TourService.autoStartTour('scheduler', schedulerTourConfig.steps, undefined, schedulerTourConfig.driverConfig);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
 
   const schedulePreviewPayloads = useMemo(() => {
     const baseMedia: PlatformMediaAttachment[] = newMedia
@@ -715,7 +726,10 @@ const Scheduler = () => {
             </p>
           </div>
         </div>
-        <div className="flex gap-4 flex-wrap items-center">
+        <div className="flex gap-2 sm:gap-4 flex-wrap items-center">
+          <Button variant="outline" size="icon" className="h-9 w-9 hidden lg:flex" onClick={() => TourService.startTour('scheduler', schedulerTourConfig.steps, undefined, schedulerTourConfig.driverConfig)} title="Help/Tour">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
           {view === "calendar" && (
             <div className="flex items-center gap-2 bg-card border border-border/50 rounded-full px-1.5 py-1">
               <div className="px-2 border-r border-border/50">

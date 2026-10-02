@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Megaphone, Sparkles, Loader2, Calendar, Trash2, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { Megaphone, Sparkles, Loader2, Calendar, Trash2, ChevronDown, ChevronUp, ArrowRight, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +15,8 @@ import { contentCampaignsApi } from '@/lib/api';
 import { MultiPlatformPicker } from '@/components/content/MultiPlatformPicker';
 import { platformOf } from '@/lib/platforms';
 import { sanitizeHtml } from '@/lib/sanitize';
+import { TourService } from '@/services/tour.service';
+import { campaignsTourConfig } from './Campaigns.tour';
 
 interface Campaign {
   id: string;
@@ -179,6 +181,15 @@ export default function CampaignsPage() {
   const [platforms, setPlatforms] = useState<string[]>(['linkedin', 'facebook', 'instagram']);
 
   useEffect(() => {
+    if (user) {
+      const timer = setTimeout(() => {
+        TourService.autoStartTour('campaigns', campaignsTourConfig.steps, undefined, campaignsTourConfig.driverConfig);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [user]);
+
+  useEffect(() => {
     if (!tenant || !activeWorkspace) return;
     loadCampaigns();
   }, [tenant?.id, activeWorkspace, workspaceVersion]);
@@ -261,6 +272,11 @@ export default function CampaignsPage() {
               Generate a full multi-day content series from one theme
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="icon" className="h-9 w-9 hidden lg:flex" onClick={() => TourService.startTour('campaigns', campaignsTourConfig.steps, undefined, campaignsTourConfig.driverConfig)} title="Help/Tour">
+            <HelpCircle className="h-4 w-4" />
+          </Button>
         </div>
       </div>
 

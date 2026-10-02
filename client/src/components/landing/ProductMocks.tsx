@@ -7,7 +7,7 @@ export type ScreenshotVariant = 'float' | 'chrome';
 
 const DEVICE_SIZE_CLASS: Record<ScreenshotDevice, string> = {
   desktop: 'w-full',
-  tablet: 'w-full max-w-sm sm:max-w-md lg:max-w-lg mx-auto',
+  tablet: 'w-full max-w-xs sm:max-w-sm lg:max-w-sm mx-auto',
   phone: 'w-full max-w-[200px] sm:max-w-[260px] md:max-w-[300px] mx-auto',
 };
 
@@ -195,9 +195,8 @@ export function MockScheduler() {
         {Array.from({ length: 14 }).map((_, i) => (
           <div
             key={i}
-            className={`aspect-square rounded-md border text-[8px] flex items-end justify-center p-0.5 ${
-              i === 3 || i === 8 ? 'bg-primary/10 border-primary/30 text-foreground' : 'bg-muted/10 border-border/60'
-            }`}
+            className={`aspect-square rounded-md border text-[8px] flex items-end justify-center p-0.5 ${i === 3 || i === 8 ? 'bg-primary/10 border-primary/30 text-foreground' : 'bg-muted/10 border-border/60'
+              }`}
           >
             {i === 3 && 'IG'}
             {i === 8 && 'FB'}

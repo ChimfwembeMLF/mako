@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import {
   Pen, Sparkles, Copy, Check, Trash2, Loader2, RefreshCw, Pencil,
-  ChevronDown, ChevronUp, Send, Eye, Search, List
+  ChevronDown, ChevronUp, Send, Eye, Search, List, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -428,6 +428,9 @@ const ContentEngine = () => {
           </div>
         </div>
         <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+          <Button variant="outline" size="icon" className="h-9 w-9 hidden lg:flex" onClick={() => TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig)} title="Help/Tour">
+            <HelpCircle className="w-4 h-4" />
+          </Button>
           <Button asChild variant="outline" size="sm" className="h-9">
             <Link to="/campaigns">AI Campaigns</Link>
           </Button>

@@ -9,6 +9,7 @@ import { UserService } from './user.service';
 import { RegisterPushTokenDto } from './dtos/register-push-token.dto';
 import type { Request } from 'express';
 import { UserEntity } from './user.entity';
+import { UpdatePreferencesDto } from './dtos/update-preferences.dto';
 
 @Controller('api/v1/users')
 export class UserController {
@@ -43,10 +44,12 @@ export class UserController {
   @HttpCode(HttpStatus.OK)
   async updatePreferences(
     @Req() req: any,
-    @Body() preferences: Record<string, any>,
+    @Body() preferences: UpdatePreferencesDto,
   ) {
     const user = req.user as UserEntity;
+    console.log('--- Incoming Preferences Update ---', preferences);
     const updatedUser = await this.userService.updatePreferences(user.id, preferences);
+    console.log('--- Updated User Preferences ---', updatedUser.preferences);
     return { success: true, message: 'Preferences updated successfully', preferences: updatedUser.preferences };
   }
 }

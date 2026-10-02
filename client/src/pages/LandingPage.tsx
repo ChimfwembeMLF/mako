@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { plansApi, type PublicPlan } from '@/lib/api';
 import { formatPriceZmw, planFeatureBullets } from '@/lib/plans';
 import {
@@ -108,69 +109,70 @@ const SHOWCASE: Array<{
   device: ScreenshotDevice;
   reverse?: boolean;
 }> = [
-  {
-    id: 'brand-brain',
-    badge: 'Brand Brain',
-    title: 'Define how your brand sounds',
-    desc: 'Set your profile, tone, audience, and key messages once. Every post follows the same guidelines.',
-    img: '/screenshots/mako-brand-brain-tablet.webp',
-    mock: <MockBrandBrain />,
-    icon: Brain,
-    device: 'tablet',
-  },
-  {
-    id: 'content',
-    badge: 'Content Engine',
-    title: 'Draft posts for every channel',
-    desc: 'Turn one idea into copy sized for Facebook, Instagram, LinkedIn, email, and ads — without rewriting from scratch.',
-    img: '/screenshots/mako-content-engine-desktop.webp',
-    mock: <MockContentEngine />,
-    icon: Pen,
-    device: 'desktop',
-  },
-  {
-    id: 'publish',
-    badge: 'Publishing',
-    title: 'Review once, post everywhere',
-    desc: 'Preview how posts look on each platform, attach media, and publish through your connected accounts.',
-    img: '/screenshots/mako-publishing-desktop.webp',
-    mock: <MockPublish />,
-    icon: Globe,
-    device: 'desktop',
-    reverse: true,
-  },
-  {
-    id: 'scheduler',
-    badge: 'Scheduler',
-    title: 'Keep your calendar full',
-    desc: 'Queue posts on a visual calendar and publish on the dates and times you choose.',
-    img: '/screenshots/mako-scheduler.webp',
-    mock: <MockScheduler />,
-    icon: CalendarClock,
-    device: 'desktop',
-  },
-  {
-    id: 'analytics',
-    badge: 'Analytics',
-    title: 'See what is working',
-    desc: 'Track reach, engagement, and leads in one place so you can focus on what drives results.',
-    img: '/screenshots/mako-analytics-desktop.webp',
-    mock: <MockAnalytics />,
-    icon: BarChart3,
-    device: 'desktop',
-    reverse: true,
-  },
-  {
-    id: 'replies',
-    badge: 'Inbox',
-    title: 'Reply from one queue',
-    desc: 'Comments from your posts land in a single inbox. Review, edit, and send replies without switching apps.',
-    img: '/screenshots/mako-replies-tablet.webp',
-    mock: <MockReplies />,
-    icon: MessageSquareReply,
-    device: 'tablet',
-  },
-];
+    {
+      id: 'brand-brain',
+      badge: 'Brand Brain',
+      title: 'Define how your brand sounds',
+      desc: 'Set your profile, tone, audience, and key messages once. Every post follows the same guidelines.',
+      img: '/screenshots/mako-brand-brain-tablet.webp',
+      mock: <MockBrandBrain />,
+      icon: Brain,
+      device: 'tablet',
+      reverse: true,
+    },
+    {
+      id: 'content',
+      badge: 'Content Engine',
+      title: 'Draft posts for every channel',
+      desc: 'Turn one idea into copy sized for Facebook, Instagram, LinkedIn, email, and ads — without rewriting from scratch.',
+      img: '/screenshots/mako-content-engine-desktop.webp',
+      mock: <MockContentEngine />,
+      icon: Pen,
+      device: 'desktop',
+    },
+    {
+      id: 'publish',
+      badge: 'Publishing',
+      title: 'Review once, post everywhere',
+      desc: 'Preview how posts look on each platform, attach media, and publish through your connected accounts.',
+      img: '/screenshots/mako-publishing-desktop.webp',
+      mock: <MockPublish />,
+      icon: Globe,
+      device: 'desktop',
+      reverse: true,
+    },
+    {
+      id: 'scheduler',
+      badge: 'Scheduler',
+      title: 'Keep your calendar full',
+      desc: 'Queue posts on a visual calendar and publish on the dates and times you choose.',
+      img: '/screenshots/mako-scheduler.webp',
+      mock: <MockScheduler />,
+      icon: CalendarClock,
+      device: 'tablet',
+    },
+    {
+      id: 'analytics',
+      badge: 'Analytics',
+      title: 'See what is working',
+      desc: 'Track reach, engagement, and leads in one place so you can focus on what drives results.',
+      img: '/screenshots/mako-analytics-desktop.webp',
+      mock: <MockAnalytics />,
+      icon: BarChart3,
+      device: 'desktop',
+      reverse: true,
+    },
+    {
+      id: 'replies',
+      badge: 'Inbox',
+      title: 'Reply from one queue',
+      desc: 'Comments from your posts land in a single inbox. Review, edit, and send replies without switching apps.',
+      img: '/screenshots/mako-replies-tablet.webp',
+      mock: <MockReplies />,
+      icon: MessageSquareReply,
+      device: 'tablet',
+    },
+  ];
 
 function Nav() {
   const [open, setOpen] = useState(false);
@@ -195,8 +197,8 @@ function Nav() {
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign in</Link></Button>
-          <Button size="sm" asChild className="rounded-xl min-h-12 h-12 px-5">
-            <Link to="/auth?mode=signup">Get started <ArrowRight className="ml-1 h-3.5 w-3.5" /></Link>
+          <Button size="sm" asChild className="group rounded-xl min-h-12 h-12 px-5 transition-all duration-300 hover:scale-105 hover:shadow-md hover:shadow-primary/20">
+            <Link to="/auth?mode=signup">Get started <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" /></Link>
           </Button>
         </div>
         <button type="button" className="md:hidden p-2" onClick={() => setOpen((o) => !o)} aria-label="Menu">
@@ -220,18 +222,17 @@ function Nav() {
 
 function Hero() {
   return (
-    <section className="relative min-h-[92svh] flex items-center pt-24 pb-section overflow-hidden bg-background">
-      <div className="absolute inset-0 landing-glow pointer-events-none opacity-60" aria-hidden />
+    <section className="relative min-h-[92svh] flex items-center pt-24 pb-section overflow-hidden bg-card">
       <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
         <div className="space-y-7 text-center lg:text-left">
           <Reveal>
-            <p className="font-display text-4xl sm:text-5xl font-extrabold tracking-tight text-foreground">
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary mb-2">
               Mako
             </p>
           </Reveal>
 
           <Reveal delay={80} variant="up">
-            <h1 className="font-display text-display-xl text-foreground">
+            <h1 className="font-display text-display-xl bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
               Your brand voice.
               <br />
               Every channel.
@@ -251,14 +252,14 @@ function Hero() {
               <Button
                 size="lg"
                 asChild
-                className="min-h-12 h-12 px-8 rounded-xl"
+                className="group min-h-12 h-12 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20"
               >
                 <Link to="/auth?mode=signup">
                   Get started free
-                  <ArrowRight className="ml-2 h-4 w-4" />
+                  <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                 </Link>
               </Button>
-              <Button size="lg" variant="secondary" asChild className="min-h-12 h-12 px-8 rounded-xl">
+              <Button size="lg" variant="outline" asChild className="min-h-12 h-12 px-8 rounded-xl">
                 <a href="#product">See how it works</a>
               </Button>
             </div>
@@ -282,8 +283,8 @@ function Hero() {
           </Reveal>
         </div>
 
-        <Reveal delay={180} variant="scale" className="relative lg:pl-4">
-          <div className="rounded-xl bg-card p-3 sm:p-4">
+        <Reveal delay={180} variant="scale" className="relative lg:pl-4 landing-float">
+          <div className="rounded-xl p-3 sm:p-4">
             <ScreenshotFrame
               src="/screenshots/mako-dashboard-desktop.webp"
               alt="Mako dashboard — content, scheduling, and analytics"
@@ -300,7 +301,7 @@ function Hero() {
 
 function ProductShowcase() {
   return (
-    <section id="product" className="py-section bg-card border-t border-border/40">
+    <section id="product" className="py-section bg-card">
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 mb-20">
         <Reveal>
           <SectionHeader
@@ -364,7 +365,7 @@ const FEATURES = [
 
 function FeaturesGrid() {
   return (
-    <section id="features" className="py-section bg-background border-t border-border/40">
+    <section id="features" className="py-section bg-card">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <Reveal>
           <SectionHeader
@@ -377,8 +378,8 @@ function FeaturesGrid() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70} variant="up">
-              <div className="rounded-xl border border-border/80 bg-card p-6 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/20">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 mb-4">
+              <div className="group rounded-xl border border-border/80 bg-card p-6 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/30">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 shadow-sm mb-4 transition-transform duration-300 group-hover:scale-110">
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold mb-2 text-foreground">{f.title}</h3>
@@ -405,7 +406,7 @@ function Pricing() {
   }, []);
 
   return (
-    <section id="pricing" className="py-section bg-card border-t border-border/40">
+    <section id="pricing" className="py-section bg-card">
       <div className="w-full px-4 sm:px-6">
         <Reveal>
           <SectionHeader
@@ -424,9 +425,10 @@ function Pricing() {
             {plans.map((p, i) => (
               <Reveal key={p.key} delay={i * 90} variant="scale">
                 <div className={cn(
-                  'rounded-xl border p-6 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-card',
-                  p.highlight ? 'border-primary bg-primary/[0.04] ring-1 ring-primary/20' : 'border-border/80 bg-card',
+                  'relative rounded-xl border p-6 h-full flex flex-col transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden group',
+                  p.highlight ? 'border-primary bg-primary/[0.04] ring-1 ring-primary/20 hover:shadow-primary/20' : 'border-border/80 bg-card hover:border-primary/40',
                 )}>
+                  <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
                   {p.highlight && (
                     <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Most popular</p>
                   )}
@@ -456,6 +458,92 @@ function Pricing() {
   );
 }
 
+const FAQS = [
+  {
+    id: "faq-1",
+    question: "Do I need to be a marketing expert to use Mako?",
+    answer: "Not at all! Mako's Brand Brain learns your business tone and automatically drafts professional, ready-to-post content. You just review and approve.",
+    image: "/screenshots/mako-content-engine-desktop.webp",
+    mock: <MockContentEngine />
+  },
+  {
+    id: "faq-2",
+    question: "Which social media platforms do you support?",
+    answer: "You can currently connect and publish to Facebook, Instagram, X (Twitter), and LinkedIn. We automatically format your content for each platform.",
+    image: "/screenshots/mako-publishing-desktop.webp",
+    mock: <MockPublish />
+  },
+  {
+    id: "faq-3",
+    question: "Can I schedule posts in advance?",
+    answer: "Yes, you can visually plan and schedule your posts weeks or months in advance using our interactive content calendar.",
+    image: "/screenshots/mako-scheduler.webp",
+    mock: <MockScheduler />
+  },
+  {
+    id: "faq-4",
+    question: "How do you handle multiple team members?",
+    answer: "Mako includes role-based access control. You can have content creators draft posts while managers approve them before they go live.",
+    image: "/screenshots/mako-dashboard-desktop.webp",
+    mock: <MockBrandBrain />
+  }
+];
+
+function FAQSection() {
+  const [activeFaq, setActiveFaq] = useState("faq-1");
+  const currentFaq = FAQS.find(f => f.id === activeFaq) || FAQS[0];
+
+  return (
+    <section id="faq" className="py-section bg-white">
+      <div className="w-full max-w-7xl mx-auto px-4 sm:px-6">
+        <Reveal>
+          <SectionHeader
+            label="FAQ"
+            title="Frequently asked questions"
+            desc="Everything you need to know about getting started."
+            className="mb-12"
+          />
+        </Reveal>
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
+          <Reveal delay={100} variant="right">
+            <Accordion 
+              type="single" 
+              collapsible 
+              value={activeFaq} 
+              onValueChange={(val) => val && setActiveFaq(val)}
+              className="w-full"
+            >
+              {FAQS.map((faq) => (
+                <AccordionItem key={faq.id} value={faq.id} className="border-border/60">
+                  <AccordionTrigger className="text-left text-lg font-semibold hover:text-primary transition-colors">
+                    {faq.question}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground text-base leading-relaxed">
+                    {faq.answer}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </Reveal>
+          
+          <Reveal delay={200} variant="left" className="hidden lg:block sticky top-32">
+            <div className="transition-all duration-500">
+               <ScreenshotFrame
+                 key={currentFaq.id}
+                 src={currentFaq.image}
+                 alt={currentFaq.question}
+                 mock={currentFaq.mock}
+                 device="desktop"
+                 className="animate-in fade-in slide-in-from-bottom-8 duration-500"
+               />
+            </div>
+          </Reveal>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function FinalCTA() {
   return (
     <section className="py-section px-4 bg-foreground text-background">
@@ -468,10 +556,10 @@ function FinalCTA() {
             Set up your brand, connect a channel, and publish your first post. Most teams are up and running the same day.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <Button size="lg" asChild className="min-h-12 h-12 px-8 rounded-xl">
+            <Button size="lg" asChild className="group min-h-12 h-12 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20">
               <Link to="/auth?mode=signup">
                 Create free account
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Link>
             </Button>
             <Button size="lg" variant="outline" asChild className="min-h-12 h-12 px-8 rounded-xl border-background/40 bg-transparent text-background hover:bg-background/10">
@@ -519,6 +607,7 @@ export default function LandingPage() {
       <GuestAdUnit slotId={import.meta.env.VITE_ADSENSE_SLOT_ARTIST} className="px-4 py-6 sm:px-6" />
       <Pricing />
       <GuestAdUnit slotId={import.meta.env.VITE_ADSENSE_SLOT_GATE} className="px-4 py-6 sm:px-6" />
+      <FAQSection />
       <FinalCTA />
       <Footer />
     </div>

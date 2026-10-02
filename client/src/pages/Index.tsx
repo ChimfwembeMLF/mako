@@ -1,4 +1,4 @@
-import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target, Link2, Megaphone, Mail } from "lucide-react";
+import { Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, ArrowRight, Bot, BookOpen, History, Target, Link2, Megaphone, Mail, HelpCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,6 +137,11 @@ const Dashboard = () => {
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       {/* Hero */}
       <div id="tour-dashboard-welcome" className="relative overflow-hidden rounded-md bg-primary p-6 sm:p-8 shadow-elevated">
+        <div className="absolute top-4 right-4 z-20">
+          <Button variant="secondary" size="icon" className="h-9 w-9 bg-background/20 hover:bg-background/40 border-0 text-primary-foreground hidden lg:flex" onClick={() => TourService.startTour('dashboard', dashboardTourConfig.steps, undefined, dashboardTourConfig.driverConfig)} title="Help/Tour">
+            <HelpCircle className="w-4 h-4" />
+          </Button>
+        </div>
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <Zap className="h-5 w-5 text-primary-foreground" />
