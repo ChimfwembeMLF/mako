@@ -123,7 +123,7 @@ export class DailyContentWorkflowCron {
     private readonly config: ConfigService,
   ) {}
 
-  @Cron('0 8 * * *')
+  @Cron(CronExpression.EVERY_5_MINUTES)
   async handleDailyWorkflow(): Promise<void> {
     if (this.config.get<string>('DAILY_WORKFLOW_CRON_ENABLED') === 'false')
       return;

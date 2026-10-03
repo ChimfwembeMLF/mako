@@ -24,8 +24,8 @@ export function useWorkspaceAutomationConfig(workspaceId?: string | null) {
   const { session } = useAuth();
 
   const fetchConfig = useCallback(async () => {
-    if (!workspaceId || !session?.access_token) return;
-    
+    if (!workspaceId || !session?.accessToken) return;
+
     setIsLoading(true);
     setError(null);
     try {

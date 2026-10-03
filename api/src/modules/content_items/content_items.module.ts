@@ -8,6 +8,7 @@ import { ContentAiController } from './content-ai.controller';
 import { AiModule } from '../ai/ai.module';
 import { BrandProfiles } from '../brand_profiles/entities/brand_profiles.entity';
 import { Workspaces } from '../workspaces/entities/workspaces.entity';
+import { WorkspaceAutomationConfig } from '../workspaces/entities/workspace-automation-config.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
 import { GenerateContentService } from './services/generate-content.service';
 import { RepurposeContentService } from './services/repurpose-content.service';
@@ -34,6 +35,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       MediaAssets,
       BrandProfiles,
       Workspaces,
+      WorkspaceAutomationConfig,
       Tenants,
       SocialAccounts,
     ]),

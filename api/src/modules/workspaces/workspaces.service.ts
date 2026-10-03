@@ -62,10 +62,10 @@ export class WorkspacesService {
   }
 
   async getAutomationConfig(workspaceId: string): Promise<WorkspaceAutomationConfig> {
-    const config = await this.automationRepo.findOne({ where: { workspaceId } });
+    let config = await this.automationRepo.findOne({ where: { workspaceId } });
     if (!config) {
-      // Return default config if none exists
-      return this.automationRepo.create({ workspaceId });
+      config = this.automationRepo.create({ workspaceId });
+      config = await this.automationRepo.save(config);
     }
     return config;
   }

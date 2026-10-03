@@ -21,7 +21,7 @@ const PLATFORMS = [
 
 export function AutomationSettingsTab() {
   const { activeWorkspace } = useWorkspace();
-  const { config, isLoading, updateConfig } = useWorkspaceAutomationConfig(activeWorkspace);
+  const { config, isLoading, updateConfig, refetch } = useWorkspaceAutomationConfig(activeWorkspace);
   const [isSaving, setIsSaving] = useState(false);
 
   const [isActive, setIsActive] = useState(false);
@@ -59,6 +59,7 @@ export function AutomationSettingsTab() {
         postingTimes,
         platforms: activePlatforms,
       });
+      await refetch();
       toast.success("Automation settings saved successfully.");
     } catch (error) {
       toast.error("Failed to save automation settings.");
@@ -191,9 +192,9 @@ export function AutomationSettingsTab() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1 day">1 day</SelectItem>
-                        <SelectItem value="3 days">3 days</SelectItem>
-                        <SelectItem value="1 week">1 week</SelectItem>
+                        <SelectItem value="1">1 day</SelectItem>
+                        <SelectItem value="3">3 days</SelectItem>
+                        <SelectItem value="7">1 week</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
