@@ -28,6 +28,14 @@ export class RolesGuard implements CanActivate {
     }
     const request = context.switchToHttp().getRequest();
     const user = request.user;
+    if (!user?.sub) {
+      throw new ForbiddenException('Authentication required');
+    }
+
+    if (!user.tenantId) {
+      return true;
+    }
+
     const has = await this.rbac.hasRoles(
       user.sub,
       user.tenantId,

@@ -163,9 +163,8 @@ export class UserService {
       throw new Error('User not found');
     }
     
-    // Perform a deep merge of the provided JSON with the existing preferences
-    const lodashMerge = require('lodash/merge');
-    const mergedPreferences = lodashMerge({}, user.preferences || {}, preferences);
+    // Native deep merge — avoids the lodash dependency that was missing from node_modules
+    const mergedPreferences = deepMerge(user.preferences || {}, preferences);
     
     // Use .update() to bypass TypeORM change tracking bugs for jsonb columns
     await this.userRepository.update(userId, { preferences: mergedPreferences });
@@ -173,4 +172,28 @@ export class UserService {
     
     return user;
   }
+}
+
+/**
+ * Recursively merges `source` into `target`. Arrays are replaced (not concatenated).
+ */
+function deepMerge(target: Record<string, any>, source: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = { ...target };
+  for (const key of Object.keys(source)) {
+    const srcVal = source[key];
+    const tgtVal = result[key];
+    if (
+      srcVal !== null &&
+      typeof srcVal === 'object' &&
+      !Array.isArray(srcVal) &&
+      tgtVal !== null &&
+      typeof tgtVal === 'object' &&
+      !Array.isArray(tgtVal)
+    ) {
+      result[key] = deepMerge(tgtVal, srcVal);
+    } else {
+      result[key] = srcVal;
+    }
+  }
+  return result;
 }

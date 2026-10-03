@@ -23,6 +23,7 @@ import { MailService } from '../mail/mail.service';
 import { TenantBootstrapService } from '../tenants/tenant-bootstrap.service';
 import { TenantSummaryDto } from '../tenants/dto/tenant-summary.dto';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
+import { RoleType } from '../../constants';
 
 function parseDurationToMs(duration: string): number {
   const match = duration.match(/^(\d+)([smhd])$/);
@@ -57,17 +58,23 @@ export class AuthService {
     if (user.email) {
       await this.tenantMembers.acceptPendingInvitations(user.id, user.email);
     }
-    const tokens = await this.issueTokensForUser(user);
+    const tokens = await this.issueTokensForUser(user, tenant);
     return {
       ...tokens,
       tenant: TenantSummaryDto.fromEntity(tenant),
     };
   }
 
-  async issueTokensForUser(user: UserEntity): Promise<LoginPayloadDto> {
+  async issueTokensForUser(
+    user: UserEntity,
+    tenant?: { id?: string | null } | null,
+  ): Promise<LoginPayloadDto> {
     const payload = {
+      id: String(user.id),
       sub: String(user.id),
       provider: user.provider ?? 'local',
+      role: String(user.role ?? RoleType.USER),
+      ...(tenant?.id ? { tenantId: String(tenant.id) } : {}),
     };
     const token = this.jwtService.sign(payload);
     const refreshExpiry = this.config.get<string>('JWT_REFRESH_EXPIRY')?.trim() || '7d';
@@ -105,8 +112,11 @@ export class AuthService {
       }
 
       const newAccessToken = this.jwtService.sign({
+        id: decoded.id ?? decoded.sub,
         sub: decoded.sub,
         provider: decoded.provider,
+        role: decoded.role ?? RoleType.USER,
+        ...(decoded.tenantId ? { tenantId: String(decoded.tenantId) } : {}),
       });
       return { accessToken: newAccessToken };
     } catch (err) {
