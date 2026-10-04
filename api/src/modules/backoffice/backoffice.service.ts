@@ -28,10 +28,12 @@ import { PlansService } from '../subscriptions/plans.service';
 import { UpdatePlansDto } from '../subscriptions/dto/update-plans.dto';
 import { RefundRequests } from '../payments/entities/refund_requests.entity';
 import { PaymentsService } from '../payments/payments.service';
+import { CronMonitorService } from './cron-monitor.service';
 
 @Injectable()
 export class BackofficeService {
   constructor(
+    private readonly cronMonitor: CronMonitorService,
     private readonly config: ConfigService,
     @InjectRepository(Tenants)
     private readonly tenantsRepo: Repository<Tenants>,
@@ -288,6 +290,9 @@ export class BackofficeService {
         tenantName: (a as { tenant?: { name?: string } }).tenant?.name,
         userEmail: (a as { user?: { email?: string } }).user?.email,
         createdAt: a.created_at,
+        beforeState: a.beforeState ?? null,
+        afterState: a.afterState ?? null,
+        metadata: a.metadata ?? null,
       })),
       dataDeletionRequests: deletionRequests.map((d) => ({
         id: d.id,
@@ -301,6 +306,7 @@ export class BackofficeService {
         dailyWorkflow: process.env.DAILY_WORKFLOW_CRON_ENABLED !== 'false',
         commentSync: process.env.COMMENT_SYNC_CRON_ENABLED !== 'false',
       },
+      cronHealth: this.cronMonitor.getSnapshot(),
       env: {
         nodeEnv: process.env.NODE_ENV ?? 'development',
         apiPublicUrl: process.env.API_PUBLIC_URL ?? '',

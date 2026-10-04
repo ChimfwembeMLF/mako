@@ -16,6 +16,7 @@ import { SubscriptionRenewalCron } from './subscription-renewal.cron';
 import { CheckPawapayDepositsCron } from './check-pawapay-deposits.cron';
 import { SyncInsightsCron } from './sync-insights.cron';
 import { SyncGmailInboxCron } from './sync-gmail-inbox.cron';
+import { BackofficeModule } from '../backoffice/backoffice.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { SyncGmailInboxCron } from './sync-gmail-inbox.cron';
     QueuesModule,
     AnalyticsModule,
     MailModule,
+    BackofficeModule,
   ],
   providers: [
     AutoPublishCron,

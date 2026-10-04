@@ -711,6 +711,9 @@ export const backofficeApi = {
                 tenantName?: string;
                 userEmail?: string;
                 createdAt: string;
+                beforeState?: unknown;
+                afterState?: unknown;
+                metadata?: unknown;
             }>;
             dataDeletionRequests: Array<{
                 id: string;
@@ -720,6 +723,18 @@ export const backofficeApi = {
                 createdAt: string;
             }>;
             crons: { autoPublish: boolean; dailyWorkflow: boolean; commentSync: boolean };
+            cronHealth: Array<{
+                key: string;
+                name: string;
+                enabled: boolean;
+                status: 'healthy' | 'running' | 'failed' | 'stale';
+                lastStartedAt?: string;
+                lastFinishedAt?: string;
+                lastSuccessAt?: string;
+                lastError?: string;
+                runCount: number;
+                recentEvents: string[];
+            }>;
             env: {
                 nodeEnv: string;
                 apiPublicUrl: string;

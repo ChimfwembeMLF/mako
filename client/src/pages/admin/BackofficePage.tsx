@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2, Users, CreditCard, Sparkles, Activity, Server, Settings,
@@ -76,6 +76,15 @@ function GrowthBars({ data }: { data: Array<{ month: string; count: number }> })
       ))}
     </div>
   );
+}
+
+function formatAuditJson(value: unknown): string {
+  if (value == null) return 'null';
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
 }
 
 function TenantDetailSheet({
@@ -226,6 +235,17 @@ function BackofficeContent() {
   const [error, setError] = useState('');
   const [selectedTenantId, setSelectedTenantId] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedCronKey, setSelectedCronKey] = useState<string | null>(null);
+  const [selectedAuditId, setSelectedAuditId] = useState<string | null>(null);
+  const [auditPage, setAuditPage] = useState(1);
+  const [auditPageSize, setAuditPageSize] = useState(8);
+  const [auditFrom, setAuditFrom] = useState('');
+  const [auditTo, setAuditTo] = useState('');
+  const [auditAction, setAuditAction] = useState('all');
+  const [auditResource, setAuditResource] = useState('all');
+  const [auditTenant, setAuditTenant] = useState('');
+  const [auditUser, setAuditUser] = useState('');
+  const [auditSearch, setAuditSearch] = useState('');
 
   useEffect(() => {
     Promise.all([backofficeApi.getOverview(), backofficeApi.listTenants(), backofficeApi.getPlans()])
@@ -243,6 +263,39 @@ function BackofficeContent() {
     setSheetOpen(true);
   };
 
+  const auditOptions = useMemo(() => {
+    if (!overview) return { actions: [], resources: [] };
+    return {
+      actions: Array.from(new Set(overview.recentAudit.map((a) => a.action))).sort(),
+      resources: Array.from(new Set(overview.recentAudit.map((a) => a.resourceType))).sort(),
+    };
+  }, [overview]);
+
+  const filteredAuditEntries = useMemo(() => {
+    if (!overview) return [];
+    return overview.recentAudit.filter((a) => {
+      const createdAt = new Date(a.createdAt);
+      if (auditFrom && createdAt < new Date(`${auditFrom}T00:00:00`)) return false;
+      if (auditTo && createdAt > new Date(`${auditTo}T23:59:59.999`)) return false;
+      if (auditAction !== 'all' && a.action !== auditAction) return false;
+      if (auditResource !== 'all' && a.resourceType !== auditResource) return false;
+      if (auditTenant && !(a.tenantName ?? '').toLowerCase().includes(auditTenant.toLowerCase())) return false;
+      if (auditUser && !(a.userEmail ?? '').toLowerCase().includes(auditUser.toLowerCase())) return false;
+      if (auditSearch) {
+        const haystack = `${a.action} ${a.resourceType} ${a.tenantName ?? ''} ${a.userEmail ?? ''}`.toLowerCase();
+        if (!haystack.includes(auditSearch.toLowerCase())) return false;
+      }
+      return true;
+    });
+  }, [overview, auditFrom, auditTo, auditAction, auditResource, auditTenant, auditUser, auditSearch]);
+
+  const auditPageCount = Math.max(1, Math.ceil(filteredAuditEntries.length / auditPageSize));
+  const pagedAuditEntries = filteredAuditEntries.slice((auditPage - 1) * auditPageSize, auditPage * auditPageSize);
+
+  useEffect(() => {
+    setAuditPage(1);
+  }, [auditFrom, auditTo, auditAction, auditResource, auditTenant, auditUser, auditSearch, auditPageSize]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] text-muted-foreground gap-2">
@@ -259,7 +312,7 @@ function BackofficeContent() {
     );
   }
 
-  const { company, stats, chatbot, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, env } = overview;
+  const { company, stats, chatbot, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, cronHealth, env } = overview;
 
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
@@ -545,22 +598,118 @@ function BackofficeContent() {
         <TabsContent value="activity" className="space-y-6 mt-6">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Recent audit events</CardTitle>
-              <CardDescription>Platform-wide governance trail</CardDescription>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">Recent audit events</CardTitle>
+                    <CardDescription>Platform-wide governance trail</CardDescription>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Showing {filteredAuditEntries.length === 0 ? 0 : (auditPage - 1) * auditPageSize + 1}-{Math.min(auditPage * auditPageSize, filteredAuditEntries.length)} of {filteredAuditEntries.length}
+                  </div>
+                </div>
+                <div className="grid gap-2 md:grid-cols-6">
+                  <input value={auditFrom} onChange={(e) => setAuditFrom(e.target.value)} type="date" className="h-9 rounded-md border bg-background px-2 text-sm" aria-label="Audit from date" />
+                  <input value={auditTo} onChange={(e) => setAuditTo(e.target.value)} type="date" className="h-9 rounded-md border bg-background px-2 text-sm" aria-label="Audit to date" />
+                  <select value={auditAction} onChange={(e) => setAuditAction(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm" aria-label="Filter by action">
+                    <option value="all">All actions</option>
+                    {auditOptions.actions.map((action) => (
+                      <option key={action} value={action}>{action}</option>
+                    ))}
+                  </select>
+                  <select value={auditResource} onChange={(e) => setAuditResource(e.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm" aria-label="Filter by resource type">
+                    <option value="all">All resources</option>
+                    {auditOptions.resources.map((resource) => (
+                      <option key={resource} value={resource}>{resource}</option>
+                    ))}
+                  </select>
+                  <input value={auditTenant} onChange={(e) => setAuditTenant(e.target.value)} placeholder="Tenant" className="h-9 rounded-md border bg-background px-2 text-sm" aria-label="Filter by tenant" />
+                  <input value={auditUser} onChange={(e) => setAuditUser(e.target.value)} placeholder="User email" className="h-9 rounded-md border bg-background px-2 text-sm" aria-label="Filter by user email" />
+                </div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <input value={auditSearch} onChange={(e) => setAuditSearch(e.target.value)} placeholder="Search action, tenant, user..." className="h-9 w-full sm:max-w-xs rounded-md border bg-background px-2 text-sm" aria-label="Search audit events" />
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Per page</span>
+                    <select value={auditPageSize} onChange={(e) => setAuditPageSize(Number(e.target.value))} className="h-8 rounded-md border bg-background px-2" aria-label="Audit page size">
+                      <option value={5}>5</option>
+                      <option value={8}>8</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              {overview.recentAudit.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No audit events yet</p>
+              {filteredAuditEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No audit events match the current filters</p>
               ) : (
-                overview.recentAudit.map((a) => (
-                  <div key={a.id} className="flex justify-between gap-4 text-sm py-2 border-b last:border-0">
-                    <div>
-                      <p className="font-medium">{a.action} · {a.resourceType}</p>
-                      <p className="text-xs text-muted-foreground">{a.tenantName ?? '—'} · {a.userEmail ?? '—'}</p>
+                pagedAuditEntries.map((a) => {
+                  const isSelected = selectedAuditId === a.id;
+
+                  return (
+                    <div key={a.id} className="rounded-lg border overflow-hidden">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full justify-start rounded-none p-0 h-auto"
+                        onClick={() => setSelectedAuditId(isSelected ? null : a.id)}
+                      >
+                        <div className="w-full p-3 text-left">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium text-sm">{a.action} · {a.resourceType}</span>
+                            <Badge variant="outline" className="uppercase tracking-wide text-[10px]">
+                              {a.resourceType}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                            <div>{a.tenantName ?? '—'} · {a.userEmail ?? '—'}</div>
+                            <div>{new Date(a.createdAt).toLocaleString()}</div>
+                          </div>
+                        </div>
+                      </Button>
+                      {isSelected && (
+                        <div className="border-t bg-muted/30 p-3 text-xs space-y-3">
+                          <div className="grid gap-1.5 sm:grid-cols-2">
+                            <div><span className="text-muted-foreground">Audit ID:</span> {a.id}</div>
+                            <div><span className="text-muted-foreground">Action:</span> {a.action}</div>
+                            <div><span className="text-muted-foreground">Tenant:</span> {a.tenantName ?? '—'}</div>
+                            <div><span className="text-muted-foreground">User:</span> {a.userEmail ?? '—'}</div>
+                            <div className="sm:col-span-2"><span className="text-muted-foreground">Timestamp:</span> {new Date(a.createdAt).toLocaleString()}</div>
+                          </div>
+
+                          {a.beforeState != null && (
+                            <div>
+                              <div className="font-medium text-foreground mb-1">Before JSON</div>
+                              <pre className="whitespace-pre-wrap break-all rounded-md border bg-background/80 p-2 text-[11px] text-muted-foreground overflow-auto max-h-64">{formatAuditJson(a.beforeState)}</pre>
+                            </div>
+                          )}
+
+                          {a.afterState != null && (
+                            <div>
+                              <div className="font-medium text-foreground mb-1">After JSON</div>
+                              <pre className="whitespace-pre-wrap break-all rounded-md border bg-background/80 p-2 text-[11px] text-muted-foreground overflow-auto max-h-64">{formatAuditJson(a.afterState)}</pre>
+                            </div>
+                          )}
+
+                          {a.metadata != null && (
+                            <div>
+                              <div className="font-medium text-foreground mb-1">Metadata JSON</div>
+                              <pre className="whitespace-pre-wrap break-all rounded-md border bg-background/80 p-2 text-[11px] text-muted-foreground overflow-auto max-h-64">{formatAuditJson(a.metadata)}</pre>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-xs text-muted-foreground shrink-0">{new Date(a.createdAt).toLocaleString()}</span>
-                  </div>
-                ))
+                  );
+                })
+              )}
+              {filteredAuditEntries.length > 0 && (
+                <div className="flex items-center justify-between gap-3 pt-2">
+                  <Button variant="outline" size="sm" onClick={() => setAuditPage((p) => Math.max(1, p - 1))} disabled={auditPage === 1}>Previous</Button>
+                  <span className="text-xs text-muted-foreground">Page {auditPage} of {auditPageCount}</span>
+                  <Button variant="outline" size="sm" onClick={() => setAuditPage((p) => Math.min(auditPageCount, p + 1))} disabled={auditPage >= auditPageCount}>Next</Button>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -589,7 +738,54 @@ function BackofficeContent() {
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4" /> Cron jobs</CardTitle></CardHeader>
               <CardContent className="space-y-2">
-                {[
+                {cronHealth.length > 0 ? cronHealth.map((item) => {
+                  const isSelected = selectedCronKey === item.key;
+                  return (
+                    <div key={item.key} className="rounded-lg border overflow-hidden">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="w-full justify-start rounded-none p-0 h-auto"
+                        onClick={() => setSelectedCronKey(isSelected ? null : item.key)}
+                      >
+                        <div className="w-full p-3 text-left">
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="font-medium text-sm">{item.name}</span>
+                            <Badge variant={item.status === 'healthy' ? 'default' : item.status === 'running' ? 'secondary' : item.status === 'failed' ? 'destructive' : 'outline'} className="capitalize">
+                              {item.status}
+                            </Badge>
+                          </div>
+                          <div className="mt-2 text-xs text-muted-foreground space-y-1">
+                            <div>Enabled: {item.enabled ? 'yes' : 'no'}</div>
+                            <div>Last success: {item.lastSuccessAt ? new Date(item.lastSuccessAt).toLocaleString() : 'never'}</div>
+                          </div>
+                        </div>
+                      </Button>
+                      {isSelected && (
+                        <div className="border-t bg-muted/30 p-3 text-xs space-y-3">
+                          <div className="grid gap-1.5 sm:grid-cols-2">
+                            <div><span className="text-muted-foreground">Started:</span> {item.lastStartedAt ? new Date(item.lastStartedAt).toLocaleString() : 'never'}</div>
+                            <div><span className="text-muted-foreground">Finished:</span> {item.lastFinishedAt ? new Date(item.lastFinishedAt).toLocaleString() : 'never'}</div>
+                            <div><span className="text-muted-foreground">Runs:</span> {item.runCount}</div>
+                            <div><span className="text-muted-foreground">Last error:</span> {item.lastError || 'none'}</div>
+                          </div>
+                          <div>
+                            <div className="font-medium mb-1">Recent events</div>
+                            {item.recentEvents.length > 0 ? (
+                              <ul className="space-y-1 list-disc pl-4 text-muted-foreground">
+                                {item.recentEvents.map((event) => (
+                                  <li key={`${item.key}-${event}`}>{event}</li>
+                                ))}
+                              </ul>
+                            ) : (
+                              <p className="text-muted-foreground">No events yet.</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : [
                   ['Auto-publish', crons.autoPublish],
                   ['Daily workflow', crons.dailyWorkflow],
                   ['Comment sync', crons.commentSync],

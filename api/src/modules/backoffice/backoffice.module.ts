@@ -29,6 +29,7 @@ import { RefundRequests } from '../payments/entities/refund_requests.entity';
 import { MediaAssets } from '../content_items/entities/media_assets.entity';
 
 import { PaymentsModule } from '../payments/payments.module';
+import { CronMonitorService } from './cron-monitor.service';
 
 @Module({
   imports: [
@@ -59,7 +60,8 @@ import { PaymentsModule } from '../payments/payments.module';
       MediaAssets,
     ]),
   ],
-  providers: [BackofficeService, SuperAdminGuard],
+  providers: [BackofficeService, CronMonitorService, SuperAdminGuard],
+  exports: [CronMonitorService],
   controllers: [BackofficeController],
 })
 export class BackofficeModule {}

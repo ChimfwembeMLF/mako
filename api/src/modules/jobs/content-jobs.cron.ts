@@ -7,6 +7,7 @@ import { PaymentsService } from '../payments/payments.service';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
 import { TenantQueueFanoutService } from '../queues/tenant-queue-fanout.service';
 import { FetchCommentsService } from '../content-publishing/social-comments.service';
+import { CronMonitorService } from '../backoffice/cron-monitor.service';
 
 @Injectable()
 export class CommentSyncCron {
@@ -17,6 +18,7 @@ export class CommentSyncCron {
     private readonly fanout: TenantQueueFanoutService,
     private readonly fetchComments: FetchCommentsService,
     private readonly config: ConfigService,
+    private readonly cronMonitor: CronMonitorService,
   ) {}
 
   /** Every 10 minutes — one queue job per tenant (not one job for all tenants). */
@@ -24,9 +26,13 @@ export class CommentSyncCron {
   async syncComments(): Promise<void> {
     if (this.config.get<string>('COMMENT_SYNC_CRON_ENABLED') === 'false')
       return;
+    this.cronMonitor.recordStart('comment-sync', 'Comment sync');
     try {
       const tenants = await this.fanout.listTenantsForCommentSync();
-      if (!tenants.length) return;
+      if (!tenants.length) {
+        this.cronMonitor.recordSuccess('comment-sync', 'Comment sync', 'No tenants requiring sync');
+        return;
+      }
 
       if (this.queueDispatch.isEnabled()) {
         await this.queueDispatch.fanOutCommentSync(
@@ -36,6 +42,7 @@ export class CommentSyncCron {
             runAutoReply: true,
           })),
         );
+        this.cronMonitor.recordSuccess('comment-sync', 'Comment sync', `${tenants.length} tenant(s) queued`);
         return;
       }
 
@@ -55,8 +62,11 @@ export class CommentSyncCron {
           `Comment sync: ${fetched} new, ${autoReplied} auto-replied across ${tenants.length} tenant(s)`,
         );
       }
+      this.cronMonitor.recordSuccess('comment-sync', 'Comment sync', `${fetched} new, ${autoReplied} auto-replied`);
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       this.logger.error('Comment sync cron error', err);
+      this.cronMonitor.recordFailure('comment-sync', 'Comment sync', message);
     }
   }
 }
@@ -70,15 +80,20 @@ export class AutoPublishCron {
     private readonly queueDispatch: QueueDispatchService,
     private readonly fanout: TenantQueueFanoutService,
     private readonly config: ConfigService,
+    private readonly cronMonitor: CronMonitorService,
   ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleAutoPublish(): Promise<void> {
     if (this.config.get<string>('AUTO_PUBLISH_CRON_ENABLED') === 'false')
       return;
+    this.cronMonitor.recordStart('auto-publish', 'Auto-publish');
     try {
       const tenantIds = await this.fanout.listTenantsForAutoPublish();
-      if (!tenantIds.length) return;
+      if (!tenantIds.length) {
+        this.cronMonitor.recordSuccess('auto-publish', 'Auto-publish', 'No tenants ready');
+        return;
+      }
 
       if (this.queueDispatch.isEnabled()) {
         try {
@@ -88,6 +103,7 @@ export class AutoPublishCron {
           this.logger.log(
             `Auto-publish enqueued for ${result.enqueued} tenant(s)`,
           );
+          this.cronMonitor.recordSuccess('auto-publish', 'Auto-publish', `${result.enqueued} tenant(s) queued`);
           return;
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -106,8 +122,11 @@ export class AutoPublishCron {
           this.logger.warn(`Auto-publish errors: ${result.errors.join(' | ')}`);
         }
       }
+      this.cronMonitor.recordSuccess('auto-publish', 'Auto-publish', `${result.published} published, ${result.failed} failed`);
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       this.logger.error('Auto-publish cron error', err);
+      this.cronMonitor.recordFailure('auto-publish', 'Auto-publish', message);
     }
   }
 }
@@ -121,21 +140,27 @@ export class DailyContentWorkflowCron {
     private readonly queueDispatch: QueueDispatchService,
     private readonly fanout: TenantQueueFanoutService,
     private readonly config: ConfigService,
+    private readonly cronMonitor: CronMonitorService,
   ) {}
 
   @Cron(CronExpression.EVERY_5_MINUTES)
   async handleDailyWorkflow(): Promise<void> {
     if (this.config.get<string>('DAILY_WORKFLOW_CRON_ENABLED') === 'false')
       return;
+    this.cronMonitor.recordStart('daily-workflow', 'Daily workflow');
     try {
       const tenantIds = await this.fanout.listTenantsForDailyWorkflow();
-      if (!tenantIds.length) return;
+      if (!tenantIds.length) {
+        this.cronMonitor.recordSuccess('daily-workflow', 'Daily workflow', 'No tenants eligible');
+        return;
+      }
 
       if (this.queueDispatch.isEnabled()) {
         const result = await this.queueDispatch.fanOutDailyWorkflow(tenantIds);
         this.logger.log(
           `Daily workflow enqueued for ${result.enqueued} tenant(s)`,
         );
+        this.cronMonitor.recordSuccess('daily-workflow', 'Daily workflow', `${result.enqueued} tenant(s) queued`);
         return;
       }
 
@@ -154,8 +179,11 @@ export class DailyContentWorkflowCron {
       this.logger.log(
         `Daily content workflow: ${generated} generated, ${skipped} skipped, ${errors.length} messages`,
       );
+      this.cronMonitor.recordSuccess('daily-workflow', 'Daily workflow', `${generated} generated, ${skipped} skipped`);
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
       this.logger.error('Daily workflow cron error', err);
+      this.cronMonitor.recordFailure('daily-workflow', 'Daily workflow', message);
     }
   }
 }

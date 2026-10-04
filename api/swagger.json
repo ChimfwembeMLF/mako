@@ -9135,6 +9135,193 @@
         ]
       }
     },
+    "/api/v1/backoffice/overview": {
+      "get": {
+        "operationId": "BackofficeController_overview",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/tenants": {
+      "get": {
+        "operationId": "BackofficeController_tenants",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/tenants/{id}": {
+      "get": {
+        "operationId": "BackofficeController_tenantDetail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/plans": {
+      "get": {
+        "operationId": "BackofficeController_plans",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      },
+      "patch": {
+        "operationId": "BackofficeController_updatePlans",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePlansDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds": {
+      "get": {
+        "operationId": "BackofficeController_listRefunds",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds/{id}/approve": {
+      "post": {
+        "operationId": "BackofficeController_approveRefund",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/refunds/{id}/reject": {
+      "post": {
+        "operationId": "BackofficeController_rejectRefund",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
     "/privacy": {
       "get": {
         "operationId": "LegalController_privacy[0]",
@@ -9570,193 +9757,6 @@
         ],
         "tags": [
           "Inbox"
-        ]
-      }
-    },
-    "/api/v1/backoffice/overview": {
-      "get": {
-        "operationId": "BackofficeController_overview",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      }
-    },
-    "/api/v1/backoffice/tenants": {
-      "get": {
-        "operationId": "BackofficeController_tenants",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      }
-    },
-    "/api/v1/backoffice/tenants/{id}": {
-      "get": {
-        "operationId": "BackofficeController_tenantDetail",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      }
-    },
-    "/api/v1/backoffice/plans": {
-      "get": {
-        "operationId": "BackofficeController_plans",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      },
-      "patch": {
-        "operationId": "BackofficeController_updatePlans",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdatePlansDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      }
-    },
-    "/api/v1/backoffice/refunds": {
-      "get": {
-        "operationId": "BackofficeController_listRefunds",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      }
-    },
-    "/api/v1/backoffice/refunds/{id}/approve": {
-      "post": {
-        "operationId": "BackofficeController_approveRefund",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
-        ]
-      }
-    },
-    "/api/v1/backoffice/refunds/{id}/reject": {
-      "post": {
-        "operationId": "BackofficeController_rejectRefund",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "security": [
-          {
-            "bearer": []
-          }
-        ],
-        "tags": [
-          "Backoffice"
         ]
       }
     },
@@ -10536,15 +10536,15 @@
         "type": "object",
         "properties": {}
       },
+      "UpdatePlansDto": {
+        "type": "object",
+        "properties": {}
+      },
       "DataDeletionRequestDto": {
         "type": "object",
         "properties": {}
       },
       "DataProtectionConsentDto": {
-        "type": "object",
-        "properties": {}
-      },
-      "UpdatePlansDto": {
         "type": "object",
         "properties": {}
       },
