@@ -4,7 +4,7 @@ import type { Request, Response } from 'express';
 const COOKIE_NAME = 'mako.oauth.state';
 const MAX_AGE_SEC = 600;
 
-function parseCookies(req: Request): Record<string, string> {
+export function parseCookies(req: Request): Record<string, string> {
   const header = req.headers.cookie;
   if (!header) return {};
   const out: Record<string, string> = {};

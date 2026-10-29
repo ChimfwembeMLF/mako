@@ -251,8 +251,12 @@ export class SocialAccountsController {
         message =
           'LinkedIn rejected a requested permission. Reconnect after removing restricted scopes, or enable Share on LinkedIn (w_member_social) in your LinkedIn app Products tab.';
       }
+      // Providers echo state on errors too — honor its returnUrl so mobile gets the error.
+      const errorReturn =
+        (state && this.oauth.decodeState(state)?.returnUrl) || fallbackReturn;
+      const errorSeparator = errorReturn.includes('?') ? '&' : '?';
       return res.redirect(
-        `${fallbackReturn}?error=${encodeURIComponent(message)}`,
+        `${errorReturn}${errorSeparator}error=${encodeURIComponent(message)}`,
       );
     }
 

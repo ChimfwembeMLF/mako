@@ -26,6 +26,13 @@ import { InstagramAuthService } from './instagram-auth.service';
 import { TwitterAuthService } from './twitter-auth.service';
 import { ConfigService } from '@nestjs/config';
 import { resolveFrontendUrl } from '../../common/env-urls.util';
+import {
+  MOBILE_OAUTH_RETURN_COOKIE,
+  appendQuery,
+  clearMobileOAuthReturnCookie,
+  isAllowedMobileOAuthReturnUrl,
+  readMobileOAuthReturnUrl,
+} from '../../common/mobile-oauth-return.util';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -44,20 +51,6 @@ type SocialOAuthUser = {
     lastName?: string;
   };
 };
-
-function isAllowedMobileOAuthReturnUrl(returnUrl: string): boolean {
-  if (/^mako:\/\//.test(returnUrl)) return true;
-  if (/^exp[s]?:\/\//.test(returnUrl)) return true;
-  try {
-    const u = new URL(returnUrl);
-    if (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) {
-      return true;
-    }
-  } catch {
-    return false;
-  }
-  return false;
-}
 
 @Controller('api/v1/auth')
 @ApiTags('Auth')
@@ -130,12 +123,11 @@ export class AuthController {
   @Get('google/mobile')
   @ApiOperation({ summary: 'Start Google OAuth for mobile (same as web client, deep-link return)' })
   googleAuthMobile(
-    @Req() req: Request,
     @Res() res: Response,
     @Query('returnUrl') returnUrl?: string,
   ) {
     if (returnUrl && isAllowedMobileOAuthReturnUrl(returnUrl)) {
-      res.cookie('mako.oauth.mobile_return', returnUrl, {
+      res.cookie(MOBILE_OAUTH_RETURN_COOKIE, returnUrl, {
         maxAge: 600_000,
         httpOnly: true,
         sameSite: 'none',
@@ -143,8 +135,8 @@ export class AuthController {
         path: '/',
       });
     }
-    const base = `${req.protocol}://${req.get('host')}`;
-    return res.redirect(`${base}/api/v1/auth/google`);
+    // Relative redirect keeps the browser on https; req.protocol resolves to http behind the proxy.
+    return res.redirect('/api/v1/auth/google');
   }
 
   @Get('google')
@@ -168,10 +160,15 @@ export class AuthController {
         },
       );
       const tokens = await this.authService.completeAuthentication(user);
-      const mobileReturn = req.cookies?.['mako.oauth.mobile_return'];
-      if (mobileReturn && isAllowedMobileOAuthReturnUrl(String(mobileReturn))) {
-        res.clearCookie('mako.oauth.mobile_return', { path: '/' });
-        return res.redirect(`${mobileReturn}?token=${encodeURIComponent(tokens.token)}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`);
+      const mobileReturn = readMobileOAuthReturnUrl(req);
+      if (mobileReturn) {
+        clearMobileOAuthReturnCookie(res);
+        return res.redirect(
+          appendQuery(
+            mobileReturn,
+            `token=${encodeURIComponent(tokens.token)}&refreshToken=${encodeURIComponent(tokens.refreshToken)}`,
+          ),
+        );
       }
       return res.redirect(
         `${this.frontendUrl}/auth/callback?token=${tokens.token}&refreshToken=${tokens.refreshToken}`,
@@ -179,11 +176,11 @@ export class AuthController {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Google authentication failed';
-      const mobileReturn = req.cookies?.['mako.oauth.mobile_return'];
-      if (mobileReturn && isAllowedMobileOAuthReturnUrl(String(mobileReturn))) {
-        res.clearCookie('mako.oauth.mobile_return', { path: '/' });
+      const mobileReturn = readMobileOAuthReturnUrl(req);
+      if (mobileReturn) {
+        clearMobileOAuthReturnCookie(res);
         return res.redirect(
-          `${mobileReturn}?error=${encodeURIComponent(message)}`,
+          appendQuery(mobileReturn, `error=${encodeURIComponent(message)}`),
         );
       }
       return res.redirect(

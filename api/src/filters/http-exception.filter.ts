@@ -8,6 +8,11 @@ import {
 } from '@nestjs/common';
 import { HttpAdapterHost } from '@nestjs/core';
 import { resolveFrontendUrl } from '../common/env-urls.util';
+import {
+  appendQuery,
+  clearMobileOAuthReturnCookie,
+  readMobileOAuthReturnUrl,
+} from '../common/mobile-oauth-return.util';
 
 const OAUTH_REDIRECT_PATH =
   /^\/api\/v1\/(?:auth\/[^/]+\/redirect|social-accounts\/oauth\/[^/]+\/callback)(?:\/|\?|$)/;
@@ -65,12 +70,23 @@ export class AllExceptionsFilter implements ExceptionFilter {
         httpStatus === HttpStatus.UNAUTHORIZED
           ? 'Sign-in session expired. Please try again.'
           : String(message || 'Authentication failed');
-      const redirectBase = isPublisherCallback
-        ? `${frontend}/publisher`
-        : `${frontend}/auth/callback`;
-      const redirectUrl = `${redirectBase}?error=${encodeURIComponent(
-        errorText,
-      )}`;
+      // The generic text hides the cause (state cookie missing, consent denied, …).
+      console.warn(
+        `[oauth] ${path.split('?')[0]} failed (${httpStatus}): ${message}`,
+      );
+      const mobileReturn = isPublisherCallback
+        ? null
+        : readMobileOAuthReturnUrl(request);
+      if (mobileReturn) clearMobileOAuthReturnCookie(response);
+      const redirectBase =
+        mobileReturn ??
+        (isPublisherCallback
+          ? `${frontend}/publisher`
+          : `${frontend}/auth/callback`);
+      const redirectUrl = appendQuery(
+        redirectBase,
+        `error=${encodeURIComponent(errorText)}`,
+      );
       if (typeof response.redirect === 'function') {
         response.redirect(HttpStatus.FOUND, redirectUrl);
       } else {
