@@ -26,14 +26,43 @@ export class AuditLogsService {
   ) {}
 
   async create(
-    dto: AuditLogsCreateDto & { userId: string },
+    dto: AuditLogsCreateDto & { userId?: string },
   ): Promise<AuditLogs> {
     const ent = this.repo.create({
       ...dto,
       resourceType: dto.resourceType ?? '',
       resourceId: dto.resourceId ?? NIL_UUID,
+      beforeState: dto.beforeState as any,
+      afterState: dto.afterState as any,
+      metadata: dto.metadata as any,
     });
     return this.repo.save(ent as AuditLogs);
+  }
+
+  async recordChange(payload: {
+    tenantId?: string;
+    userId?: string;
+    action: string;
+    resourceType: string;
+    resourceId?: string;
+    beforeState?: unknown;
+    afterState?: unknown;
+    metadata?: Record<string, unknown>;
+    ipAddress?: string;
+    userAgent?: string;
+  }): Promise<AuditLogs> {
+    return this.create({
+      tenantId: payload.tenantId ?? NIL_UUID,
+      userId: payload.userId,
+      action: payload.action,
+      resourceType: payload.resourceType,
+      resourceId: payload.resourceId ?? NIL_UUID,
+      beforeState: payload.beforeState ? JSON.stringify(payload.beforeState) : undefined,
+      afterState: payload.afterState ? JSON.stringify(payload.afterState) : undefined,
+      metadata: payload.metadata ? JSON.stringify(payload.metadata) : undefined,
+      ipAddress: payload.ipAddress,
+      userAgent: payload.userAgent,
+    } as AuditLogsCreateDto & { userId?: string });
   }
 
   /** Fire-and-forget HTTP request audit row (used by AuditInterceptor). */

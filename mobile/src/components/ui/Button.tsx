@@ -32,18 +32,18 @@ export function Button({
   const { colors } = useTheme();
   const { theme } = useTenantTheme();
   const isDisabled = disabled || loading;
-  
+
   const primaryColor = theme.primaryColor || colors.primary;
 
   const variantStyle: ViewStyle =
     variant === 'primary'
       ? { backgroundColor: primaryColor }
       : variant === 'outline'
-        ? { backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.ink }
+        ? { backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.border }
         : variant === 'ghost'
           ? { backgroundColor: 'transparent' }
           : variant === 'inverse'
-            ? { backgroundColor: 'transparent', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }
+            ? { backgroundColor: 'rgba(14,15,12,0.08)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }
             : { backgroundColor: colors.negative };
 
   const labelColor =
@@ -84,9 +84,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   pressed: {
     opacity: 0.92,
+    transform: [{ scale: 0.995 }],
   },
   disabled: {
     opacity: 0.6,
@@ -94,5 +100,6 @@ const styles = StyleSheet.create({
   label: {
     ...typography.buttonMd,
     fontFamily: fonts.bodySemi,
+    letterSpacing: -0.2,
   },
 });

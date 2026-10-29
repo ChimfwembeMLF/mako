@@ -46,11 +46,11 @@ export const usePushNotifications = (isAuthenticated: boolean): PushNotification
     });
 
     try {
-      notificationListener.current = Notifications.addNotificationReceivedListener((notification) => {
+      notificationListener.current = Notifications.addNotificationReceivedListener((notification: any) => {
         setNotification(notification);
       });
 
-      responseListener.current = Notifications.addNotificationResponseReceivedListener((response) => {
+      responseListener.current = Notifications.addNotificationResponseReceivedListener((response: any) => {
         // Handle deep linking or specific actions when user taps the notification
         console.log('Notification response received:', response);
         const data = response.notification.request.content.data;

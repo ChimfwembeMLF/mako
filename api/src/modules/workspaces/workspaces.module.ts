@@ -7,6 +7,7 @@ import { WorkspacesController } from './workspaces.controller';
 import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
 import { TemplatesModule } from '../templates/templates.module';
 import { AutoReplyRulesModule } from '../auto_reply_rules/auto_reply_rules.module';
+import { AuditLogsModule } from '../audit_logs/audit_logs.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { AutoReplyRulesModule } from '../auto_reply_rules/auto_reply_rules.modul
     BrandProfilesModule,
     TemplatesModule,
     AutoReplyRulesModule,
+    AuditLogsModule,
   ],
   providers: [WorkspacesService],
   controllers: [WorkspacesController],

@@ -9,6 +9,7 @@ import { UpdateAutomationConfigDto } from './dto/update-automation-config.dto';
 import { BrandProfilesService } from '../brand_profiles/brand_profiles.service';
 import { TemplateSeedService } from '../templates/template-seed.service';
 import { AutoReplySeedService } from '../auto_reply_rules/auto-reply-seed.service';
+import { AuditLogsService } from '../audit_logs/audit_logs.service';
 
 @Injectable()
 export class WorkspacesService {
@@ -20,6 +21,7 @@ export class WorkspacesService {
     private readonly brandProfiles: BrandProfilesService,
     private readonly templateSeeds: TemplateSeedService,
     private readonly autoReplySeeds: AutoReplySeedService,
+    private readonly auditLogs: AuditLogsService,
   ) {}
 
   async create(dto: WorkspacesCreateDto, userId: string): Promise<Workspaces> {
@@ -72,11 +74,36 @@ export class WorkspacesService {
 
   async updateAutomationConfig(workspaceId: string, payload: UpdateAutomationConfigDto): Promise<WorkspaceAutomationConfig> {
     let config = await this.automationRepo.findOne({ where: { workspaceId } });
+    const workspace = await this.repo.findOne({ where: { id: workspaceId } });
+
     if (!config) {
       config = this.automationRepo.create({ workspaceId, ...payload });
-      return this.automationRepo.save(config);
+      const saved = await this.automationRepo.save(config);
+      await this.auditLogs.recordChange({
+        tenantId: workspace?.tenantId,
+        action: 'workspace_automation_config.created',
+        resourceType: 'workspace_automation_config',
+        resourceId: saved.id,
+        afterState: saved,
+        metadata: { workspaceId },
+      });
+      return saved;
     }
+
+    const beforeState = { ...config };
     await this.automationRepo.update(config.id, payload);
-    return this.automationRepo.findOneOrFail({ where: { workspaceId } });
+    const updated = await this.automationRepo.findOneOrFail({ where: { workspaceId } });
+
+    await this.auditLogs.recordChange({
+      tenantId: workspace?.tenantId,
+      action: 'workspace_automation_config.updated',
+      resourceType: 'workspace_automation_config',
+      resourceId: updated.id,
+      beforeState,
+      afterState: updated,
+      metadata: { workspaceId, changedFields: Object.keys(payload) },
+    });
+
+    return updated;
   }
 }

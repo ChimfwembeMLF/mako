@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from '../src/context/AuthContext';
 import { ThemeProvider, useTheme } from '../src/context/ThemeContext';
 import { WorkspaceProvider } from '../src/context/WorkspaceContext';
 import { OfflineProvider } from '../src/components/OfflineBanner';
-import { AppLogoLoader, ToastProvider } from '../src/components/ui';
+import { ToastProvider } from '../src/components/ui';
 import { queryClient } from '../src/lib/query-client';
 import { useAppFonts } from '../src/hooks/useAppFonts';
 import { TenantThemeProvider, useTenantTheme } from '../src/store/themeStore';
@@ -63,11 +63,7 @@ function InitialLayout() {
   }, [hasShareIntent, token, segments, router]);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }}>
-        <AppLogoLoader />
-      </View>
-    );
+    return <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }} />;
   }
 
   return <Slot />;
@@ -78,11 +74,7 @@ function FontGate({ children }: { children: React.ReactNode }) {
   const { colors } = useTheme();
 
   if (!loaded) {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }}>
-        <AppLogoLoader />
-      </View>
-    );
+    return <View style={{ flex: 1, backgroundColor: colors['canvas-soft'] }} />;
   }
 
   return <>{children}</>;

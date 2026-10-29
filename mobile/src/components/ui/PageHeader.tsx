@@ -108,6 +108,7 @@ const styles = StyleSheet.create({
   title: {
     ...typography.displayXs,
     fontFamily: fonts.display,
+    letterSpacing: -0.6,
   },
   subtitle: {
     ...typography.bodySm,

@@ -53,12 +53,22 @@ export function AppShellHeader() {
           styles.bar,
           {
             paddingTop: insets.top + spacing.xs,
-            backgroundColor: colors.canvas,
-            borderBottomColor: colors.border,
+            backgroundColor: colors['canvas-soft'],
+            borderBottomWidth: 0,
           },
         ]}
       >
-        <Pressable onPress={() => setOpen(true)} style={styles.trigger} accessibilityRole="button">
+        <Pressable
+          onPress={() => setOpen(true)}
+          style={[
+            styles.trigger,
+            {
+              backgroundColor: colors.canvas,
+              borderColor: colors.border,
+            },
+          ]}
+          accessibilityRole="button"
+        >
           <View style={[styles.iconTile, { backgroundColor: colors['primary-pale'] }]}>
             <Text style={[styles.iconGlyph, { color: colors['positive-deep'] }]}>◆</Text>
           </View>
@@ -102,7 +112,6 @@ export function AppShellHeader() {
 
 const styles = StyleSheet.create({
   bar: {
-    borderBottomWidth: 1,
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
   },
@@ -110,7 +119,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    minHeight: 48,
+    minHeight: 56,
+    borderRadius: 18,
+    borderWidth: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   iconTile: {
     width: 40,

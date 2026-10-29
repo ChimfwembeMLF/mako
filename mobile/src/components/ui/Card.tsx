@@ -20,8 +20,10 @@ export function Card({ children, onPress, selected, style }: Props) {
           backgroundColor: colors.canvas,
           borderRadius: rounded.xl,
           padding: spacing.lg,
+          borderWidth: 1,
+          borderColor: colors.border,
         },
-        selected && { borderWidth: 2, borderColor: colors.primary },
+        selected && { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors['primary-pale'] },
         style,
       ]}
     >

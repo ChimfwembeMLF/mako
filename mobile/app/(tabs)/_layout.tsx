@@ -16,8 +16,8 @@ function TabIcon({ ios, glyph, color }: { ios: string; glyph: string; color: str
 export default function TabLayout() {
   const { colors } = useTheme();
   const { theme } = useTenantTheme();
-  
-  const activeColor = theme.primaryColor || colors.ink;
+
+  const activeColor = theme.primaryColor || colors.primary;
 
   return (
     <Tabs
@@ -26,14 +26,22 @@ export default function TabLayout() {
         tabBarInactiveTintColor: colors.mute,
         tabBarStyle: {
           backgroundColor: colors.canvas,
-          borderTopColor: colors.border,
-          height: 70, // Increased for larger touch targets
+          borderTopWidth: 0,
+          borderTopLeftRadius: 22,
+          borderTopRightRadius: 22,
+          height: 74,
           paddingTop: 10,
           paddingBottom: 10,
+          shadowColor: '#000',
+          shadowOpacity: 0.05,
+          shadowRadius: 8,
+          shadowOffset: { width: 0, height: -4 },
+          elevation: 6,
         },
         tabBarLabelStyle: {
           fontFamily: fonts.bodySemi,
-          fontSize: 12,
+          fontSize: 11,
+          letterSpacing: -0.2,
         },
         headerShown: false,
       }}

@@ -9,8 +9,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppShellChrome } from '../../context/AppShellChromeContext';
 import { useTheme } from '../../context/ThemeContext';
 import { spacing } from '../../theme';
-import { AppLogoLoader } from './AppLogoLoader';
 import { EmptyState } from './EmptyState';
+import { Skeleton, SkeletonList } from './Skeleton';
 
 type Props = ScrollViewProps & {
   children?: React.ReactNode;
@@ -30,7 +30,7 @@ type Props = ScrollViewProps & {
 export function Screen({
   children,
   loading,
-  skeleton: _skeleton,
+  skeleton,
   empty,
   emptyMessage = 'Nothing here yet.',
   emptyTitle,
@@ -52,12 +52,48 @@ export function Screen({
   }, [loading, chrome]);
 
   if (loading) {
+    const skeletonView = scroll ? (
+      <ScrollView
+        contentContainerStyle={[padded && styles.pad, styles.skeletonContainer, contentContainerStyle]}
+        keyboardShouldPersistTaps="handled"
+        {...rest}
+      >
+        <Skeleton height={20} width="38%" style={styles.skeletonRow} />
+        <Skeleton height={14} width="92%" style={styles.skeletonRow} />
+        <Skeleton height={14} width="76%" style={styles.skeletonRow} />
+        <SkeletonList count={3} />
+      </ScrollView>
+    ) : (
+      <View style={[styles.safe, padded && styles.pad, styles.skeletonContainer, contentContainerStyle]} {...rest}>
+        <Skeleton height={20} width="38%" style={styles.skeletonRow} />
+        <Skeleton height={14} width="92%" style={styles.skeletonRow} />
+        <Skeleton height={14} width="76%" style={styles.skeletonRow} />
+        <SkeletonList count={3} />
+      </View>
+    );
+
+    if (skeleton) {
+      return (
+        <SafeAreaView
+          style={[styles.safe, { backgroundColor: colors['canvas-soft'] }]}
+          edges={['top', 'bottom']}
+        >
+          {skeletonView}
+        </SafeAreaView>
+      );
+    }
+
     return (
       <SafeAreaView
         style={[styles.safe, { backgroundColor: colors['canvas-soft'] }]}
         edges={['top', 'bottom']}
       >
-        <AppLogoLoader message={loadingMessage} />
+        <View style={[styles.center, padded && styles.pad]}>
+          <Skeleton height={18} width="48%" style={styles.skeletonRow} />
+          <Skeleton height={12} width="84%" style={styles.skeletonRow} />
+          <Skeleton height={12} width="70%" style={styles.skeletonRow} />
+          <Skeleton height={220} width="100%" style={[styles.skeletonRow, { marginTop: spacing.md }]} />
+        </View>
       </SafeAreaView>
     );
   }
@@ -108,5 +144,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  skeletonContainer: {
+    gap: spacing.md,
+  },
+  skeletonRow: {
+    marginBottom: spacing.xs,
   },
 });
