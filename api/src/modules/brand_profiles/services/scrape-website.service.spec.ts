@@ -68,6 +68,28 @@ describe('ScrapeWebsiteService fetching', () => {
     expect(pages[0]).toContain('We make boats');
   });
 
+  it('says the site was reached when no page has readable text', async () => {
+    respond = (url) =>
+      url === '/' ? { status: 200, body: '<div id="app"></div>' } : { status: 404 };
+    await expect(fetchPages()).rejects.toThrow('reached that website');
+  });
+
+  it('reads content a JavaScript app embeds in the page', async () => {
+    const data = JSON.stringify({ props: { about: 'We publish Zambian books' } }).replace(/"/g, '&quot;');
+    respond = (url) =>
+      url === '/'
+        ? { status: 200, body: `<title>Kalulu</title><div id="app" data-page="${data}"></div>` }
+        : { status: 404 };
+    const pages = await fetchPages();
+    expect(pages[0]).toContain('We publish Zambian books');
+  });
+
+  it('does not count identical pages twice', async () => {
+    respond = () => ({ status: 200, body: '<main>Same page everywhere</main>' });
+    const pages = await fetchPages();
+    expect(pages).toHaveLength(1);
+  });
+
   it('reports no text, not a fetch failure, for a non-HTML response', async () => {
     respond = () => ({ status: 200, body: '{"a":1}', type: 'application/json' });
     await expect(fetchPages()).rejects.toThrow('Could not extract text');

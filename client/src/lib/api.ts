@@ -1082,7 +1082,7 @@ export const brandProfilesApi = {
                 let msg = `HTTP ${res.status}`;
                 try {
                     const body = await res.json();
-                    msg = body.message || msg;
+                    msg = body.error || body.message || msg;
                 } catch { /* ignore */ }
                 throw new Error(msg);
             }

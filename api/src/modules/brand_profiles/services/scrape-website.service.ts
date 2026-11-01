@@ -27,6 +27,7 @@ import {
   DiscoveryStatsCollector,
   resolveLogger,
 } from '../utils/brand-scrape-paths.util';
+import { extractPageText } from '../utils/page-text.util';
 
 /** The seed list is mostly guesses, so a run of misses means stop, not keep trying. */
 const MAX_CONSECUTIVE_FAILURES = 10;
@@ -145,6 +146,8 @@ export class ScrapeWebsiteService {
     let lastFailure: ScrapeFailureKind | null = null;
     let consecutiveFailures = 0;
     let triedAlternateHost = false;
+    let reachedSite = false;
+    const seenText = new Set<string>();
     const rateLimiter = new ScrapeRateLimiter(
       discoveryConfig.delayBetweenRequests,
     );
@@ -204,17 +207,13 @@ export class ScrapeWebsiteService {
             discoveryConfig,
           );
 
-          const $ = cheerio.load(html);
-          $('script, style, nav, footer, noscript, iframe').remove();
-          const title = $('title').text().trim();
-          const body = $('main, article, [role=main], .content, #content, body')
-            .first()
-            .text()
-            .replace(/\s+/g, ' ')
-            .trim()
-            .slice(0, 12000);
-
-          if (body) texts.push(`URL: ${canonical}\nTitle: ${title}\n${body}`);
+          reachedSite = true;
+          const { title, text } = extractPageText(html);
+          // App sites can serve the same content at every route.
+          if (text && !seenText.has(text)) {
+            seenText.add(text);
+            texts.push(`URL: ${canonical}\nTitle: ${title}\n${text}`);
+          }
         } catch (err) {
           lastFailure = classifyScrapeError(err);
           consecutiveFailures++;
@@ -260,7 +259,9 @@ export class ScrapeWebsiteService {
 
     if (!texts.length) {
       throw new BadRequestException(
-        lastFailure
+        reachedSite
+          ? "We reached that website but couldn't find any readable text. It may load its content with JavaScript. Upload a brand document instead, or fill in the fields yourself."
+          : lastFailure
           ? scrapeFailureMessage(lastFailure)
           : 'Could not extract text from the website',
       );

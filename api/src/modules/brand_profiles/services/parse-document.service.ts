@@ -30,7 +30,9 @@ export class ParseDocumentService {
       params.fileName,
     );
     if (!text.trim()) {
-      throw new BadRequestException('No readable text found in document');
+      throw new BadRequestException(
+        'No readable text found. If this is a scanned document, upload a version with selectable text.',
+      );
     }
 
     const { data, tokensUsed } = await this.aiRouter.completeJson<
@@ -78,8 +80,14 @@ export class ParseDocumentService {
       mimeType === 'application/msword' ||
       lower.endsWith('.docx')
     ) {
-      const result = await mammoth.extractRawText({ buffer });
-      return result.value ?? '';
+      try {
+        const result = await mammoth.extractRawText({ buffer });
+        return result.value ?? '';
+      } catch {
+        throw new BadRequestException(
+          "This Word file couldn't be read. Save it as .docx and upload it again.",
+        );
+      }
     }
     if (mimeType.startsWith('text/') || lower.endsWith('.txt')) {
       return buffer.toString('utf8');
@@ -92,8 +100,22 @@ export class ParseDocumentService {
   private async extractPdfText(buffer: Buffer): Promise<string> {
     const parser = new PDFParse({ data: buffer });
     try {
-      const result = await parser.getText();
+      // The default joiner adds "-- 1 of 1 --", which makes a textless scan look like it has text.
+      const result = await parser.getText({ pageJoiner: '' });
       return result.text ?? '';
+    } catch (err) {
+      const name = (err as Error)?.name;
+      if (name === 'PasswordException') {
+        throw new BadRequestException(
+          'This PDF is password protected. Remove the password and upload it again.',
+        );
+      }
+      if (name === 'InvalidPDFException' || name === 'FormatError') {
+        throw new BadRequestException(
+          "This PDF couldn't be read. It may be damaged, so try exporting it again.",
+        );
+      }
+      throw err;
     } finally {
       await parser.destroy();
     }

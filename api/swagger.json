@@ -9154,6 +9154,25 @@
         ]
       }
     },
+    "/api/v1/backoffice/subscriptions": {
+      "get": {
+        "operationId": "BackofficeController_listSubscriptions",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
     "/api/v1/backoffice/tenants": {
       "get": {
         "operationId": "BackofficeController_tenants",
