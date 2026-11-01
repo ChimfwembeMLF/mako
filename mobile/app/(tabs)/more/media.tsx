@@ -5,7 +5,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
 export default function MediaScreen() {
   const { colors } = useTheme();
@@ -29,7 +29,7 @@ export default function MediaScreen() {
       <PageHeader
         title="Media"
         subtitle="Tap an asset to copy its URL."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>🖼</Text>}
+        icon={<Icon name="media" size={20} color={colors['positive-deep']} />}
       />
       {error ? <Text style={{ color: colors.negative, marginBottom: spacing.md }}>{error.message}</Text> : null}
       <FlatList
@@ -54,7 +54,7 @@ export default function MediaScreen() {
           </Card>
         )}
         ListEmptyComponent={
-          <EmptyState title="No media yet" description="Upload assets from Content Engine or the web library." />
+          <EmptyState title="No media yet" description="Upload assets from Posts or the web library." />
         }
       />
     </Screen>

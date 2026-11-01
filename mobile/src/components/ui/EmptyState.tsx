@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { fonts, spacing, typography } from '../../theme';
+import { fonts, rounded, spacing, typography } from '../../theme';
 import { Button } from './Button';
 
 type Props = {
@@ -26,9 +26,9 @@ export function EmptyState({
   return (
     <View style={[styles.wrap, style]}>
       {icon ? <View style={[styles.iconTile, { backgroundColor: colors['primary-pale'] }]}>{icon}</View> : null}
-      <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.displaySemi }]}>{title}</Text>
+      <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.display }]}>{title}</Text>
       {description ? (
-        <Text style={[styles.description, { color: colors.mute, fontFamily: fonts.body }]}>{description}</Text>
+        <Text style={[styles.description, { color: colors.mute, fontFamily: fonts.bodyMedium }]}>{description}</Text>
       ) : null}
       {actionLabel && onAction ? (
         <Button label={actionLabel} onPress={onAction} style={styles.action} />
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   iconTile: {
     width: 56,
     height: 56,
-    borderRadius: 16,
+    borderRadius: rounded.md,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.lg,

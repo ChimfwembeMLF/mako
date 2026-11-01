@@ -5,7 +5,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Badge, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
 type InboundEmail = {
   id: string;
@@ -77,9 +77,9 @@ export default function MailScreen() {
   return (
     <Screen scroll={false}>
       <PageHeader
-        title="Mail"
+        title="Email"
         subtitle="Gmail connection and inbound messages."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>✉️</Text>}
+        icon={<Icon name="mail" size={20} color={colors['positive-deep']} />}
       />
 
       <Card style={styles.statusCard}>

@@ -18,9 +18,8 @@ type ThemeState = {
   setHasHydrated: (state: boolean) => void;
 };
 
-const defaultTheme: ThemeConfig = {
-  primaryColor: '#000000', // Default fallback
-};
+/** Empty so screens fall back to the web lime until a tenant sets its own brand. */
+const defaultTheme: ThemeConfig = {};
 
 export const useThemeStore = create<ThemeState>()(
   persist(
@@ -33,6 +32,9 @@ export const useThemeStore = create<ThemeState>()(
     }),
     {
       name: 'mako_tenant_theme_config',
+      // v0 persisted a black primary as the default; drop it.
+      version: 1,
+      migrate: () => ({ theme: defaultTheme }) as ThemeState,
       storage: createJSONStorage(() => AsyncStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);

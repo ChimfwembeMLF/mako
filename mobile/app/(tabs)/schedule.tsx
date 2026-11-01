@@ -15,27 +15,17 @@ import { useWorkspace } from '../../src/context/WorkspaceContext';
 import { useOfflineBanner } from '../../src/components/OfflineBanner';
 import { useEffectivePermissions } from '../../src/hooks/useEffectivePermissions';
 import { ScheduleCalendar } from '../../src/components/ScheduleCalendar';
-import { toDateKey } from '../../src/lib/dates';
-import { colors, fonts, spacing, typography } from '../../src/theme';
-import { Badge, Button, Card, Chip, EmptyState, PageHeader, Screen, useToast } from '../../src/components/ui';
+import { postsDueToday, postsOverdue } from '../../src/lib/schedule';
+import { useTheme } from '../../src/context/ThemeContext';
+import { fonts, spacing, typography, type ThemeColors } from '../../src/theme';
+import { Icon, Badge, Button, Card, Chip, EmptyState, PageHeader, Screen, useToast } from '../../src/components/ui';
 
 type ViewMode = 'calendar' | 'list';
 
-function countDueToday(posts: ContentItem[]): number {
-  const today = toDateKey(new Date());
-  return posts.filter((p) => String(p.scheduledDate || '').slice(0, 10) === today).length;
-}
-
-function countOverdue(posts: ContentItem[]): number {
-  const today = toDateKey(new Date());
-  return posts.filter((p) => {
-    const d = String(p.scheduledDate || '').slice(0, 10);
-    return d && d < today;
-  }).length;
-}
-
 export default function ScheduleScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const queryClient = useQueryClient();
   const { activeWorkspace, tenantId } = useWorkspace();
   const { reportError } = useOfflineBanner();
@@ -121,9 +111,9 @@ export default function ScheduleScreen() {
     <TabShell>
     <Screen scroll={false}>
       <PageHeader
-        title="Scheduler"
+        title="Schedule"
         subtitle="Calendar queue and upcoming posts for this workspace."
-        icon={<Text style={styles.headerIcon}>▦</Text>}
+        icon={<Icon name="calendar" size={20} color={colors['positive-deep']} />}
         actions={
           <Button
             label="New post"
@@ -144,11 +134,11 @@ export default function ScheduleScreen() {
           <Text style={styles.statLabel}>Scheduled</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={[styles.statValue, styles.statAmber]}>{countDueToday(scheduled)}</Text>
+          <Text style={[styles.statValue, styles.statAmber]}>{postsDueToday(scheduled).length}</Text>
           <Text style={styles.statLabel}>Due today</Text>
         </Card>
         <Card style={styles.statCard}>
-          <Text style={[styles.statValue, styles.statDanger]}>{countOverdue(scheduled)}</Text>
+          <Text style={[styles.statValue, styles.statDanger]}>{postsOverdue(scheduled).length}</Text>
           <Text style={styles.statLabel}>Overdue</Text>
         </Card>
       </View>
@@ -215,7 +205,7 @@ export default function ScheduleScreen() {
             description={
               selectedDate
                 ? 'Pick another day or clear the date filter.'
-                : 'Schedule a post from Content Engine.'
+                : 'Schedule a post from Posts.'
             }
             actionLabel={selectedDate ? undefined : 'New post'}
             onAction={selectedDate ? undefined : () => router.push('/content/new' as any)}
@@ -227,8 +217,7 @@ export default function ScheduleScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  headerIcon: { fontSize: 18, color: colors['positive-deep'] },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   headerBtn: { minHeight: 40, paddingHorizontal: spacing.lg },
   viewToggle: {
     flexDirection: 'row',

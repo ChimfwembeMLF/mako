@@ -5,6 +5,8 @@ export { Input } from './Input';
 export { AiInput, SuggestionCarousel } from './AiInput';
 export { FormFieldAi } from './FormFieldAi';
 export { Badge } from './Badge';
+export { BackButton } from './BackButton';
+export { Icon, type IconName } from './Icon';
 export { Chip } from './Chip';
 export { PageHeader } from './PageHeader';
 export { Screen } from './Screen';

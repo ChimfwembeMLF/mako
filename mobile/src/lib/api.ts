@@ -134,6 +134,7 @@ export type InboxConversation = {
   lastMessageAt?: string;
   lastAt?: string;
   contentId?: string;
+  unreadCount?: number;
 };
 
 export type ReplyOutcome = {

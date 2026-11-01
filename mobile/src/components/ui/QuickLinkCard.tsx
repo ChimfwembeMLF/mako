@@ -1,6 +1,8 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, rounded, spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { fonts, rounded, shadows, spacing, typography } from '../../theme';
+import { Icon } from './Icon';
 
 type Props = {
   title: string;
@@ -10,45 +12,46 @@ type Props = {
   onPress: () => void;
 };
 
-export function QuickLinkCard({
-  title,
-  description,
-  icon,
-  iconBg = colors['primary-pale'],
-  onPress,
-}: Props) {
+export function QuickLinkCard({ title, description, icon, iconBg, onPress }: Props) {
+  const { colors } = useTheme();
+
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        { backgroundColor: colors.canvas, borderColor: colors.border },
+        pressed && styles.pressed,
+      ]}
     >
-      <View style={[styles.iconTile, { backgroundColor: iconBg }]}>{icon}</View>
+      <View style={[styles.iconTile, { backgroundColor: iconBg ?? colors['primary-pale'] }]}>{icon}</View>
       <View style={styles.copy}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
+        <Text style={[styles.title, { color: colors.ink }]}>{title}</Text>
+        <Text style={[styles.description, { color: colors.mute }]}>{description}</Text>
       </View>
-      <Text style={styles.arrow}>→</Text>
+      <Icon name="chevronRight" size={20} color={colors.mute} />
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: colors.canvas,
     borderRadius: rounded.xl,
+    borderWidth: 1,
     padding: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     marginBottom: spacing.md,
+    ...shadows.softCard,
   },
   pressed: {
-    opacity: 0.96,
+    transform: [{ scale: 0.98 }],
   },
   iconTile: {
-    width: 44,
-    height: 44,
-    borderRadius: rounded.lg,
+    width: 48,
+    height: 48,
+    borderRadius: rounded.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -57,17 +60,10 @@ const styles = StyleSheet.create({
     gap: spacing.xxs,
   },
   title: {
-    ...typography.bodyMdStrong,
-    fontFamily: fonts.bodySemi,
-    color: colors.ink,
+    ...typography.headlineSm,
   },
   description: {
     ...typography.bodySm,
-    fontFamily: fonts.body,
-    color: colors.mute,
-  },
-  arrow: {
-    ...typography.bodyMdStrong,
-    color: colors.mute,
+    fontFamily: fonts.bodyMedium,
   },
 });

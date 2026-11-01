@@ -9,7 +9,8 @@ import {
   type TextInputProps,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { fonts, rounded, spacing, typography } from '../../theme';
+import { fonts, rounded, shadows, spacing, typography } from '../../theme';
+import { Icon } from './Icon';
 import { Input } from './Input';
 
 type AiInputProps = TextInputProps & {
@@ -43,12 +44,16 @@ export function AiInput({
           accessibilityLabel={props.value?.toString().trim() ? 'Enhance with AI' : 'Generate with AI'}
           onPress={() => void onEnhance?.()}
           disabled={enhancing}
-          style={[styles.enhanceBtn, multiline ? styles.enhanceBtnMultiline : styles.enhanceBtnSingle]}
+          style={[
+            styles.enhanceBtn,
+            { backgroundColor: colors.primary, ...shadows.btn(colors.primary) },
+            multiline ? styles.enhanceBtnMultiline : styles.enhanceBtnSingle,
+          ]}
         >
           {enhancing ? (
-            <ActivityIndicator size="small" color={colors.primary} />
+            <ActivityIndicator size="small" color={colors['on-primary']} />
           ) : (
-            <Text style={[styles.sparkle, { color: colors.primary }]}>✨</Text>
+            <Icon name="sparkles" size={18} color={colors['on-primary']} />
           )}
         </Pressable>
       ) : null}
@@ -89,9 +94,12 @@ export function SuggestionCarousel({
   return (
     <View style={[styles.carousel, { borderColor: colors.border, backgroundColor: colors['canvas-soft'] }]}>
       <View style={[styles.carouselHeader, { borderBottomColor: colors.border, backgroundColor: colors.canvas }]}>
-        <Text style={[styles.carouselLabel, { color: colors.mute, fontFamily: fonts.bodySemi }]}>
-          ✨ AI suggestions{isLive ? ' · live' : ''}
-        </Text>
+        <View style={styles.inlineLabel}>
+          <Icon name="sparkles" size={14} color={colors.mute} />
+          <Text style={[styles.carouselLabel, { color: colors.mute, fontFamily: fonts.bodySemi }]}>
+            AI suggestions{isLive ? ' · live' : ''}
+          </Text>
+        </View>
         <Text style={[styles.carouselCount, { color: colors.mute, fontFamily: fonts.body }]}>
           {safeIndex + 1} / {suggestions.length}
         </Text>
@@ -122,7 +130,7 @@ export function SuggestionCarousel({
               }}
               style={[styles.navBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
             >
-              <Text style={{ color: colors.ink }}>‹</Text>
+              <Icon name="chevronLeft" size={16} color={colors.ink} />
             </Pressable>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.dotsRow}>
               {suggestions.map((text, index) => (
@@ -158,7 +166,7 @@ export function SuggestionCarousel({
               }}
               style={[styles.navBtn, { borderColor: colors.border, backgroundColor: colors.canvas }]}
             >
-              <Text style={{ color: colors.ink }}>›</Text>
+              <Icon name="chevronRight" size={16} color={colors.ink} />
             </Pressable>
           </View>
 
@@ -166,9 +174,12 @@ export function SuggestionCarousel({
             onPress={() => onApply(current)}
             style={[styles.useBtn, { backgroundColor: colors['primary-pale'] }]}
           >
-            <Text style={[styles.useBtnText, { color: colors['positive-deep'], fontFamily: fonts.bodySemi }]}>
-              ✨ Use suggestion {safeIndex + 1}
-            </Text>
+            <View style={styles.inlineLabel}>
+              <Icon name="sparkles" size={14} color={colors['positive-deep']} />
+              <Text style={[styles.useBtnText, { color: colors['positive-deep'], fontFamily: fonts.bodySemi }]}>
+                Use suggestion {safeIndex + 1}
+              </Text>
+            </View>
           </Pressable>
         </>
       ) : null}
@@ -178,7 +189,7 @@ export function SuggestionCarousel({
 
 const styles = StyleSheet.create({
   wrap: { position: 'relative' },
-  inputWithButton: { paddingRight: spacing['3xl'] },
+  inputWithButton: { paddingRight: 52 },
   enhanceBtn: {
     position: 'absolute',
     right: spacing.sm,
@@ -186,11 +197,11 @@ const styles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: rounded.md,
+    borderRadius: rounded.full,
   },
   enhanceBtnSingle: { top: '50%', marginTop: -18 },
   enhanceBtnMultiline: { top: spacing.sm },
-  sparkle: { fontSize: 18 },
+  inlineLabel: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   carousel: {
     borderWidth: 1,
     borderRadius: rounded.lg,

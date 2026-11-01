@@ -5,7 +5,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Badge, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
 type Member = {
   id: string;
@@ -51,7 +51,7 @@ export default function TeamScreen() {
       <PageHeader
         title="Team"
         subtitle="Members with access to this workspace."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>👥</Text>}
+        icon={<Icon name="team" size={20} color={colors['positive-deep']} />}
       />
       {error ? <Text style={{ color: colors.negative, marginBottom: spacing.md }}>{error.message}</Text> : null}
       <FlatList

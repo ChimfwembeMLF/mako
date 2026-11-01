@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   pad: {
-    padding: spacing.lg,
+    padding: spacing.xl,
     paddingBottom: spacing['2xl'],
   },
   center: {

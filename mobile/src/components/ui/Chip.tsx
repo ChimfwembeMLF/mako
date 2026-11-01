@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { fonts, rounded, spacing, typography } from '../../theme';
+import { rounded, spacing, typography } from '../../theme';
 
 type Props = {
   label: string;
@@ -19,7 +19,7 @@ export function Chip({ label, selected, disabled, onPress }: Props) {
       style={[
         styles.chip,
         {
-          borderColor: colors.ink,
+          borderColor: colors.border,
           backgroundColor: selected ? colors.primary : colors.canvas,
         },
         selected && { borderColor: colors.primary },
@@ -50,7 +50,6 @@ const styles = StyleSheet.create({
     opacity: 0.35,
   },
   text: {
-    ...typography.bodySmStrong,
-    fontFamily: fonts.bodySemi,
+    ...typography.labelSm,
   },
 });

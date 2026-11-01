@@ -14,6 +14,7 @@ export default function InboxLayout() {
         }}
       >
         <Stack.Screen name="index" options={{ title: 'Inbox' }} />
+        <Stack.Screen name="mail" options={{ title: 'Email' }} />
         <Stack.Screen name="[id]" options={{ title: 'Conversation' }} />
       </Stack>
     </AppShellGate>

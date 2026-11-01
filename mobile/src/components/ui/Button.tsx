@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { useTenantTheme } from '../../store/themeStore';
-import { fonts, rounded, spacing, typography } from '../../theme';
+import { rounded, shadows, spacing, typography } from '../../theme';
 
 type Variant = 'primary' | 'outline' | 'ghost' | 'destructive' | 'inverse';
 
@@ -37,7 +37,7 @@ export function Button({
 
   const variantStyle: ViewStyle =
     variant === 'primary'
-      ? { backgroundColor: primaryColor }
+      ? { backgroundColor: primaryColor, ...shadows.btn(primaryColor) }
       : variant === 'outline'
         ? { backgroundColor: colors.canvas, borderWidth: 1, borderColor: colors.border }
         : variant === 'ghost'
@@ -50,7 +50,7 @@ export function Button({
     variant === 'primary'
       ? colors['on-primary']
       : variant === 'inverse' || variant === 'destructive'
-        ? colors.canvas
+        ? colors['on-contrast']
         : colors.ink;
 
   return (
@@ -79,27 +79,19 @@ export function Button({
 const styles = StyleSheet.create({
   base: {
     minHeight: 48,
-    borderRadius: rounded.xl,
+    borderRadius: rounded.full,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
   },
   pressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.995 }],
+    transform: [{ scale: 0.95 }],
   },
   disabled: {
     opacity: 0.6,
   },
   label: {
-    ...typography.buttonMd,
-    fontFamily: fonts.bodySemi,
-    letterSpacing: -0.2,
+    ...typography.labelMd,
   },
 });

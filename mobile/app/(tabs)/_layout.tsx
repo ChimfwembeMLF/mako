@@ -1,47 +1,44 @@
-import { Tabs, router } from 'expo-router';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Text, StyleSheet } from 'react-native';
+import { Tabs, router, usePathname } from 'expo-router';
+import { StyleSheet, View, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Icon, type IconName } from '../../src/components/ui';
 import { useTheme } from '../../src/context/ThemeContext';
-import { useTenantTheme } from '../../src/store/themeStore';
-import { fonts } from '../../src/theme';
+import { fonts, spacing } from '../../src/theme';
 
-function TabIcon({ ios, glyph, color }: { ios: string; glyph: string; color: string }) {
-  const tint = String(color);
-  if (Platform.OS === 'ios') {
-    return <SymbolView name={ios as any} size={22} tintColor={tint} />;
-  }
-  return <Text style={[styles.glyph, { color: tint }]}>{glyph}</Text>;
+function tabIcon(name: IconName) {
+  return ({ color }: { color: ColorValue }) => <Icon name={name} color={color as string} />;
 }
 
 export default function TabLayout() {
   const { colors } = useTheme();
-  const { theme } = useTenantTheme();
+  const insets = useSafeAreaInsets();
+  // These screens have no tab of their own; they live in the More menu.
+  const inMoreMenu = /^\/(connections|profile)/.test(usePathname());
+  const tabLabelStyle = { fontFamily: fonts.bodyMedium, fontSize: 11 };
 
-  const activeColor = theme.primaryColor || colors.primary;
-
+  // The bar stays in layout flow (not absolute) so lists and the inbox composer never sit behind it.
   return (
+    <View style={[styles.root, { backgroundColor: colors['canvas-soft'] }]}>
     <Tabs
+      backBehavior="history"
+      safeAreaInsets={{ bottom: 0 }}
       screenOptions={{
-        tabBarActiveTintColor: activeColor,
+        sceneStyle: { backgroundColor: colors['canvas-soft'] },
+        tabBarHideOnKeyboard: true,
+        tabBarActiveTintColor: colors.ink,
         tabBarInactiveTintColor: colors.mute,
+        tabBarLabelStyle: tabLabelStyle,
+        tabBarItemStyle: { height: 64, justifyContent: 'center', paddingVertical: 0 },
         tabBarStyle: {
-          backgroundColor: colors.canvas,
+          backgroundColor: 'transparent',
           borderTopWidth: 0,
-          borderTopLeftRadius: 22,
-          borderTopRightRadius: 22,
-          height: 74,
-          paddingTop: 10,
-          paddingBottom: 10,
-          shadowColor: '#000',
-          shadowOpacity: 0.05,
-          shadowRadius: 8,
-          shadowOffset: { width: 0, height: -4 },
-          elevation: 6,
-        },
-        tabBarLabelStyle: {
-          fontFamily: fonts.bodySemi,
-          fontSize: 11,
-          letterSpacing: -0.2,
+          height: 64,
+          marginHorizontal: spacing.xl,
+          marginTop: spacing.sm,
+          marginBottom: Math.max(insets.bottom, spacing.xl),
+          paddingTop: 0,
+          paddingBottom: 0,
+          elevation: 0,
         },
         headerShown: false,
       }}
@@ -50,46 +47,39 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <TabIcon ios="house.fill" glyph="⌂" color={String(color)} />,
+          tabBarIcon: tabIcon('home'),
         }}
       />
       <Tabs.Screen
         name="content"
         options={{
-          title: 'Content',
-          tabBarIcon: ({ color }) => <TabIcon ios="doc.text.fill" glyph="✎" color={String(color)} />,
-        }}
-      />
-      <Tabs.Screen
-        name="connections"
-        options={{
-          title: 'Connect',
-          href: null,
-          tabBarIcon: ({ color }) => <TabIcon ios="link" glyph="⛓" color={String(color)} />,
-        }}
-      />
-      <Tabs.Screen
-        name="inbox"
-        options={{
-          title: 'Inbox',
-          tabBarIcon: ({ color }) => <TabIcon ios="tray.fill" glyph="✉" color={String(color)} />,
+          title: 'Posts',
+          tabBarIcon: tabIcon('content'),
         }}
       />
       <Tabs.Screen
         name="schedule"
         options={{
           title: 'Schedule',
-          href: null,
-          tabBarIcon: ({ color }) => <TabIcon ios="calendar" glyph="▦" color={String(color)} />,
+          tabBarIcon: tabIcon('calendar'),
+        }}
+      />
+      <Tabs.Screen
+        name="inbox"
+        options={{
+          title: 'Inbox',
+          tabBarIcon: tabIcon('inbox'),
         }}
       />
       <Tabs.Screen
         name="more"
         options={{
           title: 'More',
-          tabBarIcon: ({ color }) => (
-            <TabIcon ios="ellipsis.circle.fill" glyph="☰" color={String(color)} />
+          // The bar's tint follows the focused route, so More has to set its own active look.
+          tabBarIcon: ({ focused }) => (
+            <Icon name="menu" color={focused || inMoreMenu ? colors.ink : colors.mute} />
           ),
+          tabBarLabelStyle: [tabLabelStyle, inMoreMenu && { color: colors.ink }],
         }}
         listeners={({ navigation, route }) => ({
           tabPress: (e) => {
@@ -106,20 +96,28 @@ export default function TabLayout() {
         })}
       />
       <Tabs.Screen
+        name="connections"
+        options={{
+          title: 'Social accounts',
+          href: null,
+          tabBarIcon: tabIcon('connections'),
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
           href: null,
-          tabBarIcon: ({ color }) => <TabIcon ios="person.fill" glyph="●" color={String(color)} />,
+          tabBarIcon: tabIcon('user'),
         }}
       />
     </Tabs>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  glyph: {
-    fontSize: 18,
-    lineHeight: 22,
+  root: {
+    flex: 1,
   },
 });

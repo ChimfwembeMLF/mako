@@ -18,7 +18,7 @@ import { useWorkspace } from '../context/WorkspaceContext';
 import { useTheme } from '../context/ThemeContext';
 import { useEffectivePermissions } from '../hooks/useEffectivePermissions';
 import { fonts, spacing, rounded, typography } from '../theme';
-import { Button, Chip, FormFieldAi, Input, Sheet, SheetRow, useToast } from './ui';
+import { Button, Chip, FormFieldAi, Input, PageHeader, Sheet, SheetRow, useToast } from './ui';
 import { resolveQueued } from '../lib/queue';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useDraftsStore } from '../store/draftsStore';
@@ -423,7 +423,8 @@ export default function ContentEditorScreen() {
   }
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors['canvas-soft'] }]} contentContainerStyle={{ padding: spacing.lg }}>
+    <ScrollView style={[styles.container, { backgroundColor: colors['canvas-soft'] }]} contentContainerStyle={{ padding: spacing.xl }}>
+      <PageHeader title={isNew ? 'New post' : 'Edit post'} showBack />
       <Text style={[styles.label, { color: colors.mute }]}>Campaign theme</Text>
       <FormFieldAi
         form="content"
@@ -468,7 +469,7 @@ export default function ContentEditorScreen() {
       <Text style={[styles.label, { color: colors.mute }]}>Platforms (connected only)</Text>
       {!connectedPlatforms.size ? (
         <Text style={[styles.meta, { color: colors.mute }]}>
-          No connected accounts. Open Connections to link a network before publishing.
+          No connected accounts. Open Social accounts to link a network before publishing.
         </Text>
       ) : null}
       <View style={styles.row}>

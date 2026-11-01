@@ -8,9 +8,10 @@ import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { useOfflineBanner } from '../../../src/components/OfflineBanner';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Button, Card, Chip, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { useEffectivePermissions } from '../../../src/hooks/useEffectivePermissions';
+import { Icon, Badge, Button, Card, Chip, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
-type ChannelFilter = 'all' | 'post_comment' | 'dm';
+type ChannelFilter = 'all' | 'post_comment' | 'dm' | 'whatsapp';
 
 type SelectedThread = {
   id: string;
@@ -27,15 +28,18 @@ export default function InboxListScreen() {
   const { colors } = useTheme();
   const { activeWorkspace, tenantId } = useWorkspace();
   const { reportError } = useOfflineBanner();
+  const perms = useEffectivePermissions();
   const effectiveTenant = tenantId || activeWorkspace?.tenantId;
   const workspaceId = activeWorkspace?.id;
   const [channel, setChannel] = useState<ChannelFilter>('all');
   const [selected, setSelected] = useState<SelectedThread | null>(null);
+  const apiChannel = channel === 'whatsapp' ? 'dm' : channel;
 
   const { data = [], isLoading, error, refetch, isRefetching } = useQuery({
-    queryKey: ['inbox', effectiveTenant, workspaceId, channel],
+    // The API serves WhatsApp as part of DMs.
+    queryKey: ['inbox', effectiveTenant, workspaceId, apiChannel],
     enabled: Boolean(effectiveTenant && workspaceId),
-    queryFn: () => api.listInboxConversations(effectiveTenant!, workspaceId, channel),
+    queryFn: () => api.listInboxConversations(effectiveTenant!, workspaceId, apiChannel),
   });
 
   React.useEffect(() => {
@@ -53,7 +57,12 @@ export default function InboxListScreen() {
     await refetch();
   };
 
-  const rows = useMemo(() => data as InboxConversation[], [data]);
+  const rows = useMemo(() => {
+    const conversations = data as InboxConversation[];
+    return channel === 'whatsapp'
+      ? conversations.filter((item) => item.platform === 'whatsapp')
+      : conversations;
+  }, [data, channel]);
 
   const openThread = (item: InboxConversation) => {
     const thread: SelectedThread = {
@@ -91,9 +100,9 @@ export default function InboxListScreen() {
   const listHeader = (
     <>
       <PageHeader
-        title="Social Inbox"
+        title="Inbox"
         subtitle="Comments, DMs and replies for your connected channels."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>✉</Text>}
+        icon={<Icon name="inbox" size={20} color={colors['positive-deep']} />}
         actions={
           <Button label="Sync" variant="outline" onPress={() => void sync()} style={styles.syncBtn} />
         }
@@ -101,13 +110,17 @@ export default function InboxListScreen() {
       <View style={styles.filters}>
         {(
           [
-            ['all', 'All inbox'],
+            ['all', 'All'],
             ['post_comment', 'Comments'],
             ['dm', 'Messages'],
+            ['whatsapp', 'WhatsApp'],
           ] as const
         ).map(([id, label]) => (
           <Chip key={id} label={label} selected={channel === id} onPress={() => setChannel(id)} />
         ))}
+        {perms.can('leads.email') ? (
+          <Chip label="Email" selected={false} onPress={() => router.push('/inbox/mail' as any)} />
+        ) : null}
       </View>
     </>
   );

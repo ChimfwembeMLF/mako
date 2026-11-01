@@ -8,8 +8,9 @@ import {
   isSameDay,
   toDateKey,
 } from '../lib/dates';
-import { colors, fonts, rounded, spacing, typography } from '../theme';
-import { Button, Card } from './ui';
+import { useTheme } from '../context/ThemeContext';
+import { fonts, rounded, spacing, typography, type ThemeColors } from '../theme';
+import { Button, Card, Icon } from './ui';
 
 type Props = {
   month: Date;
@@ -30,6 +31,8 @@ export function ScheduleCalendar({
   onSelectDate,
   onPostPress,
 }: Props) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const today = useMemo(() => new Date(), []);
   const days = useMemo(() => getCalendarDays(month), [month]);
 
@@ -53,14 +56,16 @@ export function ScheduleCalendar({
   return (
     <Card style={styles.card}>
       <View style={styles.toolbar}>
-        <Button
-          label="‹"
-          variant="ghost"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Previous month"
           onPress={() =>
             onMonthChange(new Date(month.getFullYear(), month.getMonth() - 1, 1))
           }
           style={styles.navBtn}
-        />
+        >
+          <Icon name="chevronLeft" size={20} color={colors.ink} />
+        </Pressable>
         <View style={styles.monthCopy}>
           <Text style={styles.monthLabel}>{monthLabel}</Text>
           <Button
@@ -73,14 +78,16 @@ export function ScheduleCalendar({
             style={styles.todayBtn}
           />
         </View>
-        <Button
-          label="›"
-          variant="ghost"
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Next month"
           onPress={() =>
             onMonthChange(new Date(month.getFullYear(), month.getMonth() + 1, 1))
           }
           style={styles.navBtn}
-        />
+        >
+          <Icon name="chevronRight" size={20} color={colors.ink} />
+        </Pressable>
       </View>
 
       <View style={styles.weekdays}>
@@ -140,7 +147,7 @@ export function ScheduleCalendar({
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     marginBottom: spacing.lg,
     padding: spacing.md,
@@ -152,9 +159,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   navBtn: {
-    minHeight: 36,
-    width: 36,
-    paddingHorizontal: 0,
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   monthCopy: {
     alignItems: 'center',

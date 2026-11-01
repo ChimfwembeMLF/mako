@@ -1,3 +1,4 @@
+import { NON_PUBLIC_ADDRESS } from '../../../common/public-http.util';
 import { BRAND_PATH_SLUGS } from './brand-scrape-slugs';
 import {
   type BrandDiscoveryConfig,
@@ -353,4 +354,58 @@ export function createBrandDiscovery(
     buildSeedUrls: (origin: string, customPrefixes: string[] = []) =>
       buildSeedUrls(origin, customPrefixes, config),
   };
+}
+
+export type ScrapeFailureKind =
+  | 'blocked'
+  | 'not_found'
+  | 'timeout'
+  | 'tls'
+  | 'unreachable'
+  | 'non_public'
+  | 'http';
+
+/** Sort an axios failure into a reason we can act on and explain to the user. */
+export function classifyScrapeError(err: unknown): ScrapeFailureKind {
+  const { code, response } = (err ?? {}) as {
+    code?: string;
+    response?: { status?: number };
+  };
+  const status = response?.status;
+  if (status === 401 || status === 403 || status === 429) return 'blocked';
+  if (status) return 'http';
+  if (code === NON_PUBLIC_ADDRESS) return 'non_public';
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'not_found';
+  if (code === 'ECONNABORTED' || code === 'ETIMEDOUT') return 'timeout';
+  if (code && /CERT|TLS|SSL|UNABLE_TO_VERIFY/i.test(code)) return 'tls';
+  return 'unreachable';
+}
+
+const SCRAPE_FAILURE_MESSAGES: Record<ScrapeFailureKind, string> = {
+  blocked:
+    "That website doesn't allow automated visitors, so we couldn't read it. Upload a brand document instead, or fill in the fields yourself.",
+  not_found:
+    "We couldn't find that website. Check the address and try again.",
+  timeout:
+    'That website took too long to respond. Try again, or upload a brand document instead.',
+  tls: "That website's security certificate couldn't be verified. Upload a brand document instead, or fill in the fields yourself.",
+  unreachable:
+    "We couldn't connect to that website. Check the address and try again.",
+  non_public: "That address isn't a public website. Enter your website's public URL.",
+  http: 'Could not fetch any pages from that website. Try pasting your About or Contact page URL directly.',
+};
+
+export function scrapeFailureMessage(kind: ScrapeFailureKind): string {
+  return SCRAPE_FAILURE_MESSAGES[kind];
+}
+
+/** The same address on the other host: example.com <-> www.example.com. */
+export function alternateHostUrl(url: string): string | null {
+  const u = new URL(url);
+  // Bare IPs and single-label hosts have no www variant.
+  if (!u.hostname.includes('.') || /^[\d.]+$/.test(u.hostname)) return null;
+  u.hostname = u.hostname.startsWith('www.')
+    ? u.hostname.slice(4)
+    : `www.${u.hostname}`;
+  return u.href;
 }

@@ -8,6 +8,7 @@ import { useTheme } from '../../../src/context/ThemeContext';
 import { useEffectivePermissions } from '../../../src/hooks/useEffectivePermissions';
 import { fonts, spacing, typography } from '../../../src/theme';
 import {
+  Icon,
   Badge,
   Button,
   Card,
@@ -98,7 +99,7 @@ export default function ApprovalsScreen() {
       <PageHeader
         title="Approvals"
         subtitle="Review maker-checker requests."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>✓</Text>}
+        icon={<Icon name="approvals" size={20} color={colors['positive-deep']} />}
       />
       <View style={styles.tabs}>
         <Chip label={`Pending${tab === 'pending' && requests.length ? ` (${requests.length})` : ''}`} selected={tab === 'pending'} onPress={() => setTab('pending')} />

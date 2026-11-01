@@ -1,6 +1,9 @@
 import { BRAND_PATH_SLUGS } from './brand-scrape-slugs';
 import {
+  alternateHostUrl,
   buildFetchQueue,
+  classifyScrapeError,
+  scrapeFailureMessage,
   buildSeedUrls,
   createBrandDiscovery,
   mergeDiscoveredIntoQueue,
@@ -208,5 +211,42 @@ describe('brand-scrape-paths.util', () => {
       }
       expect(Date.now() - start).toBeLessThan(500);
     });
+  });
+});
+
+describe('classifyScrapeError', () => {
+  it.each([
+    [{ response: { status: 403 } }, 'blocked'],
+    [{ response: { status: 429 } }, 'blocked'],
+    [{ response: { status: 404 } }, 'http'],
+    [{ response: { status: 500 } }, 'http'],
+    [{ code: 'ENOTFOUND' }, 'not_found'],
+    [{ code: 'ECONNABORTED' }, 'timeout'],
+    [{ code: 'CERT_HAS_EXPIRED' }, 'tls'],
+    [{ code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' }, 'tls'],
+    [{ code: 'ECONNREFUSED' }, 'unreachable'],
+    [new Error('boom'), 'unreachable'],
+  ])('classifies %j as %s', (err, kind) => {
+    expect(classifyScrapeError(err)).toBe(kind);
+    expect(scrapeFailureMessage(classifyScrapeError(err))).toBeTruthy();
+  });
+});
+
+describe('alternateHostUrl', () => {
+  it('adds www to a bare domain and keeps the path', () => {
+    expect(alternateHostUrl('https://example.com/about')).toBe(
+      'https://www.example.com/about',
+    );
+  });
+
+  it('removes www from a www domain', () => {
+    expect(alternateHostUrl('https://www.example.com/')).toBe(
+      'https://example.com/',
+    );
+  });
+
+  it('has no alternate for IPs or single-label hosts', () => {
+    expect(alternateHostUrl('http://127.0.0.1:3000/')).toBeNull();
+    expect(alternateHostUrl('http://localhost:3000/')).toBeNull();
   });
 });

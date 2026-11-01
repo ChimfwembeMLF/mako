@@ -80,8 +80,9 @@ export const usePushNotifications = (isAuthenticated: boolean): PushNotification
 };
 
 async function registerForPushNotificationsAsync() {
-  if (!Notifications) return undefined;
-  
+  // Web push needs a VAPID key and service worker; the web build is only a preview.
+  if (!Notifications || Platform.OS === 'web') return undefined;
+
   let token;
 
   if (Platform.OS === 'android') {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { fonts, rounded, spacing, typography } from '../../theme';
+import { rounded, spacing, typography } from '../../theme';
 
 type Tone = 'default' | 'positive' | 'warning' | 'muted' | 'scheduled';
 
@@ -54,12 +54,9 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     borderRadius: rounded.pill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingVertical: 6,
   },
   text: {
-    ...typography.caption,
-    fontFamily: fonts.bodySemi,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+    ...typography.labelSm,
   },
 });

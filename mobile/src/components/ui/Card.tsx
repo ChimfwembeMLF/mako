@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { rounded, spacing } from '../../theme';
+import { rounded, shadows, spacing } from '../../theme';
 
 type Props = {
   children: React.ReactNode;
@@ -22,6 +22,7 @@ export function Card({ children, onPress, selected, style }: Props) {
           padding: spacing.lg,
           borderWidth: 1,
           borderColor: colors.border,
+          ...shadows.softCard,
         },
         selected && { borderWidth: 2, borderColor: colors.primary, backgroundColor: colors['primary-pale'] },
         style,

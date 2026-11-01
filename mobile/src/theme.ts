@@ -1,4 +1,4 @@
-// Theme derived from DESIGN.md tokens (web client parity)
+// Palette and fonts match the web client; shape, elevation and type scale follow DESIGN.md
 
 export type ThemeColors = typeof lightColors;
 
@@ -27,6 +27,8 @@ export const lightColors = {
   'negative-bg': '#320707',
   'accent-orange': '#ffc091',
   'accent-cyan': '#38c8ff',
+  'surface-contrast': '#0e0f0c',
+  'on-contrast': '#ffffff',
 };
 
 /** Dark palette — mirrors web `.dark` CSS vars; primary lime unchanged */
@@ -55,6 +57,8 @@ export const darkColors: ThemeColors = {
   'negative-bg': '#320707',
   'accent-orange': '#ffc091',
   'accent-cyan': '#38c8ff',
+  'surface-contrast': '#2a2c27',
+  'on-contrast': '#ffffff',
 };
 
 /** @deprecated Use useTheme().colors for dark-mode aware styling */
@@ -62,7 +66,9 @@ export const colors = lightColors;
 
 export const fonts = {
   body: 'Inter_400Regular',
+  bodyMedium: 'Inter_500Medium',
   bodySemi: 'Inter_600SemiBold',
+  bodyBold: 'Inter_700Bold',
   display: 'Manrope_800ExtraBold',
   displaySemi: 'Manrope_600SemiBold',
 };
@@ -87,9 +93,9 @@ export const spacing = {
 export const rounded = {
   none: 0,
   sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 24,
+  md: 16,
+  lg: 24,
+  xl: 32,
   pill: 9999,
   full: 9999,
 };
@@ -109,4 +115,24 @@ export const typography = {
   bodySmStrong: { fontSize: 14, fontWeight: '600' as const, lineHeight: 20 },
   caption: { fontSize: 12, fontWeight: '400' as const, lineHeight: 16 },
   buttonMd: { fontSize: 16, fontWeight: '600' as const, lineHeight: 24 },
+  headlineLg: { fontFamily: fonts.display, fontSize: 20, lineHeight: 26, letterSpacing: -0.4 },
+  headlineMd: { fontFamily: fonts.display, fontSize: 18, lineHeight: 24, letterSpacing: -0.18 },
+  headlineSm: { fontFamily: fonts.bodyBold, fontSize: 16, lineHeight: 22, letterSpacing: -0.16 },
+  labelMd: { fontFamily: fonts.bodyBold, fontSize: 14, lineHeight: 18, letterSpacing: -0.07 },
+  labelSm: { fontFamily: fonts.bodyBold, fontSize: 12, lineHeight: 16 },
+  labelUppercase: {
+    fontFamily: fonts.bodySemi,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.88,
+    textTransform: 'uppercase' as const,
+  },
+};
+
+/** DESIGN.md elevation recipes, tinted with the web ink instead of slate. */
+export const shadows = {
+  softCard: { boxShadow: '0 12px 32px -8px rgba(14, 15, 12, 0.08)' },
+  floatingNav: { boxShadow: '0 20px 40px -10px rgba(14, 15, 12, 0.4)' },
+  /** Colored glow under primary actions; `color` is the button fill as #rrggbb. */
+  btn: (color: string) => ({ boxShadow: `0 8px 20px -6px ${color}66` }),
 };

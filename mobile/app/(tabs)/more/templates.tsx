@@ -6,7 +6,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
 export default function TemplatesScreen() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function TemplatesScreen() {
       <PageHeader
         title="Post Templates"
         subtitle="Tap a template to start a new draft with its copy."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>📋</Text>}
+        icon={<Icon name="templates" size={20} color={colors['positive-deep']} />}
       />
       <FlatList
         data={data as Array<{ id: string; name?: string; title?: string; body?: string; content?: string }>}

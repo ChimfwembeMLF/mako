@@ -1,7 +1,8 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from './Button';
-import { colors, fonts, rounded, spacing, typography } from '../../theme';
+import { useTheme } from '../../context/ThemeContext';
+import { fonts, rounded, shadows, spacing, typography } from '../../theme';
 
 type Props = {
   eyebrow?: string;
@@ -18,10 +19,12 @@ export function HeroBanner({
   primaryAction,
   secondaryAction,
 }: Props) {
+  const { colors } = useTheme();
+
   return (
-    <View style={styles.hero}>
-      <Text style={styles.eyebrow}>{eyebrow}</Text>
-      <Text style={styles.title} numberOfLines={3} ellipsizeMode="tail">
+    <View style={[styles.hero, { backgroundColor: colors['surface-contrast'] }]}>
+      <Text style={[styles.eyebrow, { color: colors.primary }]}>{eyebrow}</Text>
+      <Text style={[styles.title, { color: colors['on-contrast'] }]} numberOfLines={3} ellipsizeMode="tail">
         {title}
       </Text>
       <Text style={styles.subtitle} numberOfLines={4} ellipsizeMode="tail">
@@ -48,28 +51,23 @@ export function HeroBanner({
 
 const styles = StyleSheet.create({
   hero: {
-    backgroundColor: colors.ink,
     borderRadius: rounded.xl,
     padding: spacing.xl,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    ...shadows.floatingNav,
   },
   eyebrow: {
-    ...typography.caption,
-    fontFamily: fonts.bodySemi,
-    color: colors.primary,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    ...typography.labelUppercase,
     marginBottom: spacing.sm,
   },
   title: {
     ...typography.displaySm,
     fontFamily: fonts.display,
-    color: colors.canvas,
     marginBottom: spacing.sm,
   },
   subtitle: {
     ...typography.bodySm,
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyMedium,
     color: 'rgba(255,255,255,0.72)',
     lineHeight: 20,
   },

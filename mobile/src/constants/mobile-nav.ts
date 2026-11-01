@@ -3,6 +3,8 @@
  * @see client/src/lib/nav-config.ts, specs/007-mobile-ui-parity/research.md R1
  */
 
+import type { IconName } from '../components/ui/Icon';
+
 export type MobileNavItem = {
   title: string;
   /** Expo Router path under (tabs)/more or core tabs */
@@ -12,55 +14,41 @@ export type MobileNavItem = {
   permission?: string | string[];
   /** Super-admin only (backoffice) — excluded from mobile v1 */
   superAdmin?: boolean;
-  /** Glyph shown in More menu rows */
-  icon: string;
+  /** Lucide icon shown in More menu rows */
+  icon: IconName;
   group: string;
   /** When true, show locked row if permission denied */
   showWhenLocked?: boolean;
 };
 
-/** Social shell groups — maps to More stack routes */
+/** Social shell groups — maps to More stack routes. Bottom-bar destinations are left out. */
 export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }> = [
   {
     label: 'Create',
     items: [
       {
-        title: 'Brand Brain',
+        title: 'Brand voice',
         route: '/more/brand-brain',
         description: 'Voice, audience & guidelines',
         permission: 'settings.brand_brain',
-        icon: '🧠',
+        icon: 'brain',
         group: 'Create',
         showWhenLocked: true,
-      },
-      {
-        title: 'Content Engine',
-        route: '/content',
-        description: 'Write and generate posts',
-        icon: '✎',
-        group: 'Create',
       },
       {
         title: 'Campaigns',
         route: '/more/campaigns',
         description: 'Plan multi-post campaigns',
         permission: 'content.view',
-        icon: '📣',
+        icon: 'campaigns',
         group: 'Create',
         showWhenLocked: true,
       },
       {
-        title: 'Scheduler',
-        route: '/schedule',
-        description: 'Calendar, queue & publish',
-        icon: '▦',
-        group: 'Create',
-      },
-      {
-        title: 'Connections',
+        title: 'Social accounts',
         route: '/connections',
         description: 'Link social & ad accounts',
-        icon: '⛓',
+        icon: 'connections',
         group: 'Create',
       },
     ],
@@ -69,17 +57,10 @@ export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }>
     label: 'Inbox',
     items: [
       {
-        title: 'Social Inbox',
-        route: '/inbox',
-        description: 'Comments, DMs & WhatsApp chats',
-        icon: '✉',
-        group: 'Inbox',
-      },
-      {
         title: 'WhatsApp',
         route: '/more/whatsapp',
-        description: 'Connect, menu bot, templates & messaging',
-        icon: '💬',
+        description: 'Connection status',
+        icon: 'whatsapp',
         group: 'Inbox',
       },
       {
@@ -87,16 +68,7 @@ export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }>
         route: '/more/leads',
         description: 'Qualify and respond to inbound leads',
         permission: 'leads.view',
-        icon: '🎯',
-        group: 'Inbox',
-        showWhenLocked: true,
-      },
-      {
-        title: 'Email',
-        route: '/more/mail',
-        description: 'Gmail inbox, drafts & auto-replies',
-        permission: 'leads.email',
-        icon: '📧',
+        icon: 'leads',
         group: 'Inbox',
         showWhenLocked: true,
       },
@@ -105,7 +77,7 @@ export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }>
         route: '/more/auto-reply-rules',
         description: 'Inbox automation rules',
         permission: 'replies.manage_rules',
-        icon: '⚡',
+        icon: 'zap',
         group: 'Inbox',
         showWhenLocked: true,
       },
@@ -119,7 +91,7 @@ export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }>
         route: '/more/analytics',
         description: 'Performance insights',
         permission: 'analytics.view',
-        icon: '📊',
+        icon: 'analytics',
         group: 'Insights',
         showWhenLocked: true,
       },
@@ -133,7 +105,7 @@ export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }>
         route: '/more/media',
         description: 'Images & assets',
         permission: 'media.view',
-        icon: '🖼',
+        icon: 'media',
         group: 'Library',
         showWhenLocked: true,
       },
@@ -142,7 +114,7 @@ export const SOCIAL_NAV_GROUPS: Array<{ label: string; items: MobileNavItem[] }>
         route: '/more/templates',
         description: 'Reusable post copy',
         permission: 'templates.view',
-        icon: '📋',
+        icon: 'templates',
         group: 'Library',
         showWhenLocked: true,
       },
@@ -157,7 +129,7 @@ export const MORE_ITEMS: MobileNavItem[] = [
     route: '/more/team',
     description: 'Members, invites & roles',
     permission: 'team.view',
-    icon: '👥',
+    icon: 'team',
     group: 'Admin',
     showWhenLocked: true,
   },
@@ -166,7 +138,7 @@ export const MORE_ITEMS: MobileNavItem[] = [
     route: '/more/approvals',
     description: 'Review pending content',
     permission: 'approvals.view',
-    icon: '✓',
+    icon: 'approvals',
     group: 'Admin',
     showWhenLocked: true,
   },
@@ -175,7 +147,7 @@ export const MORE_ITEMS: MobileNavItem[] = [
     route: '/more/settings',
     description: 'Account & workspace preferences',
     permission: 'settings.view',
-    icon: '⚙',
+    icon: 'settings',
     group: 'Admin',
     showWhenLocked: true,
   },

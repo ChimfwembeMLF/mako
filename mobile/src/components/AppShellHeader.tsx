@@ -6,8 +6,9 @@ import { api } from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { useWorkspace, type WorkspaceContextValue } from '../context/WorkspaceContext';
 import { Badge } from './ui/Badge';
+import { Icon } from './ui/Icon';
 import { Sheet, SheetRow } from './ui/Sheet';
-import { fonts, spacing, typography } from '../theme';
+import { fonts, rounded, spacing, typography } from '../theme';
 
 type WorkspaceRow = {
   id: string;
@@ -23,7 +24,7 @@ export function AppShellHeader() {
     useWorkspace();
   const [open, setOpen] = useState(false);
 
-  const { data: workspaces = [] } = useQuery({
+  const { data: workspaces = [], isSuccess } = useQuery({
     queryKey: ['workspaces', tenantId],
     queryFn: () => api.getWorkspaces(tenantId),
   });
@@ -46,42 +47,27 @@ export function AppShellHeader() {
     setOpen(false);
   };
 
+  const list = workspaces as WorkspaceRow[];
+  if (isSuccess && list.length === 1 && list[0].id === activeWorkspace?.id) {
+    return <View style={{ height: insets.top + spacing.lg }} />;
+  }
+
   return (
     <>
       <View
-        style={[
-          styles.bar,
-          {
-            paddingTop: insets.top + spacing.xs,
-            backgroundColor: colors['canvas-soft'],
-            borderBottomWidth: 0,
-          },
-        ]}
+        style={[styles.bar, { paddingTop: insets.top + spacing.lg }]}
       >
         <Pressable
           onPress={() => setOpen(true)}
-          style={[
-            styles.trigger,
-            {
-              backgroundColor: colors.canvas,
-              borderColor: colors.border,
-            },
-          ]}
+          style={[styles.trigger, { borderColor: colors.border }]}
           accessibilityRole="button"
+          accessibilityLabel={`Switch workspace, current: ${activeWorkspace?.name || 'none'}`}
         >
-          <View style={[styles.iconTile, { backgroundColor: colors['primary-pale'] }]}>
-            <Text style={[styles.iconGlyph, { color: colors['positive-deep'] }]}>◆</Text>
-          </View>
-          <View style={styles.textCol}>
-            <Text style={[styles.label, { color: colors.mute, fontFamily: fonts.body }]}>Workspace</Text>
-            <Text
-              style={[styles.name, { color: colors.ink, fontFamily: fonts.displaySemi }]}
-              numberOfLines={1}
-            >
-              {activeWorkspace?.name || 'Select workspace'}
-            </Text>
-          </View>
-          <Text style={[styles.chevron, { color: colors.mute }]}>▾</Text>
+          <Icon name="workspace" size={18} color={colors['positive-deep']} />
+          <Text style={[styles.name, { color: colors.ink }]} numberOfLines={1}>
+            {activeWorkspace?.name || 'Select workspace'}
+          </Text>
+          <Icon name="chevronDown" size={18} color={colors.mute} />
         </Pressable>
       </View>
 
@@ -112,41 +98,22 @@ export function AppShellHeader() {
 
 const styles = StyleSheet.create({
   bar: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.md,
   },
   trigger: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    minHeight: 56,
-    borderRadius: 18,
+    gap: spacing.sm,
+    minHeight: 44,
+    borderRadius: rounded.full,
     borderWidth: 1,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  iconTile: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconGlyph: {
-    fontSize: 16,
-  },
-  textCol: {
-    flex: 1,
-    minWidth: 0,
-  },
-  label: {
-    ...typography.caption,
+    paddingHorizontal: spacing.lg,
   },
   name: {
-    ...typography.bodyMdStrong,
-  },
-  chevron: {
-    fontSize: 14,
+    ...typography.bodySm,
+    fontFamily: fonts.bodySemi,
+    flex: 1,
   },
   empty: {
     ...typography.bodyMd,

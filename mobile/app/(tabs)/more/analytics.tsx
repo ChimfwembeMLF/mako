@@ -5,7 +5,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
 export default function AnalyticsScreen() {
   const { colors } = useTheme();
@@ -31,7 +31,7 @@ export default function AnalyticsScreen() {
       <PageHeader
         title="Analytics"
         subtitle="High-level performance snapshot."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>📊</Text>}
+        icon={<Icon name="analytics" size={20} color={colors['positive-deep']} />}
       />
       {error ? <Text style={{ color: colors.negative }}>{error.message}</Text> : null}
       {metrics && typeof metrics === 'object' && !Array.isArray(metrics) ? (

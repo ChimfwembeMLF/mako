@@ -15,6 +15,7 @@ import {
 } from '../../../src/constants/brandBrain';
 import { fonts, rounded, spacing, typography } from '../../../src/theme';
 import {
+  Icon,
   Badge,
   Button,
   Chip,
@@ -81,9 +82,9 @@ export default function BrandBrainScreen() {
   return (
     <Screen>
       <PageHeader
-        title="Brand Brain"
+        title="Brand voice"
         subtitle="Train AI on your brand voice, audience, and guardrails."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>🧠</Text>}
+        icon={<Icon name="brain" size={20} color={colors['positive-deep']} />}
         actions={<Button label="Save" loading={save.isPending} onPress={() => void save.mutate()} />}
       />
 

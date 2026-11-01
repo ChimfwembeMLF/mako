@@ -6,7 +6,7 @@ import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { useEffectivePermissions } from '../../../src/hooks/useEffectivePermissions';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Card, EmptyState, PageHeader, Screen, useToast } from '../../../src/components/ui';
+import { Icon, Badge, Card, EmptyState, PageHeader, Screen, useToast } from '../../../src/components/ui';
 
 type ReplyRule = {
   id: string;
@@ -62,7 +62,7 @@ export default function AutoReplyRulesScreen() {
       <PageHeader
         title="Auto-reply rules"
         subtitle="Toggle automated replies per platform."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>🤖</Text>}
+        icon={<Icon name="zap" size={20} color={colors['positive-deep']} />}
       />
       {!canManageAutoReply ? (
         <Text style={[styles.readonly, { color: colors.mute, fontFamily: fonts.body }]}>

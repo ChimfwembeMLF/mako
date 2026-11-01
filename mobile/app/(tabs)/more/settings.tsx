@@ -6,7 +6,7 @@ import { useTheme } from '../../../src/context/ThemeContext';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { api } from '../../../src/lib/api';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Button, Card, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Button, Card, PageHeader, Screen } from '../../../src/components/ui';
 
 export default function SettingsScreen() {
   const { signOut } = useAuth();
@@ -24,7 +24,7 @@ export default function SettingsScreen() {
       <PageHeader
         title="Settings"
         subtitle="Account and appearance preferences."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>⚙</Text>}
+        icon={<Icon name="settings" size={20} color={colors['positive-deep']} />}
       />
       <Card style={styles.card}>
         <Field label="Email" value={profile?.email || '—'} colors={colors} />

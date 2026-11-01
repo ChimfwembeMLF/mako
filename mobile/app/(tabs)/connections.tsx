@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   FlatList,
   Modal,
@@ -22,13 +22,14 @@ import { TabShell } from '../../src/components/TabShell';
 import { useWorkspace } from '../../src/context/WorkspaceContext';
 import { useOfflineBanner } from '../../src/components/OfflineBanner';
 import { useTheme } from '../../src/context/ThemeContext';
-import { colors, fonts, spacing, typography } from '../../src/theme';
-import { Badge, Button, Card, EmptyState, PageHeader, Screen, useToast } from '../../src/components/ui';
+import { fonts, rounded, spacing, typography, type ThemeColors } from '../../src/theme';
+import { Icon, Badge, Button, Card, EmptyState, PageHeader, Screen, useToast } from '../../src/components/ui';
 
 type PickerState = OAuthPickerState;
 
 export default function ConnectionsScreen() {
   const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const toast = useToast();
   const { activeWorkspace, tenantId } = useWorkspace();
   const { reportError } = useOfflineBanner();
@@ -131,9 +132,9 @@ export default function ConnectionsScreen() {
     <TabShell>
     <Screen scroll={false}>
       <PageHeader
-        title="Connections"
+        title="Social accounts"
         subtitle="Link social accounts for the active workspace."
-        icon={<Text style={[styles.headerIcon, { color: colors['positive-deep'] }]}>⛓</Text>}
+        icon={<Icon name="connections" size={20} color={colors['positive-deep']} />}
       />
 
       <Text style={styles.sectionLabel}>Platforms</Text>
@@ -295,8 +296,7 @@ export default function ConnectionsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  headerIcon: { fontSize: 18 },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   sectionLabel: {
     ...typography.bodySmStrong,
     fontFamily: fonts.bodySemi,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   platformIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: rounded.md,
     alignItems: 'center',
     justifyContent: 'center',
   },

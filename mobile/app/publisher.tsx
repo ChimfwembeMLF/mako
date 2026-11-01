@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
@@ -10,9 +10,12 @@ import {
 import { useWorkspace } from '../src/context/WorkspaceContext';
 import { api } from '../src/lib/api';
 import { Button, Screen, useToast } from '../src/components/ui';
-import { colors, fonts, spacing, typography } from '../src/theme';
+import { useTheme } from '../src/context/ThemeContext';
+import { fonts, spacing, typography, type ThemeColors } from '../src/theme';
 
 export default function PublisherOAuthScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const params = useLocalSearchParams<Record<string, string | string[]>>();
   const router = useRouter();
   const toast = useToast();
@@ -174,7 +177,7 @@ export default function PublisherOAuthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.4)',

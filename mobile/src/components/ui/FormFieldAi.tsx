@@ -99,7 +99,7 @@ export function FormFieldAi({
             style={styles.refreshBtn}
           >
             <Text style={[styles.refreshText, { color: colors.mute, fontFamily: fonts.body }]}>
-              {suggestionsLoading ? 'Loading suggestions…' : '↻ New suggestions'}
+              {suggestionsLoading ? 'Loading suggestions…' : 'New suggestions'}
             </Text>
           </Pressable>
         </View>

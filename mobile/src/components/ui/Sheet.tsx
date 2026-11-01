@@ -41,7 +41,7 @@ export function Sheet({ visible, onClose, title, children, contentStyle }: Props
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           {title ? (
-            <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.displaySemi }]}>
+            <Text style={[styles.title, { color: colors.ink, fontFamily: fonts.display }]}>
               {title}
             </Text>
           ) : null}

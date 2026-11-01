@@ -1,37 +1,28 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { StyleSheet, Text, View } from 'react-native';
+import { usePathname } from 'expo-router';
 import { useTheme } from '../../context/ThemeContext';
-import { fonts, spacing, typography } from '../../theme';
+import { fonts, rounded, spacing, typography } from '../../theme';
+import { BackButton } from './BackButton';
 
 type Props = {
   title: string;
   subtitle?: string;
   icon?: React.ReactNode;
   actions?: React.ReactNode;
-  /** Show ← back control (auto-detected on More sub-screens when omitted) */
+  /** Show back control (auto-detected on screens without their own tab when omitted) */
   showBack?: boolean;
 };
 
 export function PageHeader({ title, subtitle, icon, actions, showBack }: Props) {
-  const router = useRouter();
   const pathname = usePathname();
   const { colors } = useTheme();
-  const onMoreSubScreen = /\/more\/.+/.test(pathname);
-  const shouldShowBack = showBack ?? onMoreSubScreen;
+  const isNestedScreen = /^\/(more\/.+|inbox\/mail|connections|profile)/.test(pathname);
+  const shouldShowBack = showBack ?? isNestedScreen;
 
   return (
     <View style={styles.wrap}>
-      {shouldShowBack ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Back to More menu"
-          onPress={() => router.back()}
-          style={styles.backBtn}
-        >
-          <Text style={[styles.backText, { color: colors.primary }]}>← More</Text>
-        </Pressable>
-      ) : null}
+      {shouldShowBack ? <BackButton style={styles.backBtn} /> : null}
       <View style={styles.row}>
         <View style={styles.lead}>
           {icon ? (
@@ -69,13 +60,7 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     alignSelf: 'flex-start',
-    marginBottom: spacing.sm,
-    paddingVertical: spacing.xs,
-    paddingRight: spacing.md,
-  },
-  backText: {
-    ...typography.bodySmStrong,
-    fontFamily: fonts.bodySemi,
+    marginBottom: spacing.md,
   },
   row: {
     flexDirection: 'row',
@@ -93,9 +78,9 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   iconTile: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 44,
+    height: 44,
+    borderRadius: rounded.md,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -108,11 +93,10 @@ const styles = StyleSheet.create({
   title: {
     ...typography.displayXs,
     fontFamily: fonts.display,
-    letterSpacing: -0.6,
   },
   subtitle: {
     ...typography.bodySm,
-    fontFamily: fonts.body,
+    fontFamily: fonts.bodyMedium,
   },
   actions: {
     flexShrink: 0,

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useTheme } from '../context/ThemeContext';
 import { fonts, rounded, spacing, typography } from '../theme';
+import { Icon } from './ui';
 
 const STORAGE_KEY = 'mako_onboarding_dismissed';
 
@@ -31,8 +31,14 @@ async function writeDismissed(): Promise<void> {
   }
 }
 
-export function OnboardingHint() {
-  const router = useRouter();
+export type OnboardingStep = {
+  label: string;
+  done: boolean;
+  onPress: () => void;
+};
+
+/** Setup checklist for new workspaces; disappears once every step is done. */
+export function OnboardingHint({ steps }: { steps: OnboardingStep[] }) {
   const { colors } = useTheme();
   const [visible, setVisible] = useState(false);
 
@@ -40,7 +46,7 @@ export function OnboardingHint() {
     void readDismissed().then((dismissed) => setVisible(!dismissed));
   }, []);
 
-  if (!visible) return null;
+  if (!visible || steps.every((step) => step.done)) return null;
 
   const close = () => {
     setVisible(false);
@@ -53,31 +59,46 @@ export function OnboardingHint() {
         styles.wrap,
         {
           backgroundColor: colors['primary-pale'],
-          borderColor: colors['positive-deep'],
+          borderColor: colors.border,
         },
       ]}
     >
-      <Text style={[styles.title, { color: colors['positive-deep'], fontFamily: fonts.bodySemi }]}>
-        Get started on mobile
-      </Text>
-      <Text style={[styles.body, { color: colors.body, fontFamily: fonts.body }]}>
-        Connect a social account, then create your first post from Content or Home.
-      </Text>
-      <View style={styles.actions}>
-        <Pressable
-          onPress={() => router.push('/connections' as any)}
-          style={[styles.cta, { backgroundColor: colors.primary }]}
-        >
-          <Text style={[styles.ctaText, { color: colors['on-primary'], fontFamily: fonts.bodySemi }]}>
-            Connect accounts
-          </Text>
-        </Pressable>
-        <Pressable onPress={close} style={styles.dismiss}>
-          <Text style={[styles.dismissText, { color: colors.mute, fontFamily: fonts.bodySemi }]}>
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors['positive-deep'], fontFamily: fonts.bodySemi }]}>
+          Get set up
+        </Text>
+        <Pressable onPress={close} style={styles.dismiss} accessibilityRole="button">
+          <Text style={[styles.dismissText, { color: colors.body, fontFamily: fonts.bodySemi }]}>
             Dismiss
           </Text>
         </Pressable>
       </View>
+      {steps.map((step) => (
+        <Pressable
+          key={step.label}
+          onPress={step.onPress}
+          disabled={step.done}
+          style={styles.step}
+          accessibilityRole="button"
+          accessibilityState={{ checked: step.done, disabled: step.done }}
+        >
+          <Icon
+            name={step.done ? 'approvals' : 'circle'}
+            size={20}
+            color={step.done ? colors['positive-deep'] : colors.body}
+          />
+          <Text
+            style={[
+              styles.stepLabel,
+              { color: step.done ? colors.body : colors.ink, fontFamily: fonts.bodyMedium },
+              step.done && styles.stepDone,
+            ]}
+          >
+            {step.label}
+          </Text>
+          {step.done ? null : <Icon name="chevronRight" size={18} color={colors.body} />}
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -89,32 +110,33 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     marginBottom: spacing.lg,
   },
-  title: {
-    ...typography.bodyMdStrong,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: spacing.xs,
   },
-  body: {
-    ...typography.bodySm,
-    marginBottom: spacing.md,
+  title: {
+    ...typography.bodyMdStrong,
   },
-  actions: {
+  dismiss: {
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  dismissText: {
+    ...typography.bodySm,
+  },
+  step: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    flexWrap: 'wrap',
+    minHeight: 44,
   },
-  cta: {
-    borderRadius: rounded.pill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+  stepLabel: {
+    ...typography.bodySm,
+    flex: 1,
   },
-  ctaText: {
-    ...typography.bodySmStrong,
-  },
-  dismiss: {
-    paddingVertical: spacing.sm,
-  },
-  dismissText: {
-    ...typography.bodySmStrong,
+  stepDone: {
+    textDecorationLine: 'line-through',
   },
 });

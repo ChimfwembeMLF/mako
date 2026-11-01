@@ -1,14 +1,17 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { TabShell } from '../../src/components/TabShell';
 import { useAuth } from '../../src/context/AuthContext';
 import { useWorkspace } from '../../src/context/WorkspaceContext';
 import { api } from '../../src/lib/api';
-import { colors, fonts, spacing, typography } from '../../src/theme';
-import { Button, Card, PageHeader, Screen } from '../../src/components/ui';
+import { useTheme } from '../../src/context/ThemeContext';
+import { fonts, spacing, typography, type ThemeColors } from '../../src/theme';
+import { Icon, Button, Card, PageHeader, Screen } from '../../src/components/ui';
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const { signOut } = useAuth();
   const { activeWorkspace } = useWorkspace();
   const { data: profile, isLoading, error } = useQuery({
@@ -26,7 +29,7 @@ export default function ProfileScreen() {
       <PageHeader
         title="Profile"
         subtitle="Account details for your signed-in Mako user."
-        icon={<Text style={styles.headerIcon}>●</Text>}
+        icon={<Icon name="user" size={20} color={colors['positive-deep']} />}
       />
 
       <Card style={styles.card}>
@@ -56,6 +59,9 @@ export default function ProfileScreen() {
 }
 
 function Field({ label, value }: { label: string; value: string }) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => createStyles(colors), [colors]);
+
   return (
     <View style={styles.field}>
       <Text style={styles.label}>{label}</Text>
@@ -64,8 +70,7 @@ function Field({ label, value }: { label: string; value: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  headerIcon: { fontSize: 18, color: colors['positive-deep'] },
+const createStyles = (colors: ThemeColors) => StyleSheet.create({
   card: {
     padding: spacing.xl,
   },

@@ -7,7 +7,7 @@ import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useOfflineBanner } from '../../../src/components/OfflineBanner';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Button, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Badge, Button, Card, EmptyState, PageHeader, Screen } from '../../../src/components/ui';
 
 function statusTone(status?: string | null): 'default' | 'positive' | 'scheduled' | 'muted' {
   const s = (status || 'draft').toLowerCase();
@@ -121,9 +121,9 @@ export default function ContentListScreen() {
   return (
     <Screen scroll={false}>
       <PageHeader
-        title="Content Engine"
+        title="Posts"
         subtitle="Write, save drafts, and publish to connected channels."
-        icon={<Text style={[styles.headerIcon, { color: colors['positive-deep'] }]}>✎</Text>}
+        icon={<Icon name="content" size={20} color={colors['positive-deep']} />}
         actions={
           <Button
             label="New post"
@@ -179,9 +179,6 @@ export default function ContentListScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerIcon: {
-    fontSize: 18,
-  },
   headerBtn: {
     minHeight: 40,
     paddingHorizontal: spacing.lg,

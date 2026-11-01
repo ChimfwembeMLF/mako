@@ -8,6 +8,7 @@ import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, rounded, spacing, typography } from '../../../src/theme';
 import {
+  Icon,
   Badge,
   Button,
   Card,
@@ -118,7 +119,7 @@ export default function CampaignsScreen() {
       <PageHeader
         title="AI Campaigns"
         subtitle="Generate a multi-day content series from one theme."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>📣</Text>}
+        icon={<Icon name="campaigns" size={20} color={colors['positive-deep']} />}
       />
 
       <View style={[styles.generateCard, { backgroundColor: colors.canvas, borderColor: colors.border }]}>
@@ -126,7 +127,7 @@ export default function CampaignsScreen() {
           Create campaign
         </Text>
         <Text style={[styles.cardHint, { color: colors.mute, fontFamily: fonts.body }]}>
-          AI plans posts across days and platforms using your Brand Brain.
+          AI plans posts across days and platforms using your brand voice.
         </Text>
 
         <Text style={[styles.fieldLabel, { color: colors.mute, fontFamily: fonts.bodySemi }]}>

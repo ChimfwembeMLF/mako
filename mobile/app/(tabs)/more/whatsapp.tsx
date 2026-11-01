@@ -6,7 +6,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Button, Card, PageHeader, Screen } from '../../../src/components/ui';
+import { Icon, Badge, Button, Card, PageHeader, Screen } from '../../../src/components/ui';
 
 export default function WhatsappScreen() {
   const { colors } = useTheme();
@@ -35,7 +35,7 @@ export default function WhatsappScreen() {
       <PageHeader
         title="WhatsApp"
         subtitle="Connection status and inbox access."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>💬</Text>}
+        icon={<Icon name="whatsapp" size={20} color={colors['positive-deep']} />}
       />
 
       <Card style={styles.card}>
@@ -68,7 +68,7 @@ export default function WhatsappScreen() {
       </Card>
 
       <Button
-        label="Open Social Inbox"
+        label="Open Inbox"
         variant="primary"
         onPress={() => router.push('/inbox' as any)}
         style={styles.button}

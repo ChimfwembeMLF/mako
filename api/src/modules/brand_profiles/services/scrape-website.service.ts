@@ -2,6 +2,10 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import {
+  assertPublicUrl,
+  publicOnlyRequestOptions,
+} from '../../../common/public-http.util';
 import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import {
@@ -9,16 +13,24 @@ import {
   normalizeBrandExtraction,
 } from '../../ai/prompts/brand-fields';
 import {
+  alternateHostUrl,
   buildFetchQueue,
+  classifyScrapeError,
   mergeDiscoveredIntoQueue,
   mergeBrandDiscoveryConfig,
   normalizeScrapeUrl,
   rankDiscoveredLinks,
+  scrapeFailureMessage,
   type BrandDiscoveryConfig,
+  type ScrapeFailureKind,
   ScrapeRateLimiter,
   DiscoveryStatsCollector,
   resolveLogger,
 } from '../utils/brand-scrape-paths.util';
+
+/** The seed list is mostly guesses, so a run of misses means stop, not keep trying. */
+const MAX_CONSECUTIVE_FAILURES = 10;
+const MAX_PAGE_BYTES = 5 * 1024 * 1024;
 
 @Injectable()
 export class ScrapeWebsiteService {
@@ -106,7 +118,7 @@ export class ScrapeWebsiteService {
       ),
       userAgent:
         this.config.get<string>('SCRAPE_USER_AGENT') ??
-        'MakoBot/1.0 (+https://mako.test; brand onboarding)',
+        'MakoBot/1.0 (+https://mako.tekreminnovations.com; brand onboarding)',
     });
   }
 
@@ -127,7 +139,12 @@ export class ScrapeWebsiteService {
     const texts: string[] = [];
     const visited = new Set<string>();
     let queue = buildFetchQueue(baseUrl, discoveryConfig);
-    let fetchFailures = 0;
+    // For scraping a site on your own machine or network during development.
+    const allowPrivateHosts =
+      this.config.get<string>('SCRAPE_ALLOW_PRIVATE_HOSTS') === 'true';
+    let lastFailure: ScrapeFailureKind | null = null;
+    let consecutiveFailures = 0;
+    let triedAlternateHost = false;
     const rateLimiter = new ScrapeRateLimiter(
       discoveryConfig.delayBetweenRequests,
     );
@@ -147,11 +164,19 @@ export class ScrapeWebsiteService {
         await rateLimiter.wait();
 
         try {
+          if (!allowPrivateHosts) assertPublicUrl(canonical);
           const response = await axios.get(canonical, {
-            headers: { 'User-Agent': discoveryConfig.userAgent },
+            ...(allowPrivateHosts ? {} : publicOnlyRequestOptions),
+            maxContentLength: MAX_PAGE_BYTES,
+            headers: {
+              'User-Agent': discoveryConfig.userAgent,
+              Accept: 'text/html,application/xhtml+xml',
+            },
             timeout: timeout,
           });
+          consecutiveFailures = 0;
           const html = response.data;
+          if (typeof html !== 'string') continue;
 
           const $discover = cheerio.load(html);
           const anchors: Array<{ href: string; text: string }> = [];
@@ -191,10 +216,38 @@ export class ScrapeWebsiteService {
 
           if (body) texts.push(`URL: ${canonical}\nTitle: ${title}\n${body}`);
         } catch (err) {
-          fetchFailures++;
+          lastFailure = classifyScrapeError(err);
+          consecutiveFailures++;
           const message = err instanceof Error ? err.message : String(err);
           stats?.recordError(canonical, message);
-          this.logger.warn(`Scrape failed for ${canonical}`, err);
+          this.logger.warn(
+            `Scrape failed for ${canonical} (${lastFailure}): ${message}`,
+          );
+
+          if (
+            !triedAlternateHost &&
+            !texts.length &&
+            visited.size === 1 &&
+            lastFailure !== 'blocked' &&
+            lastFailure !== 'timeout' &&
+            lastFailure !== 'non_public'
+          ) {
+            triedAlternateHost = true;
+            const alternate = alternateHostUrl(canonical);
+            if (alternate) {
+              queue = buildFetchQueue(alternate, discoveryConfig);
+              continue;
+            }
+          }
+
+          // Anything but a page-level miss means more requests won't help, and
+          // a site that refused us shouldn't get the rest of the list either.
+          if (
+            lastFailure !== 'http' ||
+            consecutiveFailures >= MAX_CONSECUTIVE_FAILURES
+          ) {
+            break;
+          }
         }
       }
     } finally {
@@ -207,8 +260,8 @@ export class ScrapeWebsiteService {
 
     if (!texts.length) {
       throw new BadRequestException(
-        fetchFailures > 0
-          ? 'Could not fetch any pages from that website. Try pasting your About or Contact page URL directly.'
+        lastFailure
+          ? scrapeFailureMessage(lastFailure)
           : 'Could not extract text from the website',
       );
     }

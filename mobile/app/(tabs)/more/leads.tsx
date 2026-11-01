@@ -5,7 +5,7 @@ import { api } from '../../../src/lib/api';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, spacing, typography } from '../../../src/theme';
-import { Badge, Card, EmptyState, PageHeader, Screen, Sheet } from '../../../src/components/ui';
+import { Icon, Badge, Card, EmptyState, PageHeader, Screen, Sheet } from '../../../src/components/ui';
 
 type Lead = {
   id: string;
@@ -63,7 +63,7 @@ export default function LeadsScreen() {
       <PageHeader
         title="Leads"
         subtitle="Inbound leads captured by your agent."
-        icon={<Text style={{ fontSize: 18, color: colors['positive-deep'] }}>🎯</Text>}
+        icon={<Icon name="leads" size={20} color={colors['positive-deep']} />}
       />
       {error ? <Text style={{ color: colors.negative, marginBottom: spacing.md }}>{error.message}</Text> : null}
       <FlatList
