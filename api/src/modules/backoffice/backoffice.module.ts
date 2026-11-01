@@ -1,3 +1,4 @@
+import { SmsModule } from '../sms/sms.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BackofficeService } from './backoffice.service';
@@ -33,6 +34,7 @@ import { CronMonitorService } from './cron-monitor.service';
 
 @Module({
   imports: [
+    SmsModule,
     SubscriptionsModule,
     PaymentsModule,
     TypeOrmModule.forFeature([

@@ -4,13 +4,15 @@ import { useTenant } from '@/hooks/useTenant';
 import { usePermissions } from '@/hooks/usePermissions';
 import { applyTheme, cacheGlobalTheme, ThemeConfig } from '@/hooks/useTheme';
 import { PermissionGate } from '@/components/PermissionGate';
+import { SmsSettings } from '@/components/admin/SmsSettings';
+import { SmsTestForm } from '@/components/admin/SmsTestForm';
 import { ThemePalettePicker } from '@/components/admin/ThemePalettePicker';
 import { paletteSwatchHsl } from '@/lib/themePalettes';
 import { Field, FormSection, FormRow, FormInput } from '@/components/forms';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Palette, ShieldCheck, Plus, Trash2, Save, ChevronDown, ChevronUp, Target } from 'lucide-react';
+import { Palette, ShieldCheck, Plus, Trash2, Save, ChevronDown, ChevronUp, Target, MessageSquare } from 'lucide-react';
 
 import { MAKO_THEME } from '@/lib/mako-brand';
 
@@ -160,6 +162,7 @@ export default function SystemSettingsPage() {
             <TabsTrigger value="theme" className="gap-1.5"><Palette className="h-3.5 w-3.5" /> Theme</TabsTrigger>
             <TabsTrigger value="permissions" className="gap-1.5"><ShieldCheck className="h-3.5 w-3.5" /> Permissions</TabsTrigger>
             <TabsTrigger value="ads" className="gap-1.5"><Target className="h-3.5 w-3.5" /> Ad Platforms</TabsTrigger>
+            <TabsTrigger value="sms" className="gap-1.5"><MessageSquare className="h-3.5 w-3.5" /> SMS</TabsTrigger>
           </TabsList>
 
           <TabsContent value="theme" className="space-y-6 mt-4">
@@ -315,6 +318,11 @@ export default function SystemSettingsPage() {
                 <Save className="h-4 w-4" /> Save Configuration
               </Button>
             </FormSection>
+          </TabsContent>
+
+          <TabsContent value="sms" className="space-y-4 mt-4">
+            <SmsSettings />
+            <SmsTestForm />
           </TabsContent>
 
           {/* Integrations moved to Backoffice */}

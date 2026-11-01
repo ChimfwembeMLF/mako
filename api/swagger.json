@@ -9227,6 +9227,35 @@
         ]
       }
     },
+    "/api/v1/backoffice/sms/test": {
+      "post": {
+        "operationId": "BackofficeController_sendTestSms",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTestSmsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
     "/api/v1/backoffice/overview": {
       "get": {
         "operationId": "BackofficeController_overview",
@@ -10642,6 +10671,10 @@
         "properties": {}
       },
       "CommentRepliesUpdateDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "SendTestSmsDto": {
         "type": "object",
         "properties": {}
       },

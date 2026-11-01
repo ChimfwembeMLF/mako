@@ -827,6 +827,12 @@ export const backofficeApi = {
             }>;
         }>('/api/v1/backoffice/subscriptions'),
 
+    sendTestSms: (data: { to: string; message: string }) =>
+        request<{ accepted: boolean; status: string; messageIds: number[] }>(
+            '/api/v1/backoffice/sms/test',
+            { method: 'POST', body: JSON.stringify(data) },
+        ),
+
     listRefunds: () =>
         request<
             Array<{
