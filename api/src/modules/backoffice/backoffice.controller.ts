@@ -17,6 +17,11 @@ export class BackofficeController {
     return this.backoffice.getOverview();
   }
 
+  @Get('subscriptions')
+  listSubscriptions() {
+    return this.backoffice.listSubscriptions();
+  }
+
   @Get('tenants')
   tenants() {
     return this.backoffice.listTenants();

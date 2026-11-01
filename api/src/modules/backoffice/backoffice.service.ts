@@ -22,13 +22,17 @@ import { ChatMessage } from '../chatbot/entities/chat-message.entity';
 import { KnowledgeDocument } from '../chatbot/entities/knowledge-document.entity';
 import { KnowledgeChunk } from '../chatbot/entities/knowledge-chunk.entity';
 import { ChatbotApiKey } from '../chatbot/entities/chatbot-api-key.entity';
-import { IsNull, MoreThanOrEqual } from 'typeorm';
+import { In, IsNull, MoreThanOrEqual } from 'typeorm';
 import { MediaAssets } from '../content_items/entities/media_assets.entity';
 import { PlansService } from '../subscriptions/plans.service';
 import { UpdatePlansDto } from '../subscriptions/dto/update-plans.dto';
 import { RefundRequests } from '../payments/entities/refund_requests.entity';
 import { PaymentsService } from '../payments/payments.service';
 import { CronMonitorService } from './cron-monitor.service';
+import {
+  buildSubscriptionReport,
+  monthlyRecurringRevenue,
+} from './subscription-report.util';
 
 @Injectable()
 export class BackofficeService {
@@ -164,14 +168,15 @@ export class BackofficeService {
         .getRawMany<{ status: string; count: string }>(),
     ]);
 
-    const completedDeposits = deposits.filter(
-      (d) => d.status === 'completed' || d.status === 'COMPLETED',
+    const mrrEstimate = monthlyRecurringRevenue(subs, (plan) =>
+      this.planMrr(plan),
     );
-    const mrrEstimate = subs.reduce((sum, s) => sum + this.planMrr(s.plan), 0);
-    const revenueTotal = completedDeposits.reduce(
-      (sum, d) => sum + parseFloat(d.amount ?? '0'),
-      0,
-    );
+    const revenue = await this.depositsRepo
+      .createQueryBuilder('d')
+      .select("COALESCE(SUM(CAST(NULLIF(d.amount, '') AS NUMERIC)), 0)", 'total')
+      .where("LOWER(d.status) = 'completed'")
+      .getRawOne<{ total: string }>();
+    const revenueTotal = parseFloat(revenue?.total ?? '0');
 
     const planDistribution: Record<string, number> = {};
     for (const s of subs) {
@@ -186,6 +191,15 @@ export class BackofficeService {
       aiByFunction[row.functionName] =
         (aiByFunction[row.functionName] ?? 0) + tokens;
     }
+
+    const latestDeposits = deposits.slice(0, 10);
+    const depositTenants = await this.tenantsRepo.find({
+      where: { id: In(latestDeposits.map((d) => d.tenantId)) },
+      select: ['id', 'name'],
+    });
+    const depositTenantNames = new Map(
+      depositTenants.map((t) => [t.id, t.name]),
+    );
 
     const recentTenants = await this.tenantsRepo.find({
       order: { created_at: 'DESC' },
@@ -267,9 +281,10 @@ export class BackofficeService {
         month: r.month,
         count: parseInt(r.count, 10),
       })),
-      recentDeposits: deposits.slice(0, 10).map((d) => ({
+      recentDeposits: latestDeposits.map((d) => ({
         id: d.id,
         tenantId: d.tenantId,
+        tenantName: depositTenantNames.get(d.tenantId),
         plan: d.plan,
         status: d.status,
         amount: d.amount,
@@ -403,6 +418,14 @@ export class BackofficeService {
       storageUsedBytes: storageMap.get(t.id) ?? 0,
       createdAt: t.created_at,
     }));
+  }
+
+  async listSubscriptions() {
+    const [tenants, subs] = await Promise.all([
+      this.tenantsRepo.find({ relations: ['owner'] }),
+      this.subsRepo.find(),
+    ]);
+    return buildSubscriptionReport(tenants, subs, (plan) => this.planMrr(plan));
   }
 
   async getTenantDetail(tenantId: string) {
@@ -542,7 +565,8 @@ export class BackofficeService {
   }
 
   async updatePlans(dto: UpdatePlansDto) {
-    return this.plans.updatePlans(dto);
+    await this.plans.updatePlans(dto);
+    return this.getPlans();
   }
 
   async listRefunds() {

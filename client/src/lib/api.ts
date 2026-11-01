@@ -689,6 +689,7 @@ export const backofficeApi = {
             aiByFunction: Record<string, number>;
             tenantGrowth: Array<{ month: string; count: number }>;
             recentDeposits: Array<{
+                tenantName?: string;
                 id: string;
                 tenantId: string;
                 plan?: string;
@@ -806,6 +807,24 @@ export const backofficeApi = {
                 createdAt: string;
             }>;
         }>(`/api/v1/backoffice/tenants/${id}`),
+
+    listSubscriptions: () =>
+        request<{
+            summary: { paying: number; pastDue: number; expiringSoon: number; mrrZmw: number };
+            rows: Array<{
+                tenantId: string;
+                tenantName: string;
+                ownerEmail?: string;
+                plan: string;
+                status: string;
+                monthlyPriceZmw: number;
+                billingPeriodEnd: string | null;
+                autoRenewEnabled: boolean;
+                renewalAttempts: number;
+                lastRenewalAttemptAt: string | null;
+                expiringSoon: boolean;
+            }>;
+        }>('/api/v1/backoffice/subscriptions'),
 
     getPlans: () => request<PublicPlan[]>('/api/v1/backoffice/plans'),
 

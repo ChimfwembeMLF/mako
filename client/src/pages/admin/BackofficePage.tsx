@@ -16,6 +16,7 @@ import {
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { backofficeApi } from '@/lib/api';
 import { BackofficePlansTab } from './BackofficePlansTab';
+import { BackofficeSubscriptionsTab } from './BackofficeSubscriptionsTab';
 import { PlatformIntegrationsForm } from '@/components/admin/PlatformIntegrationsForm';
 
 type Overview = Awaited<ReturnType<typeof backofficeApi.getOverview>>;
@@ -342,6 +343,7 @@ function BackofficeContent() {
         <TabsList className="flex flex-wrap h-auto gap-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="tenants">Tenants ({stats.tenants})</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="ai">AI Usage</TabsTrigger>
@@ -462,6 +464,10 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="subscriptions" className="mt-6">
+          <BackofficeSubscriptionsTab onOpenTenant={openTenant} />
+        </TabsContent>
+
         <TabsContent value="revenue" className="space-y-6 mt-6">
           <div className="grid sm:grid-cols-2 gap-4">
             <StatCard label="Total revenue (deposits)" value={`ZMW ${stats.revenueTotalZmw.toFixed(0)}`} icon={CreditCard} />
@@ -486,7 +492,7 @@ function BackofficeContent() {
               ) : (
                 recentDeposits.map((d) => (
                   <div key={d.id} className="flex justify-between text-sm py-2 border-b last:border-0">
-                    <span>{d.plan ?? '—'} · {d.amount} {d.currency}</span>
+                    <span>{d.tenantName ?? 'Unknown tenant'} · {d.plan ?? '—'} · {d.amount} {d.currency}</span>
                     <Badge variant={d.status === 'completed' ? 'default' : 'secondary'}>{d.status}</Badge>
                   </div>
                 ))
