@@ -17,6 +17,7 @@ import { GmailClientService } from './gmail-client.service';
 import { GmailConnectService } from './gmail-connect.service';
 import { GmailInboxSyncService } from './gmail-inbox-sync.service';
 import { MailInboxMessagesService } from './mail-inbox-messages.service';
+import { mailFromAddress, mailTransportOptions } from './mail-transport.util';
 import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
 
@@ -38,17 +39,9 @@ import { MailService } from './mail.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        transport: {
-          host: config.get<string>('MAIL_HOST', 'smtp.mailgun.org'),
-          port: config.get<number>('MAIL_PORT', 587),
-          secure: false,
-          auth: {
-            user: config.get<string>('MAIL_USERNAME'),
-            pass: config.get<string>('MAIL_PASSWORD'),
-          },
-        },
+        transport: mailTransportOptions(config),
         defaults: {
-          from: config.get<string>('MAIL_FROM', 'noreply@brandpilot.app'),
+          from: mailFromAddress(config) ?? 'noreply@brandpilot.app',
         },
       }),
     }),

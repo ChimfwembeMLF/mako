@@ -104,7 +104,7 @@ export default function ExportPage() {
       const date = format(new Date(), 'yyyy-MM-dd');
 
       if (key === 'leads') {
-        const all = await leadsApi.findAll();
+        const all = await leadsApi.findAll(tenant.id);
         const list = (Array.isArray(all) ? all : []).filter(
           (r: Record<string, unknown>) => r.tenantId === tenant.id,
         );
@@ -114,7 +114,7 @@ export default function ExportPage() {
           status: r.status, created_at: r.created_at,
         }));
       } else if (key === 'content') {
-        const all = await contentItemsApi.findAll();
+        const all = await contentItemsApi.findAll(tenant.id);
         const list = (Array.isArray(all) ? all : []).filter(
           (r: Record<string, unknown>) => r.tenantId === tenant.id,
         );

@@ -56,6 +56,13 @@ export class RbacService {
     return Boolean(member) || this.isSuperAdmin(userId);
   }
 
+  async memberTenantIds(userId: string): Promise<string[]> {
+    const memberships = await this.membersRepo.find({
+      where: { userId, isActive: true },
+    });
+    return memberships.map((m) => m.tenantId);
+  }
+
   async sharesTenant(userId: string, otherUserId: string): Promise<boolean> {
     const memberships = await this.membersRepo.find({
       where: { userId, isActive: true },

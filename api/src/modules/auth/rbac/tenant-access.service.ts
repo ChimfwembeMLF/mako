@@ -33,6 +33,10 @@ export class TenantAccessService {
     }
   }
 
+  memberTenantIds(userId: string): Promise<string[]> {
+    return this.rbac.memberTenantIds(userId);
+  }
+
   async isSuperAdmin(userId: string): Promise<boolean> {
     return this.rbac.isSuperAdmin(userId);
   }

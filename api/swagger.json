@@ -2547,7 +2547,7 @@
         ]
       },
       "get": {
-        "operationId": "WorkspacesController_findAll",
+        "operationId": "WorkspacesController_list",
         "parameters": [
           {
             "name": "tenantId",
@@ -7197,6 +7197,42 @@
         ],
         "responses": {
           "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Content Campaigns"
+        ]
+      }
+    },
+    "/api/v1/content-campaigns/{id}/approve": {
+      "post": {
+        "operationId": "ContentCampaignsController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
             "description": ""
           }
         },

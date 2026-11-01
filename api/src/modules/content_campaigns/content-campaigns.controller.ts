@@ -1,3 +1,4 @@
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import {
   Body,
   Controller,
@@ -23,7 +24,10 @@ interface JwtUser {
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class ContentCampaignsController {
-  constructor(private readonly campaigns: GenerateCampaignService) {}
+  constructor(
+    private readonly campaigns: GenerateCampaignService,
+    private readonly access: TenantAccessService,
+  ) {}
 
   @Post('generate')
   generate(@Req() req: { user: JwtUser }, @Body() dto: GenerateCampaignDto) {
@@ -51,6 +55,16 @@ export class ContentCampaignsController {
   @Get(':id')
   getOne(@Param('id') id: string, @Query('tenantId') tenantId: string) {
     return this.campaigns.findOne(id, tenantId);
+  }
+
+  @Post(':id/approve')
+  async approve(
+    @Req() req: { user: JwtUser },
+    @Param('id') id: string,
+    @Query('tenantId') tenantId: string,
+  ) {
+    await this.access.assertMember(String(req.user.sub), tenantId, 'content.approve');
+    return this.campaigns.approve(id, tenantId);
   }
 
   @Delete(':id')

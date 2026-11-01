@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
+import { mailFromAddress } from './mail-transport.util';
 
 @Injectable()
 export class MailService {
@@ -49,7 +50,7 @@ export class MailService {
       return;
     }
 
-    const from = this.config.get<string>('MAIL_FROM');
+    const from = mailFromAddress(this.config);
     await this.mailer.sendMail({
       to,
       from,
@@ -88,7 +89,7 @@ export class MailService {
       return;
     }
 
-    const from = this.config.get<string>('MAIL_FROM');
+    const from = mailFromAddress(this.config);
     await this.mailer.sendMail({
       to,
       from,
@@ -115,7 +116,7 @@ export class MailService {
       this.logger.warn(`Mail not configured — would send to ${to}: ${subject}`);
       return;
     }
-    const from = this.config.get<string>('MAIL_FROM');
+    const from = mailFromAddress(this.config);
     await this.mailer.sendMail({
       to,
       from,

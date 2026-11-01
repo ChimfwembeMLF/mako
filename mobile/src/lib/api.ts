@@ -721,6 +721,11 @@ export const api = {
   getTemplate: (id: string, tenantId: string) =>
     fetchWithAuth(`/api/v1/templates/${id}${withScope({ tenantId })}`),
 
+  approveCampaign: (id: string, tenantId: string): Promise<{ approved: number; shiftedDays: number }> =>
+    fetchWithAuth(`/api/v1/content-campaigns/${id}/approve${withScope({ tenantId })}`, {
+      method: 'POST',
+    }),
+
   listCampaigns: async (tenantId: string, workspaceId?: string): Promise<ContentCampaign[]> => {
     const data = await fetchWithAuth(
       `/api/v1/content-campaigns${withScope({ tenantId, workspaceId })}`,

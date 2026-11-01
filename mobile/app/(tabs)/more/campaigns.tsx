@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type ContentCampaign } from '../../../src/lib/api';
 import { PLATFORMS } from '../../../src/constants/platforms';
 import { useWorkspace } from '../../../src/context/WorkspaceContext';
+import { useEffectivePermissions } from '../../../src/hooks/useEffectivePermissions';
 import { useTheme } from '../../../src/context/ThemeContext';
 import { fonts, rounded, spacing, typography } from '../../../src/theme';
 import {
@@ -38,6 +39,7 @@ export default function CampaignsScreen() {
   const { colors } = useTheme();
   const toast = useToast();
   const router = useRouter();
+  const perms = useEffectivePermissions();
   const queryClient = useQueryClient();
   const { activeWorkspace, tenantId } = useWorkspace();
   const effectiveTenant = tenantId || activeWorkspace?.tenantId;
@@ -80,10 +82,27 @@ export default function CampaignsScreen() {
     },
     onSuccess: (result) => {
       const count = result.posts?.length ?? 0;
-      toast.success(`Campaign generated — ${count} posts scheduled`);
+      toast.success(`${count} drafts ready — review them, then approve`);
       setTheme('');
       setGoal('');
       setName('');
+      void queryClient.invalidateQueries({ queryKey: ['campaigns', effectiveTenant, workspaceId] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const approve = useMutation({
+    mutationFn: (id: string) => {
+      if (!effectiveTenant) throw new Error('No workspace');
+      return api.approveCampaign(id, effectiveTenant);
+    },
+    onSuccess: ({ approved, shiftedDays }) => {
+      toast.success(
+        shiftedDays
+          ? `${approved} posts scheduled, moved forward ${shiftedDays} days`
+          : `${approved} posts scheduled`,
+      );
+      setSelectedId(null);
       void queryClient.invalidateQueries({ queryKey: ['campaigns', effectiveTenant, workspaceId] });
     },
     onError: (e: Error) => toast.error(e.message),
@@ -113,6 +132,7 @@ export default function CampaignsScreen() {
 
   const campaign = detail?.campaign;
   const posts = detail?.posts ?? [];
+  const needsReview = campaign?.status === 'review';
 
   return (
     <Screen scroll={false}>
@@ -229,7 +249,12 @@ export default function CampaignsScreen() {
                 {item.name || 'Campaign'}
               </Text>
               <View style={styles.badges}>
-                {item.status ? <Badge label={item.status} tone="muted" /> : null}
+                {item.status ? (
+                  <Badge
+                    label={item.status === 'review' ? 'Needs review' : item.status}
+                    tone={item.status === 'review' ? 'warning' : 'muted'}
+                  />
+                ) : null}
                 {item.postCount != null ? (
                   <Badge label={`${item.postCount} posts`} tone="muted" />
                 ) : null}
@@ -284,7 +309,7 @@ export default function CampaignsScreen() {
             ) : null}
 
             <Text style={[styles.postsHeading, { color: colors.ink, fontFamily: fonts.bodySemi }]}>
-              Scheduled posts ({posts.length})
+              {needsReview ? 'Drafts to review' : 'Scheduled posts'} ({posts.length})
             </Text>
             {posts.length === 0 ? (
               <Text style={[styles.detailMeta, { color: colors.mute }]}>No posts found.</Text>
@@ -292,8 +317,14 @@ export default function CampaignsScreen() {
               posts.map((post, index) => {
                 const platform = Array.isArray(post.platforms) ? post.platforms[0] : undefined;
                 return (
-                  <View
+                  <Pressable
                     key={post.id || String(index)}
+                    disabled={!post.id}
+                    onPress={() => {
+                      setSelectedId(null);
+                      router.push(`/content/${post.id}` as any);
+                    }}
+                    accessibilityRole="button"
                     style={[styles.postCard, { borderColor: colors.border, backgroundColor: colors['canvas-soft'] }]}
                   >
                     <Text style={[styles.postTitle, { color: colors.ink, fontFamily: fonts.bodySemi }]}>
@@ -311,20 +342,36 @@ export default function CampaignsScreen() {
                         {stripHtml(String(post.content))}
                       </Text>
                     ) : null}
-                  </View>
+                  </Pressable>
                 );
               })
             )}
 
-            <Button
-              label="View in Schedule"
-              variant="outline"
-              onPress={() => {
-                setSelectedId(null);
-                router.push('/(tabs)/schedule' as any);
-              }}
-              style={styles.sheetBtn}
-            />
+            {needsReview ? (
+              <>
+                <Text style={[styles.detailMeta, { color: colors.mute, fontFamily: fonts.body }]}>
+                  Nothing goes out until this campaign is approved. Tap a post to edit it.
+                </Text>
+                {perms.can('content.approve') ? (
+                  <Button
+                    label="Approve and schedule"
+                    loading={approve.isPending}
+                    onPress={() => selectedId && void approve.mutate(selectedId)}
+                    style={styles.sheetBtn}
+                  />
+                ) : null}
+              </>
+            ) : (
+              <Button
+                label="View in Schedule"
+                variant="outline"
+                onPress={() => {
+                  setSelectedId(null);
+                  router.push('/(tabs)/schedule' as any);
+                }}
+                style={styles.sheetBtn}
+              />
+            )}
             <Button
               label="Delete campaign"
               variant="ghost"

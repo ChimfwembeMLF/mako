@@ -1,4 +1,8 @@
 import {
+  MAX_CAMPAIGN_POSTS,
+  MIN_CAMPAIGN_POSTS,
+} from '../services/generate-campaign.service';
+import {
   IsArray,
   IsInt,
   IsOptional,
@@ -33,8 +37,8 @@ export class GenerateCampaignDto {
 
   @IsOptional()
   @IsInt()
-  @Min(3)
-  @Max(14)
+  @Min(MIN_CAMPAIGN_POSTS)
+  @Max(MAX_CAMPAIGN_POSTS)
   postCount?: number;
 
   /** ISO date YYYY-MM-DD */

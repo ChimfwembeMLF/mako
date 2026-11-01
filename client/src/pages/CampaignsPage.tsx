@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { confirmModal } from '@/components/ConfirmModal';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,15 +33,21 @@ interface Campaign {
   created_at: string;
 }
 
-function CampaignCard({
+const STATUS_LABELS: Record<string, string> = { review: 'Needs review', active: 'Scheduled' };
+
+export function CampaignCard({
   campaign,
   tenantId,
-  onDeleted,
+  onChanged,
 }: {
   campaign: Campaign;
   tenantId: string;
-  onDeleted: () => void;
+  onChanged: () => void;
 }) {
+  const needsReview = campaign.status === 'review';
+  const { can, isSuperAdmin } = usePermissions();
+  const canApprove = isSuperAdmin || can('content.approve');
+  const [approving, setApproving] = useState(false);
   const [open, setOpen] = useState(false);
   const [posts, setPosts] = useState<Record<string, unknown>[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(false);
@@ -63,7 +71,7 @@ function CampaignCard({
     try {
       await contentCampaignsApi.remove(campaign.id, tenantId);
       toast({ title: 'Campaign deleted' });
-      onDeleted();
+      onChanged();
     } catch (e: unknown) {
       toast({
         title: 'Delete failed',
@@ -73,13 +81,43 @@ function CampaignCard({
     }
   }
 
+  async function handleApprove() {
+    const confirmed = await confirmModal(
+      `Mako will publish these ${campaign.postCount} posts automatically on their dates. Any post you've edited stays as you left it.`,
+      'Approve and schedule?',
+      'Approve and schedule',
+    );
+    if (!confirmed) return;
+    setApproving(true);
+    try {
+      const { approved, shiftedDays } = await contentCampaignsApi.approve(campaign.id, tenantId);
+      toast({
+        title: `${approved} posts scheduled`,
+        description: shiftedDays
+          ? `The start date had passed, so the series moved forward ${shiftedDays} days.`
+          : undefined,
+      });
+      onChanged();
+    } catch (e: unknown) {
+      toast({
+        title: "Couldn't approve this campaign",
+        description: e instanceof Error ? e.message : String(e),
+        variant: 'destructive',
+      });
+    } finally {
+      setApproving(false);
+    }
+  }
+
   return (
     <div className="rounded-xl border bg-card overflow-hidden">
       <div className="p-4 flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-sm">{campaign.name}</h3>
-            <Badge variant="secondary" className="text-[10px] capitalize">{campaign.status}</Badge>
+            <Badge variant={needsReview ? 'default' : 'secondary'} className="text-[10px] capitalize">
+              {STATUS_LABELS[campaign.status] ?? campaign.status}
+            </Badge>
             <Badge variant="outline" className="text-[10px]">{campaign.postCount} posts</Badge>
           </div>
           {campaign.theme && (
@@ -148,15 +186,35 @@ function CampaignCard({
                     className="text-xs text-muted-foreground line-clamp-2 prose prose-sm max-w-none"
                     dangerouslySetInnerHTML={{ __html: sanitizeHtml(String(p.content ?? '')) }}
                   />
+                  {p.status === 'draft' && (
+                    <Link to={`/content/edit/${String(p.id)}`} className="mt-2 inline-block text-xs font-medium text-primary hover:underline">
+                      Edit post
+                    </Link>
+                  )}
                 </div>
               );
             })
           )}
-          <Button asChild variant="outline" size="sm" className="w-full mt-2">
-            <Link to="/scheduler">
-              View in Scheduler <ArrowRight className="h-3.5 w-3.5 ml-1" />
-            </Link>
-          </Button>
+          {needsReview ? (
+            <>
+              <p className="text-xs text-muted-foreground pt-1">
+                Nothing goes out until this campaign is approved.
+                {!canApprove && ' Ask someone with approval access to approve it.'}
+              </p>
+              {canApprove && (
+                <Button size="sm" className="w-full" disabled={approving} onClick={() => void handleApprove()}>
+                  {approving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                  Approve and schedule
+                </Button>
+              )}
+            </>
+          ) : (
+            <Button asChild variant="outline" size="sm" className="w-full mt-2">
+              <Link to="/scheduler">
+                View in Schedule <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Link>
+            </Button>
+          )}
         </div>
       )}
     </div>
@@ -242,7 +300,7 @@ export default function CampaignsPage() {
       });
       toast({
         title: 'Campaign generated!',
-        description: `${result.posts?.length ?? 0} posts scheduled. Review them in the Scheduler.`,
+        description: `${result.posts?.length ?? 0} drafts are ready. Review them below, then approve to schedule.`,
       });
       setTheme('');
       setGoal('');
@@ -332,12 +390,13 @@ export default function CampaignsPage() {
                 <Label>Number of posts</Label>
                 <Input 
                   type="number" 
-                  min="1" 
+                  min="3" 
                   max="50" 
                   value={postCount} 
                   onChange={(e) => setPostCount(e.target.value)} 
                   placeholder="e.g. 7" 
                 />
+                <p className="text-xs text-muted-foreground">One post per day, from 3 to 50 posts.</p>
               </div>
               <div className="space-y-2">
                 <Label>Start date</Label>
@@ -385,7 +444,7 @@ export default function CampaignsPage() {
                   key={c.id}
                   campaign={c}
                   tenantId={tenant!.id}
-                  onDeleted={loadCampaigns}
+                  onChanged={loadCampaigns}
                 />
               ))}
             </div>

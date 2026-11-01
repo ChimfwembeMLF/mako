@@ -1,3 +1,4 @@
+import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
 import {
   Controller,
   Get,
@@ -24,7 +25,7 @@ export class SystemSettingsController {
     return this.service.getTheme();
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
   @Get('integrations')
   async getIntegrations() {
     const keys = await this.integrations.getAllIntegrations();
@@ -36,32 +37,32 @@ export class SystemSettingsController {
     return masked;
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
   @Put('integrations')
   async updateIntegrations(@Body() body: Record<string, string>) {
     await this.integrations.saveIntegrations(body);
     return { ok: true };
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
   @Get()
   findAll() {
     return this.service.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
   @Get(':key')
   findOne(@Param('key') key: string) {
     return this.service.findOne(key);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
   @Put(':key')
   upsert(@Param('key') key: string, @Body() dto: SystemSettingsUpsertDto) {
     return this.service.upsert(key, dto);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
   @Delete(':key')
   remove(@Param('key') key: string) {
     return this.service.remove(key);

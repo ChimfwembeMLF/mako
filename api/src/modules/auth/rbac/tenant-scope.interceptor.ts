@@ -59,6 +59,14 @@ export class TenantScopeInterceptor implements NestInterceptor {
     );
     if (resource) tenantIds.add(await this.resourceTenant(resource, req.params));
 
+    // Without a tenant these list every tenant's records.
+    const named = [...tenantIds].some(Boolean);
+    if (resource && !named && context.getHandler().name === 'findAll') {
+      if (!(await this.rbac.isSuperAdmin(userId))) {
+        throw new ForbiddenException('tenantId is required');
+      }
+    }
+
     for (const tenantId of tenantIds) {
       if (typeof tenantId !== 'string' || !tenantId) continue;
       if (!isUUID(tenantId) || !(await this.rbac.canAccessTenant(userId, tenantId))) {

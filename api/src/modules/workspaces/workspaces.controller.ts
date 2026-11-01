@@ -1,3 +1,4 @@
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
@@ -30,7 +31,10 @@ interface JwtUser {
 @TenantResource(Workspaces)
 @Controller('api/v1/workspaces')
 export class WorkspacesController {
-  constructor(private readonly service: WorkspacesService) {}
+  constructor(
+    private readonly service: WorkspacesService,
+    private readonly access: TenantAccessService,
+  ) {}
 
   @Post()
   create(
@@ -41,8 +45,12 @@ export class WorkspacesController {
   }
 
   @Get()
-  findAll(@Query('tenantId') tenantId?: string): Promise<Workspaces[]> {
-    return this.service.findAll(tenantId);
+  async list(
+    @Req() req: { user: { sub: string } },
+    @Query('tenantId') tenantId?: string,
+  ): Promise<Workspaces[]> {
+    if (tenantId) return this.service.findAll(tenantId);
+    return this.service.findForTenants(await this.access.memberTenantIds(req.user.sub));
   }
 
   @Get(':id')

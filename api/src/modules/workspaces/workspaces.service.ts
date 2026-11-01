@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { Workspaces } from './entities/workspaces.entity';
 import { WorkspaceAutomationConfig } from './entities/workspace-automation-config.entity';
 import { WorkspacesCreateDto } from './dto/create-workspaces.dto';
@@ -45,6 +45,14 @@ export class WorkspacesService {
       });
     }
     return this.repo.find();
+  }
+
+  async findForTenants(tenantIds: string[]): Promise<Workspaces[]> {
+    if (!tenantIds.length) return [];
+    return this.repo.find({
+      where: { tenantId: In(tenantIds) },
+      order: { created_at: 'ASC' },
+    });
   }
 
   async findOne(id: string): Promise<Workspaces> {

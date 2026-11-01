@@ -7,14 +7,22 @@ jest.mock('./rbac.service', () => ({ RbacService: class {} }));
 const mine = '11111111-1111-4111-8111-111111111111';
 const other = '22222222-2222-4222-8222-222222222222';
 
-const run = (req: Record<string, unknown>, resource?: unknown, record?: unknown) => {
-  const rbac = { canAccessTenant: jest.fn(async (_u: string, t: string) => t === mine) };
+const run = (
+  req: Record<string, unknown>,
+  resource?: unknown,
+  record?: unknown,
+  { handler = 'findOne', superAdmin = false } = {},
+) => {
+  const rbac = {
+    canAccessTenant: jest.fn(async (_u: string, t: string) => t === mine),
+    isSuperAdmin: jest.fn(async () => superAdmin),
+  };
   const reflector = { getAllAndOverride: jest.fn(() => resource) };
   const findOne = jest.fn().mockResolvedValue(record);
   const dataSource = { getRepository: () => ({ findOne }) };
   const next = { handle: jest.fn(() => of('ok')) };
   const context = {
-    getHandler: () => undefined,
+    getHandler: () => ({ name: handler }),
     getClass: () => undefined,
     getType: () => 'http',
     switchToHttp: () => ({ getRequest: () => req }),
@@ -96,6 +104,31 @@ describe('TenantScopeInterceptor', () => {
       );
       await result;
       expect(findOne).toHaveBeenCalledWith({ where: { depositId: id } });
+    });
+  });
+
+  describe('tenant-owned lists', () => {
+    const resource = { entity: class {}, param: 'id', field: 'id' };
+
+    it('refuses a list with no tenant', async () => {
+      const { result, next } = run({ ...user, query: {} }, resource, null, { handler: 'findAll' });
+      await expect(result).rejects.toThrow('tenantId is required');
+      expect(next.handle).not.toHaveBeenCalled();
+    });
+
+    it('allows the list for your tenant', async () => {
+      const req = { ...user, query: { tenantId: mine } };
+      await expect(run(req, resource, null, { handler: 'findAll' }).result).resolves.toBe('ok');
+    });
+
+    it('lets a platform admin list everything', async () => {
+      await expect(
+        run({ ...user, query: {} }, resource, null, { handler: 'findAll', superAdmin: true }).result,
+      ).resolves.toBe('ok');
+    });
+
+    it('leaves other routes on the controller alone', async () => {
+      await expect(run({ ...user, query: {} }, resource, null, { handler: 'stats' }).result).resolves.toBe('ok');
     });
   });
 

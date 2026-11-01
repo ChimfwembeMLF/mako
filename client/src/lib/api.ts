@@ -1329,6 +1329,12 @@ export const contentCampaignsApi = {
             `/api/v1/content-campaigns/${id}?tenantId=${tenantId}`,
         ),
 
+    approve: (id: string, tenantId: string) =>
+        request<{ approved: number; shiftedDays: number }>(
+            `/api/v1/content-campaigns/${id}/approve?tenantId=${tenantId}`,
+            { method: 'POST' },
+        ),
+
     remove: (id: string, tenantId: string) =>
         request<{ deleted: boolean }>(`/api/v1/content-campaigns/${id}?tenantId=${tenantId}`, {
             method: 'DELETE',
