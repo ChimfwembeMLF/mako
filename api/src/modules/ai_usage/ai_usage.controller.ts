@@ -1,3 +1,6 @@
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
 import {
   Controller,
   Get,
@@ -12,6 +15,7 @@ import { AiUsage } from './entities/ai_usage.entity';
 import { AiUsageCreateDto } from './dto/create-ai_usage.dto';
 import { AiUsageUpdateDto } from './dto/update-ai_usage.dto';
 
+@UseGuards(JwtAuthGuard, PlatformAdminGuard)
 @Controller('api/v1/ai-usage')
 export class AiUsageController {
   constructor(private readonly service: AiUsageService) {}

@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -36,6 +37,7 @@ interface JwtUser {
 import { TenantsService } from '../tenants/tenants.service';
 
 @ApiTags('Leads')
+@TenantResource(Leads)
 @Controller('api/v1/leads')
 export class LeadsController {
   constructor(

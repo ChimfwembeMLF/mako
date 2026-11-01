@@ -24,7 +24,7 @@ type DashboardModule = {
 
 const modules: DashboardModule[] = [
   {
-    title: "Brand Brain",
+    title: "Brand voice",
     description: "Define your company identity, audience, and voice",
     icon: Brain,
     href: "/brand-brain",
@@ -32,7 +32,7 @@ const modules: DashboardModule[] = [
     status: "Setup required",
   },
   {
-    title: "Content Engine",
+    title: "Posts",
     description: "Auto-generate posts, emails, and ad copy",
     icon: Pen,
     href: "/content",
@@ -40,7 +40,7 @@ const modules: DashboardModule[] = [
     status: "Ready",
   },
   {
-    title: "Scheduler",
+    title: "Schedule",
     description: "Plan and publish across all channels",
     icon: CalendarClock,
     href: "/scheduler",
@@ -48,7 +48,7 @@ const modules: DashboardModule[] = [
     status: "Ready",
   },
   {
-    title: "Connections",
+    title: "Social accounts",
     description: "Link social and ad accounts via OAuth",
     icon: Link2,
     href: "/publisher",
@@ -81,7 +81,7 @@ const modules: DashboardModule[] = [
   },
   {
     title: "Chatbot",
-    description: "Brand Brain–powered assistant with document knowledge",
+    description: "Brand voice–powered assistant with document knowledge",
     icon: Bot,
     href: "/chatbot",
     gradient: "bg-surface-strong text-foreground",
@@ -153,7 +153,7 @@ const Dashboard = () => {
             Welcome to Mako 
           </h1>
           <p className="text-primary-foreground/70 max-w-lg">
-            Your autonomous marketing engine. Set up your Brand Brain first, then let AI handle content, publishing, leads, and optimization.
+            Your autonomous marketing engine. Set up your Brand voice first, then let AI handle content, publishing, leads, and optimization.
           </p>
         </div>
         <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-primary-foreground/10 blur-2xl" />

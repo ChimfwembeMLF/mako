@@ -218,7 +218,7 @@ const Analytics = () => {
       s.push({ title: "Follow up on hot leads", description: `You have ${leadStats.hot} hot leads. Prioritize outreach to convert them into customers.`, trend: "up" });
     }
     if (contentStats.total === 0) {
-      s.push({ title: "Start generating content", description: "Head to the Content Engine and create your first piece of AI-powered marketing content.", trend: "up" });
+      s.push({ title: "Start generating content", description: "Head to the Posts and create your first piece of AI-powered marketing content.", trend: "up" });
     }
     if (s.length === 0) {
       s.push({ title: "Keep up the momentum", description: "Your content strategy is on track. Consider scheduling content for consistent publishing.", trend: "up" });
@@ -399,7 +399,7 @@ const Analytics = () => {
           {contentStats.total === 0 && channelBreakdown.length === 0 && (
             <Card className="border-border/50">
               <CardContent className="p-8 text-center text-muted-foreground">
-                No data yet. Generate some content in the Content Engine to see your analytics here.
+                No data yet. Generate some content in the Posts to see your analytics here.
               </CardContent>
             </Card>
           )}

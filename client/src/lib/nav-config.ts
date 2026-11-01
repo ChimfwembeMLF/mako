@@ -23,11 +23,11 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     label: "Create",
     items: [
-      { title: "Brand Brain", url: "/brand-brain", icon: Brain, description: "Voice, audience & guidelines", keywords: "brand voice identity audience profile" },
-      { title: "Content Engine", url: "/content", icon: Pen, description: "Write and generate posts", keywords: "create posts generate content write" },
+      { title: "Brand voice", url: "/brand-brain", icon: Brain, description: "Voice, audience & guidelines", keywords: "brand voice identity audience profile" },
+      { title: "Posts", url: "/content", icon: Pen, description: "Write and generate posts", keywords: "create posts generate content write" },
       { title: "Campaigns", url: "/campaigns", icon: Megaphone, description: "Plan multi-post campaigns", keywords: "campaign series posts plan narrative" },
-      { title: "Scheduler", url: "/scheduler", icon: CalendarClock, description: "Calendar, queue & publish", keywords: "schedule publish calendar queue" },
-      { title: "Connections", url: "/publisher", icon: Link2, description: "Link social & ad accounts", keywords: "connect social oauth linkedin meta publisher channels" },
+      { title: "Schedule", url: "/scheduler", icon: CalendarClock, description: "Calendar, queue & publish", keywords: "schedule publish calendar queue" },
+      { title: "Social accounts", url: "/publisher", icon: Link2, description: "Link social & ad accounts", keywords: "connect social oauth linkedin meta publisher channels" },
     ],
   },
   {
@@ -35,7 +35,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { title: "Leads", url: "/leads", icon: MessageSquare, description: "Qualify and respond to inbound leads", keywords: "leads inbox qualify contacts whatsapp lead agent" },
       { title: "Email", url: "/mail", icon: Mail, description: "Gmail inbox, drafts & auto-replies", keywords: "gmail email connect send mail inbox" },
-      { title: "Social Inbox", url: "/replies", icon: MessageSquareReply, description: "Comments, DMs & WhatsApp chats", keywords: "comments auto reply rules inbox replies social" },
+      { title: "Inbox", url: "/replies", icon: MessageSquareReply, description: "Comments, DMs & WhatsApp chats", keywords: "comments auto reply rules inbox replies social" },
       { title: "Chatbot", url: "/chatbot", icon: Bot, description: "AI assistant & embed widget", permission: P.chatbot.view, keywords: "chatbot widget assistant ai" },
       { title: "Chat History", url: "/chatbot/sessions", icon: History, description: "Widget & playground transcripts", permission: P.chatbot.view, keywords: "chat sessions transcripts history conversations log" },
       { title: "Knowledge", url: "/chatbot/knowledge", icon: BookOpen, description: "Documents for chatbot RAG", permission: P.chatbot.view, keywords: "knowledge base documents rag training chatbot" },
@@ -89,17 +89,17 @@ export const SOCIAL_NAV_GROUPS: NavGroup[] = [
   {
     label: "Create",
     items: [
-      { title: "Brand Brain", url: "/brand-brain", icon: Brain, description: "Voice, audience & guidelines", keywords: "brand voice identity audience profile" },
-      { title: "Content Engine", url: "/content", icon: Pen, description: "Write and generate posts", keywords: "create posts generate content write" },
+      { title: "Brand voice", url: "/brand-brain", icon: Brain, description: "Voice, audience & guidelines", keywords: "brand voice identity audience profile" },
+      { title: "Posts", url: "/content", icon: Pen, description: "Write and generate posts", keywords: "create posts generate content write" },
       { title: "Campaigns", url: "/campaigns", icon: Megaphone, description: "Plan multi-post campaigns", keywords: "campaign series posts plan narrative" },
-      { title: "Scheduler", url: "/scheduler", icon: CalendarClock, description: "Calendar, queue & publish", keywords: "schedule publish calendar queue" },
-      { title: "Connections", url: "/publisher", icon: Link2, description: "Link social & ad accounts", keywords: "connect social oauth linkedin meta publisher channels" },
+      { title: "Schedule", url: "/scheduler", icon: CalendarClock, description: "Calendar, queue & publish", keywords: "schedule publish calendar queue" },
+      { title: "Social accounts", url: "/publisher", icon: Link2, description: "Link social & ad accounts", keywords: "connect social oauth linkedin meta publisher channels" },
     ],
   },
   {
     label: "Inbox",
     items: [
-      { title: "Social Inbox", url: "/replies", icon: MessageSquareReply, description: "Comments, DMs & WhatsApp chats", keywords: "comments auto reply rules inbox replies social" },
+      { title: "Inbox", url: "/replies", icon: MessageSquareReply, description: "Comments, DMs & WhatsApp chats", keywords: "comments auto reply rules inbox replies social" },
       { title: "WhatsApp", url: "/whatsapp", icon: MessageCircle, description: "Connect, menu bot, templates & messaging", keywords: "whatsapp connect webhook menu bot flows inbox templates hsm" },
     ],
   },

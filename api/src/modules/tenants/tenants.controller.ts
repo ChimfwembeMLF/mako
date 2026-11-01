@@ -18,7 +18,7 @@ import { TenantsCreateDto } from './dto/create-tenants.dto';
 import { TenantsUpdateDto } from './dto/update-tenants.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { IntegrationProvider } from './entities/tenant-integration-config.entity';
-import { TenantAccessService } from './services/tenant-access.service';
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 
 @ApiTags('Tenants')
 @Controller('api/v1/tenants')

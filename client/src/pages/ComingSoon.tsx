@@ -2,8 +2,8 @@ import { Construction } from "lucide-react";
 import { useLocation } from "react-router-dom";
 
 const titles: Record<string, string> = {
-  "/content": "Content Engine",
-  "/scheduler": "Scheduler",
+  "/content": "Posts",
+  "/scheduler": "Schedule",
   "/leads": "Leads",
   "/analytics": "Analytics & Optimization",
   "/settings": "Settings",
@@ -20,7 +20,7 @@ const ComingSoon = () => {
       </div>
       <h1 className="text-2xl font-bold font-display mb-2">{title}</h1>
       <p className="text-muted-foreground max-w-md">
-        This module is coming soon. Set up your Brand Brain first — it powers everything else.
+        This module is coming soon. Set up your Brand voice first — it powers everything else.
       </p>
     </div>
   );

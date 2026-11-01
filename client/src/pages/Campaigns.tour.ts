@@ -16,7 +16,7 @@ export const campaignsTourConfig: TourConfig = {
       element: '#tour-campaign-generator',
       popover: {
         title: 'Campaign Generator',
-        description: 'Fill in the details for your campaign here. AI will use your Brand Brain to automatically generate a schedule of posts based on your goals.',
+        description: 'Fill in the details for your campaign here. AI will use your Brand voice to automatically generate a schedule of posts based on your goals.',
         side: 'right',
         align: 'start',
       },

@@ -13,7 +13,7 @@ export default function TabLayout() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   // These screens have no tab of their own; they live in the More menu.
-  const inMoreMenu = /^\/(connections|profile)/.test(usePathname());
+  const inMoreMenu = /^\/connections/.test(usePathname());
   const tabLabelStyle = { fontFamily: fonts.bodyMedium, fontSize: 11 };
 
   // The bar stays in layout flow (not absolute) so lists and the inbox composer never sit behind it.
@@ -101,14 +101,6 @@ export default function TabLayout() {
           title: 'Social accounts',
           href: null,
           tabBarIcon: tabIcon('connections'),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          href: null,
-          tabBarIcon: tabIcon('user'),
         }}
       />
     </Tabs>

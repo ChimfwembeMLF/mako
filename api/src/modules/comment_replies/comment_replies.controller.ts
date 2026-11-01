@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -31,6 +32,7 @@ interface JwtUser {
 }
 
 @ApiTags('Comment Replies')
+@TenantResource(CommentReplies)
 @Controller('api/v1/comment-replies')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()

@@ -214,7 +214,7 @@ const ALL_PLATFORM_DEFS: PlatformDef[] = [
   },
 ];
 
-/** Platforms available for publishing in Content Engine */
+/** Platforms available for publishing in Posts */
 export const PLATFORMS: PlatformDef[] = ALL_PLATFORM_DEFS.filter((p) =>
   publishablePlatforms().some((c) => c.id === p.value),
 );

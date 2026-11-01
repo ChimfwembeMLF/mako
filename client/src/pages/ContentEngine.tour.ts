@@ -6,8 +6,8 @@ export const contentEngineTourConfig: TourConfig = {
     {
       element: '#tour-ce-header',
       popover: {
-        title: 'Content Engine',
-        description: 'Welcome to the Content Engine! Here you can automatically generate and schedule your marketing content.',
+        title: 'Posts',
+        description: 'Welcome to the Posts! Here you can automatically generate and schedule your marketing content.',
         side: 'bottom',
         align: 'start',
       },

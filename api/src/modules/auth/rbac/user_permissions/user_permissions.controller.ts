@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
@@ -14,37 +15,66 @@ import { UserPermissionsService } from './user_permissions.service';
 import { UserPermissions } from './entities/user_permissions.entity';
 import { UserPermissionsCreateDto } from './dto/create-user_permissions.dto';
 import { UserPermissionsUpdateDto } from './dto/update-user_permissions.dto';
+import { TenantAccessService } from '../tenant-access.service';
+
+type AuthedRequest = { user: { sub: string } };
+
+const ASSIGN = 'team.assign_permissions';
 
 @UseGuards(JwtAuthGuard)
 @Controller('api/v1/user-permissions')
 export class UserPermissionsController {
-  constructor(private readonly service: UserPermissionsService) {}
+  constructor(
+    private readonly service: UserPermissionsService,
+    private readonly access: TenantAccessService,
+  ) {}
 
   @Post()
-  create(@Body() dto: UserPermissionsCreateDto): Promise<UserPermissions> {
+  async create(
+    @Req() req: AuthedRequest,
+    @Body() dto: UserPermissionsCreateDto,
+  ): Promise<UserPermissions> {
+    await this.access.assertMember(req.user.sub, dto.tenantId, ASSIGN);
+    await this.access.assertCanGrant(req.user.sub, dto.permissionKey);
     return this.service.create(dto);
   }
 
   @Get()
-  findAll(
+  async findAll(
+    @Req() req: AuthedRequest,
     @Query('tenantId') tenantId?: string,
     @Query('userId') userId?: string,
   ): Promise<UserPermissions[]> {
+    if (!tenantId) await this.access.assertSuperAdmin(req.user.sub);
     return this.service.findAll(tenantId, userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string): Promise<UserPermissions> {
-    return this.service.findOne(id);
+  async findOne(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+  ): Promise<UserPermissions> {
+    const entry = await this.service.findOne(id);
+    await this.access.assertMember(req.user.sub, entry.tenantId);
+    return entry;
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UserPermissionsUpdateDto) {
+  async update(
+    @Req() req: AuthedRequest,
+    @Param('id') id: string,
+    @Body() dto: UserPermissionsUpdateDto,
+  ) {
+    const entry = await this.service.findOne(id);
+    await this.access.assertMember(req.user.sub, entry.tenantId, ASSIGN);
+    await this.access.assertCanGrant(req.user.sub, dto.permissionKey);
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async remove(@Req() req: AuthedRequest, @Param('id') id: string) {
+    const entry = await this.service.findOne(id);
+    await this.access.assertMember(req.user.sub, entry.tenantId, ASSIGN);
     return this.service.remove(id);
   }
 }

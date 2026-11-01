@@ -1,3 +1,5 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
+import { ContentItems } from '../content_items/entities/content_items.entity';
 import {
   Body,
   Controller,
@@ -38,6 +40,7 @@ export class ContentPublicationsController {
     return this.service.findPublishedForTenant(tenantId, workspaceId);
   }
 
+  @TenantResource(ContentItems, { param: 'contentId' })
   @Get('content/:contentId')
   findByContent(@Param('contentId') contentId: string) {
     return this.service.findByContentId(contentId);

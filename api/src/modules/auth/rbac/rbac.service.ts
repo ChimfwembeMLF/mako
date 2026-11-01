@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { TenantMembers } from '../../tenant_members/entities/tenant_members.entity';
 import { Roles } from './roles/entities/roles.entity';
 import { RolePermissions } from './role_permissions/entities/role_permissions.entity';
@@ -40,6 +40,35 @@ export class RbacService {
     const role = await this.rolesRepo.findOne({ where: { id: member.roleId } });
     if (!role) return false;
     return requiredRoles.includes(role.name);
+  }
+
+  async isSuperAdmin(userId: string): Promise<boolean> {
+    const profile = await this.profilesRepo.findOne({ where: { userId } });
+    if (profile?.isSystemAdmin === true) return true;
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    return user?.role === RoleType.SUPER_ADMIN;
+  }
+
+  async canAccessTenant(userId: string, tenantId: string): Promise<boolean> {
+    const member = await this.membersRepo.findOne({
+      where: { userId, tenantId, isActive: true },
+    });
+    return Boolean(member) || this.isSuperAdmin(userId);
+  }
+
+  async sharesTenant(userId: string, otherUserId: string): Promise<boolean> {
+    const memberships = await this.membersRepo.find({
+      where: { userId, isActive: true },
+    });
+    if (!memberships.length) return false;
+    const shared = await this.membersRepo.count({
+      where: {
+        userId: otherUserId,
+        isActive: true,
+        tenantId: In(memberships.map((m) => m.tenantId)),
+      },
+    });
+    return shared > 0;
   }
 
   async hasPermission(

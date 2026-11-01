@@ -1,3 +1,6 @@
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
 import {
   Controller,
   Get,
@@ -14,6 +17,7 @@ import { DepositsUpdateDto } from './dto/update-deposits.dto';
 import { ApiTags } from '@nestjs/swagger';
 
 @ApiTags('Deposits')
+@UseGuards(JwtAuthGuard, PlatformAdminGuard)
 @Controller('api/v1/deposits')
 export class DepositsController {
   constructor(private readonly service: DepositsService) {}

@@ -765,6 +765,7 @@ export const backofficeApi = {
                 widgetEnabled: boolean;
                 ragEnabled: boolean;
                 chatSessions: number;
+                storageUsedBytes?: number;
                 createdAt: string;
             }>
         >('/api/v1/backoffice/tenants'),
@@ -825,6 +826,29 @@ export const backofficeApi = {
                 expiringSoon: boolean;
             }>;
         }>('/api/v1/backoffice/subscriptions'),
+
+    listRefunds: () =>
+        request<
+            Array<{
+                id: string;
+                amount: string;
+                reason: string;
+                status: string;
+                adminNotes?: string;
+                created_at: string;
+                tenant?: { name?: string };
+                deposit?: { currency?: string };
+            }>
+        >('/api/v1/backoffice/refunds'),
+
+    approveRefund: (id: string) =>
+        request<unknown>(`/api/v1/backoffice/refunds/${id}/approve`, { method: 'POST' }),
+
+    rejectRefund: (id: string, notes?: string) =>
+        request<unknown>(`/api/v1/backoffice/refunds/${id}/reject`, {
+            method: 'POST',
+            body: JSON.stringify({ notes }),
+        }),
 
     getPlans: () => request<PublicPlan[]>('/api/v1/backoffice/plans'),
 

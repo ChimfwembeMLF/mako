@@ -943,118 +943,6 @@
         ]
       }
     },
-    "/api/v1/rbac/roles/check/{tenantId}/{userId}": {
-      "get": {
-        "operationId": "RbacController_hasRoles",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "userId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "roles",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "Check if user has any of the given roles",
-        "tags": [
-          "RBAC"
-        ]
-      }
-    },
-    "/api/v1/rbac/permissions/check/{tenantId}/{userId}": {
-      "get": {
-        "operationId": "RbacController_hasPermission",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "userId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "permission",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "Check if user has a specific permission",
-        "tags": [
-          "RBAC"
-        ]
-      }
-    },
-    "/api/v1/rbac/effective-permissions/{tenantId}/{userId}": {
-      "get": {
-        "operationId": "RbacController_getEffectivePermissions",
-        "parameters": [
-          {
-            "name": "tenantId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "userId",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "summary": "Get all effective permissions for a user in a tenant",
-        "tags": [
-          "RBAC"
-        ]
-      }
-    },
     "/api/v1/subscriptions/tenant/{tenantId}": {
       "get": {
         "operationId": "SubscriptionsController_getForTenant",
@@ -2988,6 +2876,118 @@
         },
         "tags": [
           "AuditLogs"
+        ]
+      }
+    },
+    "/api/v1/rbac/roles/check/{tenantId}/{userId}": {
+      "get": {
+        "operationId": "RbacController_hasRoles",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "roles",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Check if user has any of the given roles",
+        "tags": [
+          "RBAC"
+        ]
+      }
+    },
+    "/api/v1/rbac/permissions/check/{tenantId}/{userId}": {
+      "get": {
+        "operationId": "RbacController_hasPermission",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "permission",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Check if user has a specific permission",
+        "tags": [
+          "RBAC"
+        ]
+      }
+    },
+    "/api/v1/rbac/effective-permissions/{tenantId}/{userId}": {
+      "get": {
+        "operationId": "RbacController_getEffectivePermissions",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "userId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "summary": "Get all effective permissions for a user in a tenant",
+        "tags": [
+          "RBAC"
         ]
       }
     },

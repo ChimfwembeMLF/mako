@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-/** Legacy route — redirects to inline editor on Content Engine. */
+/** Legacy route — redirects to inline editor on Posts. */
 export default function EditContent() {
   const { id } = useParams();
   const navigate = useNavigate();

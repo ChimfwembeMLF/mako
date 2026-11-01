@@ -157,7 +157,7 @@ export function WhatsappMenuBotPanel({ tenantId, workspaceId, compact }: Props) 
               AI for free-text messages
             </Label>
             <p className="text-[11px] text-muted-foreground mt-0.5">
-              Reply to messages that don&apos;t match a menu option using Brand Brain context.
+              Reply to messages that don&apos;t match a menu option using Brand voice context.
             </p>
           </div>
           <Switch id="wa-flow-ai-fallback" checked={aiFallback} onCheckedChange={setAiFallback} />

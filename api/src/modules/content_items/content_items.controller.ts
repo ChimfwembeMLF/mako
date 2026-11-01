@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -25,6 +26,7 @@ interface JwtUser {
 }
 
 @ApiTags('Content Items')
+@TenantResource(ContentItems)
 @Controller('api/v1/content-items')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()

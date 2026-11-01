@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import {
   Database, Share2, Sparkles, Trash2, UserCircle, MessageSquare, BarChart3,
-  Facebook, Clock,
+  Facebook, Clock, Mail,
 } from 'lucide-react';
 import { LegalCallout, LegalLayout, LegalSection } from './LegalLayout';
 
@@ -10,6 +10,7 @@ const COLLECT_ITEMS = [
   { icon: Sparkles, text: 'Brand profile, content drafts, media, campaigns, and workspace settings you create' },
   { icon: Share2, text: 'OAuth access tokens and account identifiers when you connect Facebook, Instagram, LinkedIn, YouTube, TikTok, or WhatsApp' },
   { icon: MessageSquare, text: 'WhatsApp message content, contacts, and phone numbers when you use inbox, templates, or auto-reply' },
+  { icon: Mail, text: 'Gmail messages and Google account data when you connect Google products, as described below' },
   { icon: BarChart3, text: 'Usage data for AI features, publishing activity, and billing' },
 ];
 
@@ -21,6 +22,14 @@ const META_ITEMS = [
   'Meta ad account IDs, campaign/ad set/ad objects, and performance metrics when you use Ads',
   'WhatsApp Business Account IDs, phone number IDs, message templates, and inbound/outbound message content',
   'Meta Business asset relationships needed to list Pages, ad accounts, and WhatsApp numbers you manage',
+];
+
+const GOOGLE_ITEMS = [
+  'Google sign-in: your name, email address, and profile picture',
+  'Gmail, if you connect it: messages in your inbox are read and stored in your workspace, including sender, subject, and body, so you can view them in Mako. Mako sends replies from your account, either ones you write or AI drafts when you turn on auto-reply',
+  'Google Drive, if you connect it: we list your files so you can choose one, and copy only the files you import into your media library',
+  'YouTube, if you connect it: channel details, videos you upload through Mako, comments, and performance data',
+  'Google Ads, if you connect it: account, campaign, and performance data for the campaigns you manage in Mako',
 ];
 
 const USE_ITEMS = [
@@ -75,6 +84,37 @@ export default function PrivacyPage() {
         </LegalCallout>
       </LegalSection>
 
+      <LegalSection icon={Mail} title="Google user data">
+        <p className="mb-3">
+          When you sign in with Google or connect a Google product, we access only the data needed for
+          the features you choose to use. Depending on the permissions you grant, that may include:
+        </p>
+        <ul className="list-disc space-y-2 pl-5 marker:text-primary/60">
+          {GOOGLE_ITEMS.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="mt-3">
+          If you turn on Gmail auto-reply, the text of incoming messages is sent to the AI provider
+          selected for your workspace to draft a reply. We use Google user data only to provide
+          these user-facing features. We do not sell it, use it for advertising, or use it to train
+          generalized AI or machine learning models.
+        </p>
+        <LegalCallout>
+          Mako's use and transfer of information received from Google APIs to any other app will adhere
+          to the{' '}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
+        </LegalCallout>
+      </LegalSection>
+
       <LegalSection icon={Sparkles} title="How we use data">
         <ul className="list-disc space-y-2 pl-5 marker:text-primary/60">
           {USE_ITEMS.map((item) => (
@@ -93,17 +133,29 @@ export default function PrivacyPage() {
 
       <LegalSection icon={Share2} title="Third parties">
         <p>
-          We integrate with Meta (Facebook, Instagram, WhatsApp), LinkedIn, Google (YouTube), TikTok,
-          Mistral AI, and payment providers to deliver publishing, inbox, ads, analytics, and billing
-          features. Service providers process data only to provide those services under contract.
+          We integrate with Meta (Facebook, Instagram, WhatsApp), LinkedIn, Google (Gmail, Drive,
+          YouTube, Google Ads), TikTok, AI providers (Mistral AI by default, or OpenAI, Google Gemini, or
+          DeepSeek if your workspace chooses them), and payment providers to deliver publishing, inbox,
+          ads, analytics, AI, and billing features. Service providers process data only to provide those
+          services under contract.
         </p>
         <LegalCallout>We do not sell your personal data to advertisers or data brokers.</LegalCallout>
       </LegalSection>
 
       <LegalSection icon={Trash2} title="Deletion & your rights">
         <p>
-          You can disconnect Meta accounts anytime in Connections, remove Mako from your Facebook
-          settings, or request removal of your account and connected social data. Visit our{' '}
+          You can disconnect connected accounts anytime in Mako, remove Mako from your Facebook settings
+          or your{' '}
+          <a
+            href="https://myaccount.google.com/permissions"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-primary hover:underline"
+          >
+            Google Account permissions
+          </a>
+          , or request removal of your account and connected data, including stored Gmail messages.
+          Visit our{' '}
           <Link to="/data-deletion" className="font-medium text-primary hover:underline">
             Data Deletion Instructions
           </Link>{' '}

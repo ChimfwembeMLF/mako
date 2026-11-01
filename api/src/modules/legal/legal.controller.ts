@@ -4,10 +4,13 @@ import {
   Get,
   Post,
   Query,
+  RawBodyRequest,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
+import { isValidHmacSignature } from '../../common/webhook-signature.util';
 import { ApiTags } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { Response, Request } from 'express';
@@ -142,7 +145,25 @@ export class LegalController {
 
   /** Meta webhook events (WhatsApp inbound messages, etc.) */
   @Post('api/v1/webhooks/meta')
-  async metaEvents(@Body() body: unknown) {
+  async metaEvents(
+    @Req() req: RawBodyRequest<Request>,
+    @Body() body: unknown,
+  ) {
+    const secret =
+      this.config.get<string>('FACEBOOK_APP_SECRET') ??
+      this.config.get<string>('META_APP_SECRET') ??
+      '';
+    const signature = req.headers['x-hub-signature-256'];
+    if (
+      !isValidHmacSignature(
+        secret,
+        req.rawBody,
+        Array.isArray(signature) ? signature[0] : signature,
+        'hex',
+      )
+    ) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
     if (this.queueDispatch.isEnabled()) {
       await this.queueDispatch.enqueueWhatsappInbound({ body });
       return { received: true };
@@ -182,7 +203,19 @@ export class LegalController {
 
   /** X Account Activity — real-time events (DMs, mentions, posts) */
   @Post('api/v1/webhooks/x')
-  xWebhookEvents(@Body() body: unknown) {
+  xWebhookEvents(
+    @Req() req: RawBodyRequest<Request>,
+    @Body() body: unknown,
+  ) {
+    const signature = req.headers['x-twitter-webhooks-signature'];
+    if (
+      !this.xWebhook.isValidSignature(
+        req.rawBody,
+        Array.isArray(signature) ? signature[0] : signature,
+      )
+    ) {
+      throw new UnauthorizedException('Invalid webhook signature');
+    }
     return this.xInbound.handleWebhook(body);
   }
 

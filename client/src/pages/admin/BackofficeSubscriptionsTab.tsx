@@ -22,6 +22,40 @@ const STATUS_LABELS: Record<string, string> = { past_due: "Past due", active: "A
 
 const formatDate = (value: string | null) => (value ? new Date(value).toLocaleDateString() : "—");
 
+/** Quotes each cell, and neutralises anything a spreadsheet would run as a formula. */
+export function toCsv(rows: Row[]): string {
+  const cell = (value: unknown) => {
+    const text = String(value ?? "");
+    const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
+  const header = ["Tenant", "Owner", "Plan", "Status", "Monthly ZMW", "Renews or ends", "Auto-renew", "Failed attempts"];
+  const lines = rows.map((r) =>
+    [
+      r.tenantName,
+      r.ownerEmail,
+      r.plan,
+      r.status,
+      r.monthlyPriceZmw,
+      r.billingPeriodEnd?.slice(0, 10),
+      r.autoRenewEnabled ? "On" : "Off",
+      r.renewalAttempts,
+    ]
+      .map(cell)
+      .join(","),
+  );
+  return [header.map(cell).join(","), ...lines].join("\n");
+}
+
+function downloadCsv(rows: Row[]) {
+  const url = URL.createObjectURL(new Blob([toCsv(rows)], { type: "text/csv;charset=utf-8" }));
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "subscriptions.csv";
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <Card>
@@ -90,6 +124,9 @@ export function BackofficeSubscriptionsTab({ onOpenTenant }: { onOpenTenant: (id
                 {f.label}
               </Button>
             ))}
+            <Button size="sm" variant="ghost" disabled={rows.length === 0} onClick={() => downloadCsv(rows)}>
+              Export CSV
+            </Button>
             <Input
               className="sm:max-w-xs sm:ml-auto"
               placeholder="Search tenant or owner email"

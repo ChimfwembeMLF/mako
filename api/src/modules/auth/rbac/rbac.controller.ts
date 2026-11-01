@@ -1,7 +1,10 @@
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { RbacService } from './rbac.service';
 
+@UseGuards(JwtAuthGuard)
 @Controller('api/v1/rbac')
 @ApiTags('RBAC')
 export class RbacController {

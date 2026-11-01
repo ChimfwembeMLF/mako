@@ -99,7 +99,7 @@ export default function WhatsappHubPage() {
         name: contactName.trim() || undefined,
         optedIn: true,
       });
-      toast({ title: 'Contact added', description: 'You can message them from Social Inbox or Leads.' });
+      toast({ title: 'Contact added', description: 'You can message them from Inbox or Leads.' });
       setContactPhone('');
       setContactName('');
     } catch (err: unknown) {
@@ -347,7 +347,7 @@ export default function WhatsappHubPage() {
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <p>
                   <strong>Sending replies</strong> — Free-form text only works within 24 hours after the customer
-                  messages you. Otherwise use an approved template (Social Inbox → WhatsApp tab, or WhatsApp templates).
+                  messages you. Otherwise use an approved template (Inbox → WhatsApp tab, or WhatsApp templates).
                 </p>
               </div>
               <div className="flex gap-2">
@@ -362,7 +362,7 @@ export default function WhatsappHubPage() {
                 <Button asChild variant="outline" size="sm">
                   <Link to="/replies">
                     <MessageSquareReply className="h-4 w-4 mr-1.5" />
-                    Open Social Inbox
+                    Open Inbox
                   </Link>
                 </Button>
                 <Button asChild variant="outline" size="sm">

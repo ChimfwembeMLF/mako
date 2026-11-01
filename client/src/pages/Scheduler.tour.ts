@@ -6,7 +6,7 @@ export const schedulerTourConfig: TourConfig = {
     {
       element: '#tour-scheduler-welcome',
       popover: {
-        title: 'Scheduler',
+        title: 'Schedule',
         description: 'Welcome to the Scheduler! This is where you can view, edit, and manage all your upcoming social media posts in a calendar view.',
         side: 'bottom',
         align: 'start',

@@ -783,7 +783,7 @@ const LeadAgent = () => {
                     AI for free-text messages
                   </Label>
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    When a customer sends text that doesn&apos;t match the menu, AI replies using your Brand Brain context.
+                    When a customer sends text that doesn&apos;t match the menu, AI replies using your Brand voice context.
                   </p>
                 </div>
                 <Switch id="wa-flow-ai-fallback" checked={waFlowAiFallback} onCheckedChange={setWaFlowAiFallback} />

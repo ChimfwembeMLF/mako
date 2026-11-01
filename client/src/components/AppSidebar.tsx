@@ -3,10 +3,11 @@ import {
   Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
   Rocket, Link2, Image, LayoutTemplate, MessageSquareReply, Megaphone,
   GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity,
-  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target, Mail, MessageCircle
+  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target, Mail, MessageCircle, LogOut
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
@@ -51,6 +52,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { tenant, tenants, switchTenant } = useTenant();
   const { isSuperAdmin } = usePermissions();
+  const { signOut } = useAuth();
   const { workspaces, activeWorkspace, setActiveWorkspace, loading: workspacesLoading } = useWorkspace();
   const activeWorkspaceName =
     workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name ?? "Workspace";
@@ -135,11 +137,11 @@ export function AppSidebar() {
             <SidebarMenu>
               <NavItem id="tour-nav-dashboard" title="Main Dashboard" url="/dashboard" icon={Zap} exact />
               <NavItem id="tour-nav-social" title="Social Dashboard" url="/social" icon={BarChart3} exact />
-              <NavItem id="tour-nav-brand-brain" title="Brand Brain" url="/brand-brain" icon={Brain} />
-              <NavItem id="tour-nav-content" title="Content Engine" url="/content" icon={Pen} />
+              <NavItem id="tour-nav-brand-brain" title="Brand voice" url="/brand-brain" icon={Brain} />
+              <NavItem id="tour-nav-content" title="Posts" url="/content" icon={Pen} />
               <NavItem id="tour-nav-campaigns" title="Campaigns" url="/campaigns" icon={Megaphone} />
-              <NavItem id="tour-nav-scheduler" title="Scheduler" url="/scheduler" icon={CalendarClock} />
-              <NavItem id="tour-nav-publisher" title="Connections" url="/publisher" icon={Link2} />
+              <NavItem id="tour-nav-scheduler" title="Schedule" url="/scheduler" icon={CalendarClock} />
+              <NavItem id="tour-nav-publisher" title="Social accounts" url="/publisher" icon={Link2} />
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -152,7 +154,7 @@ export function AppSidebar() {
               <NavItem id="tour-nav-leads" title="Leads" url="/leads" icon={MessageSquare} />
               <NavItem id="tour-nav-email" title="Email" url="/mail" icon={Mail} />
               <NavItem id="tour-nav-whatsapp" title="WhatsApp" url="/whatsapp" icon={MessageCircle} />
-              <NavItem id="tour-nav-inbox" title="Social Inbox" url="/replies" icon={MessageSquareReply} />
+              <NavItem id="tour-nav-inbox" title="Inbox" url="/replies" icon={MessageSquareReply} />
               <NavItem id="tour-nav-analytics" title="Analytics" url="/analytics" icon={BarChart3} />
             </SidebarMenu>
           </SidebarGroupContent>
@@ -207,76 +209,11 @@ export function AppSidebar() {
           <NavItem title="Export Data" url="/export" icon={Download} />
           <NavItem title="Billing" url="/billing" icon={CreditCard} />
           <NavItem title="Settings" url="/settings" icon={Settings} />
-          
           <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="flex items-center gap-2 w-full rounded-md hover:bg-sidebar-accent px-2 py-1.5 transition-colors text-sidebar-foreground text-sm"
-                >
-                  <MessageCircle className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span className="flex-1 text-left font-medium">Help & Tours</span>}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Replay Tours</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => {
-                  import("@/services/tour.service").then(({ TourService }) => {
-                    import("@/pages/Dashboard.tour").then(({ dashboardTourConfig }) => {
-                      TourService.startTour('dashboard', dashboardTourConfig.steps, undefined, dashboardTourConfig.driverConfig);
-                    });
-                  });
-                }}>
-                  Replay Dashboard Tour
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  import("@/services/tour.service").then(({ TourService }) => {
-                    import("@/components/AppSidebar.tour").then(({ appSidebarTourConfig }) => {
-                      TourService.startTour('sidebar', appSidebarTourConfig.steps, undefined, appSidebarTourConfig.driverConfig);
-                    });
-                  });
-                }}>
-                  Replay Navigation Tour
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  import("@/services/tour.service").then(({ TourService }) => {
-                    import("@/pages/ContentEngine.tour").then(({ contentEngineTourConfig }) => {
-                      TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
-                    });
-                  });
-                }}>
-                  Replay Content Engine Tour
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  import("@/services/tour.service").then(({ TourService }) => {
-                    import("@/pages/Campaigns.tour").then(({ campaignsTourConfig }) => {
-                      TourService.startTour('campaigns', campaignsTourConfig.steps, undefined, campaignsTourConfig.driverConfig);
-                    });
-                  });
-                }}>
-                  Replay Campaigns Tour
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  import("@/services/tour.service").then(({ TourService }) => {
-                    import("@/pages/Scheduler.tour").then(({ schedulerTourConfig }) => {
-                      TourService.startTour('scheduler', schedulerTourConfig.steps, undefined, schedulerTourConfig.driverConfig);
-                    });
-                  });
-                }}>
-                  Replay Scheduler Tour
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => {
-                  import("@/services/tour.service").then(({ TourService }) => {
-                    import("@/pages/PublisherConnect.tour").then(({ publisherConnectTourConfig }) => {
-                      TourService.startTour('connections', publisherConnectTourConfig.steps, undefined, publisherConnectTourConfig.driverConfig);
-                    });
-                  });
-                }}>
-                  Replay Connections Tour
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SidebarMenuButton tooltip="Sign out" className="hover:bg-sidebar-accent" onClick={() => void signOut()}>
+              <LogOut className="mr-2 h-4 w-4 shrink-0" />
+              {!collapsed && <span className="flex-1">Sign out</span>}
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>

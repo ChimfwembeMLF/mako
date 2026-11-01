@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -23,18 +24,21 @@ import { ScrapeWebsiteDto } from './dto/scrape-website.dto';
 import { ScrapeWebsiteService } from './services/scrape-website.service';
 import { ParseDocumentService } from './services/parse-document.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 
 interface JwtUser {
   sub: string;
 }
 
 @ApiTags('Brand Profiles')
+@TenantResource(BrandProfiles)
 @Controller('api/v1/brand-profiles')
 export class BrandProfilesController {
   constructor(
     private readonly service: BrandProfilesService,
     private readonly scrapeWebsite: ScrapeWebsiteService,
     private readonly parseDocument: ParseDocumentService,
+    private readonly access: TenantAccessService,
   ) {}
 
   @Post('scrape-website')
@@ -57,7 +61,7 @@ export class BrandProfilesController {
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @UseInterceptors(FileInterceptor('file'))
-  parse(
+  async parse(
     @Req() req: { user: JwtUser },
     @UploadedFile() file: Express.Multer.File,
     @Body('tenantId') tenantId: string,
@@ -68,6 +72,7 @@ export class BrandProfilesController {
     if (!tenantId) {
       throw new BadRequestException('tenantId is required');
     }
+    await this.access.assertMember(String(req.user.sub), tenantId);
     return this.parseDocument.parse({
       buffer: file.buffer,
       mimeType: file.mimetype,

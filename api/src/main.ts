@@ -168,6 +168,8 @@ async function bootstrap() {
   ]) as LogLevel[];
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: logLevels,
+    // Webhook signatures are computed over the exact bytes received.
+    rawBody: true,
   });
   // Set global API prefix so client requests match backend routes
   // app.setGlobalPrefix('api/v1');

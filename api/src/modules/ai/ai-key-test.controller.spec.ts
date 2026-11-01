@@ -6,7 +6,7 @@ jest.mock('./services/mistral-chat.service', () => ({ MistralChatService: class 
 jest.mock('./services/openai-chat.service', () => ({ OpenAIChatService: class {} }));
 jest.mock('./services/gemini-chat.service', () => ({ GeminiChatService: class {} }));
 jest.mock('./services/deepseek-chat.service', () => ({ DeepseekChatService: class {} }));
-jest.mock('../tenants/services/tenant-access.service', () => ({ TenantAccessService: class {} }));
+jest.mock('../auth/rbac/tenant-access.service', () => ({ TenantAccessService: class {} }));
 
 describe('AiKeyTestController', () => {
   const req = { user: { sub: 'u1' } };

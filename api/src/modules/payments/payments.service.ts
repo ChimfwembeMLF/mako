@@ -431,32 +431,20 @@ export class PaymentsService {
     }
   }
 
+  /**
+   * PawaPay callbacks aren't signed, so nothing in the body is trusted: it only
+   * tells us which deposit to re-check with PawaPay directly.
+   */
   async handlePawaPayWebhook(body: unknown) {
-    const parsed = parsePawaPayDepositStatus(body);
-    const depositId =
-      parsed?.depositId ??
-      (typeof body === 'object' &&
-      body &&
-      'depositId' in body &&
-      typeof (body as { depositId?: unknown }).depositId === 'string'
-        ? (body as { depositId: string }).depositId
-        : undefined);
-
-    if (!depositId) {
+    const depositId = (body as { depositId?: unknown } | null)?.depositId;
+    if (typeof depositId !== 'string' || !depositId) {
       return { received: true };
     }
-
-    if (isPawaPayDepositCompleted(parsed?.depositStatus)) {
-      await this.completeDeposit(depositId);
-      return { received: true, status: 'COMPLETED', activated: true };
-    }
-
     const deposit = await this.depositsRepo.findOne({ where: { depositId } });
-    if (deposit && parsed?.depositStatus) {
-      return this.applyPawaPayDepositStatus(deposit, parsed);
-    }
+    if (!deposit) return { received: true };
 
-    return { received: true };
+    const { status, activated } = await this.checkDepositStatus(depositId);
+    return { received: true, status, activated };
   }
 
   private async applyPawaPayDepositStatus(

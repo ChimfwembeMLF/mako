@@ -33,12 +33,12 @@ interface BrandForm {
 const STEPS = [
   {
     icon: Brain,
-    title: 'Brand Brain',
+    title: 'Brand voice',
     description: 'Voice, audience, and guardrails for every post.',
   },
   {
     icon: PenLine,
-    title: 'Content Engine',
+    title: 'Posts',
     description: 'Generate on-brand copy for every channel.',
   },
   {
@@ -78,8 +78,8 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
         description: form.description.trim() || undefined,
       });
       toast({
-        title: 'Brand Brain started',
-        description: 'You can add more detail anytime in Brand Brain.',
+        title: 'Brand voice started',
+        description: 'You can add more detail anytime in Brand voice.',
       });
       close();
       navigate('/brand-brain');
@@ -183,7 +183,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
             <div>
               <h3 className="text-base font-semibold font-display">Tell us about your brand</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Add your website or upload a brand doc later in Brand Brain.
+                Add your website or upload a brand doc later in Brand voice.
               </p>
             </div>
 
@@ -239,7 +239,7 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                   disabled={saving || !form.company_name.trim()}
                   className="gap-2"
                 >
-                  {saving ? 'Saving…' : 'Continue to Brand Brain'}
+                  {saving ? 'Saving…' : 'Continue to Brand voice'}
                   {!saving && <ArrowRight className="h-4 w-4" />}
                 </Button>
               </div>

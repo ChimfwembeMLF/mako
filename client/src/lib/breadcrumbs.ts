@@ -9,7 +9,7 @@ const HOME: BreadcrumbItem = { label: 'Home', href: '/' };
 const DASH: BreadcrumbItem = { label: 'Dashboard', href: '/dashboard' };
 const ADMIN: BreadcrumbItem = { label: 'Admin', href: '/admin/roles' };
 const CHATBOT: BreadcrumbItem = { label: 'Chatbot', href: '/chatbot' };
-const CONTENT: BreadcrumbItem = { label: 'Content Engine', href: '/content' };
+const CONTENT: BreadcrumbItem = { label: 'Posts', href: '/content' };
 const TEAM: BreadcrumbItem = { label: 'Team', href: '/team' };
 const TEMPLATES: BreadcrumbItem = { label: 'Post Templates', href: '/templates' };
 const WHATSAPP: BreadcrumbItem = { label: 'WhatsApp', href: '/whatsapp' };
@@ -35,19 +35,19 @@ const ROUTE_PATTERNS: RoutePattern[] = [
   { path: '/whatsapp', crumbs: [DASH, WHATSAPP] },
   { path: '/dashboard', crumbs: [DASH] },
   { path: '/social', crumbs: [{ label: 'Social', href: '/social' }] },
-  { path: '/brand-brain', crumbs: [DASH, { label: 'Brand Brain' }] },
+  { path: '/brand-brain', crumbs: [DASH, { label: 'Brand voice' }] },
   { path: '/content', crumbs: [DASH, CONTENT] },
   { path: '/campaigns', crumbs: [DASH, { label: 'Campaigns' }] },
-  { path: '/scheduler', crumbs: [DASH, { label: 'Scheduler' }] },
+  { path: '/scheduler', crumbs: [DASH, { label: 'Schedule' }] },
   { path: '/leads', crumbs: [DASH, { label: 'Leads' }] },
   { path: '/mail', crumbs: [DASH, { label: 'Email' }] },
   { path: '/analytics', crumbs: [DASH, { label: 'Analytics' }] },
   { path: '/reports', crumbs: [DASH, { label: 'Reports' }] },
-  { path: '/publisher', crumbs: [DASH, { label: 'Connections' }] },
+  { path: '/publisher', crumbs: [DASH, { label: 'Social accounts' }] },
   { path: '/settings', crumbs: [DASH, { label: 'Settings' }] },
   { path: '/media', crumbs: [DASH, { label: 'Media' }] },
   { path: '/templates', crumbs: [DASH, TEMPLATES] },
-  { path: '/replies', crumbs: [DASH, { label: 'Social Inbox' }] },
+  { path: '/replies', crumbs: [DASH, { label: 'Inbox' }] },
   { path: '/chatbot', crumbs: [DASH, CHATBOT] },
   { path: '/approvals', crumbs: [DASH, { label: 'Approvals' }] },
   { path: '/team', crumbs: [DASH, TEAM] },
@@ -92,7 +92,7 @@ export function resolveBreadcrumbs(pathname: string): BreadcrumbItem[] {
     
     currentPath += `/${seg}`;
     
-    // Attempt to format the segment nicely (e.g. "brand-brain" -> "Brand Brain")
+    // Attempt to format the segment nicely (e.g. "brand-brain" -> "Brand voice")
     const formatted = seg
       .split('-')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))

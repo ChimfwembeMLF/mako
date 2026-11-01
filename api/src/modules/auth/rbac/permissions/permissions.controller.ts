@@ -1,3 +1,6 @@
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
+import { PlatformAdminGuard } from '../platform-admin.guard';
 import {
   Controller,
   Get,
@@ -12,10 +15,12 @@ import { Permissions } from './entities/permissions.entity';
 import { PermissionsCreateDto } from './dto/create-permissions.dto';
 import { PermissionsUpdateDto } from './dto/update-permissions.dto';
 
+@UseGuards(JwtAuthGuard)
 @Controller('api/v1/permissions')
 export class PermissionsController {
   constructor(private readonly service: PermissionsService) {}
 
+  @UseGuards(PlatformAdminGuard)
   @Post()
   create(@Body() dto: PermissionsCreateDto): Promise<Permissions> {
     return this.service.create(dto);
@@ -31,11 +36,13 @@ export class PermissionsController {
     return this.service.findOne(id);
   }
 
+  @UseGuards(PlatformAdminGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: PermissionsUpdateDto) {
     return this.service.update(id, dto);
   }
 
+  @UseGuards(PlatformAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

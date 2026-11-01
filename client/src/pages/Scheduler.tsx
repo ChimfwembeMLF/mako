@@ -566,7 +566,7 @@ const Scheduler = () => {
         title: generated > 0 ? "Workflow complete!" : "Nothing generated",
         description: generated > 0
           ? `Generated ${generated} draft${generated === 1 ? "" : "s"}.${skipped ? ` Skipped ${skipped}.` : ""}`
-          : firstError ?? "Complete Brand Brain setup and upgrade to Starter or Pro for daily auto-generate.",
+          : firstError ?? "Complete Brand voice setup and upgrade to Starter or Pro for daily auto-generate.",
         variant: generated > 0 ? "default" : "destructive",
       });
       if (generated > 0) void loadPosts();
@@ -720,7 +720,7 @@ const Scheduler = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold font-display">{view === "calendar" ? "Calendar" : view === "automations" ? "Automations" : "Scheduler"}</h1>
+            <h1 className="text-2xl font-bold font-display">{view === "calendar" ? "Calendar" : view === "automations" ? "Automations" : "Schedule"}</h1>
             <p className="text-muted-foreground text-sm">
               {view === "calendar" ? `Plan, inspect, and reschedule posts for ${activeWorkspaceObj?.name || "your workspace"}.` : "Plan, schedule, and publish across channels"}
             </p>

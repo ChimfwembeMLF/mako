@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -26,6 +27,7 @@ interface JwtUser {
 @ApiTags('Workspaces')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@TenantResource(Workspaces)
 @Controller('api/v1/workspaces')
 export class WorkspacesController {
   constructor(private readonly service: WorkspacesService) {}

@@ -26,6 +26,10 @@ export class LeadSourcesService {
     return this.repo.find();
   }
 
+  async findForUser(userId: string): Promise<LeadSources[]> {
+    return this.repo.find({ where: { userId } });
+  }
+
   async findOne(id: string): Promise<LeadSources> {
     const ent = await this.repo.findOne({ where: { id } });
     if (!ent) throw new NotFoundException('LeadSources not found');

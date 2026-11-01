@@ -5,7 +5,7 @@ import { TenantsController } from './tenants.controller';
 import { IntegrationProvider } from './entities/tenant-integration-config.entity';
 
 jest.mock('./tenants.service', () => ({ TenantsService: class {} }));
-jest.mock('./services/tenant-access.service', () => ({ TenantAccessService: class {} }));
+jest.mock('../auth/rbac/tenant-access.service', () => ({ TenantAccessService: class {} }));
 
 describe('TenantsController', () => {
   const req = { user: { sub: 'u1' } } as any;

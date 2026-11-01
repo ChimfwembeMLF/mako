@@ -406,7 +406,7 @@ const SettingsPage = () => {
             <CardContent>
               {connectedAccounts.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  No accounts connected. Go to <a href="/publisher" className="text-primary hover:underline">Connections</a> to link your social accounts.
+                  No accounts connected. Go to <a href="/publisher" className="text-primary hover:underline">Social accounts</a> to link your social accounts.
                 </p>
               ) : (
                 <div className="space-y-3">

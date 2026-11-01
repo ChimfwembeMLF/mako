@@ -21,9 +21,7 @@ type AttentionItem = {
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-// WhatsApp's unreadCount is every inbound message ever, so it can't mean "waiting".
-const isWaiting = (conversation: InboxConversation) =>
-  Number(conversation.unreadCount ?? 0) > 0 && conversation.platform !== 'whatsapp';
+const isWaiting = (conversation: InboxConversation) => Number(conversation.unreadCount ?? 0) > 0;
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -98,7 +96,18 @@ export default function HomeScreen() {
     String(a.scheduledTime || '').localeCompare(String(b.scheduledTime || '')),
   );
 
+  const hasPublished = posts.some((post) => (post.status || '').toLowerCase() === 'published');
+
   const attention: AttentionItem[] = [];
+  // New workspaces get this from the setup checklist; this catches accounts lost later.
+  if (accounts.isSuccess && linkedAccounts.length === 0 && hasPublished) {
+    attention.push({
+      title: 'Reconnect a social account',
+      description: 'Nothing can be published until you do',
+      icon: 'connections',
+      route: '/connections',
+    });
+  }
   if (waiting > 0) {
     attention.push({
       title: plural(waiting, 'conversation'),
@@ -159,7 +168,7 @@ export default function HomeScreen() {
               },
               {
                 label: 'Publish your first post',
-                done: posts.some((post) => (post.status || '').toLowerCase() === 'published'),
+                done: hasPublished,
                 onPress: () => router.push('/content/new' as any),
               },
             ]}

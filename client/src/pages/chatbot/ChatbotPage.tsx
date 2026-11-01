@@ -199,7 +199,7 @@ export default function ChatbotPage() {
         <div>
           <h1 className="text-2xl font-display font-semibold">AI Chatbot</h1>
           <p className="text-sm text-muted-foreground">
-            Brand Brain–powered assistant with document knowledge
+            Brand voice–powered assistant with document knowledge
           </p>
         </div>
       </div>
@@ -223,7 +223,7 @@ export default function ChatbotPage() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Test chat</CardTitle>
                 <CardDescription>
-                  Messages use Brand Brain + uploaded knowledge documents
+                  Messages use Brand voice + uploaded knowledge documents
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-[480px]">
@@ -342,7 +342,7 @@ export default function ChatbotPage() {
                   <CardTitle className="text-base">System message</CardTitle>
                   <CardDescription>
                     Core instructions for every reply — tone, policies, and what the bot should or
-                    should not do. Combined with your Brand Brain and knowledge documents. All
+                    should not do. Combined with your Brand voice and knowledge documents. All
                     tenants start with a sensible default; customize it here.
                   </CardDescription>
                 </CardHeader>

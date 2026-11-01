@@ -32,7 +32,7 @@ export function DocumentUpload({ onResult, disabled, workspaceId }: DocumentUplo
       onResult(data);
       toast({
         title: "Document parsed",
-        description: "Review the extracted fields and save your Brand Brain.",
+        description: "Review the extracted fields and save your Brand voice.",
       });
     } catch (e: unknown) {
       toast({
@@ -85,7 +85,7 @@ export function DocumentUpload({ onResult, disabled, workspaceId }: DocumentUplo
         </Button>
       </div>
       <p className="text-xs text-muted-foreground">
-        Upload a brand guide, pitch deck, or company doc — AI extracts your Brand Brain fields.
+        Upload a brand guide, pitch deck, or company doc — AI extracts your Brand voice fields.
       </p>
     </div>
   );

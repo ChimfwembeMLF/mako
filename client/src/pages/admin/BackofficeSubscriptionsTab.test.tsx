@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { BackofficeSubscriptionsTab } from "./BackofficeSubscriptionsTab";
+import { BackofficeSubscriptionsTab, toCsv } from "./BackofficeSubscriptionsTab";
 import { backofficeApi } from "@/lib/api";
 
 vi.mock("@/lib/api", () => ({ backofficeApi: { listSubscriptions: vi.fn() } }));
@@ -77,5 +77,13 @@ describe("BackofficeSubscriptionsTab", () => {
     vi.mocked(backofficeApi.listSubscriptions).mockRejectedValue(new Error("Nope"));
     render(<BackofficeSubscriptionsTab onOpenTenant={() => {}} />);
     expect(await screen.findByText("Nope")).toBeTruthy();
+  });
+
+  it("writes a safe CSV", () => {
+    const csv = toCsv([row({ tenantName: '=HYPERLINK("x")', ownerEmail: 'a"b@x.co' })] as never);
+    const [header, line] = csv.split("\n");
+    expect(header).toContain('"Tenant"');
+    expect(line).toContain(`"'=HYPERLINK(""x"")"`);
+    expect(line).toContain('"a""b@x.co"');
   });
 });

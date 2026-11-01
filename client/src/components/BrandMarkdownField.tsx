@@ -35,7 +35,7 @@ function useIsDarkMode(): boolean {
 }
 
 /**
- * GitHub-style markdown field for Brand Brain — Write / Preview tabs, markdown stored as plain text.
+ * GitHub-style markdown field for Brand voice — Write / Preview tabs, markdown stored as plain text.
  */
 export function BrandMarkdownField({
   id,

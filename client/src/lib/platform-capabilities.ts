@@ -59,7 +59,7 @@ export const PLATFORM_CAPABILITIES: PlatformCapability[] = [
     oauth: true,
     status: 'available',
     notes:
-      'Connect with X OAuth 2.0 to post tweets and receive DMs/mentions in Social Inbox. Account Activity webhooks need OAuth 1.0a subscription tokens.',
+      'Connect with X OAuth 2.0 to post tweets and receive DMs/mentions in Inbox. Account Activity webhooks need OAuth 1.0a subscription tokens.',
   },
   {
     id: 'whatsapp',

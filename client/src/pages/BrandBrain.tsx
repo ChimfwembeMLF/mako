@@ -289,7 +289,7 @@ const BrandBrainInner = () => {
     if (workspaces.length > 0 && !activeWorkspace) {
       toast({
         title: "No workspace selected",
-        description: "Choose a workspace in the top navbar before saving Brand Brain.",
+        description: "Choose a workspace in the top navbar before saving Brand voice.",
         variant: "destructive",
       });
       return;
@@ -301,7 +301,7 @@ const BrandBrainInner = () => {
         workspaceId: activeWorkspace ?? undefined,
         ...toApi(data),
       });
-      toast({ title: "Brand Brain saved", description: "Your brand profile has been updated." });
+      toast({ title: "Brand voice saved", description: "Your brand profile has been updated." });
     } catch (error: unknown) {
       toast({
         title: "Error saving",
@@ -316,7 +316,7 @@ const BrandBrainInner = () => {
   if (loading || tenantLoading || workspaceLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="text-muted-foreground">Loading your Brand Brain...</div>
+        <div className="text-muted-foreground">Loading your Brand voice...</div>
       </div>
     );
   }
@@ -329,11 +329,11 @@ const BrandBrainInner = () => {
             <Brain className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold font-display">Brand Brain</h1>
+            <h1 className="text-3xl font-bold font-display">Brand voice</h1>
             <p className="text-muted-foreground text-sm">
               {activeWorkspaceName
                 ? `Brand profile for “${activeWorkspaceName}”. Switch workspace in the top navbar.`
-                : 'Create a workspace to set up Brand Brain.'}
+                : 'Create a workspace to set up Brand voice.'}
             </p>
           </div>
         </div>
@@ -343,7 +343,7 @@ const BrandBrainInner = () => {
           </Button>
           <Button onClick={handleSave} disabled={saving}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-            {saving ? "Saving..." : "Save Brand Brain"}
+            {saving ? "Saving..." : "Save Brand voice"}
           </Button>
         </div>
       </div>
@@ -454,7 +454,7 @@ const BrandBrainInner = () => {
       <div className="flex justify-end pt-2 pb-8">
         <Button onClick={handleSave} disabled={saving} size="lg">
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-          {saving ? "Saving..." : "Save Brand Brain"}
+          {saving ? "Saving..." : "Save Brand voice"}
         </Button>
       </div>
     </div>

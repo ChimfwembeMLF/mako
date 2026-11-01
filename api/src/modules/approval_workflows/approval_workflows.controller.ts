@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -19,6 +20,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @ApiTags('Approval Workflows')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
+@TenantResource(ApprovalWorkflows)
 @Controller('api/v1/approval-workflows')
 export class ApprovalWorkflowsController {
   constructor(private readonly service: ApprovalWorkflowsService) {}

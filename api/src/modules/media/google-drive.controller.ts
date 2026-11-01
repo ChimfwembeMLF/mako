@@ -1,4 +1,6 @@
 import { Controller, Get, Post, Query, Req, Res, Body, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { signOAuthState, verifyOAuthState } from '../../common/oauth-state.util';
 import { GoogleDriveService } from './google-drive.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,6 +16,7 @@ import { SocialAccounts } from '../social_accounts/entities/social_accounts.enti
 export class GoogleDriveController {
   constructor(
     private readonly googleDriveService: GoogleDriveService,
+    private readonly config: ConfigService,
     @InjectRepository(TenantIntegrationConfig)
     private readonly configRepo: Repository<TenantIntegrationConfig>,
     private readonly encryptionService: EncryptionService,
@@ -31,7 +34,7 @@ export class GoogleDriveController {
     const oauth2Client = await this.googleDriveService.getOAuthClient();
     
     // We pass tenantId in the state so we know which tenant this is for when Google redirects back
-    const state = Buffer.from(JSON.stringify({ tenantId })).toString('base64');
+    const state = signOAuthState({ tenantId }, this.config.getOrThrow<string>('JWT_SECRET'));
     
     const url = oauth2Client.generateAuthUrl({
       access_type: 'offline',
@@ -46,8 +49,8 @@ export class GoogleDriveController {
   @Get('callback')
   async callback(@Query('code') code: string, @Query('state') stateBase64: string, @Res() res: Response) {
     try {
-      const state = JSON.parse(Buffer.from(stateBase64, 'base64').toString('ascii'));
-      const tenantId = state.tenantId;
+      const state = verifyOAuthState(stateBase64, this.config.getOrThrow<string>('JWT_SECRET'));
+      const tenantId = state?.tenantId;
 
       if (!tenantId) {
         return res.status(400).send('Invalid state: missing tenantId');

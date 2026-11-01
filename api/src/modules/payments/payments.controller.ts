@@ -1,3 +1,5 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
+import { Deposits } from '../deposits/entities/deposits.entity';
 import {
   Body,
   Controller,
@@ -96,6 +98,7 @@ export class PaymentsController {
     return this.payments.checkPendingDeposits();
   }
 
+  @TenantResource(Deposits, { param: 'depositId', field: 'depositId' })
   @Post('deposits/:depositId/check')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -110,6 +113,7 @@ export class PaymentsController {
     return this.payments.findByTenant(tenantId, req.user?.['sub'] as string);
   }
 
+  @TenantResource(Deposits, { param: 'depositId', field: 'depositId' })
   @Get('deposits/:depositId/invoice')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -131,6 +135,7 @@ export class PaymentsController {
     res.send(pdf);
   }
 
+  @TenantResource(Deposits, { param: 'depositId', field: 'depositId' })
   @Post('deposits/:depositId/refund-request')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

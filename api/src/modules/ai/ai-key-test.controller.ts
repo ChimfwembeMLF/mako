@@ -9,7 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { TenantAccessService } from '../tenants/services/tenant-access.service';
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import {
   IntegrationProvider,
   TenantIntegrationConfig,

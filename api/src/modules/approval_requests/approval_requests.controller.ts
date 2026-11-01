@@ -1,3 +1,4 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -15,6 +16,7 @@ import { ApprovalRequestsCreateDto } from './dto/create-approval_requests.dto';
 import { ApprovalRequestsUpdateDto } from './dto/update-approval_requests.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@TenantResource(ApprovalRequests)
 @Controller('api/v1/approval-requests')
 @UseGuards(JwtAuthGuard)
 export class ApprovalRequestsController {

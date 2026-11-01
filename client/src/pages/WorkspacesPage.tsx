@@ -203,7 +203,7 @@ export default function WorkspacesPage() {
           <div>
             <h1 className="text-3xl font-bold font-display">Workspaces</h1>
             <p className="text-muted-foreground text-sm mt-0.5 max-w-lg">
-              Separate brands, clients, or business units. Brand Brain, content, and publisher
+              Separate brands, clients, or business units. Brand voice, content, and publisher
               connections are scoped to the active workspace.
             </p>
           </div>
@@ -232,7 +232,7 @@ export default function WorkspacesPage() {
                 </div>
                 <h2 className="text-lg font-semibold font-display">No workspaces yet</h2>
                 <p className="text-sm text-muted-foreground mt-2 max-w-sm">
-                  Create your first workspace to organize Brand Brain, content, and social accounts
+                  Create your first workspace to organize Brand voice, content, and social accounts
                   by brand or client.
                 </p>
                 <Button onClick={startCreate} className="mt-6 gap-2">
@@ -288,7 +288,7 @@ export default function WorkspacesPage() {
                         </div>
                         <p className="text-xs text-muted-foreground font-mono mt-0.5">{ws.slug}</p>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Brand Brain · Content · Connections · Chatbot
+                          Brand voice · Content · Connections · Chatbot
                         </p>
                       </div>
 
@@ -344,7 +344,7 @@ export default function WorkspacesPage() {
                     <p className="text-xs text-muted-foreground mt-1">
                       {editingId
                         ? 'Update name, slug, or logo.'
-                        : 'Each workspace gets its own Brand Brain and content.'}
+                        : 'Each workspace gets its own Brand voice and content.'}
                     </p>
                   </div>
                   <Button
@@ -444,7 +444,7 @@ export default function WorkspacesPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete “{deleteTarget?.name}”?</AlertDialogTitle>
             <AlertDialogDescription>
-              This removes the workspace and its scoped Brand Brain profile. Content and connected
+              This removes the workspace and its scoped Brand voice profile. Content and connected
               accounts tied to this workspace may be affected. This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>

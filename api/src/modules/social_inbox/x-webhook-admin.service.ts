@@ -1,3 +1,4 @@
+import { isValidHmacSignature } from '../../common/webhook-signature.util';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
@@ -17,6 +18,16 @@ export class XWebhookAdminService {
   private readonly logger = new Logger(XWebhookAdminService.name);
 
   constructor(private readonly config: ConfigService) {}
+
+  isValidSignature(rawBody: Buffer | undefined, header: string | undefined): boolean {
+    const { consumerSecret, clientSecret } = getTwitterConfig(this.config);
+    return isValidHmacSignature(
+      consumerSecret || clientSecret || '',
+      rawBody,
+      header,
+      'base64',
+    );
+  }
 
   buildCrcResponse(crcToken: string): string {
     const secret =

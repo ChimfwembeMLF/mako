@@ -17,7 +17,7 @@ type Props = {
 export function PageHeader({ title, subtitle, icon, actions, showBack }: Props) {
   const pathname = usePathname();
   const { colors } = useTheme();
-  const isNestedScreen = /^\/(more\/.+|inbox\/mail|connections|profile)/.test(pathname);
+  const isNestedScreen = /^\/(more\/.+|inbox\/mail|connections)/.test(pathname);
   const shouldShowBack = showBack ?? isNestedScreen;
 
   return (

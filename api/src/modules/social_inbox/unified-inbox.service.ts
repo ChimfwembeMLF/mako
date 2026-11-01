@@ -178,8 +178,12 @@ export class UnifiedInboxService {
           `(array_agg(m.body ORDER BY m.created_at DESC))[1]`,
           'preview',
         )
+        // WhatsApp has no read receipts here, so "unread" means inbound since our last reply.
         .addSelect(
-          `SUM(CASE WHEN m.direction = 'inbound' THEN 1 ELSE 0 END)`,
+          `COUNT(*) FILTER (WHERE m.direction = 'inbound' AND m.created_at > COALESCE(
+            (SELECT MAX(o.created_at) FROM whatsapp_messages o
+              WHERE o.tenant_id = m.tenant_id AND o.phone = m.phone AND o.direction = 'outbound'),
+            '-infinity'))`,
           'inbound_count',
         )
         .where('m.tenantId = :tenantId', { tenantId });

@@ -1,3 +1,5 @@
+import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
   Get,
@@ -17,6 +19,7 @@ import { AuditLogsCreateDto } from './dto/create-audit_logs.dto';
 import { AuditLogsUpdateDto } from './dto/update-audit_logs.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
+@TenantResource(AuditLogs)
 @Controller('api/v1/audit-logs')
 @UseGuards(JwtAuthGuard)
 export class AuditLogsController {
@@ -56,11 +59,13 @@ export class AuditLogsController {
     return this.service.findOne(id);
   }
 
+  @UseGuards(PlatformAdminGuard)
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: AuditLogsUpdateDto) {
     return this.service.update(id, dto);
   }
 
+  @UseGuards(PlatformAdminGuard)
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

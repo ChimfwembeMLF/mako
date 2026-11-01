@@ -20,7 +20,7 @@ interface State {
  * from AI generation calls, API timeouts, and unexpected state.
  *
  * Wrap individual panels (not the entire app) for granular recovery:
- *   <ErrorBoundary label="Content Engine">
+ *   <ErrorBoundary label="Posts">
  *     <ContentPanel />
  *   </ErrorBoundary>
  */

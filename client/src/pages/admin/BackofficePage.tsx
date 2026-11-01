@@ -16,6 +16,7 @@ import {
 import { SuperAdminRoute } from '@/components/SuperAdminRoute';
 import { backofficeApi } from '@/lib/api';
 import { BackofficePlansTab } from './BackofficePlansTab';
+import { BackofficeRefundsTab } from './BackofficeRefundsTab';
 import { BackofficeSubscriptionsTab } from './BackofficeSubscriptionsTab';
 import { PlatformIntegrationsForm } from '@/components/admin/PlatformIntegrationsForm';
 
@@ -345,6 +346,7 @@ function BackofficeContent() {
           <TabsTrigger value="tenants">Tenants ({stats.tenants})</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="revenue">Revenue</TabsTrigger>
+          <TabsTrigger value="refunds">Refunds</TabsTrigger>
           <TabsTrigger value="plans">Plans</TabsTrigger>
           <TabsTrigger value="ai">AI Usage</TabsTrigger>
           <TabsTrigger value="chatbot">Chatbot ({stats.chatSessions})</TabsTrigger>
@@ -466,6 +468,10 @@ function BackofficeContent() {
 
         <TabsContent value="subscriptions" className="mt-6">
           <BackofficeSubscriptionsTab onOpenTenant={openTenant} />
+        </TabsContent>
+
+        <TabsContent value="refunds" className="mt-6">
+          <BackofficeRefundsTab />
         </TabsContent>
 
         <TabsContent value="revenue" className="space-y-6 mt-6">
@@ -850,11 +856,11 @@ function BackofficeContent() {
               <div>
                 <h3 className="text-foreground font-semibold mb-2">Product modules</h3>
                 <ul className="list-disc pl-5 space-y-1">
-                  <li><strong>Brand Brain</strong> — company identity, tone, audience, guardrails</li>
-                  <li><strong>Content Engine</strong> — AI copy, campaigns, media library</li>
+                  <li><strong>Brand voice</strong> — company identity, tone, audience, guardrails</li>
+                  <li><strong>Posts</strong> — AI copy, campaigns, media library</li>
                   <li><strong>Connections & Scheduler</strong> — OAuth connect, per-platform publish, calendar</li>
                   <li><strong>Leads</strong> — capture, score, and follow up on leads</li>
-                  <li><strong>Social Inbox</strong> — comment sync + AI auto-reply rules</li>
+                  <li><strong>Inbox</strong> — comment sync + AI auto-reply rules</li>
                   <li><strong>AI Chatbot</strong> — RAG-powered assistant with playground, 3D avatar, and TTS</li>
                   <li><strong>Knowledge</strong> — document upload, chunking, and vector search for chatbot context</li>
                   <li><strong>Embeddable Widget</strong> — gradient-themed chat widget with API keys and OpenAPI integration docs</li>

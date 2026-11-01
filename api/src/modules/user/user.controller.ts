@@ -15,7 +15,7 @@ import { UpdatePreferencesDto } from './dtos/update-preferences.dto';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Auth([RoleType.USER, RoleType.ADMIN])
+  @Auth([RoleType.ADMIN, RoleType.SUPER_ADMIN])
   @Get()
   @HttpCode(HttpStatus.OK)
   async getUsers(@Query() pageOptionsDto: PageOptionsDto) {

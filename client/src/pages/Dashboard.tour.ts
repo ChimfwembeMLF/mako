@@ -16,7 +16,7 @@ export const dashboardTourConfig: TourConfig = {
       element: '#tour-dashboard-nav',
       popover: {
         title: 'Navigation',
-        description: 'Use the sidebar to navigate between your Brand Brain, Content Engine, and Settings.',
+        description: 'Use the sidebar to navigate between your Brand voice, Posts, and Settings.',
         side: 'right',
         align: 'start',
       },

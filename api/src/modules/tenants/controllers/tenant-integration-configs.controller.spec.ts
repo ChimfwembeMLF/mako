@@ -2,7 +2,7 @@ import { ForbiddenException } from '@nestjs/common';
 import { TenantIntegrationConfigsController } from './tenant-integration-configs.controller';
 import { IntegrationProvider } from '../entities/tenant-integration-config.entity';
 
-jest.mock('../services/tenant-access.service', () => ({ TenantAccessService: class {} }));
+jest.mock('../../auth/rbac/tenant-access.service', () => ({ TenantAccessService: class {} }));
 jest.mock('../services/encryption.service', () => ({ EncryptionService: class {} }));
 
 describe('TenantIntegrationConfigsController', () => {

@@ -5,7 +5,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantIntegrationConfig, IntegrationProvider } from '../entities/tenant-integration-config.entity';
 import { UpsertIntegrationConfigDto } from '../dto/tenant-integration-config.dto';
 import { EncryptionService } from '../services/encryption.service';
-import { TenantAccessService } from '../services/tenant-access.service';
+import { TenantAccessService } from '../../auth/rbac/tenant-access.service';
 
 type AuthedRequest = { user: { sub: string } };
 

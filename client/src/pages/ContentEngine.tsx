@@ -423,7 +423,7 @@ const ContentEngine = () => {
             <Pen size={18} className="text-primary" />
           </div>
           <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight">Content Engine</h1>
+            <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight">Posts</h1>
             <p className="text-xs sm:text-sm text-muted-foreground">Create, refine, and publish across platforms</p>
           </div>
         </div>
@@ -439,7 +439,7 @@ const ContentEngine = () => {
             hasBrandBrain === false ? 'bg-amber-500/10 text-amber-700 border-amber-500/30' :
             'bg-muted text-muted-foreground'
           }`}>
-            {hasBrandBrain === null ? 'Checking…' : hasBrandBrain ? 'Brand Brain active' : 'No Brand Brain'}
+            {hasBrandBrain === null ? 'Checking…' : hasBrandBrain ? 'Brand voice active' : 'No Brand voice'}
           </span>
         </div>
       </div>
@@ -448,7 +448,7 @@ const ContentEngine = () => {
         <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start sm:items-center gap-3">
           <Sparkles size={15} className="text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
           <p className="text-sm leading-relaxed">
-            <strong className="text-amber-600">Set up Brand Brain</strong> — the AI uses it to match your brand voice.
+            <strong className="text-amber-600">Set up Brand voice</strong> — the AI uses it to match your brand voice.
           </p>
         </div>
       )}

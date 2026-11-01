@@ -286,7 +286,7 @@ export default function CampaignsPage() {
           <div className="px-5 py-4 border-b bg-muted/30">
             <h2 className="font-semibold text-sm">Create campaign</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              AI plans posts across days and platforms using your Brand Brain
+              AI plans posts across days and platforms using your Brand voice
             </p>
           </div>
           <div className="p-5 space-y-4">

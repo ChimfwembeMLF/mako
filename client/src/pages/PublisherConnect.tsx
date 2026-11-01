@@ -126,7 +126,7 @@ const platforms: {
     icon: Twitter,
     color: "text-foreground",
     bgColor: "bg-muted",
-    description: "Post tweets, receive DMs & mentions in Social Inbox (X OAuth 2.0 + webhooks)",
+    description: "Post tweets, receive DMs & mentions in Inbox (X OAuth 2.0 + webhooks)",
     oauth: true,
     manualFallback: true,
     fields: [
@@ -647,7 +647,7 @@ const PublisherConnect = () => {
             <Link2 className="h-5 w-5 text-secondary-foreground" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold font-display">Connections</h1>
+            <h1 className="text-2xl font-bold font-display">Social accounts</h1>
             <p className="text-muted-foreground text-sm">
               {activeWorkspaceName
                 ? `Social and ad accounts for “${activeWorkspaceName}”. Switch workspace in the top navbar.`
@@ -783,7 +783,7 @@ const PublisherConnect = () => {
           <h3 className="font-semibold text-sm mb-2">How it works</h3>
           <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
             <li>Connect accounts per workspace — each tenant has its own publisher connections</li>
-            <li>Create content in the Content Engine</li>
+            <li>Create content in the Posts</li>
             <li>Publish and pick platforms — previews show per channel</li>
             <li>Content goes live on connected accounts for this workspace</li>
           </ol>

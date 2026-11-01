@@ -1,3 +1,5 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
+import { AdCampaignEntity } from './entities/ad-campaign.entity';
 import {
   Controller,
   Get,
@@ -32,6 +34,7 @@ interface CreateCampaignDto {
 @ApiTags('Ads')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@TenantResource(AdCampaignEntity)
 @Controller('api/v1/ads')
 export class AdsController {
   constructor(private readonly adsService: AdsService) {}

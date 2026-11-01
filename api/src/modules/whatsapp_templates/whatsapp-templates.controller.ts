@@ -1,3 +1,5 @@
+import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
+import { WhatsappTemplate } from './entities/whatsapp_template.entity';
 import {
   Controller,
   Get,
@@ -27,6 +29,7 @@ interface JwtUser {
 }
 
 @ApiTags('WhatsApp Templates')
+@TenantResource(WhatsappTemplate)
 @Controller('api/v1/whatsapp/templates')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()

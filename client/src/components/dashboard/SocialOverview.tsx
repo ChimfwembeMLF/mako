@@ -149,7 +149,7 @@ export function SocialOverview() {
             <CardContent className="p-4 space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Link2 className="h-4 w-4" />
-                <span className="text-xs uppercase tracking-wide">Connections</span>
+                <span className="text-xs uppercase tracking-wide">Social accounts</span>
               </div>
               <p className="text-2xl font-semibold tabular-nums">{connectedAccounts.length}</p>
               <p className="text-xs text-muted-foreground line-clamp-2">

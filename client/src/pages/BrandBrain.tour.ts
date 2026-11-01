@@ -6,8 +6,8 @@ export const brandBrainTourConfig: TourConfig = {
     {
       element: '#tour-bb-header',
       popover: {
-        title: 'Welcome to Brand Brain',
-        description: 'Brand Brain is your central hub for defining your company identity, voice, and guardrails so the AI can sound exactly like you.',
+        title: 'Welcome to Brand voice',
+        description: 'Brand voice is your central hub for defining your company identity, voice, and guardrails so the AI can sound exactly like you.',
         side: 'bottom',
         align: 'start',
       },
