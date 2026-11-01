@@ -21,6 +21,8 @@ import { MailModule } from '../mail/mail.module';
 import { TenantMembersModule } from '../tenant_members/tenant_members.module';
 import { GmailService } from './gmail.service';
 import { SystemSettingsModule } from '../system_settings/system_settings.module';
+import { SmsModule } from '../sms/sms.module';
+import { PhoneCodeService } from './phone-code.service';
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     TenantsModule,
     TenantMembersModule,
     forwardRef(() => SystemSettingsModule),
+    SmsModule,
     forwardRef(() => MailModule),
     TypeOrmModule.forFeature([RefreshTokenEntity]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -44,6 +47,7 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
   ],
   controllers: [AuthController],
   providers: [
+    PhoneCodeService,
     AuthService,
     RefreshTokenService,
     JwtStrategy,

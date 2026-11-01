@@ -36,6 +36,12 @@ import {
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import {
+  ResetPasswordWithCodeDto,
+  SendPhoneCodeDto,
+  VerifyPhoneCodeDto,
+} from './dto/phone-code.dto';
+import { Throttle } from '@nestjs/throttler';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 
 type SocialOAuthUser = {
@@ -81,10 +87,47 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('forgot-password')
   @ApiOperation({ summary: 'Request a password reset link' })
   async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
     return this.authService.requestPasswordReset(forgotPasswordDto);
+  }
+
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('reset-password/code')
+  @ApiOperation({ summary: 'Reset password using an SMS code' })
+  async resetPasswordWithCode(@Body() dto: ResetPasswordWithCodeDto) {
+    return this.authService.resetPasswordWithCode(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('phone/status')
+  phoneStatus(@Req() req: { user: { sub: string } }) {
+    return this.authService.phoneVerificationStatus(req.user.sub);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @Post('phone/send-code')
+  sendPhoneCode(
+    @Req() req: { user: { sub: string } },
+    @Body() dto: SendPhoneCodeDto,
+  ) {
+    return this.authService.sendPhoneCode(req.user.sub, dto.phone);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @Post('phone/verify')
+  verifyPhone(
+    @Req() req: { user: { sub: string } },
+    @Body() dto: VerifyPhoneCodeDto,
+  ) {
+    return this.authService.verifyPhoneCode(req.user.sub, dto.code);
   }
 
   @Post('reset-password')

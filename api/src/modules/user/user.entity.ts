@@ -47,6 +47,34 @@ export class UserEntity {
   @Column({ nullable: true })
   phone?: string;
 
+  /** Set only after the owner proves the number with an SMS code. */
+  @Column({ type: 'timestamptz', nullable: true })
+  phoneVerifiedAt?: Date | null;
+
+  @Column({ type: 'text', nullable: true })
+  pendingPhone?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  phoneCodeHash?: string | null;
+
+  @Column({ type: 'text', nullable: true })
+  phoneCodePurpose?: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  phoneCodeExpiresAt?: Date | null;
+
+  @Column({ type: 'int', default: 0 })
+  phoneCodeAttempts: number;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  phoneCodeSentAt?: Date | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  phoneCodeWindowStart?: Date | null;
+
+  @Column({ type: 'int', default: 0 })
+  phoneCodeSendCount: number;
+
   @Column({ nullable: true })
   avatar?: string;
 

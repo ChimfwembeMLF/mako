@@ -1,7 +1,12 @@
+// uuid ships ESM only, which Jest can't load through the new SMS imports.
+jest.mock('uuid', () => ({ v4: () => 'id' }));
+
 import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
+import { PhoneCodeService } from './phone-code.service';
+import { SmsService } from '../sms/sms.service';
 import { UserService } from '../user/user.service';
 import { RefreshTokenService } from './refresh-token.service';
 import { MailService } from '../mail/mail.service';
@@ -40,6 +45,8 @@ describe('AuthService', () => {
           provide: TenantMembersService,
           useValue: { acceptPendingInvitations: jest.fn() },
         },
+        { provide: PhoneCodeService, useValue: {} },
+        { provide: SmsService, useValue: {} },
       ],
     }).compile();
 
@@ -74,6 +81,8 @@ describe('AuthService', () => {
       { get: jest.fn().mockReturnValue('7d') } as any,
       {} as TenantBootstrapService,
       {} as TenantMembersService,
+      {} as PhoneCodeService,
+      {} as SmsService,
     );
 
     await serviceWithJwt.issueTokensForUser(user, tenant);

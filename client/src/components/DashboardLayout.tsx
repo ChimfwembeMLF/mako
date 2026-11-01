@@ -1,3 +1,4 @@
+import { PhoneVerifyPrompt } from "@/components/PhoneVerifyPrompt";
 import { Outlet, useLocation } from "react-router-dom";
 import { AppNavbar } from "@/components/AppNavbar";
 import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
@@ -44,7 +45,7 @@ export function DashboardLayout() {
 
           <DashboardMain />
 
-          {needs && <OnboardingWizard onComplete={dismiss} />}
+          {needs ? <OnboardingWizard onComplete={dismiss} /> : <PhoneVerifyPrompt />}
         </div>
       </PageBreadcrumbProvider>
     </SidebarProvider>

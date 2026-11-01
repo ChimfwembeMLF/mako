@@ -28,6 +28,23 @@ As a platform admin, I want to add Mako's Trinolux API key and Sender ID in Plat
 
 ---
 
+### User Story 4 - Phone Verification and SMS Password Reset (Priority: P1)
+
+As a Mako user, I want to verify my phone number and reset my password with an SMS code, so that I can get back into my account without email.
+
+**Independent Test**: Verify a number after login, use Forgot password, enter the texted code and a new password, then sign in.
+
+**Acceptance Scenarios**:
+1. **Given** no verified phone, **When** a user logs in and SMS is configured, **Then** Mako prompts them, and they can choose Remind me later.
+2. **Given** a verified phone, **When** the user requests a reset, **Then** Mako emails a link and texts a code.
+3. **Given** any email address, **When** a reset is requested, **Then** the response is identical, so it can't reveal who has an account.
+4. **Given** a number verified by another account, **When** a user tries to add it, **Then** it is refused.
+5. **Given** a code, **When** it is wrong five times, expired, reused or meant for another purpose, **Then** it is rejected.
+
+Limits: one code a minute, five an hour, 10-minute expiry. Codes are stored hashed. Requires migration `1790100000000-AddPhoneVerification`.
+
+---
+
 ### User Story 2 - Send an SMS to a Lead (Deferred)
 
 As a team member with permission, I want to text a lead from their record, so that I can follow up with people who don't answer email.

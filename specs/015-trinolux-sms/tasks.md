@@ -24,6 +24,17 @@
 
 **Checkpoint**: an admin can configure SMS and send a test.
 
+## Phase 1b: Phone Verification and SMS Password Reset (User Story 4)
+
+- [x] T019 [US4] Add migration `1790100000000-AddPhoneVerification` and user fields
+- [x] T020 [US4] Add `PhoneCodeService` with limits and tests
+- [x] T021 [US4] Add verification and SMS reset endpoints
+- [x] T022 [US4] Stop `forgot-password` revealing which accounts exist
+- [x] T023 [US4] Fix the double hash in `UserService.updatePassword`, which also broke email resets
+- [x] T024 [US4] Add website prompt, settings row and reset code form
+- [ ] T025 [US4] Add verification and the reset code form to the mobile app
+- [ ] T026 [US4] Run a real reset using a live Trinolux account
+
 ## Phase 2: Decisions Required (Deferred: SMS is Mako-only for now)
 
 - [ ] T011 Answer Q1 (use cases) and Q2 (who pays) in `spec.md`

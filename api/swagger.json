@@ -76,6 +76,108 @@
         ]
       }
     },
+    "/api/v1/auth/reset-password/code": {
+      "post": {
+        "operationId": "AuthController_resetPasswordWithCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordWithCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "summary": "Reset password using an SMS code",
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/phone/status": {
+      "get": {
+        "operationId": "AuthController_phoneStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/phone/send-code": {
+      "post": {
+        "operationId": "AuthController_sendPhoneCode",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendPhoneCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
+    "/api/v1/auth/phone/verify": {
+      "post": {
+        "operationId": "AuthController_verifyPhone",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyPhoneCodeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Auth"
+        ]
+      }
+    },
     "/api/v1/auth/reset-password": {
       "post": {
         "operationId": "AuthController_resetPassword",
@@ -10047,6 +10149,47 @@
         },
         "required": [
           "email"
+        ]
+      },
+      "ResetPasswordWithCodeDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "newPassword": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email",
+          "code",
+          "newPassword"
+        ]
+      },
+      "SendPhoneCodeDto": {
+        "type": "object",
+        "properties": {
+          "phone": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "phone"
+        ]
+      },
+      "VerifyPhoneCodeDto": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "code"
         ]
       },
       "ResetPasswordDto": {

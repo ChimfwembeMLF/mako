@@ -361,6 +361,28 @@ export const authApi = {
             requireAuth: false,
         }),
 
+    resetPasswordWithCode: (email: string, code: string, newPassword: string) =>
+        request<any>('/api/v1/auth/reset-password/code', {
+            method: 'POST',
+            body: JSON.stringify({ email, code, newPassword }),
+            requireAuth: false,
+        }),
+
+    phoneStatus: () =>
+        request<{ available: boolean; verified: boolean; phone: string | null }>('/api/v1/auth/phone/status'),
+
+    sendPhoneCode: (phone: string) =>
+        request<{ sent: boolean }>('/api/v1/auth/phone/send-code', {
+            method: 'POST',
+            body: JSON.stringify({ phone }),
+        }),
+
+    verifyPhoneCode: (code: string) =>
+        request<{ verified: boolean }>('/api/v1/auth/phone/verify', {
+            method: 'POST',
+            body: JSON.stringify({ code }),
+        }),
+
     resetPassword: (token: string, newPassword: string) =>
         request<any>('/api/v1/auth/reset-password', {
             method: 'POST',

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { getSocialLoginUrl } from "@/lib/api";
+import { authApi, getSocialLoginUrl } from "@/lib/api";
 import { Field, FormInput } from "@/components/forms";
 import {
   Rocket,
@@ -87,6 +87,9 @@ const Auth = () => {
   const [searchParams] = useSearchParams();
   const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetCodeStep, setResetCodeStep] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -136,16 +139,37 @@ const Auth = () => {
     }
   };
 
+  const leaveReset = () => {
+    setIsForgotPassword(false);
+    setResetCodeStep(false);
+    setResetCode("");
+    setNewPassword("");
+  };
+
+  const handleResetWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await authApi.resetPasswordWithCode(email, resetCode.trim(), newPassword);
+      toast({ title: "Password reset", description: "You can now sign in with your new password." });
+      leaveReset();
+    } catch (err: unknown) {
+      toast({
+        title: "Couldn't reset your password",
+        description: err instanceof Error ? err.message : "Check the code and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await requestPasswordReset(email);
-      toast({
-        title: "Email sent",
-        description: "Check your inbox for password reset instructions",
-      });
-      setIsForgotPassword(false);
+      setResetCodeStep(true);
     } catch (err: unknown) {
       toast({
         title: "Error",
@@ -212,11 +236,45 @@ const Auth = () => {
           <CardContent className="px-4 sm:px-6 lg:px-8 pb-5 sm:pb-6 lg:pb-8">
             {isForgotPassword ? (
               <div className="flex flex-col gap-4 max-w-md mx-auto lg:mx-0">
+                {resetCodeStep ? (
+                  <form onSubmit={handleResetWithCode} className="flex flex-col gap-3">
+                    <p className="text-sm text-muted-foreground">
+                      If this account exists, we've emailed a reset link. If it has a verified phone, we've
+                      also texted a 6-digit code. Use either one.
+                    </p>
+                    <Field label="SMS code" htmlFor="reset-code" required>
+                      <FormInput
+                        id="reset-code"
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        maxLength={6}
+                        placeholder="123456"
+                        value={resetCode}
+                        onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ""))}
+                        required
+                      />
+                    </Field>
+                    <Field label="New password" htmlFor="reset-password" hint="At least 6 characters." required>
+                      <FormInput
+                        id="reset-password"
+                        type="password"
+                        autoComplete="new-password"
+                        minLength={6}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                      />
+                    </Field>
+                    <Button type="submit" disabled={loading || resetCode.length !== 6} className={primaryBtnClass}>
+                      {loading ? "Resetting..." : "Reset Password"}
+                    </Button>
+                  </form>
+                ) : (
                 <form onSubmit={handleForgotPassword} className="flex flex-col gap-3">
                   <Field
                     label="Email"
                     htmlFor="email"
-                    hint="We'll send a reset link to this address."
+                    hint="We'll email a reset link, and text a code if your phone is verified."
                     required
                   >
                     <FormInput
@@ -230,12 +288,13 @@ const Auth = () => {
                     />
                   </Field>
                   <Button type="submit" disabled={loading} className={primaryBtnClass}>
-                    {loading ? "Sending..." : "Send Reset Link"}
+                    {loading ? "Sending..." : "Send Reset Instructions"}
                   </Button>
                 </form>
+                )}
                 <button
                   type="button"
-                  onClick={() => setIsForgotPassword(false)}
+                  onClick={leaveReset}
                   className="text-sm text-primary hover:underline flex items-center justify-center gap-1"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" /> Back to Sign In

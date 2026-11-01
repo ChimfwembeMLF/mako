@@ -73,8 +73,15 @@ export class UserService {
     return [itemCount, data];
   }
 
+  /** Skips UserSubscriber, which would hash the already-hashed password a second time. */
   async updatePassword(userId: string, hashedPassword: string): Promise<void> {
-    await this.userRepository.update(userId, { password: hashedPassword });
+    await this.userRepository
+      .createQueryBuilder()
+      .update()
+      .set({ password: hashedPassword })
+      .where('id = :userId', { userId })
+      .callListeners(false)
+      .execute();
   }
 
   save(user: UserEntity): Promise<UserEntity> {

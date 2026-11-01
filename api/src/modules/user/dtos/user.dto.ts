@@ -36,6 +36,9 @@ export class UserDto extends AbstractDto {
   phone?: string;
 
   @ApiPropertyOptional()
+  phoneVerified?: boolean;
+
+  @ApiPropertyOptional()
   @Expose()
   preferences?: Record<string, any>;
 
@@ -48,6 +51,7 @@ export class UserDto extends AbstractDto {
     this.email = entity.email;
     this.avatar = entity.avatar;
     this.phone = entity.phone;
+    this.phoneVerified = Boolean(entity.phoneVerifiedAt);
     this.preferences = entity.preferences;
     this.createdAt = entity.createdAt;
   }

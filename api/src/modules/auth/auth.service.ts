@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  Logger,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -18,6 +19,11 @@ import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordWithCodeDto } from './dto/phone-code.dto';
+import { PhoneCodeService } from './phone-code.service';
+import { maskNumber, normalizeZambianNumber } from '../sms/sms-number.util';
+import { SmsService } from '../sms/sms.service';
+import { IsNull, Not } from 'typeorm';
 import { RefreshTokenService } from './refresh-token.service';
 import { MailService } from '../mail/mail.service';
 import { TenantBootstrapService } from '../tenants/tenant-bootstrap.service';
@@ -43,6 +49,8 @@ const DEFAULT_REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
@@ -51,6 +59,8 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly tenantBootstrap: TenantBootstrapService,
     private readonly tenantMembers: TenantMembersService,
+    private readonly phoneCodes: PhoneCodeService,
+    private readonly sms: SmsService,
   ) {}
 
   async completeAuthentication(user: UserEntity): Promise<LoginPayloadDto> {
@@ -166,18 +176,21 @@ export class AuthService {
     return AuthProfileDto.from(user, tenant);
   }
 
+  /**
+   * Always gives the same answer, so this can't reveal who has an account. Email is sent
+   * every time: it's the fallback for anyone without a verified number or during an SMS outage.
+   */
   async requestPasswordReset(
     forgotPasswordDto: ForgotPasswordDto,
   ): Promise<{ message: string }> {
+    const response = {
+      message:
+        'If that account exists, we have sent password reset instructions.',
+    };
     const user = await this.userService.findOne({
       email: forgotPasswordDto.email,
     });
-    if (!user) throw new NotFoundException('User not found');
-    if (user.provider !== 'local') {
-      throw new BadRequestException(
-        'Please use social login to access your account',
-      );
-    }
+    if (!user || user.provider !== 'local') return response;
 
     const resetToken = this.jwtService.sign(
       { sub: user.id, type: 'reset' },
@@ -188,12 +201,20 @@ export class AuthService {
       resetToken,
     )}`;
 
-    await this.mailService.sendPasswordResetEmail(user.email!, resetLink);
+    try {
+      await this.mailService.sendPasswordResetEmail(user.email!, resetLink);
+    } catch {
+      this.logger.warn(`Password reset email failed for user ${user.id}`);
+    }
+    if (user.phoneVerifiedAt && user.phone) {
+      try {
+        await this.phoneCodes.send(user, 'reset_password', user.phone);
+      } catch {
+        this.logger.warn(`Password reset SMS failed for user ${user.id}`);
+      }
+    }
 
-    return {
-      message:
-        'If your email is registered, you will receive a password reset link.',
-    };
+    return response;
   }
 
   async resetPassword(
@@ -221,5 +242,75 @@ export class AuthService {
       message:
         'Password successfully reset. You can now log in with your new password.',
     };
+  }
+
+  /** One message for every failure, so a guess can't reveal which part was wrong. */
+  async resetPasswordWithCode(
+    dto: ResetPasswordWithCodeDto,
+  ): Promise<{ message: string }> {
+    const user = await this.userService.findOne({ email: dto.email });
+    const valid =
+      user?.provider === 'local' &&
+      user.phoneVerifiedAt &&
+      (await this.phoneCodes.verify(user, 'reset_password', dto.code));
+    if (!user || !valid) {
+      throw new BadRequestException('Invalid or expired code');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    await this.userService.updatePassword(user.id, hashedPassword);
+    await this.refreshTokenService.revoke(String(user.id));
+    return {
+      message:
+        'Password successfully reset. You can now log in with your new password.',
+    };
+  }
+
+  async phoneVerificationStatus(userId: string) {
+    const user = await this.userService.findOne({ id: userId });
+    return {
+      available: await this.sms.isConfigured(),
+      verified: Boolean(user?.phoneVerifiedAt),
+      phone:
+        user?.phoneVerifiedAt && user.phone ? maskNumber(user.phone) : null,
+    };
+  }
+
+  async sendPhoneCode(userId: string, input: string): Promise<{ sent: true }> {
+    const phone = normalizeZambianNumber(input);
+    if (!phone) {
+      throw new BadRequestException('Enter a valid Zambian mobile number');
+    }
+    const user = await this.userService.findOne({ id: userId });
+    if (!user) throw new UnauthorizedException('User not found');
+
+    // Reset codes go to verified numbers, so one number can't serve two accounts.
+    const owner = await this.userService.findOne({
+      phone,
+      phoneVerifiedAt: Not(IsNull()),
+    });
+    if (owner && owner.id !== user.id) {
+      throw new ConflictException('This number is already in use');
+    }
+
+    user.pendingPhone = phone;
+    await this.phoneCodes.send(user, 'verify_phone', phone);
+    return { sent: true };
+  }
+
+  async verifyPhoneCode(userId: string, code: string): Promise<{ verified: true }> {
+    const user = await this.userService.findOne({ id: userId });
+    if (!user?.pendingPhone) {
+      throw new BadRequestException('Request a new code');
+    }
+    if (!(await this.phoneCodes.verify(user, 'verify_phone', code))) {
+      throw new BadRequestException('Invalid or expired code');
+    }
+
+    user.phone = user.pendingPhone;
+    user.phoneVerifiedAt = new Date();
+    user.pendingPhone = null;
+    await this.userService.save(user);
+    return { verified: true };
   }
 }

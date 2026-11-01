@@ -41,6 +41,14 @@ export class SmsService {
 
   constructor(private readonly integrations: PlatformIntegrationsService) {}
 
+  async isConfigured(): Promise<boolean> {
+    const [apiKey, senderId] = await Promise.all([
+      this.integrations.getIntegrationWithEnvFallback('TRINOLUX_API_KEY'),
+      this.integrations.getIntegrationWithEnvFallback('TRINOLUX_SENDER_ID'),
+    ]);
+    return Boolean(apiKey && senderId);
+  }
+
   /** Sends Mako's own messages using the platform account. */
   async send(params: {
     to: string;

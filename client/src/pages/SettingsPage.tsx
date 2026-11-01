@@ -1,3 +1,4 @@
+import { PhoneSettings } from "@/components/PhoneSettings";
 import { useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Settings as SettingsIcon, Sparkles, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter, Monitor, Moon, Sun, Key } from "lucide-react";
@@ -191,6 +192,7 @@ const SettingsPage = () => {
                 <Input value={user?.email || ""} disabled className="bg-muted" />
                 <p className="text-xs text-muted-foreground">Email cannot be changed</p>
               </div>
+              <PhoneSettings />
               <div className="space-y-2">
                 <Label>Display Name</Label>
                 <Input

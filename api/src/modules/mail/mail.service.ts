@@ -44,8 +44,11 @@ export class MailService {
     ].join('\n');
 
     if (!this.isConfigured()) {
+      // The link is a live credential, so it only appears in local development logs.
       this.logger.warn(
-        `Mail not configured — password reset link for ${to}: ${resetLink}`,
+        process.env.NODE_ENV === 'production'
+          ? 'Mail not configured — password reset email not sent'
+          : `Mail not configured — password reset link for ${to}: ${resetLink}`,
       );
       return;
     }
