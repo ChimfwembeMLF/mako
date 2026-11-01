@@ -1,10 +1,13 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards, Put } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Req, UseGuards, Put } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { TenantIntegrationConfig, IntegrationProvider } from '../entities/tenant-integration-config.entity';
 import { UpsertIntegrationConfigDto } from '../dto/tenant-integration-config.dto';
 import { EncryptionService } from '../services/encryption.service';
+import { TenantAccessService } from '../services/tenant-access.service';
+
+type AuthedRequest = { user: { sub: string } };
 
 @Controller('api/v1/tenant-integration-configs')
 @UseGuards(JwtAuthGuard)
@@ -13,10 +16,12 @@ export class TenantIntegrationConfigsController {
     @InjectRepository(TenantIntegrationConfig)
     private readonly configRepo: Repository<TenantIntegrationConfig>,
     private readonly encryptionService: EncryptionService,
+    private readonly access: TenantAccessService,
   ) { }
 
   @Get(':tenantId')
-  async getConfigs(@Param('tenantId') tenantId: string) {
+  async getConfigs(@Req() req: AuthedRequest, @Param('tenantId') tenantId: string) {
+    await this.access.assertMember(req.user.sub, tenantId);
     const configs = await this.configRepo.find({ where: { tenantId } });
 
     // We only return whether the key is configured, NOT the decrypted key!
@@ -31,10 +36,12 @@ export class TenantIntegrationConfigsController {
 
   @Put(':tenantId')
   async upsertConfig(
+    @Req() req: AuthedRequest,
     @Param('tenantId') tenantId: string,
     @Body() dto: UpsertIntegrationConfigDto,
   ) {
-    const { encryptedData, iv, authTag } = this.encryptionService.encrypt(dto.apiKey);
+    await this.access.assertMember(req.user.sub, tenantId, 'settings.billing');
+    const { encryptedData, iv, authTag } = this.encryptionService.encrypt(dto.apiKey.trim());
 
     let config = await this.configRepo.findOne({
       where: { tenantId, provider: dto.provider },
@@ -64,9 +71,11 @@ export class TenantIntegrationConfigsController {
 
   @Delete(':tenantId/:provider')
   async deleteConfig(
+    @Req() req: AuthedRequest,
     @Param('tenantId') tenantId: string,
     @Param('provider') provider: IntegrationProvider,
   ) {
+    await this.access.assertMember(req.user.sub, tenantId, 'settings.billing');
     await this.configRepo.delete({ tenantId, provider });
     return { success: true };
   }

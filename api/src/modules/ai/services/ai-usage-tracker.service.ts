@@ -42,7 +42,12 @@ export class AiUsageTrackerService {
       where: { id: tenantId },
     });
 
-    const provider = tenant?.preferredAiProvider || IntegrationProvider.MISTRAL;
+    const preferred = tenant?.preferredAiProvider || IntegrationProvider.MISTRAL;
+    // Parler only does voice: text runs on Mistral, so only a Mistral key avoids platform spend.
+    const provider =
+      preferred === IntegrationProvider.SELF_HOSTED_PARLER
+        ? IntegrationProvider.MISTRAL
+        : preferred;
 
     const customConfig = await this.configRepo.findOne({
       where: { tenantId, provider },

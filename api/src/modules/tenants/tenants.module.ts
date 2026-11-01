@@ -1,3 +1,5 @@
+import { RbacModule } from '../auth/rbac/rbac.module';
+import { TenantAccessService } from './services/tenant-access.service';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Tenants } from './entities/tenants.entity';
@@ -22,6 +24,7 @@ import { TenantIntegrationConfig } from './entities/tenant-integration-config.en
 
 @Module({
   imports: [
+    RbacModule,
     SubscriptionsModule,
     TemplatesModule,
     AutoReplyRulesModule,
@@ -39,7 +42,12 @@ import { TenantIntegrationConfig } from './entities/tenant-integration-config.en
       TenantIntegrationConfig,
     ]),
   ],
-  providers: [TenantsService, TenantBootstrapService, EncryptionService],
+  providers: [
+    TenantsService,
+    TenantBootstrapService,
+    EncryptionService,
+    TenantAccessService,
+  ],
   controllers: [TenantsController, TenantIntegrationConfigsController],
   exports: [TenantsService, TenantBootstrapService, EncryptionService],
 })

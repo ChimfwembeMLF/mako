@@ -1,3 +1,6 @@
+import { RbacModule } from '../auth/rbac/rbac.module';
+import { TenantAccessService } from '../tenants/services/tenant-access.service';
+import { AiKeyTestController } from './ai-key-test.controller';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AiUsageModule } from '../ai_usage/ai_usage.module';
@@ -27,14 +30,16 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
 @Module({
   imports: [
     AiUsageModule,
+    RbacModule,
     SubscriptionsModule,
     StorageModule,
     SystemSettingsModule,
     TypeOrmModule.forFeature([BrandProfiles, TenantIntegrationConfig, Tenants]),
   ],
-  controllers: [AiController],
+  controllers: [AiController, AiKeyTestController],
   providers: [
     EncryptionService,
+    TenantAccessService,
     MistralChatService,
     OpenAIChatService,
     GeminiChatService,

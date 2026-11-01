@@ -872,6 +872,12 @@ export const tenantIntegrationConfigsApi = {
         request<any>(`/api/v1/tenant-integration-configs/${tenantId}/${provider}`, {
             method: 'DELETE',
         }),
+
+    testConfig: (tenantId: string, provider: string) =>
+        request<{ ok: boolean; message?: string }>(
+            `/api/v1/tenant-integration-configs/${tenantId}/${provider}/test`,
+            { method: 'POST' },
+        ),
 };
 
 export const rbacApi = {

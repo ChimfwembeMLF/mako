@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Settings as SettingsIcon, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter, Monitor, Moon, Sun, Key } from "lucide-react";
+import { Link, useSearchParams } from "react-router-dom";
+import { Settings as SettingsIcon, Sparkles, User, Bell, Link2, Save, Loader2, LogOut, Facebook, Linkedin, Instagram, Twitter, Monitor, Moon, Sun, Key } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { IntegrationSettings } from "@/components/IntegrationSettings";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -48,6 +49,7 @@ const platformLabels: Record<string, string> = {
 const SettingsPage = () => {
   const { user, signOut } = useAuth();
   const { tenant } = useTenant();
+  const [searchParams] = useSearchParams();
   const { colorMode, setColorMode } = useTheme();
   const { toast } = useToast();
   const [profile, setProfile] = useState<Profile>({ display_name: "", avatar_url: "", notification_preferences: null });
@@ -160,7 +162,8 @@ const SettingsPage = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="profile">
+      {/* Google Drive's OAuth flow returns here with ?success= or ?error=google_drive… */}
+      <Tabs defaultValue={searchParams.toString().includes("google_drive") ? "integrations" : "profile"}>
         <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="profile" className="flex items-center gap-1.5 whitespace-nowrap">
             <User className="h-3.5 w-3.5" /> Profile
@@ -170,6 +173,9 @@ const SettingsPage = () => {
           </TabsTrigger>
           <TabsTrigger value="connections" className="flex items-center gap-1.5 whitespace-nowrap">
             <Link2 className="h-3.5 w-3.5" /> Connections
+          </TabsTrigger>
+          <TabsTrigger value="integrations" className="flex items-center gap-1.5 whitespace-nowrap">
+            <Sparkles className="h-3.5 w-3.5" /> AI & integrations
           </TabsTrigger>
         </TabsList>
 
@@ -385,6 +391,10 @@ const SettingsPage = () => {
               </p>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-4">
+          {tenant?.id && <IntegrationSettings tenantId={tenant.id} />}
         </TabsContent>
 
         {/* Connections Tab */}

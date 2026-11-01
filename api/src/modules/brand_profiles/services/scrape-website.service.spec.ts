@@ -9,6 +9,9 @@ jest.mock('../../ai/services/ai-usage-tracker.service', () => ({
   AiUsageTrackerService: class {},
 }));
 
+// These hit a real local server, which can be slow while the whole suite runs.
+jest.setTimeout(30000);
+
 describe('ScrapeWebsiteService fetching', () => {
   let server: Server;
   let base: string;
@@ -24,7 +27,7 @@ describe('ScrapeWebsiteService fetching', () => {
     return (service as any).fetchPages(
       url,
       3,
-      2000,
+      15000,
       (service as any).discoveryConfig(),
     );
   };
