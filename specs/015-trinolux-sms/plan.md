@@ -35,7 +35,7 @@ api/src/modules/sms/
 ├── sms-number.util.ts          # normalise and validate Zambian numbers
 └── sms-number.util.spec.ts
 api/src/modules/backoffice/     # test endpoint
-client/src/components/admin/    # SmsSettings and SmsTestForm, shown in System Settings
+client/src/components/admin/    # SmsSettings and SmsTestForm, shown in Platform Backoffice
 ```
 
 ## Complexity Tracking

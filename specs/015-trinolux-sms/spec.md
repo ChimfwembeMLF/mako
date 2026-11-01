@@ -14,11 +14,11 @@
 
 ### User Story 1 - Platform SMS Foundation (Priority: P1)
 
-As a platform admin, I want to add Mako's Trinolux API key and Sender ID in System Settings and send a test message, so that I can confirm SMS works before any customer feature depends on it.
+As a platform admin, I want to add Mako's Trinolux API key and Sender ID in Platform Backoffice and send a test message, so that I can confirm SMS works before any customer feature depends on it.
 
 **Why this priority**: Every SMS feature depends on it, and it exposes no tenant-facing cost.
 
-**Independent Test**: Save valid settings in System Settings, send a test SMS to a Zambian number, and confirm Mako reports that Trinolux accepted it.
+**Independent Test**: Save valid settings in Platform Backoffice, send a test SMS to a Zambian number, and confirm Mako reports that Trinolux accepted it.
 
 **Acceptance Scenarios**:
 1. **Given** SMS is not configured, **When** an admin sends a test, **Then** Mako explains what is missing and makes no provider request.

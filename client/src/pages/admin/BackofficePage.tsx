@@ -19,6 +19,8 @@ import { BackofficePlansTab } from './BackofficePlansTab';
 import { BackofficeRefundsTab } from './BackofficeRefundsTab';
 import { BackofficeSubscriptionsTab } from './BackofficeSubscriptionsTab';
 import { PlatformIntegrationsForm } from '@/components/admin/PlatformIntegrationsForm';
+import { SmsSettings } from '@/components/admin/SmsSettings';
+import { SmsTestForm } from '@/components/admin/SmsTestForm';
 
 type Overview = Awaited<ReturnType<typeof backofficeApi.getOverview>>;
 type TenantRow = Awaited<ReturnType<typeof backofficeApi.listTenants>>[number];
@@ -353,6 +355,7 @@ function BackofficeContent() {
           <TabsTrigger value="activity">Activity</TabsTrigger>
           <TabsTrigger value="health">Platform Health</TabsTrigger>
           <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="sms">SMS</TabsTrigger>
           <TabsTrigger value="company">About Mako </TabsTrigger>
         </TabsList>
 
@@ -509,6 +512,11 @@ function BackofficeContent() {
 
         <TabsContent value="plans" className="mt-6">
           <BackofficePlansTab onSaved={setPricingPlans} />
+        </TabsContent>
+
+        <TabsContent value="sms" className="space-y-4 mt-6">
+          <SmsSettings />
+          <SmsTestForm />
         </TabsContent>
 
         <TabsContent value="integrations" className="mt-6">

@@ -16,7 +16,7 @@
 - [x] T003 [US1] Test T002 against every documented response in `api/src/modules/sms/sms.service.spec.ts`
 - [x] T004 [US1] Add `api/src/modules/sms/sms.module.ts` and register it
 - [x] T005 [US1] Add `POST /api/v1/backoffice/sms/test` in `api/src/modules/backoffice/backoffice.controller.ts`
-- [x] T006 [P] [US1] Add SMS settings in `client/src/components/admin/SmsSettings.tsx`, shown in System Settings
+- [x] T006 [P] [US1] Add SMS settings in `client/src/components/admin/SmsSettings.tsx`, shown in Platform Backoffice
 - [x] T007 [US1] Add the test send form and its tests in `client/src/components/admin/SmsTestForm.tsx`
 - [x] T008 [P] [US1] Document the settings in `deploy/dokploy.env.example`
 - [x] T009 [US1] Confirm the key is absent from client bundles, responses and logs
