@@ -54,42 +54,44 @@ export class SocialMessagingInboundService {
     if (!message) return;
 
     const sender = event.sender as { id?: string } | undefined;
-    const recipient = event.recipient as { id?: string } | undefined;
     const senderId = sender?.id;
     if (!senderId) return;
 
-    const account = await this.accountsRepo.findOne({
-      where: { platform, connected: true },
-    });
-    if (!account) {
-      const byPage = pageId
-        ? await this.accountsRepo
-            .createQueryBuilder('a')
-            .where('a.platform = :platform', { platform })
-            .andWhere('a.connected = true')
-            .andWhere(`a.metadata->>'page_id' = :pageId`, { pageId })
-            .getOne()
-        : null;
-      if (!byPage) return;
-      await this.saveInbound(
-        byPage,
-        platform,
-        event,
-        message,
-        senderId,
-        recipient?.id,
+    // entry.id is the Page id (Messenger) or the Instagram account id (Instagram).
+    // Only workspaces that connected the receiving account may store it.
+    const accounts = await this.findReceivingAccounts(platform, pageId);
+    if (!accounts.length) {
+      this.logger.warn(
+        `Inbound ${platform} message for ${pageId ?? 'unknown'} has no connected account`,
       );
       return;
     }
 
-    await this.saveInbound(
-      account,
-      platform,
-      event,
-      message,
-      senderId,
-      recipient?.id,
-    );
+    for (const account of accounts) {
+      await this.saveInbound(account, platform, event, message, senderId, pageId);
+    }
+  }
+
+  private async findReceivingAccounts(
+    platform: string,
+    entryId?: string,
+  ): Promise<SocialAccounts[]> {
+    if (!entryId) return [];
+    const qb = this.accountsRepo
+      .createQueryBuilder('a')
+      .where('a.platform = :platform', { platform })
+      .andWhere('a.connected = true');
+    if (platform === 'instagram') {
+      qb.andWhere(
+        `(a.externalId = :id OR a.metadata->>'instagram_business_account_id' = :id OR a.metadata->>'page_id' = :id)`,
+        { id: entryId },
+      );
+    } else {
+      qb.andWhere(`(a.metadata->>'page_id' = :id OR a.externalId = :id)`, {
+        id: entryId,
+      });
+    }
+    return qb.getMany();
   }
 
   private async saveInbound(
@@ -98,13 +100,14 @@ export class SocialMessagingInboundService {
     event: Record<string, unknown>,
     message: Record<string, unknown>,
     senderId: string,
-    pageId?: string,
+    entryId?: string,
   ) {
     const externalId = String(message.mid ?? message.id ?? '');
     if (externalId) {
       const exists = await this.messagesRepo.findOne({
         where: {
           tenantId: account.tenantId,
+          ...(account.workspaceId ? { workspaceId: account.workspaceId } : {}),
           platform,
           externalMessageId: externalId,
         },
@@ -112,7 +115,17 @@ export class SocialMessagingInboundService {
       if (exists) return;
     }
 
-    const isOutbound = senderId === pageId || senderId === account.externalId;
+    const ownIds = new Set(
+      [
+        entryId,
+        account.externalId,
+        account.metadata?.page_id,
+        account.metadata?.instagram_business_account_id,
+      ]
+        .filter(Boolean)
+        .map(String),
+    );
+    const isOutbound = Boolean(message.is_echo) || ownIds.has(senderId);
     const attachments = this.parseMessageAttachments(message.attachments);
     const body =
       String(message.text ?? '') ||
@@ -125,6 +138,7 @@ export class SocialMessagingInboundService {
     const saved = await this.messagesRepo.save(
       this.messagesRepo.create({
         tenantId: account.tenantId,
+        workspaceId: account.workspaceId,
         platform,
         threadId,
         externalMessageId: externalId || undefined,

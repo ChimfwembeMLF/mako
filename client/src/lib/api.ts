@@ -2161,6 +2161,12 @@ export const inboxApi = {
         return request<UnifiedMessage[]>(`/api/v1/inbox/messages?${params.toString()}`);
     },
 
+    draft: (tenantId: string, conversationId: string, workspaceId?: string) =>
+        request<{ content: string }>('/api/v1/inbox/messages/draft', {
+            method: 'POST',
+            body: JSON.stringify({ tenantId, conversationId, workspaceId }),
+        }),
+
     sync: (tenantId: string, workspaceId?: string) =>
         request<{ synced: number }>('/api/v1/inbox/sync', {
             method: 'POST',

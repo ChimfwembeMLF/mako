@@ -110,6 +110,11 @@ export function UnifiedSocialInbox() {
     void loadDetail();
   }, [loadDetail]);
 
+  // A draft belongs to one conversation; never carry it to the next person.
+  useEffect(() => {
+    setReplyText('');
+  }, [selectedId]);
+
   async function syncAll() {
     if (!tenant || !activeWorkspace) return;
     setSyncing(true);
@@ -151,6 +156,23 @@ export function UnifiedSocialInbox() {
     } catch (err: unknown) {
       toast({
         title: 'Send failed',
+        description: err instanceof Error ? err.message : String(err),
+        variant: 'destructive',
+      });
+    } finally {
+      setSending(null);
+    }
+  }
+
+  async function draftDmReply() {
+    if (!tenant || !selected) return;
+    setSending('dm-draft');
+    try {
+      const { content } = await inboxApi.draft(tenant.id, selected.id, activeWorkspace ?? undefined);
+      if (content?.trim()) setReplyText(content.trim());
+    } catch (err: unknown) {
+      toast({
+        title: 'AI draft failed',
         description: err instanceof Error ? err.message : String(err),
         variant: 'destructive',
       });
@@ -371,28 +393,56 @@ export function UnifiedSocialInbox() {
                     ))}
                   </div>
 
-                  {selected.channel === 'dm' && (
+                  {selected.channel === 'dm' && canReply && (
                     <div className="p-3 border-t space-y-2">
                       <Textarea
-                        rows={2}
-                        placeholder="Reply…"
+                        rows={3}
+                        placeholder={`Reply to ${selected.participantName ?? selected.title}…`}
                         className="resize-none text-sm"
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                            e.preventDefault();
+                            void sendDmReply();
+                          }
+                        }}
+                        disabled={sending === 'dm'}
                       />
-                      <Button
-                        size="sm"
-                        className="w-full sm:w-auto"
-                        onClick={() => void sendDmReply()}
-                        disabled={sending === 'dm' || !replyText.trim()}
-                      >
-                        {sending === 'dm' ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-                        ) : (
-                          <Send className="h-3.5 w-3.5 mr-2" />
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <Button
+                          size="sm"
+                          className="w-full sm:w-auto"
+                          onClick={() => void sendDmReply()}
+                          disabled={sending === 'dm' || !replyText.trim()}
+                        >
+                          {sending === 'dm' ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5 mr-2" />
+                          )}
+                          Send
+                        </Button>
+                        {selected.platform !== 'whatsapp' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full sm:w-auto"
+                            onClick={() => void draftDmReply()}
+                            disabled={sending === 'dm-draft' || sending === 'dm'}
+                          >
+                            {sending === 'dm-draft' ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                            ) : (
+                              <Bot className="h-3.5 w-3.5 mr-2" />
+                            )}
+                            AI draft
+                          </Button>
                         )}
-                        Send
-                      </Button>
+                        <span className="text-[10px] text-muted-foreground sm:ml-auto">
+                          Ctrl/⌘ + Enter to send
+                        </span>
+                      </div>
                     </div>
                   )}
                 </CardContent>
