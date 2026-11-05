@@ -62,6 +62,14 @@ export class SocialInboxController {
     );
   }
 
+  @Post('messages/draft')
+  draftReply(
+    @Body()
+    body: { tenantId: string; conversationId: string; workspaceId?: string },
+  ) {
+    return this.dmReply.draftReply(body);
+  }
+
   @Post('messages/reply')
   reply(
     @Req() req: { user: JwtUser },

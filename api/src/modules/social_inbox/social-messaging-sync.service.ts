@@ -153,7 +153,6 @@ export class SocialMessagingSyncService {
 
     let synced = 0;
     for (const conv of res.data?.data ?? []) {
-      const threadId = String(conv.id);
       const participants =
         (conv.participants as {
           data?: Array<{ id?: string; name?: string; username?: string }>;
@@ -162,6 +161,9 @@ export class SocialMessagingSyncService {
       const customer =
         participants.find((p) => p.id !== ownId && p.id !== pageId) ??
         participants[0];
+      // Thread by the customer's id (PSID / IGSID), the same key the webhook uses,
+      // so synced and pushed messages land in one conversation.
+      const threadId = String(customer?.id ?? conv.id);
 
       for (const msg of (conv.messages as { data?: Record<string, unknown>[] })
         ?.data ?? []) {
@@ -171,6 +173,7 @@ export class SocialMessagingSyncService {
         const exists = await this.messagesRepo.findOne({
           where: {
             tenantId: account.tenantId,
+            ...(account.workspaceId ? { workspaceId: account.workspaceId } : {}),
             platform: account.platform,
             externalMessageId: externalId,
           },

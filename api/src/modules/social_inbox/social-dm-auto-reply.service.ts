@@ -82,6 +82,20 @@ export class SocialDmAutoReplyService {
     return true;
   }
 
+  /** AI-written reply suggestion for the user to edit before sending. */
+  async draftReply(
+    tenantId: string,
+    conversation: string,
+    workspaceId?: string,
+  ): Promise<string> {
+    return this.buildReplyText(
+      tenantId,
+      { aiGenerate: true },
+      conversation,
+      workspaceId,
+    );
+  }
+
   private async sendDm(
     account: SocialAccounts,
     recipientId: string,
