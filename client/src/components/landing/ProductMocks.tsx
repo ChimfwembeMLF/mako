@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Brain, Pen, CalendarClock, BarChart3, MessageSquareReply, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { COMPANY } from '@/config/company';
 
 export type ScreenshotDevice = 'desktop' | 'tablet' | 'phone';
 export type ScreenshotVariant = 'float' | 'chrome';
@@ -115,7 +116,7 @@ export function MockBrandBrain() {
         <span className="ml-auto text-[10px] font-medium text-primary px-2 py-0.5 rounded-full bg-primary/10">Complete</span>
       </div>
       {[
-        ['Company', 'Tekrem Innovation Solutions'],
+        ['Company', COMPANY.legalName],
         ['Tone', 'Professional, clear, approachable'],
         ['Audience', 'SMEs and growing brands in Zambia'],
         ['Key messages', 'Local support · Multi-channel · One workspace'],
