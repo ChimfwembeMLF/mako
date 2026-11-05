@@ -218,6 +218,28 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
     setPlatformPayloads(next);
   }, [selectedPlatforms.join(','), item.id, item.content, item.title, item.platformPayloads]);
 
+  // Pre-attach the media uploaded with this draft in the composer, so users
+  // don't have to re-import it per platform. Platforms with saved or already
+  // chosen media are left untouched.
+  useEffect(() => {
+    const linked = libraryAssets.filter((a) => a.contentId === item.id);
+    if (!linked.length || !selectedPlatforms.length) return;
+    const baseMedia = toMediaAttachments(linked);
+    setPlatformPayloads((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const p of selectedPlatforms) {
+        const current = next[p];
+        if (!current) continue;
+        if (current.media?.length) continue;
+        if (item.platformPayloads?.[p]?.media !== undefined) continue;
+        next[p] = { ...current, media: trimMediaForPlatform(p, baseMedia) };
+        changed = true;
+      }
+      return changed ? next : prev;
+    });
+  }, [libraryAssets, selectedPlatforms.join(','), item.id, item.platformPayloads]);
+
   const updatePayload = (platform: string, patch: Partial<PlatformPayload>) => {
     setPlatformPayloads((prev) => ({
       ...prev,
