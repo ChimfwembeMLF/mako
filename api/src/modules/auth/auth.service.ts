@@ -237,6 +237,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(resetPasswordDto.newPassword, 10);
     await this.userService.updatePassword(user.id, hashedPassword);
     await this.refreshTokenService.revoke(String(user.id));
+    await this.alertPasswordChanged(user);
 
     return {
       message:
@@ -260,10 +261,25 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
     await this.userService.updatePassword(user.id, hashedPassword);
     await this.refreshTokenService.revoke(String(user.id));
+    await this.alertPasswordChanged(user);
     return {
       message:
         'Password successfully reset. You can now log in with your new password.',
     };
+  }
+
+  /** Warns the owner in case they didn't make the change. Never blocks the reset itself. */
+  private async alertPasswordChanged(user: UserEntity): Promise<void> {
+    if (!user.phoneVerifiedAt || !user.phone) return;
+    try {
+      await this.sms.send({
+        to: user.phone,
+        message:
+          "Mako: Your password was just changed. If this wasn't you, reset it now and contact Mako support.",
+      });
+    } catch {
+      this.logger.warn(`Password changed alert failed for user ${user.id}`);
+    }
   }
 
   async phoneVerificationStatus(userId: string) {

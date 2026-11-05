@@ -9983,6 +9983,25 @@
         ]
       }
     },
+    "/api/v1/inbox/messages/draft": {
+      "post": {
+        "operationId": "SocialInboxController_draftReply",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Inbox"
+        ]
+      }
+    },
     "/api/v1/inbox/messages/reply": {
       "post": {
         "operationId": "SocialInboxController_reply",

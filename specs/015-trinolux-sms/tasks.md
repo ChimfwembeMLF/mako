@@ -32,6 +32,7 @@
 - [x] T022 [US4] Stop `forgot-password` revealing which accounts exist
 - [x] T023 [US4] Fix the double hash in `UserService.updatePassword`, which also broke email resets
 - [x] T024 [US4] Add website prompt, settings row and reset code form
+- [x] T027 [US4] Text a password changed alert to verified numbers after either reset
 - [ ] T025 [US4] Add verification and the reset code form to the mobile app
 - [ ] T026 [US4] Run a real reset using a live Trinolux account
 

@@ -22,17 +22,19 @@ const setup = (user: unknown = local()) => {
   const mail = { sendPasswordResetEmail: jest.fn(async () => undefined) };
   const phoneCodes = { send: jest.fn(async () => undefined), verify: jest.fn(async () => true) };
   const refresh = { revoke: jest.fn() };
+  const sms = { send: jest.fn(async () => ({ accepted: true })) };
   const service = Object.create(AuthService.prototype);
   Object.assign(service, {
     userService: users,
     mailService: mail,
     phoneCodes,
     refreshTokenService: refresh,
-    jwtService: { sign: () => 'token' },
+    sms,
+    jwtService: { sign: () => 'token', verify: () => ({ sub: 'u1', type: 'reset' }) },
     config: { get: () => 'https://mako.test' },
     logger: { warn: jest.fn() },
   });
-  return { service, users, mail, phoneCodes, refresh };
+  return { service, users, mail, phoneCodes, refresh, sms };
 };
 
 const generic = { message: 'If that account exists, we have sent password reset instructions.' };
@@ -105,6 +107,46 @@ describe('password reset', () => {
       service.resetPasswordWithCode({ email: 'a@x.co', code: '123456', newPassword: 'newpass1' }),
     ).rejects.toThrow('Invalid or expired code');
     expect(phoneCodes.verify).not.toHaveBeenCalled();
+  });
+});
+
+describe('password changed alert', () => {
+  const alerts = (sms: { send: jest.Mock }) =>
+    sms.send.mock.calls.filter(([m]) => /password was just changed/.test(m.message));
+
+  it.each([
+    ['an SMS code reset', (s: any) => s.resetPasswordWithCode({ email: 'a@x.co', code: '123456', newPassword: 'newpass1' })],
+    ['an email link reset', (s: any) => s.resetPassword({ token: 't', newPassword: 'newpass1' })],
+  ])('texts the verified number after %s', async (_name, reset) => {
+    const { service, sms } = setup();
+    await reset(service);
+    expect(alerts(sms)).toHaveLength(1);
+    expect(alerts(sms)[0][0].to).toBe('260971234567');
+    expect(alerts(sms)[0][0].message.length).toBeLessThanOrEqual(160);
+  });
+
+  it('sends nothing without a verified number', async () => {
+    const { service, sms } = setup(local({ phoneVerifiedAt: null }));
+    await service.resetPassword({ token: 't', newPassword: 'newpass1' });
+    expect(sms.send).not.toHaveBeenCalled();
+  });
+
+  it('still completes the reset when the alert fails', async () => {
+    const { service, users, sms } = setup();
+    sms.send.mockRejectedValue(new Error('trinolux down'));
+    await expect(service.resetPassword({ token: 't', newPassword: 'newpass1' })).resolves.toMatchObject({
+      message: expect.stringContaining('successfully reset'),
+    });
+    expect(users.updatePassword).toHaveBeenCalled();
+  });
+
+  it('is not sent when the reset fails', async () => {
+    const { service, phoneCodes, sms } = setup();
+    phoneCodes.verify.mockResolvedValue(false);
+    await expect(
+      service.resetPasswordWithCode({ email: 'a@x.co', code: '000000', newPassword: 'newpass1' }),
+    ).rejects.toThrow();
+    expect(sms.send).not.toHaveBeenCalled();
   });
 });
 
