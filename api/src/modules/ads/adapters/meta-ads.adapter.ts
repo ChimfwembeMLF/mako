@@ -40,6 +40,7 @@ export class MetaAdsAdapter implements AdsProviderAdapter {
       tenantId,
       payload.userId,
       AdPlatform.META,
+      payload.campaign.workspaceId,
     );
     const accessToken = this.adsAccount.resolveMetaAccessToken(account);
     const adAccountId = await this.adsAccount.resolveMetaAdAccountId(
@@ -114,6 +115,7 @@ export class MetaAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.META,
+      payload.campaign.workspaceId,
     );
     const accessToken = this.adsAccount.resolveMetaAccessToken(account);
     bizSdk.FacebookAdsApi.init(accessToken);
@@ -132,6 +134,7 @@ export class MetaAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.META,
+      payload.campaign.workspaceId,
     );
     const accessToken = this.adsAccount.resolveMetaAccessToken(account);
     bizSdk.FacebookAdsApi.init(accessToken);

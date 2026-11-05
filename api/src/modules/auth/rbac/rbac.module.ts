@@ -10,6 +10,7 @@ import { RolePermissions } from './role_permissions/entities/role_permissions.en
 import { UserPermissions } from './user_permissions/entities/user_permissions.entity';
 import { Profiles } from '../../profiles/entities/profiles.entity';
 import { UserEntity } from '../../user/user.entity';
+import { Tenants } from '../../tenants/entities/tenants.entity';
 import { RbacController } from './rbac.controller';
 import { RbacService } from './rbac.service';
 
@@ -18,6 +19,7 @@ import { RbacService } from './rbac.service';
   imports: [
     TypeOrmModule.forFeature([
       TenantMembers,
+      Tenants,
       Roles,
       RolePermissions,
       UserPermissions,

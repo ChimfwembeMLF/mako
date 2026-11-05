@@ -28,7 +28,11 @@ export class TenantAccessService {
     if (!access.roleId) {
       throw new ForbiddenException('You are not a member of this workspace');
     }
-    if (permission && !access.permissions.includes(permission)) {
+    if (
+      permission &&
+      !access.permissions.includes(permission) &&
+      !(await this.rbac.isTenantOwner(userId, tenantId))
+    ) {
       throw new ForbiddenException('You do not have permission to do this');
     }
   }

@@ -55,6 +55,7 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
       tenantId,
       payload.userId,
       AdPlatform.GOOGLE,
+      payload.campaign.workspaceId,
     );
     if (!account.refreshToken) {
       throw new Error(
@@ -110,6 +111,7 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.GOOGLE,
+      payload.campaign.workspaceId,
     );
     if (!account.refreshToken) return;
 
@@ -136,6 +138,7 @@ export class GoogleAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.GOOGLE,
+      payload.campaign.workspaceId,
     );
     if (!account.refreshToken) return { spend: 0, impressions: 0, clicks: 0 };
 

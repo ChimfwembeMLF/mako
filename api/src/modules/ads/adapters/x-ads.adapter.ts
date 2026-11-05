@@ -16,6 +16,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
   private async resolveCredentials(
     tenantId: string,
     userId: string,
+    workspaceId?: string | null,
   ): Promise<{ accountId: string; accessToken: string }> {
     const accountId = await this.adsAccount.optionalConfig('X_ADS_ACCOUNT_ID');
     const envToken = await this.adsAccount.optionalConfig('X_ADS_ACCESS_TOKEN');
@@ -27,6 +28,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
       tenantId,
       userId,
       AdPlatform.X,
+      workspaceId,
     );
     if (!account.accessToken) {
       throw new Error(
@@ -50,6 +52,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
     const { accountId, accessToken } = await this.resolveCredentials(
       tenantId,
       payload.userId,
+      payload.campaign.workspaceId,
     );
 
     const { data } = await axios.post<{ data?: { id?: string } }>(
@@ -90,6 +93,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
     const { accountId, accessToken } = await this.resolveCredentials(
       tenantId,
       payload.userId,
+      payload.campaign.workspaceId,
     );
 
     await axios.put(
@@ -114,6 +118,7 @@ export class XAdsAdapter implements AdsProviderAdapter {
     const { accountId, accessToken } = await this.resolveCredentials(
       tenantId,
       payload.userId,
+      payload.campaign.workspaceId,
     );
 
     const { data } = await axios.get(

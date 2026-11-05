@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
@@ -209,6 +210,7 @@ export class LeadsController {
     };
   }
 
+  @RequirePermission('leads.email')
   @Post('send-email')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -228,6 +230,7 @@ export class LeadsController {
     return this.leadEmail.sendLeadEmail(payload);
   }
 
+  @RequirePermission('leads.classify')
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -252,6 +255,7 @@ export class LeadsController {
     return this.service.findOne(id);
   }
 
+  @RequirePermission('leads.classify')
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -259,6 +263,7 @@ export class LeadsController {
     return this.service.update(id, dto);
   }
 
+  @RequirePermission('leads.delete')
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

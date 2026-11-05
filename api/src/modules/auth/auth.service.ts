@@ -64,10 +64,9 @@ export class AuthService {
   ) {}
 
   async completeAuthentication(user: UserEntity): Promise<LoginPayloadDto> {
+    // Invitations are accepted from the emailed link (/invite), never by signing in:
+    // email addresses are not verified, so the link is what proves the inbox.
     const tenant = await this.tenantBootstrap.bootstrapForUser(user);
-    if (user.email) {
-      await this.tenantMembers.acceptPendingInvitations(user.id, user.email);
-    }
     const tokens = await this.issueTokensForUser(user, tenant);
     return {
       ...tokens,

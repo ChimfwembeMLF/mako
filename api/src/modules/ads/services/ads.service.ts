@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
-import { DataSource, Repository, In } from 'typeorm';
+import { DataSource, Repository, In, IsNull } from 'typeorm';
 import {
   AdCampaignEntity,
   AdCampaignStatus,
@@ -129,6 +129,7 @@ export class AdsService {
       location?: string;
       ageRange?: string;
       targetUrl?: string;
+      workspaceId?: string;
     },
   ) {
     await this.assertTenantAccess(userId, tenantId);
@@ -185,6 +186,7 @@ export class AdsService {
       location: data.location,
       ageRange: data.ageRange,
       targetUrl: data.targetUrl,
+      workspaceId: data.workspaceId ?? null,
       status: AdCampaignStatus.DRAFT,
     });
     await this.campaignRepo.save(campaign);
@@ -305,10 +307,20 @@ export class AdsService {
     return campaign;
   }
 
-  async getCampaigns(userId: string, tenantId: string) {
+  /** A workspace sees its own campaigns plus older ones created before workspaces were tracked. */
+  private campaignScope(tenantId: string, workspaceId?: string) {
+    return workspaceId
+      ? [
+          { tenantId, workspaceId },
+          { tenantId, workspaceId: IsNull() },
+        ]
+      : { tenantId };
+  }
+
+  async getCampaigns(userId: string, tenantId: string, workspaceId?: string) {
     await this.assertTenantAccess(userId, tenantId);
     const campaigns = await this.campaignRepo.find({
-      where: { tenantId },
+      where: this.campaignScope(tenantId, workspaceId),
       order: { createdAt: 'DESC' },
     });
 
@@ -347,10 +359,16 @@ export class AdsService {
     return adapter.getMetrics(tenantId, campaign.platformCampaignId, payload);
   }
 
-  async getDashboardStats(userId: string, tenantId: string) {
+  async getDashboardStats(
+    userId: string,
+    tenantId: string,
+    workspaceId?: string,
+  ) {
     await this.assertTenantAccess(userId, tenantId);
 
-    const campaigns = await this.campaignRepo.find({ where: { tenantId } });
+    const campaigns = await this.campaignRepo.find({
+      where: this.campaignScope(tenantId, workspaceId),
+    });
     const activeCampaigns = campaigns.filter(
       (c) => c.status === AdCampaignStatus.ACTIVE,
     ).length;

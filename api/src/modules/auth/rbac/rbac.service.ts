@@ -7,6 +7,7 @@ import { RolePermissions } from './role_permissions/entities/role_permissions.en
 import { UserPermissions } from './user_permissions/entities/user_permissions.entity';
 import { Profiles } from '../../profiles/entities/profiles.entity';
 import { UserEntity } from '../../user/user.entity';
+import { Tenants } from '../../tenants/entities/tenants.entity';
 import { RoleType } from '../../../constants';
 import { SUPER_ADMIN_PERMISSIONS } from './rbac.constants';
 
@@ -25,6 +26,8 @@ export class RbacService {
     private readonly profilesRepo: Repository<Profiles>,
     @InjectRepository(UserEntity)
     private readonly usersRepo: Repository<UserEntity>,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
   ) {}
 
   async hasRoles(
@@ -54,6 +57,15 @@ export class RbacService {
       where: { userId, tenantId, isActive: true },
     });
     return Boolean(member) || this.isSuperAdmin(userId);
+  }
+
+  /** The tenant's owner keeps full access even if their role predates a permission key. */
+  async isTenantOwner(userId: string, tenantId: string): Promise<boolean> {
+    const tenant = await this.tenantsRepo.findOne({
+      where: { id: tenantId },
+      select: { id: true, ownerId: true },
+    });
+    return tenant?.ownerId === userId;
   }
 
   async memberTenantIds(userId: string): Promise<string[]> {

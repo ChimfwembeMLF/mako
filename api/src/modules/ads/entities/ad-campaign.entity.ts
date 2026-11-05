@@ -33,6 +33,10 @@ export class AdCampaignEntity {
   @Column()
   tenantId: string;
 
+  /** Workspace whose connected ad account runs this campaign (null: created before workspaces were tracked). */
+  @Column({ type: 'uuid', nullable: true })
+  workspaceId?: string | null;
+
   @Column({ type: 'enum', enum: AdPlatform, default: AdPlatform.META })
   platform: AdPlatform;
 

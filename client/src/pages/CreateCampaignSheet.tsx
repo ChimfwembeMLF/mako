@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, Wand2, AlertTriangle } from 'lucide-react';
 import { systemSettingsApi, adsApi } from '@/lib/api';
+import { useWorkspace } from '@/hooks/useWorkspace';
 import { useTenant } from '@/hooks/useTenant';
 import {
   AlertDialog,
@@ -36,6 +37,7 @@ interface Props {
 
 export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
   const { tenant } = useTenant();
+  const { activeWorkspace } = useWorkspace();
   const [step, setStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAiGenerating, setIsAiGenerating] = useState(false);
@@ -115,7 +117,7 @@ export function CreateCampaignSheet({ open, onOpenChange, onSuccess }: Props) {
     setIsSubmitting(true);
     setError(null);
     try {
-      await adsApi.createCampaign(tenant.id, formData);
+      await adsApi.createCampaign(tenant.id, formData, activeWorkspace);
       setAlertMessage('Campaign created and launched successfully!');
     } catch (err: any) {
       setError(err.message || 'Failed to create campaign');

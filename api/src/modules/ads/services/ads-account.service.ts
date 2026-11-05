@@ -7,7 +7,7 @@ import { SocialAccountsService } from '../../social_accounts/social_accounts.ser
 import { AdPlatform } from '../entities/ad-campaign.entity';
 import {
   assertMetaAdsPermissions,
-  fetchMetaAdAccountId,
+  fetchMetaAdAccountIds,
 } from '../utils/meta-graph.util';
 
 import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
@@ -48,10 +48,16 @@ export class AdsAccountService {
     return (await this.platformIntegrations.getIntegrationWithEnvFallback(key))?.trim() || undefined;
   }
 
+  /**
+   * The ad platform account a campaign runs through. A campaign created in a
+   * workspace only ever uses that workspace's connection, never another
+   * workspace's (e.g. another agency client's) account.
+   */
   async getConnectedAccount(
     tenantId: string,
     userId: string,
     platform: AdPlatform,
+    workspaceId?: string | null,
   ): Promise<SocialAccounts> {
     const socialPlatform = this.socialPlatform(platform);
     if (!socialPlatform) {
@@ -60,12 +66,13 @@ export class AdsAccountService {
       );
     }
 
+    const scope = workspaceId ? { tenantId, workspaceId } : { tenantId };
     const account =
       (await this.repo.findOne({
-        where: { tenantId, userId, platform: socialPlatform, connected: true },
+        where: { ...scope, userId, platform: socialPlatform, connected: true },
       })) ??
       (await this.repo.findOne({
-        where: { tenantId, platform: socialPlatform, connected: true },
+        where: { ...scope, platform: socialPlatform, connected: true },
       }));
 
     if (!account?.accessToken) {
@@ -95,13 +102,25 @@ export class AdsAccountService {
       : undefined;
   }
 
+  /**
+   * The Meta ad account for this connection. META_AD_ACCOUNT_ID is only used when
+   * this user's token can actually reach it; otherwise every tenant's campaigns
+   * would land in that one account.
+   */
   async resolveMetaAdAccountId(accessToken: string): Promise<string> {
+    await assertMetaAdsPermissions(accessToken);
+    const accessible = await fetchMetaAdAccountIds(accessToken);
     const configured = await this.optionalConfig('META_AD_ACCOUNT_ID');
     if (configured) {
-      return configured.startsWith('act_') ? configured : `act_${configured}`;
+      const id = configured.startsWith('act_') ? configured : `act_${configured}`;
+      if (accessible.includes(id)) return id;
     }
-
-    await assertMetaAdsPermissions(accessToken);
-    return fetchMetaAdAccountId(accessToken);
+    if (!accessible.length) {
+      throw new BadRequestException(
+        'No Meta ad account is available to this Facebook connection. Create one in Ads Manager or give this user access to the business ad account, then reconnect Facebook.',
+      );
+    }
+    return accessible[0];
   }
+
 }

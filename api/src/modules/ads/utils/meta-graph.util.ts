@@ -90,3 +90,20 @@ export async function fetchMetaAdAccountId(
     );
   }
 }
+
+/** Every ad account id (act_…) the token can use, in Graph order. */
+export async function fetchMetaAdAccountIds(
+  accessToken: string,
+): Promise<string[]> {
+  try {
+    const { data } = await axios.get<{ data?: Array<{ id: string }> }>(
+      'https://graph.facebook.com/v19.0/me/adaccounts',
+      { params: { access_token: accessToken, fields: 'id', limit: 50 } },
+    );
+    return (data.data ?? []).map((a) => a.id).filter(Boolean);
+  } catch (err) {
+    throw new BadRequestException(
+      formatGraphApiError(err, 'Could not list Meta ad accounts'),
+    );
+  }
+}

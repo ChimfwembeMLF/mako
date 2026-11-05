@@ -13,6 +13,7 @@ const setup = (over: Record<string, unknown> = {}, role: unknown = { tenantId: '
     }),
     isSuperAdmin: jest.fn().mockResolvedValue(Boolean(over.isSuperAdmin)),
     sharesTenant: jest.fn().mockResolvedValue(Boolean(over.shares)),
+    isTenantOwner: jest.fn().mockResolvedValue(Boolean(over.owner)),
   };
   const roles = { findOne: jest.fn().mockResolvedValue(role) };
   return new TenantAccessService(rbac as any, roles as any);
@@ -31,6 +32,12 @@ describe('TenantAccessService', () => {
     await expect(
       setup({ roleId: 'r', permissions: ['settings.view'] }).assertMember('u', 't', 'settings.billing'),
     ).rejects.toThrow('permission');
+  });
+
+  it('lets the tenant owner through even if their role lacks the permission', async () => {
+    await expect(
+      setup({ roleId: 'r', permissions: [], owner: true }).assertMember('u', 't', 'settings.billing'),
+    ).resolves.toBeUndefined();
   });
 
   it('allows a member with the permission', async () => {

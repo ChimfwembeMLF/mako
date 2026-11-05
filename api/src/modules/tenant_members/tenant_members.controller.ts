@@ -18,7 +18,8 @@ import { TenantMembers } from './entities/tenant_members.entity';
 import { TenantMembersCreateDto } from './dto/create-tenant_members.dto';
 import { TenantMembersUpdateDto } from './dto/update-tenant_members.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { IsEmail, IsUUID } from 'class-validator';
+import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
+import { IsEmail, IsString, IsUUID } from 'class-validator';
 
 class InviteMemberDto {
   @IsEmail()
@@ -29,6 +30,11 @@ class InviteMemberDto {
 
   @IsUUID()
   roleId: string;
+}
+
+class InvitationTokenDto {
+  @IsString()
+  token: string;
 }
 
 @ApiTags('Tenant Members')
@@ -48,14 +54,46 @@ export class TenantMembersController {
     return this.service.invite({ ...dto, invitedBy: userId });
   }
 
+  /** Invitation details for the person it was sent to (link from the email). */
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @Post()
-  async create(
+  @Get('invitations/:id/preview')
+  previewInvitation(
     @Req() req: Request,
-    @Body() dto: TenantMembersCreateDto,
-  ): Promise<TenantMembers> {
-    await this.access.assertMember(req.user?.['sub'], dto.tenantId, 'team.assign_roles');
+    @Param('id') id: string,
+    @Query('token') token: string,
+  ) {
+    return this.service.previewInvitation(id, token, req.user?.['sub']);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('invitations/:id/accept')
+  acceptInvitation(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() dto: InvitationTokenDto,
+  ) {
+    return this.service.acceptInvitation(id, dto.token, req.user?.['sub']);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Post('invitations/:id/decline')
+  async declineInvitation(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() dto: InvitationTokenDto,
+  ) {
+    await this.service.declineInvitation(id, dto.token, req.user?.['sub']);
+    return { declined: true };
+  }
+
+  /** Adds a user without their consent, so only the platform may do it; tenants use /invite. */
+  @UseGuards(JwtAuthGuard, PlatformAdminGuard)
+  @ApiBearerAuth()
+  @Post()
+  async create(@Body() dto: TenantMembersCreateDto): Promise<TenantMembers> {
     return this.service.create(dto);
   }
 

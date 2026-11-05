@@ -61,14 +61,11 @@ export default function TeamPage() {
     try {
       const res = await tenantMembersApi.invite({ email: inviteEmail, tenantId: tenant.id, roleId: inviteRole });
       await logAudit({ tenantId: tenant.id, action: 'team.invite', metadata: { email: inviteEmail } });
-      if (res?.pending) {
-        toast({
-          title: 'Invitation sent',
-          description: `${inviteEmail} will join when they register or sign in with that email.`,
-        });
-      } else {
-        toast({ title: 'Member added', description: `${inviteEmail} was added to the team.` });
-      }
+      toast({
+        title: 'Invitation sent',
+        description:
+          res?.message ?? `${inviteEmail} will join once they accept the invitation from their email.`,
+      });
       setInviteEmail('');
       setInviteRole('');
       load();

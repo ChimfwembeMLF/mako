@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import {
   Body,
@@ -29,6 +30,7 @@ export class ContentCampaignsController {
     private readonly access: TenantAccessService,
   ) {}
 
+  @RequirePermission('content.create')
   @Post('generate')
   generate(@Req() req: { user: JwtUser }, @Body() dto: GenerateCampaignDto) {
     return this.campaigns.generate({
@@ -57,6 +59,7 @@ export class ContentCampaignsController {
     return this.campaigns.findOne(id, tenantId);
   }
 
+  @RequirePermission('content.approve')
   @Post(':id/approve')
   async approve(
     @Req() req: { user: JwtUser },
@@ -67,6 +70,7 @@ export class ContentCampaignsController {
     return this.campaigns.approve(id, tenantId);
   }
 
+  @RequirePermission('content.delete')
   @Delete(':id')
   remove(@Param('id') id: string, @Query('tenantId') tenantId: string) {
     return this.campaigns.remove(id, tenantId);

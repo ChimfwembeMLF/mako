@@ -84,8 +84,8 @@ export default function AdsPage() {
     try {
       const [bal, list, dash] = await Promise.all([
         adsApi.getBalance(tenant.id),
-        adsApi.getCampaigns(tenant.id),
-        adsApi.getDashboardStats(tenant.id),
+        adsApi.getCampaigns(tenant.id, activeWorkspace),
+        adsApi.getDashboardStats(tenant.id, activeWorkspace),
       ]);
       setBalance(bal.balance);
       setCampaigns(list);
@@ -95,7 +95,7 @@ export default function AdsPage() {
     } finally {
       setLoading(false);
     }
-  }, [tenant]);
+  }, [tenant, activeWorkspace]);
 
   useEffect(() => {
     loadData();
