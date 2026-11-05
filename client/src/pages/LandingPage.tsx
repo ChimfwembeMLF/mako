@@ -22,6 +22,7 @@ import {
 import Logo from '@/components/Logo';
 import { cn } from '@/lib/utils';
 import { GuestAdUnit } from '@/components/GuestAdUnit';
+import { COMPANY, COMPANY_BYLINE } from '@/config/company';
 
 function useInView(threshold = 0.12) {
   const ref = useRef<HTMLDivElement>(null);
@@ -579,7 +580,7 @@ function Footer() {
         <div>
           <Logo className="h-14 brightness-0 invert" />
           <p className="text-sm text-background/70 mt-3 max-w-xs leading-relaxed">
-            Marketing workspace by Tekrem Innovation Solutions. Built in Zambia for teams across Africa.
+            Marketing workspace by {COMPANY.legalName}. Built in Zambia for teams across Africa.
           </p>
         </div>
         <div className="flex gap-8 text-sm text-background/70">
@@ -590,7 +591,7 @@ function Footer() {
           <Link to="/auth" className="hover:text-background">Sign in</Link>
         </div>
       </div>
-      <p className="text-center text-xs text-background/50 mt-8">© {new Date().getFullYear()} Mako · Tekrem Innovation Solutions</p>
+      <p className="text-center text-xs text-background/50 mt-8">© {new Date().getFullYear()} {COMPANY_BYLINE}</p>
     </footer>
   );
 }

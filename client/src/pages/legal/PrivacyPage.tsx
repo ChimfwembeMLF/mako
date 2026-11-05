@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom';
 import {
   Database, Share2, Sparkles, Trash2, UserCircle, MessageSquare, BarChart3,
-  Facebook, Clock, Mail,
+  Facebook, Clock, Mail, Building2,
 } from 'lucide-react';
 import { LegalCallout, LegalLayout, LegalSection } from './LegalLayout';
+import { COMPANY } from '@/config/company';
 
 const COLLECT_ITEMS = [
   { icon: UserCircle, text: 'Account details (email, name) when you register or sign in with a social provider' },
@@ -50,12 +51,29 @@ export default function PrivacyPage() {
   return (
     <LegalLayout
       title="Privacy Policy"
-      description="How Tekrem Innovation Solutions — Mako collects, uses, and protects your data when you use our AI marketing platform."
+      description={`How ${COMPANY.legalName} collects, uses, and protects your data when you use ${COMPANY.productName}, our AI marketing platform.`}
       icon={Database}
+      lastUpdated="November 2026"
     >
       <LegalCallout variant="accent">
         We respect your privacy. This policy explains what we collect, why we need it, and the choices you have.
       </LegalCallout>
+
+      <LegalSection icon={Building2} title="Who we are">
+        <p>
+          {COMPANY.productName} is operated by <strong className="text-foreground">{COMPANY.legalName}</strong>,
+          a company registered in {COMPANY.country}
+          {COMPANY.address ? <>, at {COMPANY.address}</> : null}. {COMPANY.legalName} is responsible for
+          the personal data processed through {COMPANY.productName}.
+        </p>
+        <p>
+          Questions or requests about your data:{' '}
+          <a href={`mailto:${COMPANY.supportEmail}`} className="font-medium text-primary hover:underline">
+            {COMPANY.supportEmail}
+          </a>
+          {COMPANY.phone ? <> · {COMPANY.phone}</> : null}
+        </p>
+      </LegalSection>
 
       <LegalSection icon={Database} title="Information we collect">
         <ul className="space-y-3">

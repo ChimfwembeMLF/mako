@@ -76,7 +76,7 @@ export class LegalController {
     const urls = resolveLegalUrls(this.config);
     const appName =
       this.config.get<string>('APP_NAME') ??
-      'Tekrem Innovation Solutions - Mako';
+      'Mako';
     const supportEmail =
       this.config.get<string>('SUPPORT_EMAIL')?.trim() ?? 'support@agriwide.co';
     return { appName, supportEmail, ...urls };
@@ -227,7 +227,7 @@ export class LegalController {
       );
       const appName =
         this.config.get<string>('APP_NAME') ??
-        'Tekrem Innovation Solutions - Mako';
+        'Mako';
       const frontend = (this.config.get<string>('FRONTEND_URL') ?? '').replace(
         /\/$/,
         '',

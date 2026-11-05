@@ -2,6 +2,7 @@ import {
   FileText, Scale, CreditCard, CloudOff, ShieldCheck, MessageSquareWarning,
 } from 'lucide-react';
 import { LegalCallout, LegalLayout, LegalSection } from './LegalLayout';
+import { COMPANY } from '@/config/company';
 
 const ACCEPTABLE_USE = [
   'Comply with Meta, LinkedIn, Google, TikTok, and applicable platform policies',
@@ -18,7 +19,7 @@ export default function TermsPage() {
       icon={FileText}
     >
       <LegalCallout variant="accent">
-        By creating an account or using Tekrem Innovation Solutions — Mako, you agree to these terms.
+        By creating an account or using {COMPANY.productName}, operated by {COMPANY.legalName}, you agree to these terms.
       </LegalCallout>
 
       <LegalSection icon={Scale} title="Acceptable use">

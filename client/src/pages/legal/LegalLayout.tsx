@@ -4,6 +4,7 @@ import { FileText, Shield, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Logo from '@/components/Logo';
 import { AppBreadcrumbs } from '@/components/AppBreadcrumbs';
+import { COMPANY_BYLINE } from '@/config/company';
 
 const LEGAL_PAGES = [
   { to: '/privacy', label: 'Privacy', icon: Shield },
@@ -139,7 +140,7 @@ export function LegalLayout({
         </article>
 
         <footer className="mt-12 flex flex-col items-center gap-4 border-t pt-8 text-center text-sm text-muted-foreground sm:flex-row sm:justify-between sm:text-left">
-          <p>© {new Date().getFullYear()} Mako  · Tekrem Innovation Solutions</p>
+          <p>© {new Date().getFullYear()} {COMPANY_BYLINE}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/auth" className="hover:text-foreground transition-colors">Sign in</Link>
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
