@@ -9,6 +9,18 @@ import {
 } from 'typeorm';
 import { Workspaces } from './workspaces.entity';
 
+/** One automation cycle, kept so the Automations tab can show recent results. */
+export type AutomationRun = {
+  at: string;
+  trigger: 'scheduled' | 'manual';
+  status: 'success' | 'partial' | 'failed' | 'skipped';
+  generated: number;
+  message: string;
+  /** The day the drafts were planned for. */
+  targetDate?: string;
+  contentIds?: string[];
+};
+
 @Entity({ name: 'workspace_automation_configs' })
 export class WorkspaceAutomationConfig {
   @PrimaryGeneratedColumn('uuid')
@@ -20,7 +32,7 @@ export class WorkspaceAutomationConfig {
   @Column({ name: 'is_active', type: 'boolean', default: false })
   isActive: boolean;
 
-  @Column({ type: 'text', default: 'America/New_York' })
+  @Column({ type: 'text', default: 'Africa/Lusaka' })
   timezone: string;
 
   @Column({ name: 'generate_at', type: 'text', default: '19:00' })
@@ -40,6 +52,12 @@ export class WorkspaceAutomationConfig {
 
   @Column({ type: 'jsonb', default: '[]' })
   platforms: string[];
+
+  @Column({ name: 'last_run_at', type: 'timestamptz', nullable: true })
+  lastRunAt?: Date | null;
+
+  @Column({ name: 'recent_runs', type: 'jsonb', default: '[]' })
+  recentRuns: AutomationRun[];
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   created_at: Date;

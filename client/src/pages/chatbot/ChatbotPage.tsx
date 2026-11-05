@@ -385,24 +385,6 @@ export default function ChatbotPage() {
                       onCheckedChange={(v) => setDraft((d) => ({ ...d, ragEnabled: v }))}
                     />
                   </div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <Label>Mistral Document Library</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Optional: Mistral hosts indexing and search (extra API cost). Self-hosted
-                        RAG still runs when enabled.
-                      </p>
-                      {draft.useMistralLibrary && draft.mistralAgentId && (
-                        <Badge variant="secondary" className="mt-1 text-xs font-normal">
-                          Agent provisioned
-                        </Badge>
-                      )}
-                    </div>
-                    <Switch
-                      checked={draft.useMistralLibrary ?? false}
-                      onCheckedChange={(v) => setDraft((d) => ({ ...d, useMistralLibrary: v }))}
-                    />
-                  </div>
                 </CardContent>
               </Card>
 

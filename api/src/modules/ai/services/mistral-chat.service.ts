@@ -44,6 +44,15 @@ import { TenantIntegrationConfig, IntegrationProvider } from '../../tenants/enti
 import { EncryptionService } from '../../tenants/services/encryption.service';
 import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
 
+/** HTTP status from a Mistral SDK error, when there is one. */
+function mistralStatus(err: unknown): number | undefined {
+  const e = err as { statusCode?: unknown; status?: unknown; message?: unknown };
+  if (typeof e?.statusCode === 'number') return e.statusCode;
+  if (typeof e?.status === 'number') return e.status;
+  const match = typeof e?.message === 'string' ? e.message.match(/Status (\d{3})/) : null;
+  return match ? Number(match[1]) : undefined;
+}
+
 @Injectable()
 export class MistralChatService {
   private readonly logger = new Logger(MistralChatService.name);
@@ -98,6 +107,11 @@ export class MistralChatService {
     );
   }
 
+  /** Used when the requested model is over its usage limit or not on the account's plan. */
+  get fallbackModel(): string {
+    return this.config.get<string>('MISTRAL_FALLBACK_MODEL') || 'ministral-8b-latest';
+  }
+
   get premiumModel(): string {
     return (
       this.config.get<string>('MISTRAL_PREMIUM_MODEL') || 'mistral-large-latest'
@@ -115,6 +129,48 @@ export class MistralChatService {
     },
   ): Promise<ChatResult> {
     const model = options?.model ?? this.defaultModel;
+    try {
+      return await this.completeWithModel(messages, model, options);
+    } catch (err) {
+      const status = mistralStatus(err);
+      // A model can run out of quota (429) or be outside the plan (403) while others still work.
+      if ((status === 429 || status === 403) && model !== this.fallbackModel) {
+        this.logger.warn(`Mistral ${model} returned ${status}; retrying with ${this.fallbackModel}`);
+        try {
+          return await this.completeWithModel(messages, this.fallbackModel, options);
+        } catch (fallbackErr) {
+          throw this.toHttpError(fallbackErr);
+        }
+      }
+      throw this.toHttpError(err);
+    }
+  }
+
+  private toHttpError(err: unknown): HttpException {
+    if (err instanceof HttpException) return err;
+    if (isMistralNetworkError(err)) {
+      return new ServiceUnavailableException(
+        'Cannot reach Mistral AI (api.mistral.ai). Check your internet connection and try again.',
+      );
+    }
+    const status = mistralStatus(err);
+    if (status === 429) {
+      return new ServiceUnavailableException(
+        'The Mistral account has reached its usage limit. Raise the limit or upgrade the plan at admin.mistral.ai.',
+      );
+    }
+    if (status === 401) {
+      return new ServiceUnavailableException('Mistral rejected the API key. Save a new key under Integrations.');
+    }
+    const msg = err instanceof Error ? err.message : 'Mistral request failed';
+    return new BadRequestException(msg);
+  }
+
+  private async completeWithModel(
+    messages: ChatMessage[],
+    model: string,
+    options?: { jsonMode?: boolean; maxTokens?: number; temperature?: number; tenantId?: string },
+  ): Promise<ChatResult> {
     try {
       const client = await this.getClient(options?.tenantId);
       const response = await client.chat.complete({
@@ -151,17 +207,8 @@ export class MistralChatService {
 
       return { content: content.trim(), tokensUsed, model };
     } catch (err) {
-      this.logger.error('Mistral chat completion failed', err);
-      if (err instanceof HttpException) {
-        throw err;
-      }
-      if (isMistralNetworkError(err)) {
-        throw new ServiceUnavailableException(
-          'Cannot reach Mistral AI (api.mistral.ai). Check your internet connection and try again.',
-        );
-      }
-      const msg = err instanceof Error ? err.message : 'Mistral request failed';
-      throw new BadRequestException(msg);
+      this.logger.error(`Mistral chat completion failed (${model})`, err);
+      throw err;
     }
   }
 

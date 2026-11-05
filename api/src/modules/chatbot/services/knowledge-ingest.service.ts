@@ -7,6 +7,7 @@ import { S3StorageService } from '../../media/s3-storage.service';
 import { AiProviderRouter } from '../../ai/services/ai-provider-router.service';
 import { AiUsageTrackerService } from '../../ai/services/ai-usage-tracker.service';
 import { VectorStoreService } from './vector-store.service';
+import { KnowledgeEmbeddingService } from './knowledge-embedding.service';
 import { ChatbotConfigService } from './chatbot-config.service';
 import { MistralChatbotLibraryService } from './mistral-chatbot-library.service';
 import { chunkText, estimateTokens } from '../utils/text-chunk.util';
@@ -25,6 +26,7 @@ export class KnowledgeIngestService {
     private readonly aiRouter: AiProviderRouter,
     private readonly usage: AiUsageTrackerService,
     private readonly vectorStore: VectorStoreService,
+    private readonly embeddings: KnowledgeEmbeddingService,
     private readonly chatbotConfig: ChatbotConfigService,
     private readonly mistralLibrary: MistralChatbotLibraryService,
   ) {}
@@ -55,7 +57,7 @@ export class KnowledgeIngestService {
 
       const config = await this.chatbotConfig.getOrCreate(params.tenantId);
       if (
-        config.useMistralLibrary &&
+        this.mistralLibrary.usesLibrary(config) &&
         !this.mistralLibrary.getMistralDocumentId(doc)
       ) {
         try {
@@ -91,7 +93,7 @@ export class KnowledgeIngestService {
 
       for (let i = 0; i < chunks.length; i += EMBED_BATCH_SIZE) {
         const batch = chunks.slice(i, i + EMBED_BATCH_SIZE);
-        const embeddings = await this.aiRouter.embedBatch(batch);
+        const embeddings = await this.embeddings.embedBatch(batch);
 
         for (let j = 0; j < batch.length; j++) {
           const content = batch[j];

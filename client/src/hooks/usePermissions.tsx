@@ -16,8 +16,8 @@ interface PermissionState {
 let _cache: { tenantId: string; userId: string; state: PermissionState } | null = null;
 
 export function usePermissions() {
-  const { user } = useAuth();
-  const { tenant } = useTenant();
+  const { user, loading: authLoading } = useAuth();
+  const { tenant, loading: tenantLoading } = useTenant();
   const [state, setState] = useState<PermissionState>({
     granted: new Set(),
     isSuperAdmin: false,
@@ -26,6 +26,12 @@ export function usePermissions() {
   });
 
   const load = useCallback(async () => {
+    // Still signing in or loading the account: report loading, not "no access",
+    // so route guards don't redirect on a fresh page load.
+    if (authLoading || (user && tenantLoading)) {
+      setState((s) => ({ ...s, loading: true }));
+      return;
+    }
     if (!user || !tenant) {
       setState({ granted: new Set(), isSuperAdmin: false, roleName: null, loading: false });
       return;
@@ -54,7 +60,7 @@ export function usePermissions() {
         loading: false,
       });
     }
-  }, [user, tenant]);
+  }, [user, tenant, authLoading, tenantLoading]);
 
   useEffect(() => { load(); }, [load]);
 

@@ -3,6 +3,8 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { randomUUID } from 'crypto';
 import type { ChatCitation } from '../entities/chat-message.entity';
+import { QdrantService } from './qdrant.service';
+import { KnowledgeEmbeddingService } from './knowledge-embedding.service';
 
 export interface RetrievedChunk {
   id: string;
@@ -17,7 +19,11 @@ export class VectorStoreService {
   private readonly logger = new Logger(VectorStoreService.name);
   private embeddingMode: 'vector' | 'text' | 'none' | null = null;
 
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly qdrant: QdrantService,
+    private readonly embeddings: KnowledgeEmbeddingService,
+  ) {}
 
   private toVectorLiteral(embedding: number[]): string {
     return `[${embedding.join(',')}]`;
@@ -55,6 +61,24 @@ export class VectorStoreService {
   }): Promise<string> {
     const id = randomUUID();
     const meta = params.metadata ? JSON.stringify(params.metadata) : null;
+
+    // With Qdrant, Postgres keeps only the chunk text; the vector lives in Qdrant under the same id.
+    if (await this.qdrant.isConfigured()) {
+      await this.dataSource.query(
+        `INSERT INTO knowledge_chunks
+          (id, tenant_id, document_id, chunk_index, content, token_count, metadata)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [id, params.tenantId, params.documentId, params.chunkIndex, params.content, params.tokenCount, meta],
+      );
+      await this.qdrant.upsert(await this.embeddings.collection(), [
+        {
+          id,
+          vector: params.embedding,
+          payload: { tenant_id: params.tenantId, document_id: params.documentId, chunk_index: params.chunkIndex },
+        },
+      ]);
+      return id;
+    }
 
     const mode = await this.getEmbeddingMode();
     if (mode === 'vector') {
@@ -116,6 +140,14 @@ export class VectorStoreService {
       `DELETE FROM knowledge_chunks WHERE document_id = $1 AND tenant_id = $2`,
       [documentId, tenantId],
     );
+    if (await this.qdrant.isConfigured()) {
+      try {
+        await this.qdrant.deleteDocument(await this.embeddings.collection(), documentId, tenantId);
+      } catch (err) {
+        // Orphaned vectors are harmless: search only returns chunks that still exist in Postgres.
+        this.logger.warn(`Qdrant delete failed for document ${documentId}: ${err instanceof Error ? err.message : err}`);
+      }
+    }
   }
 
   async search(params: {
@@ -124,6 +156,13 @@ export class VectorStoreService {
     topK: number;
     minScore: number;
   }): Promise<RetrievedChunk[]> {
+    if (await this.qdrant.isConfigured()) {
+      try {
+        return await this.searchQdrant(params);
+      } catch (err) {
+        this.logger.error('Qdrant search failed, falling back to Postgres', err);
+      }
+    }
     const mode = await this.getEmbeddingMode();
     if (mode === 'vector') {
       return this.searchPgvector(params);
@@ -132,6 +171,38 @@ export class VectorStoreService {
       return this.searchInMemory(params);
     }
     return [];
+  }
+
+  private async searchQdrant(params: {
+    tenantId: string;
+    embedding: number[];
+    topK: number;
+    minScore: number;
+  }): Promise<RetrievedChunk[]> {
+    const hits = await this.qdrant.search(await this.embeddings.collection(), {
+      vector: params.embedding,
+      tenantId: params.tenantId,
+      limit: params.topK,
+      minScore: params.minScore,
+    });
+    if (!hits.length) return [];
+
+    // Text and titles come from Postgres, which also re-checks the tenant and that the document is ready.
+    const rows: Array<{ id: string; document_id: string; title: string; content: string }> =
+      await this.dataSource.query(
+        `SELECT kc.id, kc.document_id, kd.title, kc.content
+         FROM knowledge_chunks kc
+         INNER JOIN knowledge_documents kd ON kd.id = kc.document_id
+         WHERE kc.id = ANY($1::uuid[]) AND kc.tenant_id = $2 AND kd.status = 'ready'`,
+        [hits.map((h) => h.id), params.tenantId],
+      );
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    return hits
+      .map((h) => {
+        const r = byId.get(h.id);
+        return r ? { id: r.id, documentId: r.document_id, title: r.title, content: r.content, score: h.score } : null;
+      })
+      .filter((r): r is RetrievedChunk => r !== null);
   }
 
   private async searchPgvector(params: {

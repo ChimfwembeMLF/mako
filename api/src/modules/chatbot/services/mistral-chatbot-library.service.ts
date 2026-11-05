@@ -35,8 +35,18 @@ export class MistralChatbotLibraryService {
     private readonly storage: S3StorageService,
   ) {}
 
+  /** Off unless MISTRAL_LIBRARY_ENABLED=true: by default the chatbot answers through the shared AI service. */
+  get featureEnabled(): boolean {
+    return this.config.get<string>('MISTRAL_LIBRARY_ENABLED') === 'true';
+  }
+
+  /** Whether this config should use Mistral's hosted library (and the feature is switched on). */
+  usesLibrary(config: ChatbotConfig): boolean {
+    return this.featureEnabled && Boolean(config.useMistralLibrary);
+  }
+
   isEnabled(config: ChatbotConfig): boolean {
-    return Boolean(config.useMistralLibrary && config.mistralAgentId?.trim());
+    return this.usesLibrary(config) && Boolean(config.mistralAgentId?.trim());
   }
 
   private getClient(): Mistral {

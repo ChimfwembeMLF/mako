@@ -201,6 +201,7 @@ export class ContentAiController {
       tenantId: dto.tenantId,
       workspaceId: dto.workspaceId,
       userId: String(req.user.sub),
+      manual: true,
     });
   }
 

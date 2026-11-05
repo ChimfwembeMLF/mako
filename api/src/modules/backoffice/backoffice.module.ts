@@ -1,4 +1,7 @@
 import { SmsModule } from '../sms/sms.module';
+import { AiModule } from '../ai/ai.module';
+import { ChatbotModule } from '../chatbot/chatbot.module';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BackofficeService } from './backoffice.service';
@@ -35,6 +38,9 @@ import { CronMonitorService } from './cron-monitor.service';
 @Module({
   imports: [
     SmsModule,
+    AiModule,
+    SystemSettingsModule,
+    ChatbotModule,
     SubscriptionsModule,
     PaymentsModule,
     TypeOrmModule.forFeature([

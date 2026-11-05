@@ -1,14 +1,15 @@
 import { Link } from "react-router-dom";
 import {
-  Brain, Pen, CalendarClock, MessageSquare, BarChart3, Zap, Settings,
-  Rocket, Link2, Image, LayoutTemplate, MessageSquareReply, Megaphone,
-  GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity,
-  ChevronsUpDown, Building2, CreditCard, Download, ListOrdered, Layers, Target, Mail, MessageCircle, LogOut
+  Brain, Pen, CalendarClock, Zap, Settings, Rocket, Link2, Image, LayoutTemplate,
+  Megaphone, GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity, ChevronsUpDown,
+  Building2, CreditCard, Download, ListOrdered, Layers, Target, Mail, MessageCircle, LogOut,
+  Inbox, UserPlus, LayoutDashboard, LineChart, Workflow,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
+import { P, type PermissionKey } from "@/lib/permissions";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
@@ -22,36 +23,115 @@ import {
 import { useTenant } from "@/hooks/useTenant";
 import { cn } from "@/lib/utils";
 
-function NavItem({ title, url, icon: Icon, exact = false, badge, id }: {
+function NavItem({ title, url, icon: Icon, exact = false, id }: {
   title: string; url: string; icon: React.ComponentType<{ className?: string }>;
-  exact?: boolean; badge?: number; id?: string;
+  exact?: boolean; id?: string;
 }) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   return (
     <SidebarMenuItem id={id}>
-      <SidebarMenuButton asChild>
+      <SidebarMenuButton asChild tooltip={collapsed ? title : undefined}>
         <NavLink to={url} end={exact}
           className="hover:bg-sidebar-accent"
           activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
           <Icon className="mr-2 h-4 w-4 shrink-0" />
-          {!collapsed && (
-            <span className="flex-1 flex items-center justify-between">
-              {title}
-              {badge ? <Badge variant="destructive" className="text-[9px] h-4 px-1">{badge}</Badge> : null}
-            </span>
-          )}
+          {!collapsed && <span className="flex-1 truncate">{title}</span>}
         </NavLink>
       </SidebarMenuButton>
     </SidebarMenuItem>
   );
 }
 
+type NavEntry = {
+  title: string;
+  url: string;
+  icon: React.ComponentType<{ className?: string }>;
+  id?: string;
+  exact?: boolean;
+  /** Shown when the person has any of these permissions. Omit for everyone. */
+  perms?: PermissionKey[];
+  superAdminOnly?: boolean;
+};
+
+type NavGroup = { label: string; id?: string; items: NavEntry[] };
+
+/** Grouped by what people are doing: making content, getting it out, talking to people, measuring, running the team. */
+const NAV: NavGroup[] = [
+  {
+    label: "Home",
+    id: "tour-sidebar-core",
+    items: [
+      { id: "tour-nav-dashboard", title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, exact: true },
+      { id: "tour-nav-social", title: "Social overview", url: "/social", icon: Zap, exact: true },
+    ],
+  },
+  {
+    label: "Create",
+    items: [
+      { id: "tour-nav-brand-brain", title: "Brand voice", url: "/brand-brain", icon: Brain },
+      { id: "tour-nav-content", title: "Posts", url: "/content", icon: Pen, perms: [P.content.view] },
+      { id: "tour-nav-campaigns", title: "Campaigns", url: "/campaigns", icon: Megaphone, perms: [P.content.view] },
+      { id: "tour-nav-templates", title: "Templates", url: "/templates", icon: LayoutTemplate, perms: [P.templates.view] },
+      { id: "tour-nav-media", title: "Media", url: "/media", icon: Image, perms: [P.media.view] },
+    ],
+  },
+  {
+    label: "Publish",
+    items: [
+      { id: "tour-nav-scheduler", title: "Schedule", url: "/scheduler", icon: CalendarClock, perms: [P.content.view] },
+      { id: "tour-nav-approvals", title: "Approvals", url: "/approvals", icon: GitPullRequestArrow, perms: [P.approvals.view, P.content.approve] },
+      { id: "tour-nav-publisher", title: "Social accounts", url: "/publisher", icon: Link2 },
+    ],
+  },
+  {
+    label: "Engage",
+    id: "tour-sidebar-engagement",
+    items: [
+      { id: "tour-nav-inbox", title: "Inbox", url: "/replies", icon: Inbox, perms: [P.replies.view] },
+      { id: "tour-nav-leads", title: "Leads", url: "/leads", icon: UserPlus, perms: [P.leads.view] },
+      { id: "tour-nav-email", title: "Email", url: "/mail", icon: Mail, perms: [P.leads.email, P.leads.view] },
+      { id: "tour-nav-whatsapp", title: "WhatsApp", url: "/whatsapp", icon: MessageCircle },
+    ],
+  },
+  {
+    label: "Grow",
+    id: "tour-sidebar-assets",
+    items: [
+      { id: "tour-nav-analytics", title: "Analytics", url: "/analytics", icon: LineChart, perms: [P.analytics.view] },
+      { id: "tour-nav-ads", title: "Ads", url: "/ads", icon: Target },
+    ],
+  },
+  {
+    label: "Team",
+    id: "tour-sidebar-governance",
+    items: [
+      { id: "tour-nav-team", title: "Members", url: "/team", icon: Users, perms: [P.team.view] },
+      { id: "tour-nav-workspaces", title: "Workspaces", url: "/workspaces", icon: Building2 },
+      { id: "tour-nav-audit", title: "Audit logs", url: "/audit", icon: ClipboardList, perms: [P.audit.view] },
+      { title: "Export data", url: "/export", icon: Download, perms: [P.settings.view] },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { id: "tour-nav-roles", title: "Roles & permissions", url: "/admin/roles", icon: ShieldCheck, perms: [P.admin.roles] },
+      { id: "tour-nav-maker-checker", title: "Maker-checker", url: "/admin/maker-checker", icon: Workflow, perms: [P.admin.makerChecker] },
+      { id: "tour-nav-backoffice", title: "Platform backoffice", url: "/admin/backoffice", icon: Activity, superAdminOnly: true },
+      { id: "tour-nav-queues", title: "Job queues", url: "/admin/queues", icon: ListOrdered, superAdminOnly: true },
+      { id: "tour-nav-system", title: "System settings", url: "/admin/system", icon: Settings, superAdminOnly: true },
+    ],
+  },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { tenant, tenants, switchTenant } = useTenant();
-  const { isSuperAdmin } = usePermissions();
+  const { isSuperAdmin, canAny, loading: permsLoading } = usePermissions();
+  // While permissions load, show everything rather than flashing a short menu.
+  const visible = (item: NavEntry) =>
+    item.superAdminOnly ? isSuperAdmin : !item.perms || permsLoading || isSuperAdmin || canAny(...item.perms);
   const { signOut } = useAuth();
   const { workspaces, activeWorkspace, setActiveWorkspace, loading: workspacesLoading } = useWorkspace();
   const activeWorkspaceName =
@@ -130,84 +210,29 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
-        {/* Core */}
-        <SidebarGroup id="tour-sidebar-core">
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Core</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <NavItem id="tour-nav-dashboard" title="Main Dashboard" url="/dashboard" icon={Zap} exact />
-              <NavItem id="tour-nav-social" title="Social Dashboard" url="/social" icon={BarChart3} exact />
-              <NavItem id="tour-nav-brand-brain" title="Brand voice" url="/brand-brain" icon={Brain} />
-              <NavItem id="tour-nav-content" title="Posts" url="/content" icon={Pen} />
-              <NavItem id="tour-nav-campaigns" title="Campaigns" url="/campaigns" icon={Megaphone} />
-              <NavItem id="tour-nav-scheduler" title="Schedule" url="/scheduler" icon={CalendarClock} />
-              <NavItem id="tour-nav-publisher" title="Social accounts" url="/publisher" icon={Link2} />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Engagement */}
-        <SidebarGroup id="tour-sidebar-engagement">
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Engagement</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <NavItem id="tour-nav-leads" title="Leads" url="/leads" icon={MessageSquare} />
-              <NavItem id="tour-nav-email" title="Email" url="/mail" icon={Mail} />
-              <NavItem id="tour-nav-whatsapp" title="WhatsApp" url="/whatsapp" icon={MessageCircle} />
-              <NavItem id="tour-nav-inbox" title="Inbox" url="/replies" icon={MessageSquareReply} />
-              <NavItem id="tour-nav-analytics" title="Analytics" url="/analytics" icon={BarChart3} />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Assets */}
-        <SidebarGroup id="tour-sidebar-assets">
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Assets</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <NavItem id="tour-nav-media" title="Media" url="/media" icon={Image} />
-              <NavItem id="tour-nav-templates" title="Post Templates" url="/templates" icon={LayoutTemplate} />
-              <NavItem id="tour-nav-ads" title="Ads" url="/ads" icon={Target} />
-              <NavItem id="tour-nav-workspaces" title="Workspaces" url="/workspaces" icon={Building2} />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* Team & Governance */}
-        <SidebarGroup id="tour-sidebar-governance">
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">Governance</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <NavItem id="tour-nav-approvals" title="Approvals" url="/approvals" icon={GitPullRequestArrow} />
-              <NavItem id="tour-nav-team" title="Team" url="/team" icon={Users} />
-              <NavItem id="tour-nav-audit" title="Audit Logs" url="/audit" icon={ClipboardList} />
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {/* System Admin */}
-        <SidebarGroup>
-          <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">System Admin</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <NavItem id="tour-nav-roles" title="Roles & Permissions" url="/admin/roles" icon={ShieldCheck} />
-              <NavItem id="tour-nav-maker-checker" title="Maker-Checker" url="/admin/maker-checker" icon={GitPullRequestArrow} />
-              {isSuperAdmin && (
-                <>
-                  <NavItem id="tour-nav-backoffice" title="Platform Backoffice" url="/admin/backoffice" icon={Activity} />
-                  <NavItem id="tour-nav-queues" title="Job Queues" url="/admin/queues" icon={ListOrdered} />
-                  <NavItem id="tour-nav-system" title="System Settings" url="/admin/system" icon={Settings} />
-                </>
-              )}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {NAV.map((group) => {
+          const items = group.items.filter(visible);
+          if (items.length === 0) return null;
+          return (
+            <SidebarGroup key={group.label} id={group.id}>
+              <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">{group.label}</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {items.map((item) => (
+                    <NavItem key={item.url} id={item.id} title={item.title} url={item.url} icon={item.icon} exact={item.exact} />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          );
+        })}
       </SidebarContent>
 
       <SidebarFooter className="shrink-0 border-t border-sidebar-border">
         <SidebarMenu>
-          <NavItem title="Export Data" url="/export" icon={Download} />
-          <NavItem title="Billing" url="/billing" icon={CreditCard} />
+          {visible({ title: "Billing", url: "/billing", icon: CreditCard, perms: [P.settings.billing] }) && (
+            <NavItem title="Billing" url="/billing" icon={CreditCard} />
+          )}
           <NavItem title="Settings" url="/settings" icon={Settings} />
           <SidebarMenuItem>
             <SidebarMenuButton tooltip="Sign out" className="hover:bg-sidebar-accent" onClick={() => void signOut()}>

@@ -121,8 +121,9 @@ export default function RolesPage() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-[minmax(200px,280px)_1fr] gap-4 md:gap-6">
-          <div className="space-y-3">
+        <div className="grid md:grid-cols-[minmax(200px,280px)_1fr] gap-4 md:gap-6 md:items-start">
+          {/* Stays in view while the permission list scrolls; scrolls itself if there are many roles. */}
+          <div className="space-y-3 md:sticky md:top-4 md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Roles</p>
             {roles.map((role) => (
               <button

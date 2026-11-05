@@ -31,6 +31,10 @@ import { WidgetApiKeyGuard } from './guards/widget-api-key.guard';
 import { ChatbotWidgetSeedService } from './chatbot-widget-seed.service';
 import { WidgetSuggestionsService } from './services/widget-suggestions.service';
 
+import { QdrantService } from './services/qdrant.service';
+import { KnowledgeEmbeddingService } from './services/knowledge-embedding.service';
+import { SystemSettingsModule } from '../system_settings/system_settings.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -44,6 +48,7 @@ import { WidgetSuggestionsService } from './services/widget-suggestions.service'
     ]),
     BullModule.registerQueue({ name: QUEUE_AI }),
     AiModule,
+    SystemSettingsModule,
     BrandProfilesModule,
     MediaModule,
     forwardRef(() => QueuesModule),
@@ -58,6 +63,8 @@ import { WidgetSuggestionsService } from './services/widget-suggestions.service'
     KnowledgeDocumentService,
     KnowledgeIngestService,
     VectorStoreService,
+    QdrantService,
+    KnowledgeEmbeddingService,
     RagOrchestratorService,
     MistralChatbotLibraryService,
     ChatbotTtsVoiceService,
@@ -69,6 +76,9 @@ import { WidgetSuggestionsService } from './services/widget-suggestions.service'
     ChatbotConfigService,
     KnowledgeIngestService,
     ChatbotWidgetSeedService,
+    QdrantService,
+    KnowledgeEmbeddingService,
+    KnowledgeDocumentService,
   ],
 })
 export class ChatbotModule {}

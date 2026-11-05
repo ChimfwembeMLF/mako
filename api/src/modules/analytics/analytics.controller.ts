@@ -3,6 +3,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AiAnalyticsService, AiAnalyticsReport } from './ai-analytics.service';
 import { PageInsightsService } from './page-insights.service';
 import { PlatformDashboardService } from './platform-dashboard.service';
+import { PerformanceService, PerformanceReport } from './performance.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { SocialInsights } from './entities/social_insights.entity';
@@ -14,6 +15,7 @@ export class AnalyticsController {
     private readonly aiAnalytics: AiAnalyticsService,
     private readonly pageInsights: PageInsightsService,
     private readonly platformDashboard: PlatformDashboardService,
+    private readonly performance: PerformanceService,
     @InjectRepository(SocialInsights)
     private readonly insightsRepo: Repository<SocialInsights>,
   ) {}
@@ -45,15 +47,31 @@ export class AnalyticsController {
     return this.platformDashboard.getDashboard(tenantId, workspaceId);
   }
 
+  @Get('performance')
+  getPerformance(
+    @Req() req: any,
+    @Query('days') days = '30',
+    @Query('tenantId') queryTenantId?: string,
+    @Query('workspaceId') workspaceId?: string,
+  ): Promise<PerformanceReport | null> {
+    const tenantId = queryTenantId || req.user?.tenantId;
+    if (!tenantId) return Promise.resolve(null);
+    return this.performance.getReport(tenantId, workspaceId, Number(days));
+  }
+
   @Get('insights')
   async getInsights(
     @Req() req: any,
     @Query('days') days = 30,
+    @Query('tenantId') queryTenantId?: string,
+    @Query('workspaceId') workspaceId?: string,
   ): Promise<SocialInsights[]> {
-    const { tenantId, workspaceId } = req.user;
-    
+    // The account being viewed, not the one in the login token; access is checked by TenantScopeInterceptor.
+    const tenantId = queryTenantId || req.user?.tenantId;
+    if (!tenantId) return [];
+
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - days);
+    startDate.setDate(startDate.getDate() - Math.min(365, Math.max(1, Number(days) || 30)));
 
     const query = this.insightsRepo
       .createQueryBuilder('insights')
@@ -68,8 +86,13 @@ export class AnalyticsController {
   }
 
   @Get('ai-report')
-  async getAiReport(@Req() req: any): Promise<AiAnalyticsReport | null> {
-    const { tenantId, workspaceId } = req.user;
+  async getAiReport(
+    @Req() req: any,
+    @Query('tenantId') queryTenantId?: string,
+    @Query('workspaceId') workspaceId?: string,
+  ): Promise<AiAnalyticsReport | null> {
+    const tenantId = queryTenantId || req.user?.tenantId;
+    if (!tenantId) return null;
     return this.aiAnalytics.generateReport(tenantId, workspaceId);
   }
 }

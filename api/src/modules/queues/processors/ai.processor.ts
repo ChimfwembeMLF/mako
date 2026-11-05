@@ -96,7 +96,10 @@ export class AiProcessor extends WorkerHost {
       case 'daily-workflow':
         return this.dailyWorkflow.run({
           tenantId: payload.tenantId as string | undefined,
+          workspaceId: payload.workspaceId as string | undefined,
           userId,
+          // Jobs queued by a person (not the cron fan-out) run immediately.
+          manual: userId !== 'system',
         });
       case 'suggest-comment-reply':
         return this.commentReplyAi.suggestReply({

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,12 +23,21 @@ export function InboxSplitLayout({
   onBack,
   backLabel = 'Conversations',
   className,
-  listMinHeight = 'min-h-[280px] md:min-h-[520px]',
-  detailMinHeight = 'min-h-[360px] md:min-h-[520px]',
+  // A fixed-height panel: the list and the conversation scroll inside it instead of growing the page.
+  // Sized to the space below the inbox header, so the reply box stays on screen.
+  listMinHeight = 'md:h-[calc(100dvh-23rem)] md:min-h-[440px]',
+  detailMinHeight = 'h-[calc(100dvh-5.5rem)] min-h-[400px] md:h-auto md:min-h-0',
 }: InboxSplitLayoutProps) {
   const isMobile = useIsMobile();
   const showList = !isMobile || !hasSelection;
   const showDetail = !isMobile || hasSelection;
+  const detailRef = useRef<HTMLDivElement>(null);
+
+  // On phones the inbox header fills most of the screen, so bring an opened
+  // conversation (and its reply box) fully into view.
+  useEffect(() => {
+    if (isMobile && hasSelection) detailRef.current?.scrollIntoView({ block: 'start' });
+  }, [isMobile, hasSelection]);
 
   return (
     <div
@@ -38,13 +48,13 @@ export function InboxSplitLayout({
       )}
     >
       {showList && (
-        <Card className="overflow-hidden min-w-0 flex flex-col">
+        <Card className="overflow-hidden min-w-0 min-h-0 flex flex-col max-md:max-h-[70dvh]">
           <CardContent className="p-0 flex flex-col flex-1 min-h-0">{list}</CardContent>
         </Card>
       )}
 
       {showDetail && (
-        <div className={cn('min-w-0 flex flex-col', detailMinHeight)}>
+        <div ref={detailRef} className={cn('min-w-0 min-h-0 flex flex-col overflow-hidden scroll-mt-20', detailMinHeight)}>
           {isMobile && hasSelection && onBack && (
             <Button
               type="button"

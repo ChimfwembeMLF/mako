@@ -12,6 +12,7 @@ import { brandContextBlock } from '../../ai/prompts/brand-fields';
 import { ChatbotConfig } from '../entities/chatbot-config.entity';
 import { ChatMessage, ChatCitation } from '../entities/chat-message.entity';
 import { VectorStoreService } from './vector-store.service';
+import { KnowledgeEmbeddingService } from './knowledge-embedding.service';
 import { MistralChatbotLibraryService } from './mistral-chatbot-library.service';
 import { ChatSession } from '../entities/chat-session.entity';
 import { resolveSystemPromptExtra } from '../constants/default-system-message';
@@ -37,6 +38,7 @@ export class RagOrchestratorService {
     private readonly usage: AiUsageTrackerService,
     private readonly brandProfiles: BrandProfilesService,
     private readonly vectorStore: VectorStoreService,
+    private readonly embeddings: KnowledgeEmbeddingService,
     private readonly mistralLibrary: MistralChatbotLibraryService,
     @InjectRepository(ChatMessage)
     private readonly messageRepo: Repository<ChatMessage>,
@@ -83,7 +85,7 @@ export class RagOrchestratorService {
       GREETING_PATTERN.test(params.userMessage.trim());
 
     if (!skipRetrieval) {
-      const queryEmbedding = await this.aiRouter.embed(params.userMessage);
+      const queryEmbedding = await this.embeddings.embed(params.userMessage);
       const chunks = await this.vectorStore.search({
         tenantId: params.tenantId,
         embedding: queryEmbedding,

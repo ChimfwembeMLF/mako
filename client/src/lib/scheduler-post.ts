@@ -5,6 +5,7 @@ import {
   isScheduledStatus,
   resolveScheduleDateStr,
 } from '@/lib/schedule';
+import { getPostDisplayStatus } from '@/lib/post-status';
 
 export interface ScheduledPost {
   id: string;
@@ -16,6 +17,8 @@ export interface ScheduledPost {
   created_at: string;
   media_url: string | null;
   media_type: string | null;
+  /** How many attachments the post has; the list API returns only the first. */
+  media_count: number;
   campaign_theme: string | null;
   scheduled_date: string | null;
   scheduled_time: string | null;
@@ -26,7 +29,7 @@ export interface ScheduledPost {
   user_id?: string;
 }
 
-export type ListFilter = 'upcoming' | 'unscheduled' | 'published' | 'failed' | 'needs_approval' | 'all';
+export type ListFilter = 'upcoming' | 'unscheduled' | 'published' | 'failed' | 'needs_approval' | 'overdue' | 'all';
 
 export function mapApiItemToPost(item: Record<string, unknown>): ScheduledPost {
   const preview = item.previewMedia as Record<string, unknown> | null | undefined;
@@ -40,6 +43,7 @@ export function mapApiItemToPost(item: Record<string, unknown>): ScheduledPost {
     created_at: String(item.created_at ?? ''),
     media_url: preview?.mediaUrl != null ? String(preview.mediaUrl) : null,
     media_type: preview?.mediaType != null ? String(preview.mediaType) : null,
+    media_count: typeof item.mediaCount === 'number' ? item.mediaCount : preview ? 1 : 0,
     campaign_theme: item.campaignTheme != null ? String(item.campaignTheme) : null,
     scheduled_date: resolveScheduleDateStr(
       item.scheduledDate as string | Date | null | undefined,
@@ -94,9 +98,11 @@ export function filterPosts(
     case 'published':
       return list.filter((p) => p.status === 'published');
     case 'failed':
-      return list.filter((p) => Boolean(p.publish_failed_reason));
+      return list.filter((p) => getPostDisplayStatus(p, now) === 'failed');
+    case 'overdue':
+      return list.filter((p) => getPostDisplayStatus(p, now) === 'overdue');
     case 'needs_approval':
-      return list.filter((p) => p.status === 'draft' && Boolean(p.scheduled_date));
+      return list.filter((p) => getPostDisplayStatus(p, now) === 'needs_approval');
     default:
       return list;
   }

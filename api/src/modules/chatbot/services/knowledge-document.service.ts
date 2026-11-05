@@ -1,4 +1,5 @@
 import {
+  Logger,
   BadRequestException,
   Injectable,
   NotFoundException,
@@ -25,6 +26,8 @@ const ALLOWED_MIMES = [
 
 @Injectable()
 export class KnowledgeDocumentService {
+  private readonly logger = new Logger(KnowledgeDocumentService.name);
+
   constructor(
     @InjectRepository(KnowledgeDocument)
     private readonly docRepo: Repository<KnowledgeDocument>,
@@ -112,7 +115,7 @@ export class KnowledgeDocumentService {
       params.tenantId,
       params.workspaceId,
     );
-    if (config.useMistralLibrary) {
+    if (this.mistralLibrary.usesLibrary(config)) {
       void this.mistralLibrary
         .uploadDocument({
           config,
@@ -182,7 +185,7 @@ export class KnowledgeDocumentService {
 
   async syncMistral(tenantId: string): Promise<{ success: true }> {
     const config = await this.chatbotConfig.getOrCreate(tenantId);
-    if (!config.useMistralLibrary) {
+    if (!this.mistralLibrary.usesLibrary(config)) {
       throw new BadRequestException(
         'Enable Mistral Document Library in chatbot settings first',
       );
@@ -211,5 +214,40 @@ export class KnowledgeDocumentService {
       void this.ingest.ingest({ tenantId, documentId: id, userId });
     }
     return doc;
+  }
+
+  /**
+   * Re-processes every document on the platform, e.g. after moving to Qdrant or a new
+   * embedding model. Runs one document at a time so the embedding provider isn't flooded.
+   */
+  async reindexAll(requestedBy: string): Promise<{ queued: number }> {
+    const docs = await this.docRepo.find({ select: ['id', 'tenantId', 'uploadedBy'] });
+    void (async () => {
+      for (const doc of docs) {
+        try {
+          const userId = doc.uploadedBy || requestedBy;
+          await this.docRepo.update({ id: doc.id }, { status: 'pending', errorMessage: null as never, chunkCount: 0 });
+          await this.vectorStore.deleteByDocument(doc.id, doc.tenantId);
+          const queued = await this.queueDispatch.enqueueIngestDocument({ tenantId: doc.tenantId, documentId: doc.id, userId });
+          if ((queued as { inline?: boolean }).inline) {
+            await this.ingest.ingest({ tenantId: doc.tenantId, documentId: doc.id, userId });
+          }
+        } catch (err) {
+          this.logger.warn(`Re-index failed for document ${doc.id}: ${err instanceof Error ? err.message : err}`);
+        }
+      }
+    })();
+    return { queued: docs.length };
+  }
+
+  /** Document counts by processing status across the platform. */
+  async statusCounts(): Promise<Record<string, number>> {
+    const rows: Array<{ status: string; count: string }> = await this.docRepo
+      .createQueryBuilder('d')
+      .select('d.status', 'status')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('d.status')
+      .getRawMany();
+    return Object.fromEntries(rows.map((r) => [r.status, Number(r.count)]));
   }
 }

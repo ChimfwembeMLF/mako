@@ -1,15 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Building2, Users, CreditCard, Sparkles, Activity, Server, Settings,
   TrendingUp, Globe, Zap, CheckCircle2, XCircle, Loader2, ArrowLeft,
   FileText, Share2, MessageSquare, ClipboardList, Shield, ExternalLink,
-  ChevronRight, Bot, BookOpen, Key,
+  ChevronRight, Bot, BookOpen, Key, AlertTriangle, Search, Wallet, Undo2, Tags, MessageCircleMore, Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet';
@@ -31,29 +34,63 @@ function StatCard({
   value,
   icon: Icon,
   sub,
+  size = 'lg',
 }: {
   label: string;
   value: string | number;
   icon: React.ComponentType<{ className?: string }>;
   sub?: string;
+  size?: 'lg' | 'sm';
 }) {
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
-            <p className="text-2xl font-bold mt-1">{value}</p>
-            {sub && <p className="text-xs text-muted-foreground mt-1">{sub}</p>}
-          </div>
-          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
-            <Icon className="h-5 w-5 text-primary" />
-          </div>
+    <Card className="border-border/60">
+      <CardContent className={size === 'lg' ? 'space-y-2 p-5' : 'space-y-1 p-4'}>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <span>{label}</span>
+          <Icon className="h-4 w-4" />
         </div>
+        <p className={cn('font-display font-bold tabular-nums tracking-tight', size === 'lg' ? 'text-3xl' : 'text-xl')}>{value}</p>
+        {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
       </CardContent>
     </Card>
   );
 }
+
+type SectionKey =
+  | 'overview' | 'tenants' | 'subscriptions' | 'revenue' | 'refunds' | 'plans'
+  | 'ai' | 'chatbot' | 'activity' | 'health' | 'integrations' | 'sms' | 'company';
+
+const SECTION_GROUPS: Array<{ label: string; items: Array<{ key: SectionKey; label: string; icon: React.ComponentType<{ className?: string }> }> }> = [
+  {
+    label: 'Business',
+    items: [
+      { key: 'overview', label: 'Overview', icon: TrendingUp },
+      { key: 'tenants', label: 'Tenants', icon: Building2 },
+      { key: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
+      { key: 'revenue', label: 'Revenue', icon: Wallet },
+      { key: 'refunds', label: 'Refunds', icon: Undo2 },
+      { key: 'plans', label: 'Plans & pricing', icon: Tags },
+    ],
+  },
+  {
+    label: 'Product usage',
+    items: [
+      { key: 'ai', label: 'AI usage', icon: Sparkles },
+      { key: 'chatbot', label: 'Chatbot', icon: MessageCircleMore },
+      { key: 'activity', label: 'Activity log', icon: ClipboardList },
+    ],
+  },
+  {
+    label: 'Platform',
+    items: [
+      { key: 'health', label: 'Health', icon: Activity },
+      { key: 'integrations', label: 'Integrations', icon: Key },
+      { key: 'sms', label: 'SMS', icon: MessageSquare },
+      { key: 'company', label: 'About Mako', icon: Info },
+    ],
+  },
+];
+const SECTION_KEYS = SECTION_GROUPS.flatMap((g) => g.items.map((i) => i.key));
 
 function EnvRow({ label, ok }: { label: string; ok: boolean }) {
   return (
@@ -67,17 +104,149 @@ function EnvRow({ label, ok }: { label: string; ok: boolean }) {
 function GrowthBars({ data }: { data: Array<{ month: string; count: number }> }) {
   const max = Math.max(...data.map((d) => d.count), 1);
   return (
-    <div className="flex items-end gap-2 h-32">
+    <div className="flex h-40 items-end gap-3" role="img" aria-label={data.map((d) => `${d.month}: ${d.count}`).join(', ')}>
       {data.map((d) => (
-        <div key={d.month} className="flex-1 flex flex-col items-center gap-1">
-          <div
-            className="w-full rounded-t-md bg-primary/80 min-h-[4px] transition-all"
-            style={{ height: `${(d.count / max) * 100}%` }}
-          />
-          <span className="text-[10px] text-muted-foreground">{d.month.slice(5)}</span>
-          <span className="text-xs font-medium">{d.count}</span>
+        <div key={d.month} className="flex h-full flex-1 flex-col items-center justify-end gap-1">
+          <span className="text-xs font-semibold tabular-nums">{d.count}</span>
+          {/* The bar's height is relative to this full-height column. */}
+          <div className="w-full max-w-12 rounded-t bg-[var(--chart-1)]" style={{ height: `${Math.max(4, (d.count / max) * 100)}%` }} />
+          <span className="text-[11px] text-muted-foreground">
+            {new Date(`${d.month}-01T12:00:00Z`).toLocaleDateString(undefined, { month: 'short' })}
+          </span>
         </div>
       ))}
+    </div>
+  );
+}
+
+const PROVIDER_LABEL: Record<string, string> = { openai: 'OpenAI', mistral: 'Mistral', gemini: 'Gemini', deepseek: 'DeepSeek' };
+
+/** Which engines answer chats and index chatbot documents, and the vector database's state. */
+function AiKnowledgeCard({ onOpenIntegrations }: { onOpenIntegrations: () => void }) {
+  const [status, setStatus] = useState<Awaited<ReturnType<typeof backofficeApi.getAiStatus>> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [reindexing, setReindexing] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+
+  const load = () => {
+    setLoading(true);
+    backofficeApi.getAiStatus().then(setStatus).catch(() => setStatus(null)).finally(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const reindex = async () => {
+    if (!window.confirm('Re-process every chatbot document on the platform? Chatbots answer from the old index until each document finishes.')) return;
+    setReindexing(true);
+    try {
+      const { queued } = await backofficeApi.reindexKnowledge();
+      setMessage(`${queued} document${queued === 1 ? '' : 's'} queued for re-indexing. Refresh to follow progress.`);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : 'Re-index failed to start');
+    } finally {
+      setReindexing(false);
+    }
+  };
+
+  const docs = status?.documents ?? {};
+  const qdrantOk = status?.qdrantConfigured && status.qdrant?.reachable;
+
+  return (
+    <Card className="border-border/60">
+      <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 space-y-0">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-base"><Sparkles className="h-4 w-4" /> AI &amp; chatbot knowledge base</CardTitle>
+          <CardDescription>Which engines answer chats and search uploaded documents.</CardDescription>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" variant="ghost" onClick={load} disabled={loading}>Refresh</Button>
+          <Button size="sm" variant="outline" onClick={() => void reindex()} disabled={reindexing || loading}>
+            {reindexing ? <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" /> : null} Re-index all documents
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4 text-sm">
+        {loading && !status ? (
+          <p className="text-muted-foreground">Loading…</p>
+        ) : !status ? (
+          <p className="text-destructive">Could not load AI status.</p>
+        ) : (
+          <>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Default chat provider</p>
+                <p className="mt-1 font-semibold">{PROVIDER_LABEL[status.defaultProvider] ?? status.defaultProvider}</p>
+                <p className="text-xs text-muted-foreground">For workspaces without their own choice</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Document search model</p>
+                <p className="mt-1 font-semibold">{status.embedModel}</p>
+                <p className="text-xs text-muted-foreground">{PROVIDER_LABEL[status.embedProvider] ?? status.embedProvider}, same for every workspace</p>
+              </div>
+              <div className="rounded-lg bg-muted/40 p-3">
+                <p className="text-xs text-muted-foreground">Vector database</p>
+                {!status.qdrantConfigured ? (
+                  <>
+                    <p className="mt-1 font-semibold">Postgres (built in)</p>
+                    <button type="button" className="text-xs text-primary underline" onClick={onOpenIntegrations}>Connect Qdrant</button>
+                  </>
+                ) : qdrantOk ? (
+                  <>
+                    <p className="mt-1 flex items-center gap-1 font-semibold text-green-700 dark:text-green-400"><CheckCircle2 className="h-4 w-4" /> Qdrant connected</p>
+                    <p className="text-xs text-muted-foreground">{status.qdrant?.points.toLocaleString()} vectors in {status.collection}</p>
+                  </>
+                ) : (
+                  <>
+                    <p className="mt-1 flex items-center gap-1 font-semibold text-destructive"><XCircle className="h-4 w-4" /> Qdrant unreachable</p>
+                    <p className="break-words text-xs text-muted-foreground">{status.qdrant?.error}</p>
+                  </>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              <span className="text-muted-foreground">Documents:</span>
+              {['ready', 'processing', 'pending', 'failed'].map((k) => (
+                <Badge key={k} variant={k === 'failed' && docs[k] ? 'destructive' : 'secondary'} className="capitalize">{k} {docs[k] ?? 0}</Badge>
+              ))}
+            </div>
+            {message && <p className="text-xs text-muted-foreground">{message}</p>}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+/** Mistral powers the chatbot, document reading and media features, so check the key really works. */
+function MistralKeyRow({ configured, onOpenIntegrations }: { configured: boolean; onOpenIntegrations: () => void }) {
+  const [state, setState] = useState<{ status: 'idle' | 'testing' | 'ok' | 'failed'; message?: string }>({ status: 'idle' });
+  const test = async () => {
+    setState({ status: 'testing' });
+    try {
+      const res = await backofficeApi.testMistral();
+      setState(res.ok ? { status: 'ok' } : { status: 'failed', message: res.message });
+    } catch (err) {
+      setState({ status: 'failed', message: err instanceof Error ? err.message : 'Test failed' });
+    }
+  };
+  return (
+    <div className="space-y-1.5 rounded-md border border-border/60 p-2.5 text-sm">
+      <div className="flex items-center justify-between gap-2">
+        <span>Mistral AI <span className="text-xs text-muted-foreground">(chatbot, documents, media)</span></span>
+        <span className="flex items-center gap-2">
+          {state.status === 'ok' && <span className="flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400"><CheckCircle2 className="h-4 w-4" /> Working</span>}
+          {state.status === 'failed' && <span className="flex items-center gap-1 text-xs font-medium text-destructive"><XCircle className="h-4 w-4" /> Not working</span>}
+          {state.status === 'idle' && (configured ? <span className="text-xs text-muted-foreground">Key saved</span> : <span className="flex items-center gap-1 text-xs font-medium text-destructive"><XCircle className="h-4 w-4" /> No key</span>)}
+          <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => void test()} disabled={state.status === 'testing' || !configured}>
+            {state.status === 'testing' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Test'}
+          </Button>
+        </span>
+      </div>
+      {state.status === 'failed' && (
+        <p className="text-xs text-destructive">
+          {state.message}{' '}
+          <button type="button" className="underline" onClick={onOpenIntegrations}>Open Integrations</button>
+        </p>
+      )}
     </div>
   );
 }
@@ -125,7 +294,7 @@ function TenantDetailSheet({
               <SheetTitle>{detail.name}</SheetTitle>
               <SheetDescription>{detail.slug} · {detail.ownerEmail ?? 'No owner email'}</SheetDescription>
             </SheetHeader>
-            <div className="mt-6 space-y-6">
+            <div className="mt-0 space-y-6">
               <div className="flex gap-2">
                 <Badge variant="outline" className="capitalize">{detail.subscription.plan}</Badge>
                 <Badge variant={detail.subscription.status === 'active' ? 'default' : 'secondary'}>
@@ -250,6 +419,18 @@ function BackofficeContent() {
   const [auditTenant, setAuditTenant] = useState('');
   const [auditUser, setAuditUser] = useState('');
   const [auditSearch, setAuditSearch] = useState('');
+  const [tenantSearch, setTenantSearch] = useState('');
+  const [tenantPlan, setTenantPlan] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requested = searchParams.get('section') as SectionKey | null;
+  const section: SectionKey = requested && SECTION_KEYS.includes(requested) ? requested : 'overview';
+  // Kept in the URL so a refresh or a shared link opens the same section.
+  const setSection = (key: SectionKey) => {
+    const next = new URLSearchParams(searchParams);
+    if (key === 'overview') next.delete('section');
+    else next.set('section', key);
+    setSearchParams(next, { replace: true });
+  };
 
   useEffect(() => {
     Promise.all([backofficeApi.getOverview(), backofficeApi.listTenants(), backofficeApi.getPlans()])
@@ -318,70 +499,131 @@ function BackofficeContent() {
 
   const { company, stats, chatbot, planDistribution, aiByFunction, recentDeposits, recentTenants, crons, cronHealth, env } = overview;
 
+  const tenantPlans = Array.from(new Set(tenants.map((t) => t.plan))).sort();
+  const visibleTenants = tenants.filter((t) => {
+    if (tenantPlan !== 'all' && t.plan !== tenantPlan) return false;
+    if (!tenantSearch) return true;
+    const q = tenantSearch.toLowerCase();
+    return t.name.toLowerCase().includes(q) || (t.ownerEmail ?? '').toLowerCase().includes(q);
+  });
+
+  const missingIntegrations = [
+    ['Mistral AI', env.mistralConfigured],
+    ['Meta', env.metaConfigured],
+    ['LinkedIn', env.linkedInConfigured],
+    ['PawaPay', env.pawapayConfigured],
+  ].filter(([, ok]) => !ok).map(([name]) => String(name));
+  const failedCrons = cronHealth.filter((c) => c.status === 'failed');
+  const attention: Array<{ label: string; section: SectionKey }> = [
+    ...failedCrons.map((c) => ({ label: `${c.name} job failing`, section: 'health' as const })),
+    ...(missingIntegrations.length ? [{ label: `${missingIntegrations.join(', ')} not configured`, section: 'health' as const }] : []),
+    ...(stats.pendingDataDeletions > 0 ? [{ label: `${stats.pendingDataDeletions} data deletion request${stats.pendingDataDeletions === 1 ? '' : 's'}`, section: 'activity' as const }] : []),
+    ...(stats.knowledgeFailed > 0 ? [{ label: `${stats.knowledgeFailed} knowledge doc${stats.knowledgeFailed === 1 ? '' : 's'} failed`, section: 'chatbot' as const }] : []),
+  ];
+
   return (
     <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
       <TenantDetailSheet tenantId={selectedTenantId} open={sheetOpen} onOpenChange={setSheetOpen} />
 
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-            <Link to="/dashboard" className="hover:text-foreground inline-flex items-center gap-1">
-              <ArrowLeft className="h-3.5 w-3.5" /> Dashboard
-            </Link>
-            <span>/</span>
-            <span>Platform Backoffice</span>
-          </div>
-          <h1 className="text-3xl font-bold font-display">{company.product}</h1>
-          <p className="text-muted-foreground mt-1">{company.tagline} — operated by {company.operator}</p>
+          <h1 className="font-display text-2xl font-bold">Platform backoffice</h1>
+          <p className="text-sm text-muted-foreground">Customers, money and platform health for {company.product}.</p>
         </div>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/admin/system"><Settings className="h-4 w-4 mr-2" /> System settings</Link>
-        </Button>
-        <Button variant="outline" size="sm" asChild>
-          <Link to="/admin/queues"><Activity className="h-4 w-4 mr-2" /> Job queues</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/queues"><Activity className="mr-2 h-4 w-4" /> Job queues</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/admin/system"><Settings className="mr-2 h-4 w-4" /> System settings</Link>
+          </Button>
+        </div>
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList className="flex flex-wrap h-auto gap-1">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tenants">Tenants ({stats.tenants})</TabsTrigger>
-          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
-          <TabsTrigger value="revenue">Revenue</TabsTrigger>
-          <TabsTrigger value="refunds">Refunds</TabsTrigger>
-          <TabsTrigger value="plans">Plans</TabsTrigger>
-          <TabsTrigger value="ai">AI Usage</TabsTrigger>
-          <TabsTrigger value="chatbot">Chatbot ({stats.chatSessions})</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="health">Platform Health</TabsTrigger>
-          <TabsTrigger value="integrations">Integrations</TabsTrigger>
-          <TabsTrigger value="sms">SMS</TabsTrigger>
-          <TabsTrigger value="company">About Mako </TabsTrigger>
-        </TabsList>
+      {attention.length > 0 ? (
+        <div className="rounded-xl border border-amber-500/40 bg-amber-500/5 p-4">
+          <p className="flex items-center gap-2 text-sm font-semibold">
+            <AlertTriangle className="h-4 w-4 text-amber-700 dark:text-amber-300" />
+            {attention.length} thing{attention.length === 1 ? '' : 's'} need{attention.length === 1 ? 's' : ''} attention
+          </p>
+          <ul className="mt-2 flex flex-wrap gap-2">
+            {attention.map((a) => (
+              <li key={a.label}>
+                <button
+                  type="button"
+                  onClick={() => setSection(a.section)}
+                  className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium hover:bg-muted"
+                >
+                  {a.label} <ChevronRight className="h-3 w-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <CheckCircle2 className="h-4 w-4 text-green-600" /> All background jobs and integrations look healthy.
+        </p>
+      )}
 
-        <TabsContent value="overview" className="space-y-6 mt-6">
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Tenants" value={stats.tenants} icon={Building2} />
-            <StatCard label="Users" value={stats.users} icon={Users} sub={`${stats.activeMembers} active members`} />
-            <StatCard label="Est. MRR" value={`ZMW ${stats.estimatedMrrZmw}`} icon={TrendingUp} />
-            <StatCard label="Publications" value={stats.publications} icon={Share2} sub={`${stats.contentItems} content items`} />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Leads captured" value={stats.leads} icon={MessageSquare} />
-            <StatCard label="Comment replies" value={stats.commentReplies} icon={MessageSquare} />
-            <StatCard label="Audit events" value={stats.auditLogs} icon={ClipboardList} />
-            <StatCard label="Pending deletions" value={stats.pendingDataDeletions} icon={Shield} />
-          </div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard label="Chat sessions" value={stats.chatSessions} icon={Bot} sub={`${stats.chatSessionsLast7Days} last 7 days`} />
-            <StatCard label="Chat messages" value={stats.chatMessages} icon={MessageSquare} />
-            <StatCard label="Knowledge docs" value={stats.knowledgeDocuments} icon={BookOpen} sub={`${stats.knowledgeReady} ready · ${stats.knowledgeFailed} failed`} />
-            <StatCard label="Widgets live" value={stats.widgetsEnabled} icon={Globe} sub={`${stats.chatbotConfigs} configs · ${stats.activeChatbotApiKeys} API keys`} />
+      <div className="lg:hidden">
+        <Select value={section} onValueChange={(v) => setSection(v as SectionKey)}>
+          <SelectTrigger aria-label="Backoffice section"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {SECTION_GROUPS.flatMap((g) => g.items).map((item) => (
+              <SelectItem key={item.key} value={item.key}>{item.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-[210px_minmax(0,1fr)] lg:items-start">
+        <nav aria-label="Backoffice sections" className="hidden space-y-5 lg:sticky lg:top-4 lg:block">
+          {SECTION_GROUPS.map((group) => (
+            <div key={group.label}>
+              <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{group.label}</p>
+              <ul className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = section === item.key;
+                  const count = item.key === 'tenants' ? stats.tenants : item.key === 'chatbot' ? stats.chatSessions : undefined;
+                  return (
+                    <li key={item.key}>
+                      <button
+                        type="button"
+                        aria-current={active ? 'page' : undefined}
+                        onClick={() => setSection(item.key)}
+                        className={cn(
+                          'flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors',
+                          active ? 'bg-card font-semibold text-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
+                        )}
+                      >
+                        <Icon className="h-4 w-4 shrink-0" />
+                        <span className="flex-1 text-left">{item.label}</span>
+                        {count !== undefined && <span className="text-xs tabular-nums text-muted-foreground">{count}</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ))}
+        </nav>
+
+      <Tabs value={section} onValueChange={(v) => setSection(v as SectionKey)} className="min-w-0">
+        <TabsContent value="overview" className="mt-0 space-y-6">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+            <StatCard label="Tenants" value={stats.tenants} icon={Building2} sub={`${stats.activeMembers} active members`} />
+            <StatCard label="Est. monthly revenue" value={`ZMW ${stats.estimatedMrrZmw.toLocaleString()}`} icon={TrendingUp} sub={`ZMW ${stats.revenueTotalZmw.toFixed(0)} collected in total`} />
+            <StatCard label="Users" value={stats.users} icon={Users} />
+            <StatCard label="Posts published" value={stats.publications} icon={Share2} sub={`${stats.contentItems} posts written`} />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Tenant growth</CardTitle></CardHeader>
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="border-border/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">New tenants by month</CardTitle>
+              </CardHeader>
               <CardContent>
                 {overview.tenantGrowth.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No growth data yet</p>
@@ -390,9 +632,12 @@ function BackofficeContent() {
                 )}
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader><CardTitle className="text-base">Recent tenants</CardTitle></CardHeader>
-              <CardContent className="space-y-3">
+            <Card className="border-border/60">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-base">Newest tenants</CardTitle>
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setSection('tenants')}>View all</Button>
+              </CardHeader>
+              <CardContent className="space-y-1">
                 {recentTenants.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No tenants yet</p>
                 ) : (
@@ -401,26 +646,55 @@ function BackofficeContent() {
                       key={t.id}
                       type="button"
                       onClick={() => openTenant(t.id)}
-                      className="flex w-full justify-between text-sm border-b pb-2 last:border-0 hover:bg-muted/50 rounded px-1 -mx-1 text-left"
+                      className="flex w-full items-center justify-between rounded-md px-2 py-2 text-left text-sm hover:bg-muted/50"
                     >
-                      <div>
-                        <p className="font-medium">{t.name}</p>
-                        <p className="text-xs text-muted-foreground">{t.ownerEmail ?? t.slug}</p>
-                      </div>
-                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium">{t.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{t.ownerEmail ?? t.slug}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
                     </button>
                   ))
                 )}
               </CardContent>
             </Card>
           </div>
+
+          <div>
+            <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Platform usage</h2>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+              <StatCard size="sm" label="Leads captured" value={stats.leads} icon={MessageSquare} />
+              <StatCard size="sm" label="Comment replies" value={stats.commentReplies} icon={MessageSquare} />
+              <StatCard size="sm" label="Chat sessions" value={stats.chatSessions} icon={Bot} sub={`${stats.chatSessionsLast7Days} in the last 7 days`} />
+              <StatCard size="sm" label="Chat messages" value={stats.chatMessages} icon={MessageSquare} />
+              <StatCard size="sm" label="Knowledge docs" value={stats.knowledgeDocuments} icon={BookOpen} sub={`${stats.knowledgeReady} ready · ${stats.knowledgeFailed} failed`} />
+              <StatCard size="sm" label="Live chat widgets" value={stats.widgetsEnabled} icon={Globe} sub={`${stats.activeChatbotApiKeys} API keys`} />
+              <StatCard size="sm" label="Audit events" value={stats.auditLogs} icon={ClipboardList} />
+              <StatCard size="sm" label="Pending deletions" value={stats.pendingDataDeletions} icon={Shield} />
+            </div>
+          </div>
         </TabsContent>
 
-        <TabsContent value="tenants" className="mt-6">
+        <TabsContent value="tenants" className="mt-0">
           <Card>
-            <CardHeader>
-              <CardTitle>All tenants</CardTitle>
-              <CardDescription>Click a row to view workspace details</CardDescription>
+            <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <CardTitle className="text-base">Tenants</CardTitle>
+                <CardDescription>{visibleTenants.length} of {tenants.length} · click a row for details</CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input value={tenantSearch} onChange={(e) => setTenantSearch(e.target.value)} placeholder="Name or owner email" className="h-9 w-56 pl-8" aria-label="Search tenants" />
+                </div>
+                <Select value={tenantPlan} onValueChange={setTenantPlan}>
+                  <SelectTrigger className="h-9 w-32" aria-label="Filter by plan"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All plans</SelectItem>
+                    {tenantPlans.map((p) => <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -438,7 +712,7 @@ function BackofficeContent() {
                   </tr>
                 </thead>
                 <tbody>
-                  {tenants.map((t) => (
+                  {visibleTenants.map((t) => (
                     <tr
                       key={t.id}
                       className="border-b last:border-0 cursor-pointer hover:bg-muted/40"
@@ -469,15 +743,15 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="subscriptions" className="mt-6">
+        <TabsContent value="subscriptions" className="mt-0">
           <BackofficeSubscriptionsTab onOpenTenant={openTenant} />
         </TabsContent>
 
-        <TabsContent value="refunds" className="mt-6">
+        <TabsContent value="refunds" className="mt-0">
           <BackofficeRefundsTab />
         </TabsContent>
 
-        <TabsContent value="revenue" className="space-y-6 mt-6">
+        <TabsContent value="revenue" className="mt-0 space-y-6">
           <div className="grid sm:grid-cols-2 gap-4">
             <StatCard label="Total revenue (deposits)" value={`ZMW ${stats.revenueTotalZmw.toFixed(0)}`} icon={CreditCard} />
             <StatCard label="Estimated MRR" value={`ZMW ${stats.estimatedMrrZmw}`} icon={TrendingUp} />
@@ -510,20 +784,20 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="plans" className="mt-6">
+        <TabsContent value="plans" className="mt-0">
           <BackofficePlansTab onSaved={setPricingPlans} />
         </TabsContent>
 
-        <TabsContent value="sms" className="space-y-4 mt-6">
+        <TabsContent value="sms" className="mt-0 space-y-4">
           <SmsSettings />
           <SmsTestForm />
         </TabsContent>
 
-        <TabsContent value="integrations" className="mt-6">
+        <TabsContent value="integrations" className="mt-0">
           <PlatformIntegrationsForm />
         </TabsContent>
 
-        <TabsContent value="ai" className="space-y-6 mt-6">
+        <TabsContent value="ai" className="mt-0 space-y-6">
           <StatCard label="AI tokens (recent sample)" value={stats.aiTokensLastPeriod.toLocaleString()} icon={Sparkles} />
           <Card>
             <CardHeader><CardTitle className="text-base">Usage by function</CardTitle></CardHeader>
@@ -544,7 +818,7 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="chatbot" className="space-y-6 mt-6">
+        <TabsContent value="chatbot" className="mt-0 space-y-6">
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard label="Chatbot configs" value={stats.chatbotConfigs} icon={Bot} />
             <StatCard label="Widgets enabled" value={stats.widgetsEnabled} icon={Globe} />
@@ -615,7 +889,7 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="activity" className="space-y-6 mt-6">
+        <TabsContent value="activity" className="mt-0 space-y-6">
           <Card>
             <CardHeader>
               <div className="flex flex-col gap-3">
@@ -753,7 +1027,8 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="health" className="space-y-6 mt-6">
+        <TabsContent value="health" className="mt-0 space-y-6">
+          <AiKnowledgeCard onOpenIntegrations={() => setSection('integrations')} />
           <div className="grid sm:grid-cols-2 gap-4">
             <Card>
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4" /> Cron jobs</CardTitle></CardHeader>
@@ -821,7 +1096,7 @@ function BackofficeContent() {
               <CardHeader><CardTitle className="text-base flex items-center gap-2"><Server className="h-4 w-4" /> Integrations</CardTitle></CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex justify-between text-sm"><span>Environment</span><Badge variant="outline">{env.nodeEnv}</Badge></div>
-                <EnvRow label="Mistral AI" ok={env.mistralConfigured} />
+                <MistralKeyRow configured={env.mistralConfigured} onOpenIntegrations={() => setSection('integrations')} />
 
                 <EnvRow label="Meta (Facebook/IG)" ok={env.metaConfigured} />
                 <EnvRow label="LinkedIn OAuth" ok={env.linkedInConfigured} />
@@ -839,7 +1114,7 @@ function BackofficeContent() {
           </div>
         </TabsContent>
 
-        <TabsContent value="company" className="mt-6 space-y-6">
+        <TabsContent value="company" className="mt-0 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Globe className="h-5 w-5" /> About {company.name}</CardTitle>
@@ -916,6 +1191,7 @@ function BackofficeContent() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

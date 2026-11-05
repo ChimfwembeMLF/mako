@@ -68,10 +68,6 @@ export default function SocialDashboardPage() {
     }
   }, [loadData, tenant?.id, wsLoading]);
 
-  if (!permsLoading && !allowed) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // --- Process Calendar Days ---
   const calendarDays = useMemo(() => {
     const days = [];
@@ -124,7 +120,12 @@ export default function SocialDashboardPage() {
   };
 
   const engagement = totals.likes + totals.comments + totals.shares;
-  
+
+  // After every hook, so a redirect never changes the hook count between renders.
+  if (!permsLoading && !allowed) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   if (permsLoading || wsLoading || (loading && !data.dashboard)) {
     return (
       <div className="flex items-center justify-center py-12 text-muted-foreground">

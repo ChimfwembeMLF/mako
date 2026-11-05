@@ -146,7 +146,7 @@ export class ChatbotConfigService {
     }
     let saved = await this.repo.save(config);
 
-    if (saved.useMistralLibrary) {
+    if (this.mistralLibrary.usesLibrary(saved)) {
       saved = await this.mistralLibrary.provision(saved);
       if (mistralTouched) {
         await this.mistralLibrary.syncAgentInstructions(saved);

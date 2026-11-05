@@ -18,6 +18,17 @@ const INTEGRATION_GROUPS = [
       { key: 'GEMINI_API_KEY', label: 'Gemini API Key', placeholder: '...' },
       { key: 'DEEPSEEK_API_KEY', label: 'DeepSeek API Key', placeholder: '...' },
       { key: 'PARLER_TTS_URL', label: 'Self-Hosted Parler TTS URL', placeholder: 'http://mako-tts:8000' },
+      { key: 'AI_DEFAULT_PROVIDER', label: 'Default AI provider (openai, gemini, deepseek or mistral)', placeholder: 'openai' },
+      { key: 'KNOWLEDGE_EMBED_PROVIDER', label: 'Chatbot document search model provider (openai, gemini or mistral)', placeholder: 'openai' },
+    ],
+  },
+  {
+    name: 'Vector database (Qdrant)',
+    category: 'infra',
+    iconUrls: ['https://cdn.simpleicons.org/qdrant'],
+    fields: [
+      { key: 'QDRANT_URL', label: 'Qdrant URL (internal Docker network address)', placeholder: 'http://mako-qdrant:6333' },
+      { key: 'QDRANT_API_KEY', label: 'Qdrant API Key', placeholder: '...' },
     ],
   },
   {

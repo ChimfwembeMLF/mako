@@ -4,7 +4,7 @@ import { sanitizeHtml } from "@/lib/sanitize";
 import {
   CalendarClock, Plus, CheckCircle2, XCircle, Send, Facebook, Linkedin, Instagram,
   Twitter, Mail, Megaphone, Zap, Loader2, List, CalendarDays, ChevronLeft, ChevronRight,
-  AlertCircle, RotateCcw, Clock, Eye, Youtube, MessageCircle, Users, User, Bot, HelpCircle
+  AlertCircle, RotateCcw, Eye, Youtube, MessageCircle, Users, User, Bot, HelpCircle, Paperclip
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,6 +30,8 @@ import { PlatformPreviewPanel } from "@/components/content/PlatformPreviewPanel"
 import { PublishPanel } from "@/components/content/PublishPanel";
 import { AutomationSettingsTab } from "@/components/scheduler/AutomationSettingsTab";
 import { CalendarDayModal } from "@/components/scheduler/CalendarDayModal";
+import { PostPreviewSheet, PostStatusBadge } from "@/components/scheduler/PostPreviewSheet";
+import { getPostDisplayStatus, POST_STATUS_LEGEND, POST_STATUS_META, type PostDisplayStatus } from "@/lib/post-status";
 import type { ContentItem } from "@/components/content/types";
 import {
   buildPlatformPayloads,
@@ -56,8 +58,6 @@ import {
   filterPosts,
   getScheduledPosts,
   getUnscheduledPosts,
-  countDueToday,
-  countOverdue,
 } from "@/lib/scheduler-post";
 import { TourService } from '@/services/tour.service';
 import { schedulerTourConfig } from './Scheduler.tour';
@@ -66,7 +66,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { contentItemsApi } from "@/lib/api";
-import { invokeEdgeFunction } from "@/lib/edgeFunctions";
 
 function TikTokIcon({ className }: { className?: string }) {
   return (
@@ -100,22 +99,6 @@ const channelLabels: Record<string, string> = {
   whatsapp: "WhatsApp",
 };
 
-const statusDots: Record<string, string> = {
-  draft: "bg-muted-foreground",
-  approved: "bg-primary",
-  scheduled: "bg-blue-500",
-  published: "bg-green-500",
-  rejected: "bg-destructive",
-};
-
-const statusColors: Record<string, string> = {
-  draft: "bg-muted text-muted-foreground",
-  approved: "bg-primary/10 text-primary",
-  scheduled: "bg-blue-100 text-blue-700",
-  published: "bg-green-100 text-green-700",
-  rejected: "bg-destructive/10 text-destructive",
-};
-
 function postToContentItem(post: ScheduledPost): ContentItem {
   return {
     id: post.id,
@@ -130,30 +113,6 @@ function postToContentItem(post: ScheduledPost): ContentItem {
     created_at: post.created_at,
   };
 }
-
-function getPostPreviewPayloads(post: ScheduledPost): Record<string, PlatformPayload> {
-  if (post.platform_payloads && Object.keys(post.platform_payloads).length > 0) {
-    return post.platform_payloads;
-  }
-  const platforms =
-    post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
-  return buildPlatformPayloads(post.content, post.title ?? "", platforms);
-}
-
-function getPlatformBorderColor(p: string) {
-  switch (p) {
-    case "facebook": return "border-l-[3px] border-l-[#1877F2]";
-    case "linkedin": return "border-l-[3px] border-l-[#0A66C2]";
-    case "instagram": return "border-l-[3px] border-l-[#E1306C]";
-    case "twitter": return "border-l-[3px] border-l-[#000000]";
-    case "tiktok": return "border-l-[3px] border-l-[#000000]";
-    case "whatsapp": return "border-l-[3px] border-l-[#25D366]";
-    case "youtube": return "border-l-[3px] border-l-[#ff0000]";
-    default: return "border-l-[3px] border-l-muted-foreground";
-  }
-}
-
-
 
 function PostMediaPreview({ post }: { post: ScheduledPost }) {
   if (!post.media_url) return null;
@@ -198,14 +157,6 @@ function getBrandBg(p: string) {
   }
 }
 
-function getPlatformStatusDot(posts: ScheduledPost[]) {
-  if (posts.some(p => p.status === 'rejected')) return 'bg-destructive';
-  if (posts.every(p => p.status === 'published')) return 'bg-green-500';
-  if (posts.some(p => p.status === 'approved')) return 'bg-primary';
-  if (posts.some(p => p.status === 'scheduled')) return 'bg-blue-500';
-  return 'bg-muted-foreground'; // draft
-}
-
 const Scheduler = () => {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
   const [view, setView] = useState<"list" | "calendar" | "automations">("calendar");
@@ -222,7 +173,6 @@ const Scheduler = () => {
   const [newTitle, setNewTitle] = useState("");
   const [newMedia, setNewMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
   const [retrying, setRetrying] = useState<string | null>(null);
-  const [runningWorkflow, setRunningWorkflow] = useState(false);
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [calendarView, setCalendarView] = useState<'month' | 'week' | 'day'>('month');
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -231,7 +181,7 @@ const Scheduler = () => {
   const [savingReschedule, setSavingReschedule] = useState(false);
   const [publishItem, setPublishItem] = useState<ContentItem | null>(null);
   const [previewPost, setPreviewPost] = useState<ScheduledPost | null>(null);
-  const [queuePreviewTab, setQueuePreviewTab] = useState("facebook");
+  const [platformFilter, setPlatformFilter] = useState<string>("all");
   const [schedulePayloadOverrides, setSchedulePayloadOverrides] = useState<Record<string, PlatformPayload>>({});
   const { toast } = useToast();
   const { user } = useAuth();
@@ -271,10 +221,25 @@ const Scheduler = () => {
 
   const sortedPosts = useMemo(() => sortPostsBySchedule(posts), [posts]);
   const visiblePosts = useMemo(
-    () => filterPosts(sortedPosts, listFilter, { showTeam, userId: user?.id }),
-    [sortedPosts, listFilter, showTeam, user?.id],
+    () =>
+      filterPosts(sortedPosts, listFilter, { showTeam, userId: user?.id }).filter(
+        (p) => platformFilter === "all" || (p.platforms?.length ? p.platforms : [p.content_type]).includes(platformFilter),
+      ),
+    [sortedPosts, listFilter, showTeam, user?.id, platformFilter],
   );
-  const scheduledPosts = useMemo(() => getScheduledPosts(posts), [posts]);
+  const postPlatforms = (post: ScheduledPost) =>
+    post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
+  const scheduledPosts = useMemo(
+    () =>
+      getScheduledPosts(posts).filter(
+        (p) => platformFilter === "all" || postPlatforms(p).includes(platformFilter),
+      ),
+    [posts, platformFilter],
+  );
+  const calendarPlatforms = useMemo(
+    () => Array.from(new Set(posts.flatMap(postPlatforms))).filter((p) => channelIcons[p]),
+    [posts],
+  );
   const unscheduledPosts = useMemo(() => getUnscheduledPosts(posts), [posts]);
 
   const loadPosts = useCallback(async () => {
@@ -308,6 +273,10 @@ const Scheduler = () => {
   useEffect(() => {
     if (user && activeWorkspace) void loadPosts();
   }, [user, tenant?.id, activeWorkspace, workspaceVersion, loadPosts]);
+
+  useEffect(() => {
+    setPreviewPost((current) => (current ? posts.find((p) => p.id === current.id) ?? null : current));
+  }, [posts]);
 
   useEffect(() => {
     if (sheetOpen && !newDate) {
@@ -420,8 +389,17 @@ const Scheduler = () => {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await contentItemsApi.update(id, { status } as Parameters<typeof contentItemsApi.update>[1]);
-    void loadPosts();
+    try {
+      await contentItemsApi.update(id, { status } as Parameters<typeof contentItemsApi.update>[1]);
+      toast({ title: status === "approved" ? "Approved" : status === "rejected" ? "Rejected" : "Status updated" });
+      await loadPosts();
+    } catch (err: unknown) {
+      toast({
+        title: "Could not update status",
+        description: err instanceof Error ? err.message : String(err),
+        variant: "destructive",
+      });
+    }
   };
 
   const persistSchedule = async (
@@ -544,43 +522,6 @@ const Scheduler = () => {
     }
   };
 
-  const handleDailyWorkflow = async () => {
-    if (!tenant || !activeWorkspace) {
-      toast({ title: "Select a workspace", description: "Choose a workspace from the top navbar.", variant: "destructive" });
-      return;
-    }
-    setRunningWorkflow(true);
-    try {
-      const { data, error } = await invokeEdgeFunction("daily-content-workflow", {
-        body: { tenantId: tenant.id, workspaceId: activeWorkspace },
-      });
-      if (error) throw error;
-      const result = data as { generated?: number; skipped?: number; errors?: string[] } | null;
-      const generated = result?.generated ?? 0;
-      const skipped = result?.skipped ?? 0;
-      const firstError = result?.errors?.[0];
-      if (generated === 0 && firstError) {
-        throw new Error(firstError.replace(/^[^:]+:\s*/, ""));
-      }
-      toast({
-        title: generated > 0 ? "Workflow complete!" : "Nothing generated",
-        description: generated > 0
-          ? `Generated ${generated} draft${generated === 1 ? "" : "s"}.${skipped ? ` Skipped ${skipped}.` : ""}`
-          : firstError ?? "Complete Brand voice setup and upgrade to Starter or Pro for daily auto-generate.",
-        variant: generated > 0 ? "default" : "destructive",
-      });
-      if (generated > 0) void loadPosts();
-    } catch (err: unknown) {
-      toast({
-        title: "Workflow failed",
-        description: err instanceof Error ? err.message : String(err),
-        variant: "destructive",
-      });
-    } finally {
-      setRunningWorkflow(false);
-    }
-  };
-
   const getCalendarDays = useCallback(() => {
     const year = calendarMonth.getFullYear();
     const month = calendarMonth.getMonth();
@@ -611,11 +552,22 @@ const Scheduler = () => {
 
   const monthLabel = calendarMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
 
-  const stats = [
-    { label: "Scheduled", count: posts.filter((p) => p.status === "scheduled" || (p.status === "approved" && p.scheduled_date)).length, color: "text-blue-600" },
-    { label: "Due today", count: countDueToday(posts), color: "text-amber-600" },
-    { label: "Overdue", count: countOverdue(posts), color: "text-destructive" },
-    { label: "Published", count: posts.filter((p) => p.status === "published").length, color: "text-green-600" },
+  const statusCounts = useMemo(() => {
+    const counts = {} as Record<PostDisplayStatus, number>;
+    for (const p of posts) {
+      const key = getPostDisplayStatus(p);
+      counts[key] = (counts[key] ?? 0) + 1;
+    }
+    return counts;
+  }, [posts]);
+
+  // Each card opens the list filtered to the posts it counts.
+  const stats: Array<{ status: PostDisplayStatus; filter: ListFilter; color: string; alert?: string }> = [
+    { status: "scheduled", filter: "upcoming", color: "text-blue-600" },
+    { status: "needs_approval", filter: "needs_approval", color: "text-amber-600" },
+    { status: "overdue", filter: "overdue", color: "text-orange-600", alert: "border-orange-600/40" },
+    { status: "failed", filter: "failed", color: "text-destructive", alert: "border-destructive/40" },
+    { status: "published", filter: "published", color: "text-green-600" },
   ];
 
   const renderListPost = (post: ScheduledPost) => {
@@ -633,7 +585,12 @@ const Scheduler = () => {
                 {platforms.map((p) => (
                   <Badge key={`badge-${p}`} variant="secondary" className="text-xs mr-1">{channelLabels[p] || p}</Badge>
                 ))}
-                <Badge className={`text-xs ${statusColors[post.status] || statusColors.draft}`}>{post.status}</Badge>
+                <PostStatusBadge post={post} />
+                {post.media_count > 0 && (
+                  <span className="inline-flex items-center gap-0.5 text-xs text-muted-foreground" title={`${post.media_count} attachment${post.media_count === 1 ? "" : "s"}`}>
+                    <Paperclip className="h-3 w-3" /> {post.media_count}
+                  </span>
+                )}
                 <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => openReschedule(post)}>
                   <CalendarDays className="h-3 w-3" />
                   {post.scheduled_date ? formatScheduleLabel(post.scheduled_date, post.scheduled_time) : "Set schedule"}
@@ -665,7 +622,7 @@ const Scheduler = () => {
               </p>
             </div>
             <div className="flex gap-1 shrink-0">
-              <Button size="sm" variant="ghost" onClick={() => { setQueuePreviewTab(platforms[0] ?? "facebook"); setPreviewPost(post); }} className="h-8 text-muted-foreground" title="Preview">
+              <Button size="sm" variant="ghost" onClick={() => setPreviewPost(post)} className="h-8 text-muted-foreground" title="Preview">
                 <Eye className="h-4 w-4" />
               </Button>
               {(post.status === "draft" || post.status === "scheduled") && (
@@ -720,9 +677,11 @@ const Scheduler = () => {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
           <div>
-            <h1 className="text-2xl font-bold font-display">{view === "calendar" ? "Calendar" : view === "automations" ? "Automations" : "Schedule"}</h1>
+            <h1 className="text-2xl font-bold font-display">Schedule</h1>
             <p className="text-muted-foreground text-sm">
-              {view === "calendar" ? `Plan, inspect, and reschedule posts for ${activeWorkspaceObj?.name || "your workspace"}.` : "Plan, schedule, and publish across channels"}
+              {view === "automations"
+                ? `Let Mako draft posts for ${activeWorkspaceObj?.name || "your workspace"} on a schedule.`
+                : `Plan, review, and publish posts for ${activeWorkspaceObj?.name || "your workspace"}.`}
             </p>
           </div>
         </div>
@@ -730,26 +689,33 @@ const Scheduler = () => {
           <Button variant="outline" size="icon" className="h-9 w-9 hidden lg:flex" onClick={() => TourService.startTour('scheduler', schedulerTourConfig.steps, undefined, schedulerTourConfig.driverConfig)} title="Help/Tour">
             <HelpCircle className="h-4 w-4" />
           </Button>
-          {view === "calendar" && (
-            <div className="flex items-center gap-2 bg-card border border-border/50 rounded-full px-1.5 py-1">
-              <div className="px-2 border-r border-border/50">
-                <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-muted-foreground"><path d="M2.5 3.5C2.5 3.22386 2.72386 3 3 3H12C12.2761 3 12.5 3.22386 12.5 3.5C12.5 3.77614 12.2761 4 12 4H3C2.72386 4 2.5 3.77614 2.5 3.5ZM4.5 7.5C4.5 7.22386 4.72386 7 5 7H10C10.2761 7 10.5 7.22386 10.5 7.5C10.5 7.77614 10.2761 8 10 8H5C4.72386 8 4.5 7.77614 4.5 7.5ZM6.5 11.5C6.5 11.2239 6.72386 11 7 11H8C8.27614 11 8.5 11.2239 8.5 11.5C8.5 11.7761 8.27614 12 8 12H7C6.72386 12 6.5 11.7761 6.5 11.5Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
-              </div>
-              <div className="flex items-center gap-1.5 px-1">
-                <Badge variant="secondary" className="bg-white text-black hover:bg-white/90 rounded-full text-[10px] px-2 h-5 cursor-pointer">All</Badge>
-                <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-[#fd5949] to-[#d6249f] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-                  <Instagram className="h-2.5 w-2.5 text-white" />
-                </div>
-                <div className="h-5 w-5 rounded-full bg-black flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5 text-white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
-                </div>
-                <div className="h-5 w-5 rounded-full bg-[#0A66C2] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-                  <Linkedin className="h-2.5 w-2.5 text-white" />
-                </div>
-                <div className="h-5 w-5 rounded-full bg-[#1877F2] flex items-center justify-center cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-                  <Facebook className="h-2.5 w-2.5 text-white" />
-                </div>
-              </div>
+          {view !== "automations" && calendarPlatforms.length > 1 && (
+            <div className="flex items-center gap-1 bg-card border border-border/50 rounded-full p-1" role="group" aria-label="Filter calendar by platform">
+              <button
+                type="button"
+                aria-pressed={platformFilter === "all"}
+                onClick={() => setPlatformFilter("all")}
+                className={`h-7 rounded-full px-3 text-xs font-medium transition-colors ${platformFilter === "all" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"}`}
+              >
+                All
+              </button>
+              {calendarPlatforms.map((p) => {
+                const Icon = channelIcons[p];
+                const on = platformFilter === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    aria-pressed={on}
+                    title={channelLabels[p] ?? p}
+                    onClick={() => setPlatformFilter(on ? "all" : p)}
+                    className={`flex h-7 w-7 items-center justify-center rounded-full transition-[opacity,box-shadow] ${getBrandBg(p)} ${on ? "opacity-100 ring-2 ring-offset-2 ring-offset-card ring-foreground/60" : "opacity-50 hover:opacity-90"}`}
+                  >
+                    <Icon className="h-3.5 w-3.5 text-white" />
+                    <span className="sr-only">{channelLabels[p] ?? p}</span>
+                  </button>
+                );
+              })}
             </div>
           )}
 
@@ -761,7 +727,7 @@ const Scheduler = () => {
                      key={v}
                      className={`px-3 rounded-full capitalize transition-all ${
                        calendarView === v
-                         ? 'bg-white dark:bg-foreground text-black shadow-sm h-7 font-semibold'
+                         ? 'bg-background text-foreground shadow-sm h-7 font-semibold'
                          : 'text-muted-foreground hover:text-foreground'
                      }`}
                      onClick={() => {
@@ -785,21 +751,107 @@ const Scheduler = () => {
             </Tabs>
           </div>
 
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+            <SheetTrigger asChild>
+              <Button size="sm" className="h-9 rounded-full gap-1 font-medium" id="tour-scheduler-create"><Plus className="h-4 w-4" /> New post</Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-3xl overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle className="font-display">New scheduled post</SheetTitle>
+              </SheetHeader>
+              <div className="grid lg:grid-cols-2 gap-6 mt-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Platforms</Label>
+                    <MultiPlatformPicker values={selectedPlatforms} onChange={setSelectedPlatforms} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Title <span className="text-muted-foreground text-xs">(optional)</span></Label>
+                    <Input placeholder="Give this post a title..." value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input type="date" value={newDate} onChange={(e) => setNewDate(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Time</Label>
+                      <Input type="time" value={newTime} onChange={(e) => setNewTime(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Content</Label>
+                    <Textarea rows={8} value={newContent} onChange={(e) => setNewContent(e.target.value)} placeholder="Write your post content..." />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>
+                      Media{" "}
+                      <span className="text-muted-foreground text-xs">
+                        {instagramNeedsMedia ? "(required for Instagram)" : "(optional)"}
+                      </span>
+                    </Label>
+                    {newMedia ? (
+                      <div className="relative w-full rounded-lg overflow-hidden border border-border/50 bg-muted/30">
+                        {newMedia.type === "image" ? (
+                          <img src={newMedia.url} alt="Attached media" className="w-full max-h-40 object-cover" />
+                        ) : (
+                          <video src={newMedia.url} className="w-full max-h-40 object-cover" controls />
+                        )}
+                        <button type="button" onClick={() => setNewMedia(null)} aria-label="Remove media" className="absolute top-1.5 right-1.5 rounded-full bg-background/80 p-1 hover:bg-background"><XCircle className="h-4 w-4" /></button>
+                      </div>
+                    ) : (
+                      <MediaUpload label="" onUpload={(url, type) => setNewMedia({ url, type })} />
+                    )}
+                  </div>
+                  <Button onClick={handleSchedule} disabled={!newContent.trim() || !selectedPlatforms.length || !newDate || instagramNeedsMedia} className="w-full">
+                    <Send className="mr-2 h-4 w-4" /> Schedule to {selectedPlatforms.length} platform{selectedPlatforms.length !== 1 ? "s" : ""}
+                  </Button>
+                </div>
+                <PlatformPreviewPanel
+                  platforms={selectedPlatforms}
+                  platformPayloads={displaySchedulePayloads}
+                  title={newTitle}
+                  baseContent={plainToHtml(newContent)}
+                  previewTab={previewTab}
+                  onPreviewTabChange={setPreviewTab}
+                  mediaUrls={newMedia ? [newMedia.url] : []}
+                  showEditors
+                  onEditPayload={(platform, patch) =>
+                    setSchedulePayloadOverrides((prev) => ({
+                      ...prev,
+                      [platform]: { ...displaySchedulePayloads[platform], ...prev[platform], ...patch },
+                    }))
+                  }
+                />
+              </div>
+            </SheetContent>
+          </Sheet>
+
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        {stats.map((s) => (
-          <Card key={s.label} className="border-border/50">
-            <CardContent className="p-4 text-center">
+      {view !== "automations" && <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {stats.map((s) => {
+          const meta = POST_STATUS_META[s.status];
+          const count = statusCounts[s.status] ?? 0;
+          return (
+            <button
+              key={s.status}
+              type="button"
+              onClick={() => { setListFilter(s.filter); setView("list"); }}
+              title={meta.hint}
+              className={`rounded-xl border bg-card p-4 text-center transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                count > 0 && s.alert ? s.alert : "border-border/50"
+              }`}
+            >
               {loadingPosts ? <Skeleton className="h-8 w-10 mx-auto mb-1" /> : (
-                <p className={`text-2xl font-bold font-display ${s.color}`}>{s.count}</p>
+                <p className={`text-2xl font-bold font-display ${count > 0 ? s.color : "text-muted-foreground"}`}>{count}</p>
               )}
-              <p className="text-xs text-muted-foreground">{s.label}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+              <p className="text-xs text-muted-foreground">{meta.label}</p>
+            </button>
+          );
+        })}
+      </div>}
 
       {view === "calendar" && (() => {
         // ── Shared helpers ────────────────────────────────────────────────
@@ -826,68 +878,83 @@ const Scheduler = () => {
         const navToday = () => { setCalendarDate(new Date()); setCalendarMonth(new Date()); };
 
         const sharedHeader = (
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100 dark:border-border/20">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-border/60">
             <div>
-              <p className="text-[11px] font-semibold text-gray-400 dark:text-muted-foreground uppercase tracking-widest mb-0.5">{calendarView} View</p>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-foreground">{navLabel}</h2>
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest mb-0.5">{calendarView} View</p>
+              <h2 className="text-2xl font-bold text-foreground">{navLabel}</h2>
             </div>
             <div className="flex items-center gap-2">
-              <button className="h-9 w-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-border/50 bg-white dark:bg-background hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors shadow-sm" onClick={navPrev}>
-                <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-muted-foreground" />
+              <button className="h-9 w-9 rounded-full flex items-center justify-center border border-border bg-background hover:bg-muted transition-colors shadow-sm" onClick={navPrev}>
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
               </button>
-              <button className="h-9 px-4 rounded-full text-xs font-semibold border border-gray-200 dark:border-border/50 bg-white dark:bg-background hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors shadow-sm text-gray-700 dark:text-foreground" onClick={navToday}>
+              <button className="h-9 px-4 rounded-full text-xs font-semibold border border-border bg-background hover:bg-muted transition-colors shadow-sm text-foreground" onClick={navToday}>
                 Today
               </button>
-              <button className="h-9 w-9 rounded-full flex items-center justify-center border border-gray-200 dark:border-border/50 bg-white dark:bg-background hover:bg-gray-50 dark:hover:bg-muted/50 transition-colors shadow-sm" onClick={navNext}>
-                <ChevronRight className="h-4 w-4 text-gray-600 dark:text-muted-foreground" />
+              <button className="h-9 w-9 rounded-full flex items-center justify-center border border-border bg-background hover:bg-muted transition-colors shadow-sm" onClick={navNext}>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
             </div>
           </div>
         );
 
         const legend = (
-          <div className="flex flex-wrap items-center gap-4 px-6 py-3 border-t border-gray-100 dark:border-border/20 bg-gray-50/50 dark:bg-muted/5 text-[11px] text-gray-400 dark:text-muted-foreground">
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-gray-400" /> Draft</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-blue-500" /> Scheduled</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-primary" /> Approved</span>
-            <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-green-500" /> Published</span>
-            <span className="ml-auto hidden sm:inline">Click a day to view or add posts</span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 border-t border-border/60 bg-muted/30 text-[11px] text-muted-foreground">
+            {POST_STATUS_LEGEND.map((key) => (
+              <span key={key} className="flex items-center gap-1.5" title={POST_STATUS_META[key].hint}>
+                <span className={`h-2 w-2 rounded-full ${POST_STATUS_META[key].dot}`} /> {POST_STATUS_META[key].label}
+              </span>
+            ))}
+            <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> Has attachments</span>
+            <span className="ml-auto hidden md:inline">Click a post to preview it · drag to move it</span>
           </div>
         );
 
-        // ── Day chip helper ───────────────────────────────────────────────
-        const DayCellPosts = ({ day, mini = false }: { day: Date; mini?: boolean }) => {
-          const dayPosts = getPostsForDate(day);
-          const platformPostsMap: Record<string, ScheduledPost[]> = {};
-          for (const post of dayPosts) {
-            const platforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
-            for (const p of platforms) {
-              if (!platformPostsMap[p]) platformPostsMap[p] = [];
-              platformPostsMap[p].push(post);
-            }
-          }
-          const platKeys = Object.keys(platformPostsMap);
-          if (platKeys.length === 0) return null;
-
+        // ── Day cell posts: one row per post, coloured by status ─────────
+        const DayCellPosts = ({ day, max, showThumbs = false }: { day: Date; max: number; showThumbs?: boolean }) => {
+          const dayPosts = sortPostsBySchedule(getPostsForDate(day));
+          if (dayPosts.length === 0) return null;
           return (
-            <div className="space-y-1">
-              {platKeys.slice(0, mini ? 2 : 3).map((platform) => {
-                const Icon = channelIcons[platform] || CalendarClock;
-                const platformPosts = platformPostsMap[platform] || [];
-                const statusDot = getPlatformStatusDot(platformPosts);
+            <div className="flex flex-col gap-1">
+              {dayPosts.slice(0, max).map((post) => {
+                const meta = POST_STATUS_META[getPostDisplayStatus(post)];
+                const platforms = postPlatforms(post);
+                const Icon = channelIcons[platformFilter !== "all" ? platformFilter : platforms[0]] || CalendarClock;
+                const time = formatTimeDisplay(post.scheduled_time);
+                const thumb = showThumbs && post.media_url && post.media_type === "image" ? post.media_url : null;
                 return (
-                  <div key={platform} className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-medium transition-all shadow-sm border border-black/5 dark:border-white/5 hover:scale-[1.02] ${getBrandBg(platform)} text-white`}>
-                    <Icon className="h-3 w-3 shrink-0 opacity-90" />
-                    {!mini && <span className="truncate capitalize tracking-wide hidden sm:block">{platform}</span>}
-                    <div className="ml-auto flex items-center gap-1.5 bg-black/10 dark:bg-white/20 px-1.5 rounded-full">
-                      <span className="font-bold">{platformPosts.length}</span>
-                      <span className={`h-1.5 w-1.5 rounded-full ${statusDot} shrink-0 hidden sm:inline`} />
-                    </div>
-                  </div>
+                  <button
+                    key={post.id}
+                    type="button"
+                    draggable={post.status !== "published"}
+                    onDragStart={(e) => handleDragStart(e, post.id)}
+                    onClick={(e) => { e.stopPropagation(); setPreviewPost(post); }}
+                    title={`${post.title || "Untitled post"} · ${meta.label}`}
+                    className={`group/post w-full rounded-md border border-border/60 border-l-[3px] ${meta.edge} bg-card px-1.5 py-1 text-left text-[11px] leading-tight shadow-sm transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${post.status === "rejected" ? "opacity-60" : ""}`}
+                  >
+                    {thumb && <img src={thumb} alt="" loading="lazy" className="mb-1 h-14 w-full rounded object-cover" />}
+                    <span className="flex items-center gap-1">
+                      <Icon className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      {platforms.length > 1 && <span className="text-[9px] font-semibold text-muted-foreground">+{platforms.length - 1}</span>}
+                      {time && <span className="font-semibold tabular-nums text-foreground/80">{time}</span>}
+                      {post.media_count > 0 && (
+                        <span className="ml-auto flex items-center gap-0.5 text-muted-foreground" aria-label={`${post.media_count} attachments`}>
+                          <Paperclip className="h-2.5 w-2.5" />
+                          {post.media_count > 1 && <span className="text-[9px]">{post.media_count}</span>}
+                        </span>
+                      )}
+                    </span>
+                    <span className="mt-0.5 hidden truncate font-medium text-foreground sm:block">{post.title || "Untitled post"}</span>
+                  </button>
                 );
               })}
-              {platKeys.length > (mini ? 2 : 3) && (
-                <span className="text-[10px] text-gray-400 dark:text-muted-foreground px-2 font-medium">+{platKeys.length - (mini ? 2 : 3)} more</span>
+              {dayPosts.length > max && (
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); setSelectedDayForModal(day); }}
+                  className="px-1 text-left text-[10px] font-semibold text-muted-foreground hover:text-primary"
+                >
+                  +{dayPosts.length - max} more
+                </button>
               )}
             </div>
           );
@@ -895,42 +962,42 @@ const Scheduler = () => {
 
         return (
           <div className="space-y-4">
-            <div className="bg-white dark:bg-card rounded-2xl overflow-hidden border border-gray-200/80 dark:border-border/30 shadow-sm" id="tour-scheduler-calendar">
+            <div className="bg-card rounded-2xl overflow-hidden border border-border/60 shadow-sm" id="tour-scheduler-calendar">
               {sharedHeader}
               {loadingPosts ? <Skeleton className="h-80 w-full" /> : (
                 <>
                   {/* ── MONTH VIEW ─────────────────────────────────────────── */}
                   {calendarView === 'month' && (
                     <>
-                      <div className="grid grid-cols-7 bg-gray-50/80 dark:bg-muted/5 border-b border-gray-100 dark:border-border/20">
+                      <div className="grid grid-cols-7 bg-muted/40 border-b border-border/60">
                         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                          <div key={d} className="text-center text-[11px] font-bold text-gray-400 dark:text-muted-foreground uppercase tracking-wider py-3">{d}</div>
+                          <div key={d} className="text-center text-[11px] font-bold text-muted-foreground uppercase tracking-wider py-3">{d}</div>
                         ))}
                       </div>
-                      <div className="grid grid-cols-7 divide-x divide-y divide-gray-100 dark:divide-border/20">
+                      <div className="grid grid-cols-7 divide-x divide-y divide-border/60">
                         {getCalendarDays().map((day, idx) => {
-                          if (!day) return <div key={`empty-${idx}`} className="min-h-[130px] bg-gray-50/50 dark:bg-muted/5" />;
+                          if (!day) return <div key={`empty-${idx}`} className="min-h-[130px] bg-muted/30" />;
                           const dayPosts = getPostsForDate(day);
                           const isTodayDate = isToday(day);
                           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
                           return (
                             <div
                               key={day.toISOString()}
-                              className={`min-h-[130px] flex flex-col cursor-pointer group/cell transition-colors ${isWeekend ? "bg-gray-50/70 dark:bg-muted/5" : "bg-white dark:bg-card"} ${dragId !== null ? "bg-primary/5" : "hover:bg-blue-50/40 dark:hover:bg-muted/20"}`}
+                              className={`min-h-[130px] flex flex-col cursor-pointer group/cell transition-colors ${isWeekend ? "bg-muted/30" : "bg-card"} ${dragId !== null ? "bg-primary/5" : "hover:bg-muted/40"}`}
                               onDragOver={handleDragOver}
                               onDrop={(e) => void handleDrop(e, day)}
                               onClick={() => setSelectedDayForModal(day)}
                             >
                               <div className="p-3 pb-2 flex items-center justify-between">
-                                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full transition-colors ${isTodayDate ? "bg-primary text-primary-foreground shadow-sm" : "text-gray-700 dark:text-foreground group-hover/cell:bg-gray-100 dark:group-hover/cell:bg-muted/30"}`}>
+                                <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full transition-colors ${isTodayDate ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground group-hover/cell:bg-muted"}`}>
                                   {day.getDate()}
                                 </span>
-                                {dayPosts.length > 0 && <span className="text-[10px] font-semibold bg-primary/10 text-primary rounded-full px-1.5 py-0.5">{dayPosts.length}</span>}
+
                               </div>
                               <div className="px-2 pb-2 flex flex-col gap-1">
-                                <DayCellPosts day={day} />
+                                <DayCellPosts day={day} max={3} />
                                 {dayPosts.length === 0 && (
-                                  <button className="opacity-0 group-hover/cell:opacity-100 transition-opacity mt-1 flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted-foreground hover:text-primary px-1" onClick={(e) => { e.stopPropagation(); openCreatePostForDate(day); }}>
+                                  <button className="opacity-0 group-hover/cell:opacity-100 transition-opacity mt-1 flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary px-1" onClick={(e) => { e.stopPropagation(); openCreatePostForDate(day); }}>
                                     <Plus className="h-3 w-3" /> Add
                                   </button>
                                 )}
@@ -953,28 +1020,28 @@ const Scheduler = () => {
                     });
                     return (
                       <>
-                        <div className="grid grid-cols-7 bg-gray-50/80 dark:bg-muted/5 border-b border-gray-100 dark:border-border/20">
+                        <div className="grid grid-cols-7 bg-muted/40 border-b border-border/60">
                           {weekDays.map((d) => (
-                            <div key={d.toISOString()} className={`text-center py-3 border-r border-gray-100 dark:border-border/20 last:border-r-0 ${isToday(d) ? 'bg-primary/5' : ''}`}>
-                              <p className="text-[11px] font-bold text-gray-400 dark:text-muted-foreground uppercase tracking-wider">{d.toLocaleDateString('en-US', { weekday: 'short' })}</p>
-                              <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full mx-auto mt-0.5 ${isToday(d) ? 'bg-primary text-primary-foreground' : 'text-gray-700 dark:text-foreground'}`}>{d.getDate()}</span>
+                            <div key={d.toISOString()} className={`text-center py-3 border-r border-border/60 last:border-r-0 ${isToday(d) ? 'bg-primary/5' : ''}`}>
+                              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{d.toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                              <span className={`text-sm font-bold w-7 h-7 flex items-center justify-center rounded-full mx-auto mt-0.5 ${isToday(d) ? 'bg-primary text-primary-foreground' : 'text-foreground'}`}>{d.getDate()}</span>
                             </div>
                           ))}
                         </div>
-                        <div className="grid grid-cols-7 divide-x divide-gray-100 dark:divide-border/20">
+                        <div className="grid grid-cols-7 divide-x divide-border/60">
                           {weekDays.map((d) => {
                             const dayPosts = getPostsForDate(d);
                             return (
                               <div
                                 key={d.toISOString()}
-                                className="min-h-[400px] flex flex-col p-2 gap-1 cursor-pointer group/cell hover:bg-blue-50/30 dark:hover:bg-muted/10 transition-colors"
+                                className="min-h-[400px] flex flex-col p-2 gap-1 cursor-pointer group/cell hover:bg-muted/30 transition-colors"
                                 onClick={() => { setCalendarDate(d); setSelectedDayForModal(d); }}
                                 onDragOver={handleDragOver}
                                 onDrop={(e) => void handleDrop(e, d)}
                               >
-                                <DayCellPosts day={d} mini />
+                                <DayCellPosts day={d} max={8} showThumbs />
                                 {dayPosts.length === 0 && (
-                                  <button className="opacity-0 group-hover/cell:opacity-100 transition-opacity flex items-center gap-1 text-[10px] text-gray-400 dark:text-muted-foreground hover:text-primary p-1" onClick={(e) => { e.stopPropagation(); openCreatePostForDate(d); }}>
+                                  <button className="opacity-0 group-hover/cell:opacity-100 transition-opacity flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary p-1" onClick={(e) => { e.stopPropagation(); openCreatePostForDate(d); }}>
                                     <Plus className="h-3 w-3" /> Add
                                   </button>
                                 )}
@@ -993,12 +1060,12 @@ const Scheduler = () => {
                       <div className="min-h-[400px] p-6">
                         {dayPosts.length === 0 ? (
                           <div className="flex flex-col items-center justify-center h-64 text-center gap-3">
-                            <div className="h-12 w-12 rounded-full bg-gray-100 dark:bg-muted/30 flex items-center justify-center">
-                              <CalendarDays className="h-6 w-6 text-gray-400 dark:text-muted-foreground" />
+                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                              <CalendarDays className="h-6 w-6 text-muted-foreground" />
                             </div>
                             <div>
-                              <p className="font-semibold text-gray-700 dark:text-foreground">No posts scheduled</p>
-                              <p className="text-sm text-gray-400 dark:text-muted-foreground mt-0.5">Click below to schedule a post for this day.</p>
+                              <p className="font-semibold text-foreground">No posts scheduled</p>
+                              <p className="text-sm text-muted-foreground mt-0.5">Click below to schedule a post for this day.</p>
                             </div>
                             <button
                               className="mt-2 flex items-center gap-1.5 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
@@ -1010,28 +1077,37 @@ const Scheduler = () => {
                         ) : (
                           <div className="space-y-3">
                             <div className="flex items-center justify-between mb-4">
-                              <p className="text-sm font-semibold text-gray-700 dark:text-foreground">{dayPosts.length} post{dayPosts.length !== 1 ? 's' : ''} scheduled</p>
-                              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gray-200 dark:border-border/50 text-xs font-medium text-gray-600 dark:text-muted-foreground hover:bg-gray-50 dark:hover:bg-muted/30 transition-colors" onClick={() => openCreatePostForDate(calendarDate)}>
+                              <p className="text-sm font-semibold text-foreground">{dayPosts.length} post{dayPosts.length !== 1 ? 's' : ''} scheduled</p>
+                              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-border text-xs font-medium text-muted-foreground hover:bg-muted transition-colors" onClick={() => openCreatePostForDate(calendarDate)}>
                                 <Plus className="h-3 w-3" /> Add post
                               </button>
                             </div>
-                            {dayPosts.map((post) => {
-                              const postPlatforms = post.platforms && post.platforms.length > 0 ? post.platforms : [post.content_type];
-                              const timeStr = post.scheduled_at ? new Date(post.scheduled_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'Unscheduled';
+                            {sortPostsBySchedule(dayPosts).map((post) => {
+                              const platformsForPost = postPlatforms(post);
+                              const timeStr = formatTimeDisplay(post.scheduled_time) ?? 'Any time';
+                              const meta = POST_STATUS_META[getPostDisplayStatus(post)];
                               return (
-                                <div key={post.id} className="flex gap-4 p-4 rounded-xl border border-gray-100 dark:border-border/30 bg-gray-50/50 dark:bg-muted/5 hover:border-gray-200 dark:hover:border-border/60 transition-colors">
+                                <div
+                                  key={post.id}
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={() => setPreviewPost(post)}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setPreviewPost(post); } }}
+                                  className={`flex gap-4 p-4 rounded-xl border border-border/60 border-l-4 ${meta.edge} bg-card cursor-pointer hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+                                >
                                   <div className="flex flex-col items-center min-w-[52px]">
                                     <span className="text-xs font-bold text-primary">{timeStr}</span>
-                                    <div className="flex-1 w-px bg-gray-200 dark:bg-border/30 mt-1" />
+                                    <div className="flex-1 w-px bg-border mt-1" />
                                   </div>
                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-2 mb-2">
-                                      <p className="text-sm font-semibold text-gray-800 dark:text-foreground truncate">{post.title || 'Untitled Post'}</p>
-                                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold capitalize shrink-0 ${statusColors[post.status] || 'bg-muted text-muted-foreground'}`}>{post.status}</span>
+                                      <p className="text-sm font-semibold text-foreground truncate">{post.title || 'Untitled Post'}</p>
+                                      <PostStatusBadge post={post} className="shrink-0" />
                                     </div>
-                                    <p className="text-xs text-gray-500 dark:text-muted-foreground line-clamp-2 mb-3" dangerouslySetInnerHTML={{ __html: post.content.replace(/<[^>]*>/g, '') }} />
+                                    <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{post.content.replace(/<[^>]*>/g, ' ')}</p>
+                                    <PostMediaPreview post={post} />
                                     <div className="flex items-center gap-1.5">
-                                      {postPlatforms.map((p) => {
+                                      {platformsForPost.map((p) => {
                                         const Icon = channelIcons[p] || CalendarClock;
                                         return (
                                           <span key={p} className={`h-5 w-5 rounded-full flex items-center justify-center ${getBrandBg(p)}`}>
@@ -1039,9 +1115,14 @@ const Scheduler = () => {
                                           </span>
                                         );
                                       })}
-                                      <button className="ml-auto text-[10px] text-gray-400 dark:text-muted-foreground hover:text-primary transition-colors" onClick={() => openReschedule(post)}>
-                                        Reschedule
-                                      </button>
+                                      {post.media_count > 0 && (
+                                        <span className="flex items-center gap-0.5 text-[11px] text-muted-foreground"><Paperclip className="h-3 w-3" /> {post.media_count}</span>
+                                      )}
+                                      {post.status !== 'published' && (
+                                        <button className="ml-auto text-[11px] text-muted-foreground hover:text-primary transition-colors" onClick={(e) => { e.stopPropagation(); openReschedule(post); }}>
+                                          Reschedule
+                                        </button>
+                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -1070,10 +1151,10 @@ const Scheduler = () => {
                       onDragStart={(e) => handleDragStart(e, post.id)}
                       className="rounded-md border border-border/60 p-2 text-xs bg-card cursor-grab active:cursor-grabbing"
                     >
-                      <div className="flex items-center justify-between gap-2 mb-1">
-                        <span className="font-medium truncate">{post.title?.replace(/<[^>]*>/g, "") || "Untitled"}</span>
-                        <Badge variant="outline" className="text-[9px] capitalize">{post.status}</Badge>
-                      </div>
+                      <button type="button" onClick={() => setPreviewPost(post)} className="flex w-full items-center justify-between gap-2 mb-1 text-left">
+                        <span className="font-medium truncate hover:underline">{post.title?.replace(/<[^>]*>/g, "") || "Untitled"}</span>
+                        <PostStatusBadge post={post} className="shrink-0 text-[10px]" />
+                      </button>
                       <Button type="button" variant="ghost" size="sm" className="h-6 text-[10px] px-2" onClick={() => openReschedule(post)}>
                         Set schedule
                       </Button>
@@ -1091,11 +1172,21 @@ const Scheduler = () => {
             isOpen={!!selectedDayForModal}
             onClose={() => setSelectedDayForModal(null)}
             date={selectedDayForModal}
-            posts={selectedDayForModal ? getPostsForDate(selectedDayForModal) : []}
+            posts={selectedDayForModal ? sortPostsBySchedule(getPostsForDate(selectedDayForModal)) : []}
+            unscheduledPosts={unscheduledPosts}
             workspaceName={activeWorkspaceObj?.name}
+            channelIcons={channelIcons}
             onCreatePost={(date) => {
               setSelectedDayForModal(null);
               openCreatePostForDate(date);
+            }}
+            onOpenPost={(post) => {
+              setSelectedDayForModal(null);
+              setPreviewPost(post);
+            }}
+            onScheduleDraft={(post, date) => {
+              setSelectedDayForModal(null);
+              openReschedule(post, toLocalDateInput(date));
             }}
           />
         </div>
@@ -1113,7 +1204,8 @@ const Scheduler = () => {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="upcoming">Upcoming</SelectItem>
-                  <SelectItem value="needs_approval">Needs Approval</SelectItem>
+                  <SelectItem value="needs_approval">Needs approval</SelectItem>
+                  <SelectItem value="overdue">Overdue</SelectItem>
                   <SelectItem value="unscheduled">Unscheduled drafts</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
                   <SelectItem value="failed">Failed</SelectItem>
@@ -1150,7 +1242,10 @@ const Scheduler = () => {
       )}
 
       {view === "automations" && (
-        <AutomationSettingsTab />
+        <AutomationSettingsTab
+          onGenerated={() => void loadPosts()}
+          onReviewDrafts={() => { setListFilter("needs_approval"); setView("list"); }}
+        />
       )}
 
       <Dialog open={reschedule != null} onOpenChange={(open) => !open && setReschedule(null)}>
@@ -1190,37 +1285,18 @@ const Scheduler = () => {
         </DialogContent>
       </Dialog>
 
-      <Sheet open={!!previewPost} onOpenChange={(open) => { if (!open) setPreviewPost(null); }}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="font-display">Per-platform content</SheetTitle>
-          </SheetHeader>
-          {previewPost && (
-            <div className="mt-4 space-y-4">
-              <p className="text-sm text-muted-foreground">
-                What will be sent to each platform when this post publishes.
-                {previewPost.scheduled_date ? ` Scheduled for ${formatScheduleLabel(previewPost.scheduled_date, previewPost.scheduled_time)}.` : ""}
-              </p>
-              <PlatformPreviewPanel
-                platforms={previewPost.platforms?.length ? previewPost.platforms : [previewPost.content_type]}
-                platformPayloads={getPostPreviewPayloads(previewPost)}
-                title={previewPost.title ?? ""}
-                baseContent={previewPost.content}
-                previewTab={queuePreviewTab}
-                onPreviewTabChange={setQueuePreviewTab}
-              />
-              <div className="flex gap-2">
-                <Button type="button" variant="outline" className="flex-1" asChild>
-                  <Link to={`/content/${previewPost.id}`}>Open full detail</Link>
-                </Button>
-                <Button type="button" className="flex-1" onClick={() => { setPreviewPost(null); setPublishItem(postToContentItem(previewPost)); }}>
-                  <Send className="h-4 w-4 mr-2" /> Edit & publish
-                </Button>
-              </div>
-            </div>
-          )}
-        </SheetContent>
-      </Sheet>
+      <PostPreviewSheet
+        post={previewPost}
+        onClose={() => setPreviewPost(null)}
+        channelLabels={channelLabels}
+        channelIcons={channelIcons}
+        retrying={retrying === previewPost?.id}
+        onApprove={(post) => updateStatus(post.id, "approved")}
+        onReject={(post) => updateStatus(post.id, "rejected")}
+        onPublish={(post) => { setPreviewPost(null); setPublishItem(postToContentItem(post)); }}
+        onRetry={(post) => handleRetry(post.id)}
+        onReschedule={(post) => openReschedule(post)}
+      />
 
       <Sheet open={!!publishItem} onOpenChange={(open) => { if (!open) setPublishItem(null); }}>
         <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col overflow-hidden">

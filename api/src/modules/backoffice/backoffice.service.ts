@@ -29,6 +29,7 @@ import { UpdatePlansDto } from '../subscriptions/dto/update-plans.dto';
 import { RefundRequests } from '../payments/entities/refund_requests.entity';
 import { PaymentsService } from '../payments/payments.service';
 import { CronMonitorService } from './cron-monitor.service';
+import { PlatformIntegrationsService } from '../system_settings/services/platform-integrations.service';
 import {
   buildSubscriptionReport,
   monthlyRecurringRevenue,
@@ -38,6 +39,7 @@ import {
 export class BackofficeService {
   constructor(
     private readonly cronMonitor: CronMonitorService,
+    private readonly integrations: PlatformIntegrationsService,
     private readonly config: ConfigService,
     @InjectRepository(Tenants)
     private readonly tenantsRepo: Repository<Tenants>,
@@ -85,6 +87,8 @@ export class BackofficeService {
   ) { }
 
   async getOverview() {
+    const has = async (key: string) =>
+      Boolean((await this.integrations.getIntegrationWithEnvFallback(key))?.trim());
     const weekAgo = new Date();
     weekAgo.setDate(weekAgo.getDate() - 7);
 
@@ -327,15 +331,14 @@ export class BackofficeService {
         apiPublicUrl: process.env.API_PUBLIC_URL ?? '',
         clientUrl: process.env.CLIENT_URL ?? process.env.FRONTEND_URL ?? '',
 
-        mistralConfigured: Boolean(process.env.MISTRAL_API_KEY),
-        metaConfigured: Boolean(
-          process.env.META_APP_ID && process.env.META_APP_SECRET,
-        ),
-        linkedInConfigured: Boolean(
-          process.env.LINKEDIN_CLIENT_ID && process.env.LINKEDIN_CLIENT_SECRET,
-        ),
-        pawapayConfigured: Boolean(process.env.PAWAPAY_API_TOKEN),
-        metaWebhookTokenSet: Boolean(process.env.META_WEBHOOK_VERIFY_TOKEN),
+        // Keys saved under Backoffice → Integrations count as well as the server environment.
+        mistralConfigured: await has('MISTRAL_API_KEY'),
+        metaConfigured:
+          ((await has('FACEBOOK_APP_ID')) && (await has('FACEBOOK_APP_SECRET'))) ||
+          ((await has('META_APP_ID')) && (await has('META_APP_SECRET'))),
+        linkedInConfigured: (await has('LINKEDIN_CLIENT_ID')) && (await has('LINKEDIN_CLIENT_SECRET')),
+        pawapayConfigured: await has('PAWAPAY_API_TOKEN'),
+        metaWebhookTokenSet: await has('META_WEBHOOK_VERIFY_TOKEN'),
         widgetBundleConfigured: Boolean(
           process.env.CLIENT_URL || process.env.FRONTEND_URL,
         ),

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, Inbox, Loader2, MessageSquare, MessagesSquare, RefreshCw, Send } from 'lucide-react';
 import {
@@ -46,6 +46,17 @@ export function UnifiedSocialInbox() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [sending, setSending] = useState<string | null>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  // Open each conversation at its newest message, and follow new ones as they arrive.
+  useEffect(() => {
+    // After paint, so the new messages are measured.
+    const frame = requestAnimationFrame(() => {
+      const el = messagesRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedId, dmMessages.length]);
 
   const loadConversations = useCallback(async () => {
     if (!tenant || !activeWorkspace) return;
@@ -272,7 +283,7 @@ export function UnifiedSocialInbox() {
               <div className="p-3 border-b text-xs font-medium text-muted-foreground">
                 {conversations.length} conversation{conversations.length === 1 ? '' : 's'}
               </div>
-              <div className="max-h-[min(60vh,560px)] md:max-h-[560px] overflow-y-auto">
+              <div className="flex-1 min-h-0 overflow-y-auto">
                 {conversations.map((c) => {
                   const plat = platformOf(c.platform);
                   const Icon = plat.icon;
@@ -314,7 +325,7 @@ export function UnifiedSocialInbox() {
                 Select a conversation
               </Card>
             ) : selected.channel === 'post_comment' && postGroup ? (
-              <div className="space-y-3 min-h-0 flex flex-col h-full">
+              <div className="space-y-3 min-h-0 flex flex-col h-full overflow-y-auto pr-1">
                 <div className="flex items-center gap-2 px-1 text-xs font-medium text-muted-foreground uppercase tracking-wide shrink-0">
                   <MessageSquare className="h-3.5 w-3.5 text-primary" />
                   Post comments
@@ -359,7 +370,7 @@ export function UnifiedSocialInbox() {
                     <span className="text-[10px] text-muted-foreground ml-auto shrink-0">Direct message</span>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[200px]">
+                  <div ref={messagesRef} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3 min-h-0">
                     {dmMessages.map((m) => (
                       <div
                         key={m.id}
@@ -394,7 +405,7 @@ export function UnifiedSocialInbox() {
                   </div>
 
                   {selected.channel === 'dm' && canReply && (
-                    <div className="p-3 border-t space-y-2">
+                    <div className="p-3 border-t space-y-2 shrink-0">
                       <Textarea
                         rows={3}
                         placeholder={`Reply to ${selected.participantName ?? selected.title}…`}

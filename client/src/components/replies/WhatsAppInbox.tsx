@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, Loader2, MessageSquare, Send } from 'lucide-react';
 import { whatsappApi, whatsappTemplatesApi } from '@/lib/api';
@@ -51,6 +51,17 @@ export function WhatsAppInbox() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  // Open each conversation at its newest message, and follow new ones as they arrive.
+  useEffect(() => {
+    // After paint, so the new messages are measured.
+    const frame = requestAnimationFrame(() => {
+      const el = messagesRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [selectedPhone, messages.length]);
   const [replyText, setReplyText] = useState('');
   const [useTemplate, setUseTemplate] = useState(false);
   const [templateName, setTemplateName] = useState('hello_world');
@@ -204,12 +215,10 @@ export function WhatsAppInbox() {
     <InboxSplitLayout
       hasSelection={Boolean(selectedPhone)}
       onBack={() => setSelectedPhone(null)}
-      listMinHeight="min-h-[280px] md:min-h-[480px]"
-      detailMinHeight="min-h-[360px] md:min-h-[480px]"
       list={
         <>
           <div className="p-3 border-b text-xs font-medium text-muted-foreground">Conversations</div>
-          <div className="max-h-[min(60vh,520px)] md:max-h-[520px] overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {conversations.map((c) => (
               <button
                 key={c.phone}
@@ -250,7 +259,7 @@ export function WhatsAppInbox() {
                 <span className="text-sm font-medium truncate">{selectedPhone}</span>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 min-h-[200px]">
+              <div ref={messagesRef} className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-3 min-h-0">
                 {messages.map((m) => (
                   <div
                     key={m.id}
@@ -297,7 +306,7 @@ export function WhatsAppInbox() {
                 ))}
               </div>
 
-              <div className="p-3 border-t space-y-2">
+              <div className="p-3 border-t space-y-2 shrink-0">
                 <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-2">
                   <Checkbox
                     id="wa-use-template"

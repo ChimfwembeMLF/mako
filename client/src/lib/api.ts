@@ -849,6 +849,20 @@ export const backofficeApi = {
             }>;
         }>('/api/v1/backoffice/subscriptions'),
 
+    getAiStatus: () =>
+        request<{
+            defaultProvider: string;
+            embedProvider: string;
+            embedModel: string;
+            collection: string;
+            qdrantConfigured: boolean;
+            qdrant: { reachable: boolean; points: number; error?: string } | null;
+            documents: Record<string, number>;
+        }>('/api/v1/backoffice/ai/status'),
+    reindexKnowledge: () =>
+        request<{ queued: number }>('/api/v1/backoffice/knowledge/reindex', { method: 'POST' }),
+    testMistral: () =>
+        request<{ ok: boolean; message?: string }>('/api/v1/backoffice/integrations/mistral/test', { method: 'POST' }),
     sendTestSms: (data: { to: string; message: string }) =>
         request<{ accepted: boolean; status: string; messageIds: number[] }>(
             '/api/v1/backoffice/sms/test',
@@ -2981,6 +2995,29 @@ export type PlatformDashboardRow = {
     lastEngagementSync?: string;
 };
 
+export type PerformanceTotals = { posts: number; views: number; likes: number; comments: number; shares: number };
+
+export type PerformanceReport = {
+    days: number;
+    from: string;
+    to: string;
+    current: PerformanceTotals;
+    previous: PerformanceTotals;
+    daily: Array<{ date: string; posts: number; views: number; engagements: number }>;
+    byPlatform: Array<PerformanceTotals & { platform: string }>;
+    topPosts: Array<{
+        id: string;
+        contentId: string;
+        platforms: string[];
+        title: string;
+        publishedAt: string | null;
+        views: number;
+        likes: number;
+        comments: number;
+        shares: number;
+    }>;
+};
+
 export type PlatformDashboardResponse = {
     platforms: PlatformDashboardRow[];
     totals: {
@@ -3004,6 +3041,10 @@ export const analyticsApi = {
     getInsights: (days: number, tenantId: string, workspaceId?: string) => {
         const qs = withWorkspace(new URLSearchParams({ days: String(days), tenantId }), workspaceId);
         return request<any[]>(`/api/v1/analytics/insights?${qs}`);
+    },
+    getPerformance: (tenantId: string, days: number, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId, days: String(days) }), workspaceId);
+        return request<PerformanceReport | null>(`/api/v1/analytics/performance?${qs}`);
     },
     getAiReport: (tenantId: string, workspaceId?: string) => {
         const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);

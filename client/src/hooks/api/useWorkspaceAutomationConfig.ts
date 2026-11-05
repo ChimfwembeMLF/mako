@@ -2,6 +2,16 @@ import { useState, useEffect, useCallback } from 'react';
 import { workspacesApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 
+export interface AutomationRun {
+  at: string;
+  trigger: 'scheduled' | 'manual';
+  status: 'success' | 'partial' | 'failed' | 'skipped';
+  generated: number;
+  message: string;
+  targetDate?: string;
+  contentIds?: string[];
+}
+
 export interface WorkspaceAutomationConfig {
   id: string;
   workspaceId: string;
@@ -13,6 +23,8 @@ export interface WorkspaceAutomationConfig {
   publishingDays: string[];
   postingTimes: string[];
   platforms: string[];
+  lastRunAt?: string | null;
+  recentRuns?: AutomationRun[];
   created_at: string;
   updated_at: string;
 }

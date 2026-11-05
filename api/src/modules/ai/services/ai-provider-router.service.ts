@@ -9,6 +9,24 @@ import { ParlerTtsService } from './parler-tts.service';
 export { ChatMessage, ChatResult };
 import { Tenants } from '../../tenants/entities/tenants.entity';
 import { IntegrationProvider } from '../../tenants/entities/tenant-integration-config.entity';
+import { PlatformIntegrationsService } from '../../system_settings/services/platform-integrations.service';
+
+/** Providers that can answer chat requests. Others (e.g. self-hosted voice) are text-to-speech only. */
+const CHAT_PROVIDERS = new Set<IntegrationProvider>([
+  IntegrationProvider.MISTRAL,
+  IntegrationProvider.OPENAI,
+  IntegrationProvider.GEMINI,
+  IntegrationProvider.DEEPSEEK,
+]);
+
+const PLATFORM_KEY: Partial<Record<IntegrationProvider, string>> = {
+  [IntegrationProvider.MISTRAL]: 'MISTRAL_API_KEY',
+  [IntegrationProvider.OPENAI]: 'OPENAI_API_KEY',
+  [IntegrationProvider.GEMINI]: 'GEMINI_API_KEY',
+  [IntegrationProvider.DEEPSEEK]: 'DEEPSEEK_API_KEY',
+};
+
+const MISTRAL_MODEL = /^(mistral|ministral|open-mistral|open-mixtral|pixtral|codestral|magistral)/i;
 
 @Injectable()
 export class AiProviderRouter {
@@ -22,6 +40,7 @@ export class AiProviderRouter {
     private readonly parlerTtsService: ParlerTtsService,
     @InjectRepository(Tenants)
     private readonly tenantsRepo: Repository<Tenants>,
+    private readonly integrations: PlatformIntegrationsService,
   ) {}
 
   get defaultModel(): string {
@@ -32,28 +51,47 @@ export class AiProviderRouter {
     return this.mistralService.premiumModel;
   }
 
-  private async getProvider(tenantId?: string): Promise<IntegrationProvider> {
-    if (!tenantId) {
-      return IntegrationProvider.MISTRAL;
-    }
-
+  /** The workspace's stored preference, which may also be a voice-only provider. */
+  private async getTenantPreference(tenantId?: string): Promise<IntegrationProvider | null> {
+    if (!tenantId) return null;
     try {
-      const tenant = await this.tenantsRepo.findOne({
-        where: { id: tenantId },
-      });
-
-      if (tenant?.preferredAiProvider) {
-        return tenant.preferredAiProvider;
-      }
+      const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } });
+      return tenant?.preferredAiProvider ?? null;
     } catch (err) {
       this.logger.warn(`Failed to fetch preferred AI provider for tenant ${tenantId}`, err);
+      return null;
     }
+  }
 
-    return IntegrationProvider.MISTRAL;
+  /**
+   * AI_DEFAULT_PROVIDER (Integrations or environment), defaulting to OpenAI.
+   * Falls back to Mistral when the chosen provider has no platform key.
+   */
+  async getPlatformDefault(): Promise<IntegrationProvider> {
+    const raw = (await this.integrations.getIntegrationWithEnvFallback('AI_DEFAULT_PROVIDER'))?.trim().toLowerCase();
+    const chosen = (raw && CHAT_PROVIDERS.has(raw as IntegrationProvider) ? raw : IntegrationProvider.OPENAI) as IntegrationProvider;
+    const keyName = PLATFORM_KEY[chosen];
+    const key = keyName ? await this.integrations.getIntegrationWithEnvFallback(keyName) : undefined;
+    return key?.trim() ? chosen : IntegrationProvider.MISTRAL;
+  }
+
+  /** Chat provider: the workspace's choice when it is a chat provider, otherwise the platform default. */
+  private async getProvider(tenantId?: string): Promise<IntegrationProvider> {
+    const preferred = await this.getTenantPreference(tenantId);
+    if (preferred && CHAT_PROVIDERS.has(preferred)) return preferred;
+    return this.getPlatformDefault();
   }
 
   private translateModel(provider: IntegrationProvider, model?: string): string | undefined {
     if (!model) return undefined;
+
+    // A Mistral model name (e.g. saved on a chatbot) means nothing to other providers.
+    if (provider !== IntegrationProvider.MISTRAL && MISTRAL_MODEL.test(model)) {
+      const premium = /large|medium/i.test(model);
+      if (provider === IntegrationProvider.OPENAI) return premium ? this.openAiService.premiumModel : this.openAiService.defaultModel;
+      if (provider === IntegrationProvider.GEMINI) return premium ? this.geminiService.premiumModel : this.geminiService.defaultModel;
+      if (provider === IntegrationProvider.DEEPSEEK) return premium ? this.deepseekService.premiumModel : this.deepseekService.defaultModel;
+    }
     
     // If the caller explicitly used the router's generic default/premium getters,
     // we translate them to the chosen provider's respective default/premium model.
@@ -124,8 +162,8 @@ export class AiProviderRouter {
       return this.parlerTtsService.speak(text, { description: options.description, tenantId: options.tenantId });
     }
 
-    const provider = await this.getProvider(options?.tenantId);
-    
+    const provider = (await this.getTenantPreference(options?.tenantId)) ?? IntegrationProvider.MISTRAL;
+
     if (provider === IntegrationProvider.OPENAI) return this.openAiService.speak(text, options as any);
     if (provider === IntegrationProvider.GEMINI) return this.geminiService.speak(text, options);
     if (provider === IntegrationProvider.DEEPSEEK) return this.deepseekService.speak(text, options);

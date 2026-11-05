@@ -11,6 +11,7 @@ import { CommentReplies } from '../comment_replies/entities/comment_replies.enti
 import { ContentItems } from '../content_items/entities/content_items.entity';
 import { AiModule } from '../ai/ai.module';
 import { PlatformDashboardService } from './platform-dashboard.service';
+import { PerformanceService } from './performance.service';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { PlatformDashboardService } from './platform-dashboard.service';
     AiModule,
   ],
   controllers: [AnalyticsController],
-  providers: [PageInsightsService, AiAnalyticsService, PlatformDashboardService],
+  providers: [PageInsightsService, AiAnalyticsService, PlatformDashboardService, PerformanceService],
   exports: [PageInsightsService, PlatformDashboardService],
 })
 export class AnalyticsModule {}

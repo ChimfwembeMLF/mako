@@ -8,8 +8,15 @@ export type ScreenshotVariant = 'float' | 'chrome';
 
 const DEVICE_SIZE_CLASS: Record<ScreenshotDevice, string> = {
   desktop: 'w-full',
-  tablet: 'w-full max-w-xs sm:max-w-sm lg:max-w-sm mx-auto',
+  tablet: 'w-full max-w-[240px] sm:max-w-[280px] mx-auto',
   phone: 'w-full max-w-[200px] sm:max-w-[260px] md:max-w-[300px] mx-auto',
+};
+
+// Every screenshot of a device shares one size, so space is reserved before it loads.
+const DEVICE_ASPECT_CLASS: Record<ScreenshotDevice, string> = {
+  desktop: 'aspect-[2900/1666]',
+  tablet: 'aspect-[1342/1860]',
+  phone: 'aspect-[748/1508]',
 };
 
 export function BrowserChrome({
@@ -49,6 +56,7 @@ export function ScreenshotFrame({
   variant = 'float',
   device = 'desktop',
   float = false,
+  eager = false,
 }: {
   src: string;
   alt: string;
@@ -60,27 +68,30 @@ export function ScreenshotFrame({
   device?: ScreenshotDevice;
   /** Gentle hover float animation (hero) */
   float?: boolean;
+  /** Load straight away (above the fold) instead of lazily */
+  eager?: boolean;
 }) {
   const [loaded, setLoaded] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const image = (
-    <div className="relative">
-      {!failed && (
-        <img
-          src={src}
-          alt={alt}
-          className={cn(
-            'w-full h-auto block rounded-2xl transition-all duration-700 ease-out',
-            variant === 'float' && 'landing-screenshot-shadow bg-transparent',
-            loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.97]',
-          )}
-          onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
-          loading="lazy"
-        />
-      )}
-      {(!loaded || failed) && mock}
+  const image = failed ? (
+    mock
+  ) : (
+    <div className={cn('relative', DEVICE_ASPECT_CLASS[device])}>
+      <img
+        src={src}
+        alt={alt}
+        className={cn(
+          'absolute inset-0 w-full h-full object-contain rounded-2xl transition-opacity duration-500 ease-out motion-reduce:transition-none',
+          variant === 'float' && 'landing-screenshot-shadow bg-transparent',
+          loaded ? 'opacity-100' : 'opacity-0',
+        )}
+        onLoad={() => setLoaded(true)}
+        onError={() => setFailed(true)}
+        loading={eager ? 'eager' : 'lazy'}
+        // React 18 only passes the lowercase attribute through.
+        {...(eager ? { fetchpriority: 'high' } : {})}
+      />
     </div>
   );
 

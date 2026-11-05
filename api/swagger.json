@@ -9301,10 +9301,58 @@
         ]
       }
     },
+    "/api/v1/analytics/performance": {
+      "get": {
+        "operationId": "AnalyticsController_getPerformance",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
     "/api/v1/analytics/insights": {
       "get": {
         "operationId": "AnalyticsController_getInsights",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -9318,7 +9366,24 @@
     "/api/v1/analytics/ai-report": {
       "get": {
         "operationId": "AnalyticsController_getAiReport",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": ""
@@ -9326,6 +9391,63 @@
         },
         "tags": [
           "Analytics"
+        ]
+      }
+    },
+    "/api/v1/backoffice/ai/status": {
+      "get": {
+        "operationId": "BackofficeController_aiStatus",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/knowledge/reindex": {
+      "post": {
+        "operationId": "BackofficeController_reindexKnowledge",
+        "parameters": [],
+        "responses": {
+          "202": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
+        ]
+      }
+    },
+    "/api/v1/backoffice/integrations/mistral/test": {
+      "post": {
+        "operationId": "BackofficeController_testMistral",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Backoffice"
         ]
       }
     },

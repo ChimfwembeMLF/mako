@@ -15,6 +15,8 @@ import { applyWorkspaceScope } from '../../common/workspace-scope.util';
 
 export type ContentItemWithPreviewMedia = ContentItems & {
   previewMedia?: MediaAssets | null;
+  /** Number of media assets attached to the item. */
+  mediaCount?: number;
 };
 
 export type ContentItemDetails = {
@@ -88,14 +90,17 @@ export class ContentItemsService {
     });
 
     const firstByContent = new Map<string, MediaAssets>();
+    const countByContent = new Map<string, number>();
     for (const row of mediaRows) {
-      if (!row.contentId || firstByContent.has(row.contentId)) continue;
-      firstByContent.set(row.contentId, row);
+      if (!row.contentId) continue;
+      countByContent.set(row.contentId, (countByContent.get(row.contentId) ?? 0) + 1);
+      if (!firstByContent.has(row.contentId)) firstByContent.set(row.contentId, row);
     }
 
     return items.map((item) => ({
       ...item,
       previewMedia: firstByContent.get(item.id) ?? null,
+      mediaCount: countByContent.get(item.id) ?? 0,
     }));
   }
 

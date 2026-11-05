@@ -4,7 +4,7 @@ WebP captures used by `LandingPage.tsx`. If a file fails to load, a live UI mock
 
 | File | Section |
 |------|---------|
-| `mako-dashboard-desktop.webp` | Hero |
+| `mako-dashboard-desktop.webp` | Hero (Social Dashboard) |
 | `mako-brand-brain-tablet.webp` | Brand Brain showcase |
 | `mako-content-engine-desktop.webp` | Content Engine showcase |
 | `mako-publisher-phone.webp` | Multi-platform publish |
@@ -12,4 +12,5 @@ WebP captures used by `LandingPage.tsx`. If a file fails to load, a live UI mock
 | `mako-analytics-desktop.webp` | Analytics |
 | `mako-replies-tablet.webp` | AI Replies |
 
-Capture from your running app at `http://localhost:5173` after seeding demo data.
+Captured from the local app as the demo owner (`owner@brandpilot.test`) with fictional demo content, never from a real customer workspace.
+Sizes: desktop 1450×833, tablet 671×930, phone 374×754, all at 2× — `ScreenshotFrame` reserves space using these ratios, so keep them when recapturing.

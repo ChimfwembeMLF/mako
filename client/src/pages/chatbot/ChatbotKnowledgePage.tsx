@@ -5,7 +5,6 @@ import {
   ArrowLeft,
   BookOpen,
   Check,
-  CloudUpload,
   FileText,
   MessageSquare,
   Pencil,
@@ -93,15 +92,6 @@ export default function ChatbotKnowledgePage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const syncMistral = useMutation({
-    mutationFn: () => knowledgeApi.syncMistral(tenantId, workspaceId),
-    onSuccess: () => {
-      toast.success("Documents sent to Mistral for indexing");
-      void queryClient.invalidateQueries({ queryKey: ["knowledge-docs", tenantId, activeWorkspace] });
-    },
-    onError: (e: Error) => toast.error(e.message),
-  });
-
   const docs = docsQuery.data ?? [];
   const readyCount = docs.filter((d) => d.status === "ready").length;
   const indexingCount = docs.filter((d) => d.status === "pending" || d.status === "processing").length;
@@ -149,15 +139,6 @@ export default function ChatbotKnowledgePage() {
               <CardTitle className="text-base">Upload documents</CardTitle>
               <CardDescription>Add new files to the library</CardDescription>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={syncMistral.isPending || !docs.length}
-              onClick={() => syncMistral.mutate()}
-            >
-              <CloudUpload className="h-4 w-4 mr-2" />
-              {syncMistral.isPending ? "Syncing…" : "Sync to Mistral"}
-            </Button>
           </CardHeader>
           <CardContent>
             <FileDropzone

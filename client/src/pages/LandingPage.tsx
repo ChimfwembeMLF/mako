@@ -40,39 +40,27 @@ function useInView(threshold = 0.12) {
   return { ref, visible };
 }
 
-type RevealVariant = 'up' | 'left' | 'right' | 'scale';
-
-const REVEAL_HIDDEN: Record<RevealVariant, string> = {
-  up: 'translateY(36px)',
-  left: 'translateX(-44px)',
-  right: 'translateX(44px)',
-  scale: 'translateY(20px) scale(0.94)',
-};
-
+// Classes rather than inline styles, so the motion-reduce overrides can win.
 function Reveal({
   children,
   delay = 0,
   className = '',
-  variant = 'up',
 }: {
   children: React.ReactNode;
   delay?: number;
   className?: string;
-  variant?: RevealVariant;
 }) {
   const { ref, visible } = useInView(0.14);
   return (
     <div
       ref={ref}
       className={cn(
-        'motion-reduce:opacity-100 motion-reduce:transform-none',
+        'transition-[opacity,transform] duration-500 ease-out',
+        'motion-reduce:transition-none motion-reduce:opacity-100 motion-reduce:translate-y-0',
+        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
         className,
       )}
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? 'none' : REVEAL_HIDDEN[variant],
-        transition: `opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms, transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) ${delay}ms`,
-      }}
+      style={{ transitionDelay: `${delay}ms` }}
     >
       {children}
     </div>
@@ -108,7 +96,6 @@ const SHOWCASE: Array<{
   mock: React.ReactNode;
   icon: typeof Brain;
   device: ScreenshotDevice;
-  reverse?: boolean;
 }> = [
     {
       id: 'brand-brain',
@@ -119,7 +106,6 @@ const SHOWCASE: Array<{
       mock: <MockBrandBrain />,
       icon: Brain,
       device: 'tablet',
-      reverse: true,
     },
     {
       id: 'content',
@@ -140,7 +126,6 @@ const SHOWCASE: Array<{
       mock: <MockPublish />,
       icon: Globe,
       device: 'desktop',
-      reverse: true,
     },
     {
       id: 'scheduler',
@@ -161,7 +146,6 @@ const SHOWCASE: Array<{
       mock: <MockAnalytics />,
       icon: BarChart3,
       device: 'desktop',
-      reverse: true,
     },
     {
       id: 'replies',
@@ -185,7 +169,7 @@ function Nav() {
   }, []);
 
   return (
-    <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'bg-card/95 backdrop-blur border-b border-border' : 'bg-transparent'}`}>
+    <header className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${scrolled ? 'bg-card/95 backdrop-blur border-b border-border' : 'bg-transparent'}`}>
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center">
           <Logo className="h-9" />
@@ -198,7 +182,7 @@ function Nav() {
         </nav>
         <div className="hidden md:flex items-center gap-3">
           <Button variant="ghost" size="sm" asChild><Link to="/auth">Sign in</Link></Button>
-          <Button size="sm" asChild className="group rounded-xl min-h-12 h-12 px-5 transition-all duration-300 hover:scale-105 hover:shadow-md hover:shadow-primary/20">
+          <Button size="sm" asChild className="group rounded-xl min-h-12 h-12 px-5 transition-shadow duration-200 hover:shadow-md hover:shadow-primary/20">
             <Link to="/auth?mode=signup">Get started <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" /></Link>
           </Button>
         </div>
@@ -221,18 +205,50 @@ function Nav() {
   );
 }
 
+/** The dashboard screenshot as a full-bleed, tilted background behind the hero copy. */
+function HeroBackdrop() {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
+      <div className="absolute inset-0 [perspective:1800px]">
+        <div className="landing-float absolute left-[8%] top-[10%] w-[150%] sm:left-[20%] sm:w-[110%] lg:left-[25%] lg:top-[14%] lg:w-[75%]">
+          <img
+            src="/screenshots/mako-dashboard-desktop.webp"
+            alt=""
+            width={2900}
+            height={1666}
+            loading="eager"
+            {...{ fetchpriority: 'high' }}
+            onLoad={() => setLoaded(true)}
+            className={cn(
+              'w-full h-auto rounded-3xl border border-border/60 shadow-2xl',
+              '[transform:rotateX(18deg)_rotateY(-24deg)_rotateZ(7deg)] [transform-origin:left_center]',
+              'transition-opacity duration-700 ease-out motion-reduce:transition-none',
+              loaded ? 'opacity-100' : 'opacity-0',
+            )}
+          />
+        </div>
+      </div>
+      {/* Keeps the copy readable: a solid wash on phones, a left-to-right fade on desktop. */}
+      <div className="absolute inset-0 bg-card/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-40% lg:via-card/85 lg:via-55% lg:to-card/0" />
+      <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-card to-transparent" />
+    </div>
+  );
+}
+
 function Hero() {
   return (
-    <section className="relative min-h-[92svh] flex items-center pt-24 pb-section overflow-hidden bg-card">
-      <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 lg:gap-16 items-center w-full">
-        <div className="space-y-7 text-center lg:text-left">
+    <section className="relative isolate min-h-[92svh] flex items-center pt-24 pb-section overflow-hidden bg-card">
+      <HeroBackdrop />
+      <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 w-full">
+        <div className="max-w-xl space-y-7 text-center mx-auto lg:mx-0 lg:text-left">
           <Reveal>
             <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary mb-2">
               Mako
             </p>
           </Reveal>
 
-          <Reveal delay={80} variant="up">
+          <Reveal delay={80}>
             <h1 className="font-display text-display-xl bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
               Your brand voice.
               <br />
@@ -242,18 +258,18 @@ function Hero() {
             </h1>
           </Reveal>
 
-          <Reveal delay={140} variant="up">
+          <Reveal delay={140}>
             <p className="text-lg text-body max-w-lg mx-auto lg:mx-0 leading-relaxed">
               Plan content, publish to social, reply to comments, and follow up on leads — without switching between a dozen tabs.
             </p>
           </Reveal>
 
-          <Reveal delay={280} variant="up">
+          <Reveal delay={280}>
             <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1">
               <Button
                 size="lg"
                 asChild
-                className="group min-h-12 h-12 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20"
+                className="group min-h-12 h-12 px-8 rounded-xl transition-shadow duration-200 hover:shadow-lg hover:shadow-primary/20"
               >
                 <Link to="/auth?mode=signup">
                   Get started free
@@ -266,7 +282,7 @@ function Hero() {
             </div>
           </Reveal>
 
-          <Reveal delay={360} variant="up">
+          <Reveal delay={360}>
             <ul className="flex flex-col sm:flex-row flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-body">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
@@ -284,17 +300,6 @@ function Hero() {
           </Reveal>
         </div>
 
-        <Reveal delay={180} variant="scale" className="relative lg:pl-4 landing-float">
-          <div className="rounded-xl p-3 sm:p-4">
-            <ScreenshotFrame
-              src="/screenshots/mako-dashboard-desktop.webp"
-              alt="Mako dashboard — content, scheduling, and analytics"
-              device="desktop"
-              float
-              mock={<div className="min-h-[300px] rounded-xl border border-dashed border-border/60 animate-pulse" />}
-            />
-          </div>
-        </Reveal>
       </div>
     </section>
   );
@@ -302,58 +307,242 @@ function Hero() {
 
 function ProductShowcase() {
   return (
-    <section id="product" className="py-section bg-card">
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 mb-20">
+    <section id="product" className="py-section bg-card overflow-hidden">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 mb-10 lg:mb-20">
         <Reveal>
           <SectionHeader
             label="Product"
             title="From brief to published post"
-            desc="Six tools that share the same brand context — so you are not copying and pasting between apps."
+            desc="Six steps that share the same brand context — follow the road from your first idea to results."
           />
         </Reveal>
       </div>
-      <div className="space-y-24">
-        {SHOWCASE.map((s, i) => (
-          <div key={s.id} className="max-w-7xl mx-auto px-4 sm:px-6">
-            <div className={`grid lg:grid-cols-2 gap-12 lg:gap-16 items-center ${s.reverse ? 'lg:[direction:rtl]' : ''}`}>
-              <Reveal
-                delay={i * 50}
-                variant={s.reverse ? 'right' : 'left'}
-                className={`space-y-5 ${s.reverse ? 'lg:[direction:ltr]' : ''}`}
-              >
-                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-primary">
-                  <s.icon className="h-3.5 w-3.5" />
-                  {s.badge}
-                </p>
-                <h3 className="text-2xl sm:text-3xl font-bold font-display leading-tight tracking-tight">{s.title}</h3>
-                <p className="text-muted-foreground text-base leading-relaxed max-w-md">{s.desc}</p>
-                <Button variant="outline" asChild className="rounded-xl transition-transform duration-300 hover:translate-x-0.5">
-                  <Link to="/auth?mode=signup">
-                    Open {s.badge}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </Reveal>
-              <Reveal
-                delay={i * 50 + 120}
-                variant={s.reverse ? 'left' : 'right'}
-                className={cn(
-                  s.reverse ? 'lg:[direction:ltr]' : '',
-                  s.device !== 'desktop' && 'flex justify-center lg:justify-center',
-                )}
-              >
-                <ScreenshotFrame
-                  src={s.img}
-                  alt={s.title}
-                  mock={s.mock}
-                  device={s.device}
-                />
-              </Reveal>
-            </div>
-          </div>
-        ))}
-      </div>
+      <RoadmapTimeline />
+      <RoadmapCarousel />
     </section>
+  );
+}
+
+function StepBadge({ step, reached }: { step: (typeof SHOWCASE)[number]; reached: boolean }) {
+  return (
+    <p
+      className={cn(
+        'inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wide transition-colors duration-300',
+        reached ? 'text-primary' : 'text-muted-foreground',
+      )}
+    >
+      <step.icon className="h-3.5 w-3.5" />
+      {step.badge}
+    </p>
+  );
+}
+
+/** Desktop: a vertical road whose line fills, and whose stops light up, as you scroll. */
+function RoadmapTimeline() {
+  const trackRef = useRef<HTMLOListElement>(null);
+  const fillRef = useRef<HTMLDivElement>(null);
+  const stepRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const [reached, setReached] = useState(-1);
+
+  useEffect(() => {
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const track = trackRef.current;
+      // Hidden below lg, so there is nothing to measure.
+      if (!track || track.offsetParent === null) return;
+      const line = window.innerHeight * 0.55;
+      const rect = track.getBoundingClientRect();
+      const progress = Math.min(1, Math.max(0, (line - rect.top) / rect.height));
+      if (fillRef.current) fillRef.current.style.transform = `scaleY(${progress})`;
+      let last = -1;
+      stepRefs.current.forEach((el, i) => {
+        if (el && el.getBoundingClientRect().top + el.offsetHeight / 2 < line) last = i;
+      });
+      setReached(last);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, []);
+
+  return (
+    <div className="hidden lg:block max-w-7xl mx-auto px-6">
+      <div className="relative">
+        <div className="pointer-events-none absolute left-1/2 top-6 bottom-6 w-0.5 -translate-x-1/2 rounded-full bg-border" aria-hidden>
+          <div ref={fillRef} className="h-full w-full origin-top rounded-full bg-primary" style={{ transform: 'scaleY(0)' }} />
+        </div>
+        <ol ref={trackRef} className="relative space-y-28">
+          {SHOWCASE.map((s, i) => {
+            const isReached = i <= reached;
+            const textFirst = i % 2 === 0;
+            return (
+              <li
+                key={s.id}
+                ref={(el) => { stepRefs.current[i] = el; }}
+                className="relative grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-12"
+              >
+                <Reveal className={cn('row-start-1 space-y-4', textFirst ? 'col-start-1 justify-self-end max-w-md' : 'col-start-3 max-w-md')}>
+                  <p className="font-display text-sm font-extrabold tracking-wide text-muted-foreground">
+                    Step {String(i + 1).padStart(2, '0')}
+                  </p>
+                  <StepBadge step={s} reached={isReached} />
+                  <h3 className="text-2xl sm:text-3xl font-bold font-display leading-tight tracking-tight">{s.title}</h3>
+                  <p className="text-muted-foreground text-base leading-relaxed">{s.desc}</p>
+                  <Button variant="outline" asChild className="group rounded-xl">
+                    <Link to="/auth?mode=signup">
+                      Open {s.badge}
+                      <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1 motion-reduce:group-hover:translate-x-0" />
+                    </Link>
+                  </Button>
+                </Reveal>
+
+                <div className="col-start-2 row-start-1 relative z-10 flex justify-center">
+                  <span
+                    className={cn(
+                      'flex h-12 w-12 items-center justify-center rounded-full border-2 font-display text-base font-extrabold',
+                      'transition-[background-color,border-color,color,transform,box-shadow] duration-300 ease-out motion-reduce:transition-none',
+                      isReached
+                        ? 'scale-100 border-primary bg-primary text-primary-foreground shadow-[0_0_0_8px_hsl(var(--primary)/0.15)]'
+                        : 'scale-90 border-border bg-card text-muted-foreground',
+                    )}
+                  >
+                    {isReached ? <s.icon className="h-5 w-5" /> : i + 1}
+                  </span>
+                </div>
+
+                <Reveal delay={120} className={cn('row-start-1', textFirst ? 'col-start-3' : 'col-start-1')}>
+                  <ScreenshotFrame src={s.img} alt={s.title} mock={s.mock} device={s.device} />
+                </Reveal>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+    </div>
+  );
+}
+
+/** Phones and tablets: swipeable step cards under a small roadmap rail. */
+function RoadmapCarousel() {
+  const scrollerRef = useRef<HTMLOListElement>(null);
+  const [active, setActive] = useState(0);
+  const last = SHOWCASE.length - 1;
+
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    if (!scroller) return;
+    const cards = Array.from(scroller.children) as HTMLElement[];
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) setActive(cards.indexOf(e.target as HTMLElement));
+        });
+      },
+      { root: scroller, threshold: 0.6 },
+    );
+    cards.forEach((c) => obs.observe(c));
+    return () => obs.disconnect();
+  }, []);
+
+  const goTo = (i: number) => {
+    const scroller = scrollerRef.current;
+    const card = scroller?.children[i] as HTMLElement | undefined;
+    if (!scroller || !card) return;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scroller.scrollTo({
+      left: card.offsetLeft - (scroller.clientWidth - card.clientWidth) / 2,
+      behavior: reduce ? 'auto' : 'smooth',
+    });
+  };
+
+  return (
+    <div className="lg:hidden">
+      <div className="mx-auto max-w-md px-6 mb-6">
+        <div className="relative flex items-center justify-between">
+          <div className="absolute inset-x-3 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-border" aria-hidden>
+            <div
+              className="h-full origin-left rounded-full bg-primary transition-transform duration-300 ease-out motion-reduce:transition-none"
+              style={{ transform: `scaleX(${active / last})` }}
+            />
+          </div>
+          {SHOWCASE.map((s, i) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => goTo(i)}
+              aria-label={`Step ${i + 1}: ${s.badge}`}
+              aria-current={i === active ? 'step' : undefined}
+              className={cn(
+                'relative z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 text-[11px] font-bold',
+                'transition-[background-color,border-color,color,transform] duration-300 motion-reduce:transition-none',
+                i <= active ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-card text-muted-foreground',
+                i === active && 'scale-110',
+              )}
+            >
+              {i + 1}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <ol
+        ref={scrollerRef}
+        aria-label="Product steps"
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain px-[7.5%] pb-4 sm:px-[20%] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {SHOWCASE.map((s, i) => (
+          <li
+            key={s.id}
+            aria-roledescription="slide"
+            aria-label={`${i + 1} of ${SHOWCASE.length}`}
+            className={cn(
+              'flex w-[85%] shrink-0 snap-center flex-col rounded-2xl border bg-card p-5 sm:w-[60%]',
+              'transition-[opacity,transform,border-color] duration-300 ease-out motion-reduce:transition-none',
+              i === active ? 'border-primary/40 shadow-card' : 'border-border/80 opacity-60 scale-[0.96] motion-reduce:scale-100',
+            )}
+          >
+            <div className="flex items-center justify-between">
+              <StepBadge step={s} reached={i === active} />
+              <span className="text-xs font-semibold text-muted-foreground">
+                {i + 1} / {SHOWCASE.length}
+              </span>
+            </div>
+            <h3 className="mt-3 text-xl font-bold font-display leading-tight tracking-tight">{s.title}</h3>
+            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{s.desc}</p>
+            <div className="flex flex-1 items-center pt-5">
+              <ScreenshotFrame
+                src={s.img}
+                alt={s.title}
+                mock={s.mock}
+                device={s.device}
+                className={s.device === 'tablet' ? 'max-w-[190px] sm:max-w-[220px]' : undefined}
+              />
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-4 flex items-center justify-center gap-3 px-4">
+        <Button variant="outline" size="icon" className="rounded-full" onClick={() => goTo(Math.max(0, active - 1))} disabled={active === 0} aria-label="Previous step">
+          <ArrowRight className="h-4 w-4 rotate-180" />
+        </Button>
+        <Button asChild className="rounded-xl">
+          <Link to="/auth?mode=signup">Open {SHOWCASE[active].badge}</Link>
+        </Button>
+        <Button variant="outline" size="icon" className="rounded-full" onClick={() => goTo(Math.min(last, active + 1))} disabled={active === last} aria-label="Next step">
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   );
 }
 
@@ -378,9 +567,9 @@ function FeaturesGrid() {
         </Reveal>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={i * 70} variant="up">
-              <div className="group rounded-xl border border-border/80 bg-card p-6 h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:border-primary/30">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 shadow-sm mb-4 transition-transform duration-300 group-hover:scale-110">
+            <Reveal key={f.title} delay={i * 70}>
+              <div className="group rounded-xl border border-border/80 bg-card p-6 h-full transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-card hover:border-primary/30 motion-reduce:hover:translate-y-0">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 shadow-sm mb-4">
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="font-semibold mb-2 text-foreground">{f.title}</h3>
@@ -424,12 +613,12 @@ function Pricing() {
         ) : (
           <div className="grid md:grid-cols-3 gap-6">
             {plans.map((p, i) => (
-              <Reveal key={p.key} delay={i * 90} variant="scale">
+              <Reveal key={p.key} delay={i * 90}>
                 <div className={cn(
-                  'relative rounded-xl border p-6 h-full flex flex-col transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl overflow-hidden group',
+                  'relative rounded-xl border p-6 h-full flex flex-col transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-lg overflow-hidden group motion-reduce:hover:translate-y-0',
                   p.highlight ? 'border-primary bg-primary/[0.04] ring-1 ring-primary/20 hover:shadow-primary/20' : 'border-border/80 bg-card hover:border-primary/40',
                 )}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100 pointer-events-none" />
                   {p.highlight && (
                     <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Most popular</p>
                   )}
@@ -465,6 +654,7 @@ const FAQS = [
     question: "Do I need to be a marketing expert to use Mako?",
     answer: "Not at all! Mako's Brand Brain learns your business tone and automatically drafts professional, ready-to-post content. You just review and approve.",
     image: "/screenshots/mako-content-engine-desktop.webp",
+    device: "desktop" as ScreenshotDevice,
     mock: <MockContentEngine />
   },
   {
@@ -472,6 +662,7 @@ const FAQS = [
     question: "Which social media platforms do you support?",
     answer: "You can currently connect and publish to Facebook, Instagram, X (Twitter), and LinkedIn. We automatically format your content for each platform.",
     image: "/screenshots/mako-publishing-desktop.webp",
+    device: "desktop" as ScreenshotDevice,
     mock: <MockPublish />
   },
   {
@@ -479,6 +670,7 @@ const FAQS = [
     question: "Can I schedule posts in advance?",
     answer: "Yes, you can visually plan and schedule your posts weeks or months in advance using our interactive content calendar.",
     image: "/screenshots/mako-scheduler.webp",
+    device: "tablet" as ScreenshotDevice,
     mock: <MockScheduler />
   },
   {
@@ -486,13 +678,13 @@ const FAQS = [
     question: "How do you handle multiple team members?",
     answer: "Mako includes role-based access control. You can have content creators draft posts while managers approve them before they go live.",
     image: "/screenshots/mako-dashboard-desktop.webp",
+    device: "desktop" as ScreenshotDevice,
     mock: <MockBrandBrain />
   }
 ];
 
 function FAQSection() {
   const [activeFaq, setActiveFaq] = useState("faq-1");
-  const currentFaq = FAQS.find(f => f.id === activeFaq) || FAQS[0];
 
   return (
     <section id="faq" className="py-section bg-white">
@@ -506,17 +698,16 @@ function FAQSection() {
           />
         </Reveal>
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-start">
-          <Reveal delay={100} variant="right">
-            <Accordion 
-              type="single" 
-              collapsible 
-              value={activeFaq} 
+          <Reveal delay={100}>
+            <Accordion
+              type="single"
+              value={activeFaq}
               onValueChange={(val) => val && setActiveFaq(val)}
               className="w-full"
             >
               {FAQS.map((faq) => (
                 <AccordionItem key={faq.id} value={faq.id} className="border-border/60">
-                  <AccordionTrigger className="text-left text-lg font-semibold hover:text-primary transition-colors">
+                  <AccordionTrigger className="text-left text-lg font-semibold hover:no-underline hover:text-primary transition-colors">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-muted-foreground text-base leading-relaxed">
@@ -527,17 +718,25 @@ function FAQSection() {
             </Accordion>
           </Reveal>
           
-          <Reveal delay={200} variant="left" className="hidden lg:block sticky top-32">
-            <div className="transition-all duration-500">
-               <ScreenshotFrame
-                 key={currentFaq.id}
-                 src={currentFaq.image}
-                 alt={currentFaq.question}
-                 mock={currentFaq.mock}
-                 device="desktop"
-                 className="animate-in fade-in slide-in-from-bottom-8 duration-500"
-               />
-            </div>
+          {/* All screenshots stay mounted and cross-fade, so switching never reloads an image. */}
+          <Reveal delay={200} className="hidden lg:grid sticky top-32 items-center">
+            {FAQS.map((faq) => (
+              <div
+                key={faq.id}
+                aria-hidden={faq.id !== activeFaq}
+                className={cn(
+                  '[grid-area:1/1] transition-opacity duration-300 ease-out motion-reduce:transition-none',
+                  faq.id === activeFaq ? 'opacity-100' : 'opacity-0 pointer-events-none',
+                )}
+              >
+                <ScreenshotFrame
+                  src={faq.image}
+                  alt={faq.question}
+                  mock={faq.mock}
+                  device={faq.device}
+                />
+              </div>
+            ))}
           </Reveal>
         </div>
       </div>
@@ -548,7 +747,7 @@ function FAQSection() {
 function FinalCTA() {
   return (
     <section className="py-section px-4 bg-foreground text-background">
-      <Reveal variant="scale">
+      <Reveal>
         <div className="w-full max-w-[1200px] mx-auto rounded-xl bg-foreground p-10 sm:p-12 text-center">
           <h2 className="font-display text-display-md sm:text-4xl font-extrabold tracking-tight text-primary">
             Start with a free account
@@ -557,7 +756,7 @@ function FinalCTA() {
             Set up your brand, connect a channel, and publish your first post. Most teams are up and running the same day.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-8">
-            <Button size="lg" asChild className="group min-h-12 h-12 px-8 rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-lg hover:shadow-primary/20">
+            <Button size="lg" asChild className="group min-h-12 h-12 px-8 rounded-xl transition-shadow duration-200 hover:shadow-lg hover:shadow-primary/20">
               <Link to="/auth?mode=signup">
                 Create free account
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
