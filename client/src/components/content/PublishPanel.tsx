@@ -28,8 +28,6 @@ import {
   PlatformMediaAttachment,
   platformRequiresMedia,
   instagramHasMedia,
-  payloadsAreDuplicates,
-  contentNeedsFormatting,
   formatPlainPostText,
   formatContentForPlatform,
 } from '@/lib/platforms';
@@ -443,49 +441,16 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
       let payloadsToUse = { ...platformPayloads };
       const platformsToPublish = selectedPlatforms;
 
-      const shouldAdaptWithAi =
-        tenant &&
-        platformsToPublish.length > 1 &&
-        (payloadsAreDuplicates(platformsToPublish, payloadsToUse) ||
-          contentNeedsFormatting(item.content ?? '') ||
-          platformsToPublish.some((p) => contentNeedsFormatting(payloadsToUse[p]?.content ?? '')));
-
-      if (shouldAdaptWithAi) {
-        toast({
-          title: 'Adapting copy',
-          description: 'Generating platform-specific versions with AI…',
-        });
-        const adapted = (await resolveQueued(
-          await contentAiApi.adaptPlatforms({
-            tenantId: tenant.id,
-            platforms: platformsToPublish,
-            title: item.title,
-            content: item.content ?? '',
-            workspaceId,
-          }),
-        )) as { payloads?: Record<string, { title: string; content: string }> } | null;
-        if (!adapted?.payloads) {
-          throw new Error('AI adapt returned no platform copy. Restart the API and try again.');
-        }
-        for (const p of platformsToPublish) {
-          if (adapted.payloads[p]) {
-            payloadsToUse[p] = {
-              ...payloadsToUse[p],
-              title: adapted.payloads[p].title,
-              content: plainToHtml(adapted.payloads[p].content),
-            };
-          }
-        }
-        setPlatformPayloads((prev) => ({ ...prev, ...payloadsToUse }));
-      } else {
-        for (const p of platformsToPublish) {
-          payloadsToUse[p] = {
-            ...payloadsToUse[p],
-            content: plainToHtml(
-              formatPublishText(p, payloadsToUse[p]?.content ?? item.content ?? ''),
-            ),
-          };
-        }
+      // Publish the copy exactly as the user wrote or edited it. AI platform
+      // adaptation is opt-in via "Generate AI copy for selected platforms" and
+      // must never block publishing (an AI outage or rate limit used to stall it).
+      for (const p of platformsToPublish) {
+        payloadsToUse[p] = {
+          ...payloadsToUse[p],
+          content: plainToHtml(
+            formatPublishText(p, payloadsToUse[p]?.content ?? item.content ?? ''),
+          ),
+        };
       }
 
       const { publishPayloads } = await saveChanges(platformsToPublish, payloadsToUse);
@@ -526,7 +491,7 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           <div className="pr-6 sm:pr-8 min-w-0">
             <h2 className="font-display text-lg sm:text-xl font-semibold">Publish content</h2>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-1.5 leading-relaxed">
-              Grow Smarter, Sell Stronger with Tekrem Innovation Solutions — pick platforms and preview before publishing.
+              Pick platforms and preview before publishing.
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="shrink-0 -mr-1">

@@ -1213,6 +1213,13 @@ export async function retryQueueJob(queue: string, jobId: string | number) {
     return waitForQueueJob(queue, jobId);
 }
 
+function friendlyJobError(reason: string): string {
+    if (/429|rate limit/i.test(reason)) {
+        return 'The AI provider is busy (rate limit reached). Try again in a minute, or switch AI provider in Settings.';
+    }
+    return reason.split('\n')[0];
+}
+
 export async function waitForQueueJob(
     queue: string,
     jobId: string | number,
@@ -1235,6 +1242,11 @@ export async function waitForQueueJob(
         }
         if (status.state === 'failed') {
             throw new Error(status.failedReason || 'Background job failed');
+        }
+        // A job that errored and is waiting to retry (e.g. AI provider rate limit)
+        // would otherwise spin silently until the timeout: surface the reason now.
+        if (status.state === 'delayed' && status.failedReason) {
+            throw new Error(friendlyJobError(status.failedReason));
         }
         await new Promise((resolve) => setTimeout(resolve, intervalMs));
     }
