@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -36,11 +37,21 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(false);
   const [workspaceVersion, setWorkspaceVersion] = useState(0);
 
+  // The server rejects a workspace from another organization, so drop the old
+  // one the moment the organization changes instead of after the new list loads.
+  const loadedTenantId = useRef<string | null>(null);
+
   const load = useCallback(async () => {
     if (!tenant) {
       setWorkspaces([]);
       setActiveWorkspaceState(null);
+      loadedTenantId.current = null;
       return;
+    }
+    if (loadedTenantId.current !== tenant.id) {
+      loadedTenantId.current = tenant.id;
+      setWorkspaces([]);
+      setActiveWorkspaceState(null);
     }
     setLoading(true);
     try {
