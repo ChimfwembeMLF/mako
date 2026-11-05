@@ -126,11 +126,24 @@ export class SocialMessagingSyncService {
     const pageId = account.metadata?.page_id ?? account.externalId;
     if (!token || !pageId) return 0;
 
+    // Instagram DMs live on the linked Page's conversations edge, but only when
+    // platform=instagram is passed; without it Graph returns Messenger threads.
+    // Messages in those threads come "from" the Instagram account id, not the Page.
+    const isInstagram = account.platform === 'instagram';
+    const ownId = isInstagram
+      ? String(
+          account.metadata?.instagram_business_account_id ??
+            account.externalId ??
+            pageId,
+        )
+      : pageId;
+
     const res = await axios.get(
       `https://graph.facebook.com/v19.0/${pageId}/conversations`,
       {
         params: {
           access_token: token,
+          ...(isInstagram ? { platform: 'instagram' } : {}),
           fields:
             'id,participants,updated_time,messages.limit(25){id,message,from,created_time,attachments,reactions}',
           limit: 25,
@@ -142,10 +155,13 @@ export class SocialMessagingSyncService {
     for (const conv of res.data?.data ?? []) {
       const threadId = String(conv.id);
       const participants =
-        (conv.participants as { data?: Array<{ id?: string; name?: string }> })
+        (conv.participants as {
+          data?: Array<{ id?: string; name?: string; username?: string }>;
+        })
           ?.data ?? [];
       const customer =
-        participants.find((p) => p.id !== pageId) ?? participants[0];
+        participants.find((p) => p.id !== ownId && p.id !== pageId) ??
+        participants[0];
 
       for (const msg of (conv.messages as { data?: Record<string, unknown>[] })
         ?.data ?? []) {
@@ -161,8 +177,10 @@ export class SocialMessagingSyncService {
         });
         if (exists) continue;
 
-        const from = msg.from as { id?: string; name?: string } | undefined;
-        const isOutbound = from?.id === pageId;
+        const from = msg.from as
+          | { id?: string; name?: string; username?: string }
+          | undefined;
+        const isOutbound = from?.id === ownId || from?.id === pageId;
         const attachments = this.parseAttachments(msg.attachments);
         const reactions = this.parseReactions(msg.reactions);
         const body =
@@ -176,7 +194,11 @@ export class SocialMessagingSyncService {
             threadId,
             externalMessageId: externalId,
             participantId: String(customer?.id ?? from?.id ?? 'unknown'),
-            participantName: customer?.name ?? from?.name,
+            participantName:
+              customer?.name ??
+              customer?.username ??
+              from?.name ??
+              from?.username,
             direction: isOutbound ? 'outbound' : 'inbound',
             body,
             attachments,

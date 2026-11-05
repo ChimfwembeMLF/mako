@@ -275,11 +275,6 @@ function splitSentences(text: string): string[] {
   return text.split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean);
 }
 
-function appendInstagramHashtags(text: string): string {
-  if (/#\w+/.test(text)) return text;
-  return `${text}\n\n#Mako #Marketing #AI #SocialMedia #ContentCreation`.trim();
-}
-
 export function formatContentForPlatform(platform: string, raw: string): string {
   const plain = formatPlainPostText(raw);
   if (!plain) return '';
@@ -288,10 +283,10 @@ export function formatContentForPlatform(platform: string, raw: string): string 
 
   if (key === 'instagram') {
     const sentences = splitSentences(plain);
-    if (sentences.length <= 2) return appendInstagramHashtags(plain);
+    if (sentences.length <= 2) return plain;
     const hook = sentences.slice(0, 2).join(' ');
     const body = sentences.slice(2).join(' ');
-    return appendInstagramHashtags(`${hook}\n\n${body}`.trim());
+    return `${hook}\n\n${body}`.trim();
   }
 
   if (key === 'facebook') {
