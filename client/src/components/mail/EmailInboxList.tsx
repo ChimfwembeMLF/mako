@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { Inbox, Loader2, Mail, RefreshCw } from 'lucide-react';
+import { Inbox, Loader2, Mail, RefreshCw, Search } from 'lucide-react';
 import { mailApi } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { InboxSplitLayout } from '@/components/layout/InboxSplitLayout';
 import { EmailThreadView } from '@/components/mail/EmailThreadView';
+import { avatarTone, excerpt, initials, mailStatus, senderName, shortTime, toneDot } from '@/components/mail/mailFormat';
 import { cn } from '@/lib/utils';
 
 type InboundEmail = {
@@ -23,41 +22,17 @@ type InboundEmail = {
   hasDraft: boolean;
 };
 
-function statusLabel(status: string): string {
-  switch (status) {
-    case 'processed':
-      return 'Draft ready';
-    case 'skipped':
-      return 'Skipped';
-    case 'failed':
-      return 'Failed';
-    default:
-      return 'Received';
-  }
-}
+type Filter = 'all' | 'new' | 'drafted';
 
-function statusVariant(
-  status: string,
-): 'default' | 'secondary' | 'destructive' | 'outline' {
-  switch (status) {
-    case 'processed':
-      return 'default';
-    case 'failed':
-      return 'destructive';
-    case 'skipped':
-      return 'outline';
-    default:
-      return 'secondary';
-  }
-}
+type Props = {
+  refreshKey?: number;
+  onCount?: (count: number) => void;
+  /** Whether Gmail can be used; shapes the empty state. */
+  connected?: boolean;
+  onConnect?: () => void;
+};
 
-function excerpt(text: string, max = 100): string {
-  const trimmed = text.trim();
-  if (trimmed.length <= max) return trimmed;
-  return `${trimmed.slice(0, max)}…`;
-}
-
-export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
+export function EmailInboxList({ refreshKey = 0, onCount, connected = true, onConnect }: Props) {
   const { toast } = useToast();
   const { tenant } = useTenant();
   const { activeWorkspace } = useWorkspace();
@@ -66,6 +41,8 @@ export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<Filter>('all');
+  const [query, setQuery] = useState('');
 
   const loadInbox = useCallback(async () => {
     if (!tenant?.id) {
@@ -73,7 +50,6 @@ export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
       setLoading(false);
       return;
     }
-
     setRefreshing(true);
     try {
       const { items } = await mailApi.listInbox({
@@ -82,9 +58,11 @@ export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
         limit: 50,
       });
       setEmails(items);
+      onCount?.(items.filter((i) => i.status === 'received').length);
       setSelectedId((prev) => {
         if (prev && items.some((item) => item.id === prev)) return prev;
-        if (isMobile) return null;
+        // Phones open on the list; the hook's first value can lag, so read the width directly.
+        if (isMobile || window.matchMedia('(max-width: 767px)').matches) return null;
         return items[0]?.id ?? null;
       });
     } catch (err: unknown) {
@@ -98,97 +76,163 @@ export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [tenant?.id, activeWorkspace, toast, isMobile]);
+  }, [tenant?.id, activeWorkspace, toast, isMobile, onCount]);
 
   useEffect(() => {
     void loadInbox();
   }, [loadInbox, refreshKey]);
 
-  const selected = useMemo(
-    () => emails.find((email) => email.id === selectedId) ?? null,
-    [emails, selectedId],
-  );
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return emails.filter((e) => {
+      if (filter === 'new' && e.status !== 'received') return false;
+      if (filter === 'drafted' && !e.hasDraft) return false;
+      if (!q) return true;
+      return [e.fromEmail, e.subject ?? '', e.body].some((v) => v.toLowerCase().includes(q));
+    });
+  }, [emails, filter, query]);
+
+  const selected = useMemo(() => emails.find((e) => e.id === selectedId) ?? null, [emails, selectedId]);
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
+      <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground">
         <Loader2 className="h-4 w-4 animate-spin" />
         Loading inbox…
       </div>
     );
   }
 
-  const listPane = (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="px-3 py-3 border-b bg-muted/20 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 min-w-0">
-          <Mail className="h-4 w-4 text-primary shrink-0" />
-          <div>
-            <p className="font-medium text-sm">Inbox</p>
-            <p className="text-[11px] text-muted-foreground">Gmail messages</p>
-          </div>
+  if (emails.length === 0) {
+    return (
+      <div className="flex flex-col items-center rounded-2xl border border-dashed bg-card/60 px-6 py-16 text-center">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Inbox className="h-5 w-5 text-muted-foreground" />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 shrink-0 h-8"
-          onClick={() => void loadInbox()}
-          disabled={refreshing || !tenant?.id}
-        >
-          {refreshing ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <RefreshCw className="h-3.5 w-3.5" />
-          )}
-        </Button>
+        <h3 className="mt-4 font-display text-base font-semibold">
+          {connected ? 'Your inbox is clear' : 'Nothing here yet'}
+        </h3>
+        <p className="mt-1.5 max-w-sm text-sm text-muted-foreground">
+          {connected
+            ? 'New Gmail messages appear here every few minutes. Check now to pull them in straight away.'
+            : 'Connect Gmail and the messages customers send you will show up here, with draft replies ready to review.'}
+        </p>
+        {connected ? (
+          <Button variant="outline" size="sm" className="mt-5 gap-1.5" onClick={() => void loadInbox()} disabled={refreshing}>
+            {refreshing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            Refresh
+          </Button>
+        ) : (
+          onConnect && (
+            <Button size="sm" className="mt-5" onClick={onConnect}>
+              Connect Gmail
+            </Button>
+          )
+        )}
       </div>
+    );
+  }
 
-      {emails.length === 0 ? (
-        <div className="rounded-lg border border-dashed m-3 p-6 text-center text-sm text-muted-foreground">
-          <Inbox className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          No emails synced yet. Connect Gmail and check your inbox.
+  const filters: Array<{ key: Filter; label: string }> = [
+    { key: 'all', label: 'All' },
+    { key: 'new', label: 'New' },
+    { key: 'drafted', label: 'Has draft' },
+  ];
+
+  const listPane = (
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="space-y-2.5 border-b p-3">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search mail"
+            className="h-8 w-full rounded-md border bg-background pl-8 pr-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="Search mail"
+          />
         </div>
-      ) : (
-        <div className="overflow-y-auto flex-1 min-h-0">
-          {emails.map((email) => {
-            const unreadStyle = email.status === 'received';
-            return (
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex gap-1">
+            {filters.map((f) => (
               <button
-                key={email.id}
+                key={f.key}
                 type="button"
-                onClick={() => setSelectedId(email.id)}
+                onClick={() => setFilter(f.key)}
                 className={cn(
-                  'w-full text-left px-3 py-3 border-b transition-colors',
-                  selectedId === email.id
-                    ? 'bg-primary/5 border-l-2 border-l-primary'
-                    : 'hover:bg-muted/40',
-                  unreadStyle && 'bg-background',
+                  'rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors',
+                  filter === f.key ? 'bg-foreground text-background' : 'text-muted-foreground hover:bg-muted',
                 )}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <p className={cn('text-sm truncate', unreadStyle ? 'font-semibold' : 'font-medium')}>
-                    {email.fromEmail}
-                  </p>
-                  <span className="text-[10px] text-muted-foreground shrink-0">
-                    {formatDistanceToNow(new Date(email.createdAt), { addSuffix: false })}
-                  </span>
-                </div>
-                <p className={cn('text-xs truncate mt-0.5', unreadStyle ? 'font-medium text-foreground' : 'text-muted-foreground')}>
-                  {email.subject || '(no subject)'}
-                </p>
-                <p className="text-[11px] text-muted-foreground mt-1 line-clamp-1">{excerpt(email.body, 80)}</p>
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <Badge variant={statusVariant(email.status)} className="text-[9px] h-4">
-                    {statusLabel(email.status)}
-                  </Badge>
-                  {email.hasDraft && (
-                    <Badge variant="outline" className="text-[9px] h-4">Draft</Badge>
-                  )}
-                </div>
+                {f.label}
               </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadInbox()}
+            disabled={refreshing}
+            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+            aria-label="Refresh inbox"
+          >
+            <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
+          </button>
+        </div>
+      </div>
+
+      {visible.length === 0 ? (
+        <p className="p-6 text-center text-xs text-muted-foreground">No messages match.</p>
+      ) : (
+        <ul className="min-h-0 flex-1 overflow-y-auto">
+          {visible.map((email) => {
+            const name = senderName(email.fromEmail);
+            const isNew = email.status === 'received';
+            const status = mailStatus(email.status);
+            const active = selectedId === email.id;
+            return (
+              <li key={email.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedId(email.id)}
+                  className={cn(
+                    'relative flex w-full gap-3 border-b border-border/60 px-3 py-3 text-left transition-colors',
+                    active ? 'bg-primary/[0.06]' : 'hover:bg-muted/50',
+                  )}
+                  aria-current={active ? 'true' : undefined}
+                >
+                  {active && <span className="absolute inset-y-0 left-0 w-0.5 bg-primary" aria-hidden />}
+                  <span
+                    className={cn(
+                      'mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold',
+                      avatarTone(email.fromEmail),
+                    )}
+                    aria-hidden
+                  >
+                    {initials(name)}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-baseline justify-between gap-2">
+                      <span className={cn('truncate text-sm', isNew ? 'font-semibold text-foreground' : 'font-medium text-foreground/90')}>
+                        {name}
+                      </span>
+                      <span className={cn('shrink-0 text-[11px] tabular-nums', isNew ? 'font-medium text-foreground' : 'text-muted-foreground')}>
+                        {shortTime(email.createdAt)}
+                      </span>
+                    </span>
+                    <span className={cn('mt-0.5 block truncate text-xs', isNew ? 'font-medium text-foreground' : 'text-foreground/80')}>
+                      {email.subject || '(no subject)'}
+                    </span>
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">{excerpt(email.body, 90)}</span>
+                    <span className="mt-1.5 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                      <span className={cn('h-1.5 w-1.5 rounded-full', toneDot[status.tone])} aria-hidden />
+                      {status.label}
+                    </span>
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
     </div>
   );
@@ -196,9 +240,9 @@ export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
   const detailPane = selected ? (
     <EmailThreadView message={selected} className="h-full" />
   ) : (
-    <div className="h-full rounded-lg border border-dashed flex flex-col items-center justify-center text-sm text-muted-foreground p-6 text-center min-h-[280px]">
-      <Mail className="h-10 w-10 mb-3 opacity-30" />
-      Select an email to read the full message.
+    <div className="flex h-full min-h-[280px] flex-col items-center justify-center rounded-xl border border-dashed bg-card/50 p-6 text-center text-sm text-muted-foreground">
+      <Mail className="mb-3 h-8 w-8 opacity-30" />
+      Choose a message to read it.
     </div>
   );
 
@@ -209,8 +253,9 @@ export function EmailInboxList({ refreshKey = 0 }: { refreshKey?: number }) {
       hasSelection={Boolean(selected)}
       onBack={() => setSelectedId(null)}
       backLabel="Inbox"
-      listMinHeight="min-h-[420px] md:min-h-[560px]"
-      detailMinHeight="min-h-[420px] md:min-h-[560px]"
+      className="md:grid-cols-[minmax(260px,340px)_1fr]"
+      listMinHeight="min-h-[420px] md:h-[calc(100dvh-20rem)] md:min-h-[520px]"
+      detailMinHeight="min-h-[420px] md:h-auto md:min-h-0"
     />
   );
 }

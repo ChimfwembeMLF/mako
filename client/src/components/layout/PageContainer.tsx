@@ -27,7 +27,7 @@ export function pageWidthClass(width: PageWidth): string {
 
 /** Match dashboard routes to the same max-width their page content uses. */
 const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = ([
-  { path: '/templates/:id', width: '2xl' },
+  { path: '/templates/:id', width: '5xl' },
   { path: '/team/:userId/permissions', width: '3xl' },
   { path: '/approvals', width: '3xl' },
   { path: '/settings', width: '3xl' },

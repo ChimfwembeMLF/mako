@@ -87,9 +87,13 @@ export class AuditLogsService {
     module?: string;
     page?: number;
     take?: number;
+    /** "changes" hides plain page loads (GET requests); default "all". */
+    kind?: 'all' | 'changes';
+    /** Only events at or after this time. */
+    from?: Date;
   }): Promise<{ items: Record<string, unknown>[]; total: number }> {
-    const page = opts.page ?? 0;
-    const take = opts.take ?? 25;
+    const page = Math.max(0, opts.page ?? 0);
+    const take = Math.min(Math.max(1, opts.take ?? 25), 100);
 
     const qb = this.repo
       .createQueryBuilder('log')
@@ -100,9 +104,19 @@ export class AuditLogsService {
       .take(take);
 
     if (opts.search?.trim()) {
-      qb.andWhere('log.action ILIKE :search', {
-        search: `%${opts.search.trim()}%`,
-      });
+      qb.andWhere(
+        `(log.action ILIKE :search OR log.resourceType ILIKE :search OR user.email ILIKE :search
+          OR CONCAT_WS(' ', user.firstName, user.lastName) ILIKE :search)`,
+        { search: `%${opts.search.trim()}%` },
+      );
+    }
+    if (opts.kind === 'changes') {
+      // Page loads, and the request that records a named event (that event is listed itself).
+      qb.andWhere('log.action NOT LIKE :reads', { reads: 'http.GET %' });
+      qb.andWhere('log.action NOT LIKE :auditWrites', { auditWrites: 'http.POST /api/v1/audit-logs%' });
+    }
+    if (opts.from && !Number.isNaN(opts.from.getTime())) {
+      qb.andWhere('log.created_at >= :from', { from: opts.from });
     }
     if (opts.module && opts.module !== 'all') {
       if (opts.module === 'http') {

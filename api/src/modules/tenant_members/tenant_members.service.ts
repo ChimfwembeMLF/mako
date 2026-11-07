@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
   ForbiddenException,
@@ -7,6 +8,7 @@ import {
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
+import { ModuleRef } from '@nestjs/core';
 import { Repository, MoreThan } from 'typeorm';
 import { TenantMembers } from './entities/tenant_members.entity';
 import { TenantMemberInvitation } from './entities/tenant_member_invitation.entity';
@@ -17,8 +19,15 @@ import { Profiles } from '../profiles/entities/profiles.entity';
 import { Tenants } from '../tenants/entities/tenants.entity';
 import { MailService } from '../mail/mail.service';
 import { resolveFrontendUrl } from '../../common/env-urls.util';
+import { GmailService } from '../auth/gmail.service';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+export type InviteEmailResult = {
+  via: 'gmail' | 'smtp' | null;
+  /** Why it was not sent, in words the inviter can act on. */
+  problem?: string;
+};
 
 @Injectable()
 export class TenantMembersService {
@@ -34,7 +43,67 @@ export class TenantMembersService {
     private readonly userService: UserService,
     private readonly mailService: MailService,
     private readonly config: ConfigService,
+    private readonly moduleRef?: ModuleRef,
   ) {}
+
+  private readonly logger = new Logger(TenantMembersService.name);
+
+  /** AuthModule imports this module, so GmailService is looked up lazily rather than injected. */
+  private gmail(): GmailService | null {
+    try {
+      return this.moduleRef?.get(GmailService, { strict: false }) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Sends the invitation from the inviter's connected Gmail, so it arrives from a
+   * real person's address. Falls back to SMTP only if the server has it set up.
+   */
+  private async sendInviteEmail(params: {
+    to: string;
+    workspaceName: string;
+    acceptLink: string;
+    hasAccount: boolean;
+    invitedBy: string;
+  }): Promise<InviteEmailResult> {
+    const inviter = await this.userService.findOne({ id: params.invitedBy });
+    const inviterName =
+      [inviter?.firstName, inviter?.lastName].filter(Boolean).join(' ') || null;
+    const content = this.mailService.workspaceInviteContent({ ...params, inviterName });
+
+    let problem: string | undefined;
+    const gmail = this.gmail();
+    if (gmail) {
+      try {
+        await gmail.sendEmailAsUser(params.invitedBy, params.to, content.subject, content.text, content.html);
+        return { via: 'gmail' };
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`Invite to ${params.to} not sent from Gmail: ${reason}`);
+        problem = /not connected|no email/i.test(reason)
+          ? 'Connect your Gmail on the Email page so invitations send from your address.'
+          : /expired|re-authenticate|invalid_grant|insufficient/i.test(reason)
+            ? 'Your Gmail connection has expired. Reconnect it on the Email page.'
+            : 'Gmail would not send the invitation. Try reconnecting Gmail on the Email page.';
+      }
+    } else {
+      problem = 'Gmail sending is not available on this server.';
+    }
+
+    if (this.mailService.isSmtpConfigured()) {
+      const sent = await this.mailService.sendWorkspaceInviteEmail(
+        params.to,
+        params.workspaceName,
+        params.acceptLink,
+        params.hasAccount,
+        inviterName,
+      );
+      if (sent) return { via: 'smtp' };
+    }
+    return { via: null, problem };
+  }
 
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
@@ -176,6 +245,11 @@ export class TenantMembersService {
     message: string;
     invitation: TenantMemberInvitation;
     pending: true;
+    emailSent: boolean;
+    emailVia: 'gmail' | 'smtp' | null;
+    /** Only when the email could not be sent, so the inviter can pass it on. */
+    acceptLink?: string;
+    emailProblem?: string;
   }> {
     const email = this.normalizeEmail(params.email);
     const user = await this.userService.findOne({ email });
@@ -222,12 +296,27 @@ export class TenantMembersService {
     const frontendUrl = resolveFrontendUrl(this.config);
     const acceptLink = `${frontendUrl}/invite?id=${invitation.id}&token=${this.invitationToken(invitation.id)}`;
 
-    await this.mailService.sendWorkspaceInviteEmail(
-      email,
-      tenant?.name ?? 'Workspace',
+    const sent = await this.sendInviteEmail({
+      to: email,
+      workspaceName: tenant?.name ?? 'Workspace',
       acceptLink,
-      Boolean(user),
-    );
+      hasAccount: Boolean(user),
+      invitedBy: params.invitedBy,
+    });
+
+    if (!sent.via) {
+      // The link only works for someone signed in as the invited email, so the
+      // inviter can safely send it themselves.
+      return {
+        message: `The invitation to ${email} is saved but was not emailed. ${sent.problem ?? ''} In the meantime, copy the link and send it to them.`.replace(/\s+/g, ' '),
+        invitation,
+        pending: true,
+        emailSent: false,
+        emailVia: null,
+        acceptLink,
+        emailProblem: sent.problem,
+      };
+    }
 
     return {
       message: user
@@ -235,6 +324,8 @@ export class TenantMembersService {
         : 'Invitation sent — they can create an account from the email to join.',
       invitation,
       pending: true,
+      emailSent: true,
+      emailVia: sent.via,
     };
   }
 

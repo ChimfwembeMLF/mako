@@ -1,7 +1,6 @@
-import { formatDistanceToNow } from 'date-fns';
-import { ExternalLink, FileText } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { avatarTone, fullTime, initials, senderAddress, senderName } from '@/components/mail/mailFormat';
 import { cn } from '@/lib/utils';
 
 export type EmailDraftItem = {
@@ -14,54 +13,56 @@ export type EmailDraftItem = {
   gmailDraftsUrl: string;
 };
 
-export function EmailDraftView({
-  draft,
-  className,
-}: {
-  draft: EmailDraftItem;
-  className?: string;
-}) {
+export function EmailDraftView({ draft, className }: { draft: EmailDraftItem; className?: string }) {
+  const name = senderName(draft.toEmail);
+  const address = senderAddress(draft.toEmail);
+
   return (
-    <div className={cn('flex flex-col h-full bg-background rounded-lg border overflow-hidden', className)}>
-      <div className="px-4 sm:px-5 py-4 border-b bg-amber-50/50 dark:bg-amber-950/20 space-y-2">
-        <div className="flex items-center gap-2 text-xs font-medium text-amber-800 dark:text-amber-200 uppercase tracking-wide">
-          <FileText className="h-3.5 w-3.5" />
-          Draft reply — review in Gmail before sending
+    <article className={cn('flex h-full flex-col overflow-hidden rounded-xl border bg-card', className)}>
+      <header className="border-b px-5 py-5 sm:px-7">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-amber-700 dark:text-amber-400">Draft reply · not sent</p>
+        <h2 className="mt-1.5 font-display text-lg font-semibold leading-snug sm:text-xl">{draft.subject || '(no subject)'}</h2>
+        <div className="mt-4 flex items-center gap-3">
+          <span
+            className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold', avatarTone(draft.toEmail))}
+            aria-hidden
+          >
+            {initials(name)}
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">
+              <span className="font-normal text-muted-foreground">To </span>
+              {name}
+              {name !== address && <span className="font-normal text-muted-foreground"> &lt;{address}&gt;</span>}
+            </p>
+            <p className="text-xs text-muted-foreground">Written {fullTime(draft.createdAt)}</p>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm">
-            <span className="text-muted-foreground">To:</span>{' '}
-            <span className="font-medium">{draft.toEmail}</span>
-          </p>
-          <Badge variant="secondary" className="text-[10px]">Draft</Badge>
-        </div>
-        <p className="text-base font-medium">{draft.subject || '(no subject)'}</p>
-        <p className="text-xs text-muted-foreground">
-          Created {formatDistanceToNow(new Date(draft.createdAt), { addSuffix: true })}
-        </p>
-        <div className="flex flex-wrap gap-2 pt-1">
-          {draft.gmailThreadUrl && (
-            <Button variant="outline" size="sm" className="gap-1.5 h-8" asChild>
-              <a href={draft.gmailThreadUrl} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3.5 w-3.5" />
-                View thread
-              </a>
-            </Button>
-          )}
-          <Button variant="default" size="sm" className="gap-1.5 h-8" asChild>
-            <a href={draft.gmailDraftsUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3.5 w-3.5" />
-              Open in Gmail
-            </a>
-          </Button>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-6 sm:px-7">
+        <div className="max-w-[68ch] rounded-lg border border-dashed border-amber-300/70 bg-amber-50/40 p-5 dark:border-amber-500/30 dark:bg-amber-500/5">
+          <p className="whitespace-pre-wrap text-sm leading-7 text-foreground/90">{draft.body}</p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-5">
-        <div className="rounded-lg border border-dashed bg-muted/20 p-4 max-w-3xl">
-          <p className="text-sm whitespace-pre-wrap leading-relaxed">{draft.body}</p>
+      <footer className="flex flex-col gap-2 border-t bg-muted/30 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+        <p className="text-xs text-muted-foreground">Edit and send it from Gmail. Mako never sends a draft on its own.</p>
+        <div className="flex gap-2">
+          {draft.gmailThreadUrl && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs" asChild>
+              <a href={draft.gmailThreadUrl} target="_blank" rel="noopener noreferrer">
+                View original
+              </a>
+            </Button>
+          )}
+          <Button size="sm" className="h-8 gap-1.5 text-xs" asChild>
+            <a href={draft.gmailDraftsUrl} target="_blank" rel="noopener noreferrer">
+              Review in Gmail <ExternalLink className="h-3 w-3" />
+            </a>
+          </Button>
         </div>
-      </div>
-    </div>
+      </footer>
+    </article>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -8,32 +8,23 @@ import { templatesApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionGate } from '@/components/PermissionGate';
 import { templatePlatforms } from '@/lib/platform-capabilities';
-import { ArrowLeft, Save, LayoutTemplate, Loader2, X } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Loader2, X } from 'lucide-react';
 import { usePageBreadcrumb } from '@/hooks/usePageBreadcrumb';
 import { MediaPicker } from '@/components/MediaPicker';
+import { CHANNEL_RULES, CHANNEL_SWATCH } from '@/components/templates/channels';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
+import { cn } from '@/lib/utils';
 
 const TEMPLATE_PLATFORM_LIST = templatePlatforms();
 const PLATFORM_LABELS: Record<string, string> = Object.fromEntries(
   TEMPLATE_PLATFORM_LIST.map((p) => [p.id, p.label]),
 );
 
-const PLATFORM_HINTS: Record<string, string> = {
-  facebook: 'Max 63,206 chars. 5 hashtags max. Use hook → body → CTA structure.',
-  linkedin: 'Max 3,000 chars. Professional tone. 3-5 hashtags at end.',
-  instagram: 'Max 2,200 chars. 30 hashtags max — place at end.',
-  twitter: 'STRICT 280 char limit. 1-2 hashtags only.',
-  whatsapp: 'Conversational. No markdown. Max ~300 words.',
-  email: 'Subject ≤ 60 chars. Preheader ≤ 90 chars. One CTA.',
-  ad_copy: 'Headline ≤ 40 chars. Primary ≤ 125 chars. One CTA verb.',
-  content: 'HTML allowed: <p>, <ul>, <li>, <strong>.',
-};
+const MAX_MEDIA = 4;
 
 interface TemplateForm {
   name: string;
@@ -65,6 +56,8 @@ export default function TemplateEditPage() {
   });
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
+  const [pickingMedia, setPickingMedia] = useState(false);
+  const [dirty, setDirty] = useState(false);
 
   usePageBreadcrumb(isNew ? 'New template' : form.name || undefined);
 
@@ -98,8 +91,15 @@ export default function TemplateEditPage() {
     }
   }
 
-  const set = <K extends keyof TemplateForm>(k: K, v: TemplateForm[K]) =>
+  const set = <K extends keyof TemplateForm>(k: K, v: TemplateForm[K]) => {
+    setDirty(true);
     setForm((f) => ({ ...f, [k]: v }));
+  };
+
+  function chooseChannel(v: string) {
+    set('platform', v);
+    set('contentType', v === 'content' ? 'content' : v === 'email' || v === 'ad_copy' ? v : 'social');
+  }
 
   async function handleSave() {
     if (!form.name.trim() || !tenant || !activeWorkspace) return;
@@ -124,6 +124,7 @@ export default function TemplateEditPage() {
         else navigate('/templates');
       } else if (id) {
         await templatesApi.update(id, tenant.id, payload, activeWorkspace);
+        setDirty(false);
         toast({ title: 'Template saved' });
       }
     } catch (e: unknown) {
@@ -138,165 +139,199 @@ export default function TemplateEditPage() {
   }
 
   const requirePerm = isNew ? P.templates.create : P.templates.edit;
+  const canSave = Boolean(form.name.trim() && form.body.trim()) && !saving;
+  const rules = CHANNEL_RULES[form.platform] ?? [];
+  const label = PLATFORM_LABELS[form.platform] ?? form.platform;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 text-muted-foreground gap-2">
+      <div className="flex items-center justify-center gap-2 p-12 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
         Loading template…
       </div>
     );
   }
 
+  const saveButton = (
+    <Button onClick={() => void handleSave()} disabled={!canSave} className="gap-1.5">
+      {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+      {saving ? 'Saving…' : isNew ? 'Create template' : 'Save changes'}
+    </Button>
+  );
+
   return (
     <PermissionGate require={requirePerm} fallback={true}>
-      <div className="w-full space-y-5 sm:space-y-6 pb-8 min-w-0">
-        <div className="flex items-center gap-3">
-          <Link to="/templates">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4" />
+      <div className="w-full min-w-0 pb-24 lg:pb-10">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <Link to="/templates" className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+              <ArrowLeft className="h-3.5 w-3.5" /> Templates
+            </Link>
+            <h1 className="mt-2 truncate font-display text-2xl font-semibold sm:text-3xl">
+              {isNew ? 'New template' : form.name || 'Untitled template'}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {isNew ? 'Tell AI how to write for one channel.' : dirty ? 'You have unsaved changes.' : 'All changes saved.'}
+            </p>
+          </div>
+          <div className="hidden items-center gap-2 sm:flex">
+            <Button variant="ghost" asChild>
+              <Link to="/templates">Cancel</Link>
             </Button>
-          </Link>
-          <LayoutTemplate className="h-5 w-5 text-primary" />
-          <h1 className="text-xl font-semibold">{isNew ? 'New Template' : 'Edit Template'}</h1>
+            {saveButton}
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <Label htmlFor="name">
-                Template name <span className="text-destructive">*</span>
-              </Label>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <div className="space-y-6 rounded-2xl border bg-card p-5 sm:p-6">
+            <div className="space-y-1.5">
+              <Label htmlFor="name">Name</Label>
               <Input
                 id="name"
                 value={form.name}
                 onChange={(e) => set('name', e.target.value)}
-                placeholder="e.g. Facebook Product Launch"
+                placeholder="e.g. Facebook product launch"
               />
             </div>
-            <div className="space-y-1">
-              <Label>Platform</Label>
-              <Select
-                value={form.platform}
-                onValueChange={(v) => {
-                  set('platform', v);
-                  if (v === 'content' || v === 'email' || v === 'ad_copy') {
-                    set('contentType', v === 'content' ? 'content' : v);
-                  } else {
-                    set('contentType', 'social');
-                  }
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {TEMPLATE_PLATFORM_LIST.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.label}
-                    </SelectItem>
+
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium">Channel</legend>
+              <div className="flex flex-wrap gap-2">
+                {TEMPLATE_PLATFORM_LIST.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => chooseChannel(p.id)}
+                    aria-pressed={form.platform === p.id}
+                    className={cn(
+                      'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors',
+                      form.platform === p.id ? 'border-foreground bg-foreground text-background' : 'hover:bg-muted',
+                    )}
+                  >
+                    <span className={cn('h-2 w-2 rounded-sm', CHANNEL_SWATCH[p.id] ?? 'bg-muted-foreground')} aria-hidden />
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="desc">What it’s for <span className="font-normal text-muted-foreground">(optional)</span></Label>
+              <Input
+                id="desc"
+                value={form.description}
+                onChange={(e) => set('description', e.target.value)}
+                placeholder="e.g. Launch posts that end with a question"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-baseline justify-between gap-3">
+                <Label htmlFor="prompt">Instructions for AI</Label>
+                <span className="text-xs tabular-nums text-muted-foreground">{form.body.length.toLocaleString()} characters</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Structure, tone, length, emojis and hashtags. AI reads this every time it writes for {label}.
+              </p>
+              <textarea
+                id="prompt"
+                rows={14}
+                value={form.body}
+                onChange={(e) => set('body', e.target.value)}
+                placeholder={`Write for ${label}.\nStructure: hook (1 line) → short story → question to drive comments.\nTone: warm and conversational.\nLength: 150–300 words.`}
+                className="mt-1 w-full resize-y rounded-xl border bg-background p-4 font-mono text-[13px] leading-6 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </div>
+          </div>
+
+          <aside className="space-y-4">
+            {rules.length > 0 && (
+              <section className="rounded-2xl border bg-card p-5">
+                <h2 className="flex items-center gap-2 text-sm font-semibold">
+                  <span className={cn('h-2 w-2 rounded-sm', CHANNEL_SWATCH[form.platform] ?? 'bg-muted-foreground')} aria-hidden />
+                  {label} rules
+                </h2>
+                <ul className="mt-3 space-y-2 text-xs text-muted-foreground">
+                  {rules.map((r) => (
+                    <li key={r} className="flex gap-2"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-muted-foreground/60" />{r}</li>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                </ul>
+                <p className="mt-3 text-[11px] text-muted-foreground/80">AI keeps to these even if your instructions don’t mention them.</p>
+              </section>
+            )}
 
-          <div className="space-y-1">
-            <Label htmlFor="desc">Description</Label>
-            <Input
-              id="desc"
-              value={form.description}
-              onChange={(e) => set('description', e.target.value)}
-              placeholder="What is this template optimised for?"
-            />
-          </div>
-
-          {form.platform && (
-            <div className="rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 p-3 text-xs text-blue-700 dark:text-blue-300">
-              <strong>Platform rules for {PLATFORM_LABELS[form.platform]}:</strong>
-              <br />
-              {PLATFORM_HINTS[form.platform]}
-            </div>
-          )}
-
-          <div className="space-y-1">
-            <Label htmlFor="prompt">
-              AI prompt instructions <span className="text-destructive">*</span>
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              Injected into AI system prompts when generating or adapting content for this platform.
-            </p>
-            <Textarea
-              id="prompt"
-              rows={10}
-              value={form.body}
-              onChange={(e) => set('body', e.target.value)}
-              placeholder={`Write for ${PLATFORM_LABELS[form.platform] ?? 'this platform'}…`}
-              className="font-mono text-sm resize-y"
-            />
-            <p className="text-xs text-muted-foreground text-right">{form.body.length} chars</p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <Label>Template Media (Optional)</Label>
-              <p className="text-xs text-muted-foreground">Assets to automatically attach to posts generated from this template.</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {form.mediaUrls.map((url, i) => (
-                <div key={i} className="relative group rounded-md border overflow-hidden aspect-square">
-                  <div className="absolute top-2 right-2 z-10 bg-black/50 rounded-full p-1 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => {
-                    const newUrls = [...form.mediaUrls];
-                    newUrls.splice(i, 1);
-                    set('mediaUrls', newUrls);
-                  }}>
-                    <X className="h-4 w-4 text-white" />
-                  </div>
-                  {url.match(/\.(mp4|webm|mov)/i) ? (
-                    <video src={url} className="w-full h-full object-cover" />
-                  ) : (
-                    <img src={url} alt="Template Media" className="w-full h-full object-cover" />
-                  )}
+            {can(P.templates.activate) && (
+              <section className="flex items-start justify-between gap-4 rounded-2xl border bg-card p-5">
+                <div>
+                  <h2 className="text-sm font-semibold">Use this template</h2>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    When on, it’s available when writing. The most recently edited active template for {label} is used by default.
+                  </p>
                 </div>
-              ))}
-              {form.mediaUrls.length < 4 && (
-                <div className="aspect-square">
-                  <MediaPicker
-                    value=""
-                    onChange={(url) => {
-                      if (url) {
-                        set('mediaUrls', [...form.mediaUrls, url]);
-                      }
-                    }}
-                  />
+                <Switch checked={form.isActive} onCheckedChange={(v) => set('isActive', v)} aria-label="Use this template" />
+              </section>
+            )}
+
+            <section className="rounded-2xl border bg-card p-5">
+              <div className="flex items-baseline justify-between gap-2">
+                <h2 className="text-sm font-semibold">Media</h2>
+                <span className="text-xs tabular-nums text-muted-foreground">{form.mediaUrls.length}/{MAX_MEDIA}</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground">Attached to every post written with this template.</p>
+              {form.mediaUrls.length > 0 && (
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  {form.mediaUrls.map((url, i) => (
+                    <div key={`${url}-${i}`} className="group relative aspect-square overflow-hidden rounded-lg border bg-muted">
+                      {/\.(mp4|webm|mov)/i.test(url) ? (
+                        <video src={resolveMediaUrl(url)} className="h-full w-full object-cover" muted />
+                      ) : (
+                        <img src={resolveMediaUrl(url)} alt="" className="h-full w-full object-cover" />
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => set('mediaUrls', form.mediaUrls.filter((_, j) => j !== i))}
+                        className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100"
+                        aria-label="Remove"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               )}
+              {form.mediaUrls.length < MAX_MEDIA && !pickingMedia && (
+                <Button variant="outline" size="sm" className="mt-3 w-full gap-1.5" onClick={() => setPickingMedia(true)}>
+                  <ImagePlus className="h-3.5 w-3.5" /> Add media
+                </Button>
+              )}
+            </section>
+          </aside>
+        </div>
+
+        {pickingMedia && (
+          <section className="mt-6 rounded-2xl border bg-card p-5">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Add media</h2>
+              <Button variant="ghost" size="sm" onClick={() => setPickingMedia(false)}>Done</Button>
             </div>
-          </div>
+            <MediaPicker
+              value=""
+              onChange={(url) => {
+                if (!url) return;
+                const next = [...form.mediaUrls, url].slice(0, MAX_MEDIA);
+                set('mediaUrls', next);
+                if (next.length >= MAX_MEDIA) setPickingMedia(false);
+              }}
+            />
+          </section>
+        )}
 
-          {can(P.templates.activate) && (
-            <div className="flex items-center justify-between rounded-lg border p-3">
-              <div>
-                <p className="text-sm font-medium">Active</p>
-                <p className="text-xs text-muted-foreground">
-                  Active templates are used automatically during AI generation.
-                </p>
-              </div>
-              <Switch checked={form.isActive} onCheckedChange={(v) => set('isActive', v)} />
-            </div>
-          )}
-
-          <Separator />
-
-          <div className="flex items-center justify-between pt-2">
-            <Button variant="outline" asChild>
-              <Link to="/templates">Cancel</Link>
-            </Button>
-            <Button onClick={handleSave} disabled={saving || !form.name.trim() || !form.body.trim()} className="gap-1">
-              <Save className="h-4 w-4" />
-              {saving ? 'Saving…' : isNew ? 'Create Template' : 'Save Changes'}
-            </Button>
-          </div>
+        {/* Phones: keep Save in reach. */}
+        <div className="fixed inset-x-0 bottom-0 z-20 flex gap-2 border-t bg-background/95 p-3 backdrop-blur sm:hidden">
+          <Button variant="outline" asChild className="flex-1">
+            <Link to="/templates">Cancel</Link>
+          </Button>
+          <div className="flex-[2] [&>button]:w-full">{saveButton}</div>
         </div>
       </div>
     </PermissionGate>

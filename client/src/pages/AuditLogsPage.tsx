@@ -1,30 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { format, formatDistanceToNow } from 'date-fns';
-import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  ClipboardList,
-  Download,
-  Filter,
-  Search,
-  Shield,
-} from 'lucide-react';
+import { format, isToday, isYesterday } from 'date-fns';
+import { ChevronDown, Download, Loader2, Search } from 'lucide-react';
 import { auditLogsApi } from '@/lib/api';
 import { useTenant } from '@/hooks/useTenant';
+import { useToast } from '@/hooks/use-toast';
 import { P } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { PermissionGate } from '@/components/PermissionGate';
+import { DataPagination } from '@/components/DataPagination';
 import { cn } from '@/lib/utils';
 
 interface AuditLog {
@@ -35,47 +19,144 @@ interface AuditLog {
   before_state: Record<string, unknown> | null;
   after_state: Record<string, unknown> | null;
   metadata: Record<string, unknown> | null;
+  ip_address?: string | null;
   created_at: string;
-  profiles?: { full_name: string | null; email: string | null };
+  profiles?: { full_name: string | null; email: string | null } | null;
 }
 
-const ACTION_STYLES: Record<string, string> = {
-  'content.approved': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
-  'content.published': 'bg-blue-500/10 text-blue-700 border-blue-500/20',
-  'content.deleted': 'bg-red-500/10 text-red-700 border-red-500/20',
-  'team.invite': 'bg-violet-500/10 text-violet-700 border-violet-500/20',
-  'team.member_removed': 'bg-orange-500/10 text-orange-700 border-orange-500/20',
-  'media.delete': 'bg-red-500/10 text-red-700 border-red-500/20',
-  'approval.approved': 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20',
-  'approval.rejected': 'bg-red-500/10 text-red-700 border-red-500/20',
-  http: 'bg-slate-500/10 text-slate-700 border-slate-500/20',
+const RANGES = [
+  { key: '1d', label: '24 hours', ms: 864e5 },
+  { key: '7d', label: '7 days', ms: 7 * 864e5 },
+  { key: '30d', label: '30 days', ms: 30 * 864e5 },
+  { key: 'all', label: 'All time', ms: 0 },
+] as const;
+type RangeKey = (typeof RANGES)[number]['key'];
+
+const EXPORT_LIMIT = 5000;
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Readable names for API areas whose path doesn't say it well. */
+const AREA_NAMES: Record<string, string> = {
+  'tenant-members/invitations': 'team invitation',
+  'tenant-members': 'team member',
+  'content-items': 'post',
+  'content-ai': 'AI content',
+  'media/upload': 'media',
+  'whatsapp/bots': 'WhatsApp bot',
+  'ai/form-suggestions': 'AI suggestion',
+  'brand-profiles': 'brand voice',
+  'approval-requests': 'approval request',
+  'comment-replies': 'comment reply',
+  'auto-reply-rules': 'reply rule',
+  'social-accounts': 'social account',
+  'ads/campaigns': 'ad campaign',
+  'audit-logs': 'audit entry',
+  workspaces: 'workspace',
+  templates: 'template',
+  leads: 'lead',
+  roles: 'role',
 };
 
-const PAGE_SIZE = 25;
-const MODULES = [
-  'all',
-  'http',
-  'content',
-  'leads',
-  'media',
-  'templates',
-  'replies',
-  'team',
-  'approval',
-  'reply_rule',
-] as const;
+/** Section names shown under each event. */
+const SECTION: Record<string, string> = {
+  'tenant-members': 'Team',
+  whatsapp: 'WhatsApp',
+  'whatsapp-templates': 'WhatsApp',
+  'content-items': 'Posts',
+  'content-ai': 'Posts',
+  'brand-profiles': 'Brand voice',
+  'social-accounts': 'Social accounts',
+  'comment-replies': 'Inbox',
+  inbox: 'Inbox',
+  mail: 'Email',
+  ai: 'AI',
+  auth: 'Account',
+  rbac: 'Roles',
+  roles: 'Roles',
+  'approval-requests': 'Approvals',
+  'auto-reply-rules': 'Reply rules',
+};
 
-function actionStyle(action: string): string {
-  if (ACTION_STYLES[action]) return ACTION_STYLES[action];
-  if (action.startsWith('http.')) return ACTION_STYLES.http;
-  return 'bg-muted text-muted-foreground border-border/60';
+/** Exact requests that deserve their own wording. */
+const REQUEST_TITLES: Record<string, string> = {
+  'POST tenant-members/invite': 'Invited a team member',
+  'POST tenant-members/invitations/accept': 'Accepted a team invitation',
+  'DELETE tenant-members/invitations': 'Cancelled a team invitation',
+  'POST whatsapp/bots/test': 'Tested a WhatsApp bot',
+  'POST ai/form-suggestions': 'Asked AI for form suggestions',
+  'POST media/upload': 'Uploaded media',
+  'POST auth/logout': 'Signed out',
+};
+
+const NAMED: Record<string, string> = {
+  'team.invite': 'Invited a team member',
+  'team.invite_revoked': 'Cancelled a team invitation',
+  'team.member_removed': 'Removed a team member',
+  'team.role_changed': 'Changed a member’s role',
+  'content.approved': 'Approved a post',
+  'content.published': 'Published a post',
+  'content.deleted': 'Deleted a post',
+  'approval.approved': 'Approved a request',
+  'approval.rejected': 'Rejected a request',
+  'media.delete': 'Deleted media',
+};
+
+const VERB: Record<string, { word: string; tone: string }> = {
+  POST: { word: 'Created', tone: 'bg-emerald-500' },
+  PUT: { word: 'Updated', tone: 'bg-sky-500' },
+  PATCH: { word: 'Updated', tone: 'bg-sky-500' },
+  DELETE: { word: 'Deleted', tone: 'bg-rose-500' },
+  GET: { word: 'Viewed', tone: 'bg-muted-foreground/40' },
+};
+
+/** Turns "http.POST /api/v1/whatsapp/bots/…" into "Created WhatsApp bot", and named actions into a sentence. */
+function describe(log: AuditLog): { title: string; area: string; dot: string; path?: string } {
+  const http = log.action.match(/^http\.([A-Z]+)\s+(\S+)/);
+  if (http) {
+    const [, method, rawPath] = http;
+    const path = rawPath.replace(/^\/api\/v\d+\//, '').split('?')[0];
+    const parts = path.split('/').filter((p) => p && !UUID.test(p) && !/^\d+$/.test(p));
+    const key2 = parts.slice(0, 2).join('/');
+    const verb = VERB[method] ?? { word: method, tone: 'bg-muted-foreground/40' };
+    const section = SECTION[parts[0] ?? ''] ?? (parts[0] ?? 'API').replace(/[-_]/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+    const exact = REQUEST_TITLES[`${method} ${parts.join('/')}`] ?? REQUEST_TITLES[`${method} ${key2}`];
+    if (exact) return { title: exact, area: section, dot: verb.tone, path: rawPath };
+
+    const area =
+      AREA_NAMES[key2] ?? AREA_NAMES[parts[0] ?? ''] ?? (parts[parts.length - 1] ?? 'item').replace(/[-_]/g, ' ').replace(/s$/, '');
+    // A trailing word after the record (e.g. /campaigns/:id/publish) is the action taken.
+    const action = parts.length > 2 || (parts.length === 2 && !AREA_NAMES[key2]) ? parts[parts.length - 1] : null;
+    const title =
+      action && method === 'POST' && !/^(upload|create)$/.test(action)
+        ? `${action.replace(/[-_]/g, ' ').replace(/^\w/, (c) => c.toUpperCase())} · ${area}`
+        : `${verb.word} ${area}`;
+    return { title, area: section, dot: verb.tone, path: rawPath };
+  }
+  const [module, ...rest] = log.action.split('.');
+  const title =
+    NAMED[log.action] ??
+    `${module.replace(/^\w/, (c) => c.toUpperCase())} ${rest.join(' ').replace(/[_-]/g, ' ')}`.trim();
+  const dot = /delete|remov|reject|revok/.test(log.action)
+    ? 'bg-rose-500'
+    : /approv|publish|creat|invite/.test(log.action)
+      ? 'bg-emerald-500'
+      : 'bg-sky-500';
+  return { title, area: SECTION[module] ?? module.replace(/[-_]/g, ' ').replace(/^\w/, (c) => c.toUpperCase()), dot };
 }
 
-function actionModule(action: string): string {
-  return action.split('.')[0] ?? 'other';
+function statusOf(log: AuditLog): number | null {
+  const code = Number(log.metadata?.statusCode);
+  return Number.isFinite(code) && code > 0 ? code : null;
 }
 
-function formatJsonBlock(value: unknown): string {
+function dayLabel(iso: string): string {
+  const d = new Date(iso);
+  if (isToday(d)) return 'Today';
+  if (isYesterday(d)) return 'Yesterday';
+  return format(d, 'EEEE d MMMM yyyy');
+}
+
+function json(value: unknown): string {
   if (value == null) return '';
   try {
     return JSON.stringify(value, null, 2);
@@ -84,147 +165,131 @@ function formatJsonBlock(value: unknown): string {
   }
 }
 
-function AuditLogCard({ log, expanded, onToggle }: {
-  log: AuditLog;
-  expanded: boolean;
-  onToggle: () => void;
-}) {
-  const profile = log.profiles;
-  const hasDetails =
-    Boolean(log.after_state) ||
-    Boolean(log.before_state) ||
-    Boolean(log.metadata && Object.keys(log.metadata).length > 0);
+function actorName(log: AuditLog): string {
+  return log.profiles?.full_name || log.profiles?.email || 'System';
+}
+
+function Row({ log, open, onToggle }: { log: AuditLog; open: boolean; onToggle: () => void }) {
+  const d = describe(log);
+  const status = statusOf(log);
+  const failed = status !== null && status >= 400;
+  const name = actorName(log);
+  const duration = Number(log.metadata?.durationMs);
 
   return (
-    <Card className="border-border/50 overflow-hidden transition-shadow hover:shadow-sm">
-      <CardContent className="p-0">
-        <button
-          type="button"
-          onClick={onToggle}
-          disabled={!hasDetails}
-          className={cn(
-            'w-full text-left p-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4',
-            hasDetails && 'cursor-pointer hover:bg-muted/30 transition-colors',
-            !hasDetails && 'cursor-default',
+    <li className={cn(open && 'bg-muted/30')}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="grid w-full grid-cols-[52px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 sm:grid-cols-[64px_minmax(0,1fr)_200px_auto] sm:px-5"
+      >
+        <span className="text-xs tabular-nums text-muted-foreground">{format(new Date(log.created_at), 'HH:mm')}</span>
+        <span className="min-w-0">
+          <span className="flex items-center gap-2">
+            <span className={cn('h-1.5 w-1.5 shrink-0 rounded-full', failed ? 'bg-destructive' : d.dot)} aria-hidden />
+            <span className="truncate text-sm font-medium">{d.title}</span>
+            {failed && (
+              <span className="shrink-0 rounded bg-destructive/10 px-1.5 py-px text-[10px] font-semibold text-destructive">
+                Failed · {status}
+              </span>
+            )}
+          </span>
+          <span className="mt-0.5 block truncate pl-3.5 text-xs text-muted-foreground sm:hidden">{name}</span>
+          <span className="mt-0.5 hidden truncate pl-3.5 text-xs text-muted-foreground sm:block">{d.area}</span>
+        </span>
+        <span className="hidden min-w-0 sm:block">
+          <span className="block truncate text-sm">{name}</span>
+          {log.profiles?.email && log.profiles.full_name && (
+            <span className="block truncate text-xs text-muted-foreground">{log.profiles.email}</span>
           )}
-        >
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary text-xs font-semibold">
-              {(profile?.full_name ?? 'SY').slice(0, 2).toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1 space-y-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge
-                  variant="outline"
-                  className={cn('font-mono text-[10px] border', actionStyle(log.action))}
-                >
-                  {log.action}
-                </Badge>
-                <span className="text-[11px] text-muted-foreground capitalize">
-                  {actionModule(log.action)}
-                </span>
-              </div>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  {profile?.full_name ?? 'System'}
-                </span>
-                {profile?.email && <span>{profile.email}</span>}
-                <span title={format(new Date(log.created_at), 'PPpp')}>
-                  {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                </span>
-              </div>
-              {(log.resource_type || log.resource_id) && (
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {log.resource_type && (
-                    <span className="rounded-md bg-muted/60 px-2 py-0.5 font-medium">
-                      {log.resource_type}
-                    </span>
-                  )}
-                  {log.resource_id && (
-                    <span className="rounded-md bg-muted/40 px-2 py-0.5 font-mono text-[10px]">
-                      {log.resource_id}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          {hasDetails && (
-            <ChevronDown
-              className={cn(
-                'h-4 w-4 shrink-0 text-muted-foreground transition-transform self-end sm:self-center',
-                expanded && 'rotate-180',
-              )}
-            />
-          )}
-        </button>
+        </span>
+        <ChevronDown className={cn('h-4 w-4 shrink-0 text-muted-foreground transition-transform', open && 'rotate-180')} />
+      </button>
 
-        {expanded && hasDetails && (
-          <div className="border-t border-border/50 bg-muted/20 px-4 py-3 space-y-3">
-            {log.before_state && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  Before
-                </p>
-                <pre className="text-[11px] leading-relaxed overflow-x-auto rounded-lg bg-background/80 border border-border/50 p-3 max-h-40">
-                  {formatJsonBlock(log.before_state)}
-                </pre>
-              </div>
-            )}
-            {log.after_state && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  After
-                </p>
-                <pre className="text-[11px] leading-relaxed overflow-x-auto rounded-lg bg-background/80 border border-border/50 p-3 max-h-40">
-                  {formatJsonBlock(log.after_state)}
-                </pre>
-              </div>
-            )}
-            {log.metadata && Object.keys(log.metadata).length > 0 && (
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1">
-                  Metadata
-                </p>
-                <pre className="text-[11px] leading-relaxed overflow-x-auto rounded-lg bg-background/80 border border-border/50 p-3 max-h-40">
-                  {formatJsonBlock(log.metadata)}
-                </pre>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      {open && (
+        <div className="space-y-4 border-t border-border/60 px-4 pb-5 pt-4 sm:px-5 sm:pl-[84px]">
+          <dl className="grid grid-cols-[110px_minmax(0,1fr)] gap-x-4 gap-y-1.5 text-xs">
+            <dt className="text-muted-foreground">When</dt>
+            <dd>{format(new Date(log.created_at), "EEE d MMM yyyy 'at' HH:mm:ss")}</dd>
+            <dt className="text-muted-foreground">Who</dt>
+            <dd className="truncate">{name}{log.profiles?.email && log.profiles.full_name ? ` · ${log.profiles.email}` : ''}</dd>
+            {d.path && (<><dt className="text-muted-foreground">Request</dt><dd className="break-all font-mono text-[11px]">{log.action.replace(/^http\./, '')}</dd></>)}
+            {status !== null && (<><dt className="text-muted-foreground">Result</dt><dd className={cn(failed && 'text-destructive')}>{status}{Number.isFinite(duration) ? ` · ${duration} ms` : ''}</dd></>)}
+            {log.resource_id && (<><dt className="text-muted-foreground">Record</dt><dd className="break-all font-mono text-[11px]">{log.resource_type ? `${log.resource_type} · ` : ''}{log.resource_id}</dd></>)}
+            {log.ip_address && (<><dt className="text-muted-foreground">IP address</dt><dd className="font-mono text-[11px]">{log.ip_address}</dd></>)}
+            <dt className="text-muted-foreground">Raw action</dt>
+            <dd className="break-all font-mono text-[11px] text-muted-foreground">{log.action}</dd>
+          </dl>
+
+          {(log.before_state || log.after_state) && (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {[
+                ['Before', log.before_state],
+                ['After', log.after_state],
+              ].map(([label, value]) =>
+                value ? (
+                  <div key={label as string} className="min-w-0">
+                    <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label as string}</p>
+                    <pre className="max-h-56 overflow-auto rounded-lg border bg-background p-3 text-[11px] leading-relaxed">{json(value)}</pre>
+                  </div>
+                ) : null,
+              )}
+            </div>
+          )}
+
+          {log.metadata && Object.keys(log.metadata).length > 0 && (
+            <details className="group">
+              <summary className="cursor-pointer select-none text-xs font-medium text-muted-foreground hover:text-foreground">
+                Technical details
+              </summary>
+              <pre className="mt-2 max-h-56 overflow-auto rounded-lg border bg-background p-3 text-[11px] leading-relaxed">{json(log.metadata)}</pre>
+            </details>
+          )}
+        </div>
+      )}
+    </li>
   );
 }
 
 export default function AuditLogsPage() {
   const { tenant } = useTenant();
+  const { toast } = useToast();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(25);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [module, setModule] = useState<string>('all');
+  const [range, setRange] = useState<RangeKey>('30d');
+  const [changesOnly, setChangesOnly] = useState(true);
   const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchQuery(searchInput.trim()), 300);
     return () => window.clearTimeout(timer);
   }, [searchInput]);
 
+  // Recomputed per load so "last 24 hours" moves with the clock.
+  const filters = useCallback(() => {
+    const r = RANGES.find((x) => x.key === range);
+    return {
+      tenantId: tenant?.id,
+      search: searchQuery || undefined,
+      kind: changesOnly ? ('changes' as const) : ('all' as const),
+      from: r && r.ms ? new Date(Date.now() - r.ms).toISOString() : undefined,
+    };
+  }, [tenant?.id, searchQuery, changesOnly, range]);
+
   const load = useCallback(async () => {
     if (!tenant) return;
     setLoading(true);
+    setFailed(false);
     try {
-      const res = await auditLogsApi.findAll({
-        tenantId: tenant.id,
-        search: searchQuery || undefined,
-        module: module !== 'all' ? module : undefined,
-        page,
-        take: PAGE_SIZE,
-      });
+      const res = await auditLogsApi.findAll({ ...filters(), page, take: pageSize });
       if (Array.isArray(res)) {
         setLogs(res as AuditLog[]);
         setTotal(res.length);
@@ -235,10 +300,11 @@ export default function AuditLogsPage() {
     } catch {
       setLogs([]);
       setTotal(0);
+      setFailed(true);
     } finally {
       setLoading(false);
     }
-  }, [tenant, searchQuery, module, page]);
+  }, [tenant, filters, page, pageSize]);
 
   useEffect(() => {
     void load();
@@ -246,176 +312,175 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     setPage(0);
-  }, [searchQuery, module]);
+  }, [searchQuery, changesOnly, range, pageSize]);
 
-  function exportCsv() {
-    const header = 'timestamp,user,action,resource_type,resource_id,metadata';
-    const rows = logs.map((l) =>
-      [
-        l.created_at,
-        l.profiles?.email ?? 'system',
-        l.action,
-        l.resource_type ?? '',
-        l.resource_id ?? '',
-        JSON.stringify(l.metadata ?? {}),
-      ]
-        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
-        .join(','),
-    );
-    const csv = [header, ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `audit-${tenant?.slug}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const moduleCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
+  const groups = useMemo(() => {
+    const out: Array<{ day: string; items: AuditLog[] }> = [];
     for (const log of logs) {
-      const key = actionModule(log.action);
-      counts[key] = (counts[key] ?? 0) + 1;
+      const day = dayLabel(log.created_at);
+      const last = out[out.length - 1];
+      if (last?.day === day) last.items.push(log);
+      else out.push({ day, items: [log] });
     }
-    return counts;
+    return out;
   }, [logs]);
+
+  /** Exports every matching event (up to EXPORT_LIMIT), not just this page. */
+  async function exportCsv() {
+    if (!tenant) return;
+    setExporting(true);
+    try {
+      const all: AuditLog[] = [];
+      for (let p = 0; all.length < Math.min(total, EXPORT_LIMIT); p++) {
+        const res = await auditLogsApi.findAll({ ...filters(), page: p, take: 100 });
+        const items = (Array.isArray(res) ? res : res.items) as AuditLog[];
+        if (!items?.length) break;
+        all.push(...items);
+      }
+      const header = 'timestamp,user,email,event,action,status,resource_type,resource_id,ip_address';
+      const rows = all.slice(0, EXPORT_LIMIT).map((l) =>
+        [
+          l.created_at,
+          l.profiles?.full_name ?? '',
+          l.profiles?.email ?? 'system',
+          describe(l).title,
+          l.action,
+          statusOf(l) ?? '',
+          l.resource_type ?? '',
+          l.resource_id ?? '',
+          l.ip_address ?? '',
+        ]
+          .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+          .join(','),
+      );
+      const blob = new Blob([[header, ...rows].join('\n')], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-${tenant.slug ?? 'log'}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({
+        title: `Exported ${rows.length.toLocaleString()} events`,
+        description: total > EXPORT_LIMIT ? `Only the newest ${EXPORT_LIMIT.toLocaleString()} are included. Narrow the dates to export older ones.` : undefined,
+      });
+    } catch (err) {
+      toast({ title: 'Export failed', description: err instanceof Error ? err.message : undefined, variant: 'destructive' });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <PermissionGate require={P.audit.view} fallback={true}>
-      <div className="w-full space-y-6 sm:space-y-8 pb-8 sm:pb-10 min-w-0">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary">
-              <ClipboardList className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold font-display">Audit Logs</h1>
-              <p className="text-muted-foreground text-sm mt-0.5">
-                Immutable activity trail for {tenant?.name ?? 'your organization'}.
-              </p>
-            </div>
+      <div className="w-full min-w-0 space-y-6 pb-10">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="font-display text-2xl font-semibold sm:text-3xl">Audit log</h1>
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+              Everything people and systems changed in {tenant?.name ?? 'your organization'}. Entries can’t be edited or removed.
+            </p>
           </div>
-          <Button variant="outline" onClick={exportCsv} disabled={!logs.length} className="gap-2 shrink-0">
-            <Download className="h-4 w-4" />
-            Export CSV
+          <Button variant="outline" onClick={() => void exportCsv()} disabled={!total || exporting} className="gap-1.5 self-start sm:self-auto">
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </Button>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-3">
-          <Card className="border-border/50">
-            <CardContent className="p-4 flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Shield className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold tabular-nums">{total.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">Total events</p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <p className="text-2xl font-bold tabular-nums">{logs.length}</p>
-              <p className="text-xs text-muted-foreground">On this page</p>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50">
-            <CardContent className="p-4">
-              <p className="text-2xl font-bold tabular-nums">{Object.keys(moduleCounts).length}</p>
-              <p className="text-xs text-muted-foreground">Modules represented</p>
-            </CardContent>
-          </Card>
+        <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 sm:p-4 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search by action, area, name or email"
+              aria-label="Search the audit log"
+              className="h-10 w-full rounded-lg border bg-background pl-9 pr-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex rounded-lg border bg-background p-0.5" role="group" aria-label="Time range">
+              {RANGES.map((r) => (
+                <button
+                  key={r.key}
+                  type="button"
+                  onClick={() => setRange(r.key)}
+                  aria-pressed={range === r.key}
+                  className={cn(
+                    'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+                    range === r.key ? 'bg-foreground text-background' : 'text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+              <Switch checked={changesOnly} onCheckedChange={setChangesOnly} aria-label="Changes only" />
+              Changes only
+            </label>
+          </div>
         </div>
 
-        <Card className="border-border/50">
-          <CardContent className="p-4 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                className="pl-9"
-                placeholder="Search actions, resources, users…"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Select value={module} onValueChange={setModule}>
-                <SelectTrigger className="w-[160px]">
-                  <SelectValue placeholder="All modules" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MODULES.map((m) => (
-                    <SelectItem key={m} value={m} className="capitalize">
-                      {m === 'all' ? 'All modules' : m.replace('_', ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="space-y-3">
+        <div className="overflow-hidden rounded-2xl border bg-card">
           {loading ? (
-            Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-24 rounded-xl border border-border/50 bg-muted/30 animate-pulse" />
-            ))
+            <div className="divide-y">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-5 py-4">
+                  <div className="h-3 w-10 animate-pulse rounded bg-muted" />
+                  <div className="h-3 flex-1 animate-pulse rounded bg-muted" />
+                  <div className="hidden h-3 w-32 animate-pulse rounded bg-muted sm:block" />
+                </div>
+              ))}
+            </div>
+          ) : failed ? (
+            <div className="px-6 py-16 text-center">
+              <p className="font-medium">Couldn’t load the audit log</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={() => void load()}>Try again</Button>
+            </div>
           ) : logs.length === 0 ? (
-            <Card className="border-dashed border-border/60">
-              <CardContent className="py-16 text-center">
-                <ClipboardList className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="font-medium">No audit events found</p>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Try a different search or module filter.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="px-6 py-16 text-center">
+              <p className="font-medium">No events match</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {changesOnly ? 'Try a longer time range, or turn off “Changes only” to include page views.' : 'Try a longer time range or a different search.'}
+              </p>
+            </div>
           ) : (
-            logs.map((log) => (
-              <AuditLogCard
-                key={log.id}
-                log={log}
-                expanded={expandedId === log.id}
-                onToggle={() =>
-                  setExpandedId((prev) => (prev === log.id ? null : log.id))
-                }
-              />
-            ))
+            <>
+              <div className="hidden grid-cols-[64px_minmax(0,1fr)_200px_16px] gap-3 border-b px-5 py-2.5 text-[11px] font-medium uppercase tracking-wide text-muted-foreground sm:grid">
+                <span>Time</span>
+                <span>Event</span>
+                <span>By</span>
+                <span />
+              </div>
+              {groups.map((g) => (
+                <section key={g.day}>
+                  <h2 className="border-b bg-muted/50 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:px-5">
+                    {g.day}
+                  </h2>
+                  <ul className="divide-y divide-border/60">
+                    {g.items.map((log) => (
+                      <Row key={log.id} log={log} open={openId === log.id} onToggle={() => setOpenId((p) => (p === log.id ? null : log.id))} />
+                    ))}
+                  </ul>
+                </section>
+              ))}
+            </>
           )}
         </div>
 
-        {totalPages > 1 && (
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm text-muted-foreground">
-            <p>
-              {total.toLocaleString()} events · Page {page + 1} of {totalPages}
-            </p>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-                disabled={page === 0}
-                className="gap-1"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                disabled={page >= totalPages - 1}
-                className="gap-1"
-              >
-                Next
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
+        <DataPagination
+          page={page}
+          pageSize={pageSize}
+          total={total}
+          noun="events"
+          onPageChange={(p) => {
+            setPage(p);
+            setOpenId(null);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onPageSizeChange={setPageSize}
+        />
       </div>
     </PermissionGate>
   );

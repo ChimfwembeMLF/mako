@@ -63,13 +63,21 @@ export class GmailConnectService {
     if (!user) throw new BadRequestException('User not found');
 
     const tokens = await this.userService.getGoogleOAuthTokens(userId);
+    // A token from "Sign in with Google" has no refresh token, so once it expires
+    // nothing can be sent until Gmail is connected here.
+    const usable =
+      !!tokens?.accessToken &&
+      (!!tokens.refreshToken ||
+        !tokens.expiresAt ||
+        tokens.expiresAt.getTime() > Date.now() + 60_000);
     return {
-      connected: !!tokens,
+      connected: usable,
+      needsReconnect: !!tokens && !usable,
       email: user.email,
-      expiresAt: tokens?.expiresAt?.toISOString() ?? null,
+      expiresAt: tokens?.refreshToken ? null : (tokens?.expiresAt?.toISOString() ?? null),
       smtpConfigured,
-      inboxAutoReply: !!tokens,
-      inboxScopeNote: tokens
+      inboxAutoReply: usable,
+      inboxScopeNote: usable
         ? 'Reconnect Gmail if inbox sync or draft replies fail (compose/read permissions may be missing on older connections).'
         : null,
     };

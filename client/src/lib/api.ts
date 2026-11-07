@@ -1049,7 +1049,7 @@ export const userPermissionsApi = {
 
 export const tenantMembersApi = {
     invite: (data: { email: string; tenantId: string; roleId: string }) =>
-        request<any>('/api/v1/tenant-members/invite', { method: 'POST', body: JSON.stringify(data) }),
+        request<{ message: string; pending: true; emailSent: boolean; emailVia: 'gmail' | 'smtp' | null; acceptLink?: string; emailProblem?: string }>('/api/v1/tenant-members/invite', { method: 'POST', body: JSON.stringify(data) }),
     findAll: (tenantId?: string, detailed = false) => {
         const params = new URLSearchParams();
         if (tenantId) params.set('tenantId', tenantId);
@@ -1939,6 +1939,7 @@ export const mailApi = {
     gmailStatus: () =>
         request<{
             connected: boolean;
+            needsReconnect?: boolean;
             email?: string | null;
             expiresAt?: string | null;
             smtpConfigured?: boolean;
@@ -2402,9 +2403,13 @@ export const auditLogsApi = {
         module?: string;
         page?: number;
         take?: number;
+        kind?: 'all' | 'changes';
+        from?: string;
     }) => {
         const params = new URLSearchParams();
         if (opts?.tenantId) params.set('tenantId', opts.tenantId);
+        if (opts?.kind) params.set('kind', opts.kind);
+        if (opts?.from) params.set('from', opts.from);
         if (opts?.search) params.set('search', opts.search);
         if (opts?.module) params.set('module', opts.module);
         if (opts?.page != null) params.set('page', String(opts.page));

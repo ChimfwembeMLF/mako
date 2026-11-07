@@ -9,9 +9,16 @@ import { AutoReplyRulesPanel } from '@/components/replies/AutoReplyRulesPanel';
 import { PermissionGate } from '@/components/PermissionGate';
 import { P } from '@/lib/permissions';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, Link2, Unlink, Loader2, Bot, FileText, Inbox } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { AlertTriangle, Check, Loader2, Mail, MoreHorizontal, RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { EmailDraftsList } from '@/components/mail/EmailDraftsList';
 import { EmailInboxList } from '@/components/mail/EmailInboxList';
 
@@ -19,6 +26,8 @@ const EMAIL_PLATFORM_OPTIONS = ['email'];
 
 interface GmailStatus {
   connected: boolean;
+  /** Gmail was linked but the access has expired and cannot renew itself. */
+  needsReconnect?: boolean;
   email?: string | null;
   expiresAt?: string | null;
   smtpConfigured?: boolean;
@@ -38,6 +47,9 @@ export default function MailDashboardPage() {
   const [syncing, setSyncing] = useState(false);
   const [inboxRefreshKey, setInboxRefreshKey] = useState(0);
   const [draftRefreshKey, setDraftRefreshKey] = useState(0);
+  const [tab, setTab] = useState('inbox');
+  const [newCount, setNewCount] = useState<number | null>(null);
+  const [draftCount, setDraftCount] = useState<number | null>(null);
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
@@ -134,154 +146,192 @@ export default function MailDashboardPage() {
     }
   }
 
+  const connected = Boolean(status?.connected);
+
   return (
     <PermissionGate require={P.leads.view} fallback={true}>
       <PageContainer>
-        <div className="flex items-start gap-3 mb-6">
-          <Mail className="h-6 w-6 text-primary shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-semibold">Email</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Connect Gmail to send lead emails. Inbox rules create draft replies you review before sending.
-            </p>
-          </div>
+        <div className="mb-6 flex flex-col gap-1">
+          <h1 className="font-display text-2xl font-semibold sm:text-3xl">Email</h1>
+          <p className="max-w-2xl text-sm text-muted-foreground">
+            Customer emails from your Gmail, with replies drafted for you to check and send.
+          </p>
         </div>
 
-        <Tabs defaultValue="inbox" className="min-w-0">
-          <TabsList className="h-auto flex-wrap justify-start gap-1 p-1">
-            <TabsTrigger value="inbox" className="text-xs sm:text-sm">
-              <Inbox className="h-3.5 w-3.5 mr-1.5" />
-              Inbox
-            </TabsTrigger>
-            <TabsTrigger value="gmail" className="text-xs sm:text-sm">
-              <Link2 className="h-3.5 w-3.5 mr-1.5" />
-              Gmail
-            </TabsTrigger>
-            <TabsTrigger value="drafts" className="text-xs sm:text-sm">
-              <FileText className="h-3.5 w-3.5 mr-1.5" />
-              Draft replies
-            </TabsTrigger>
-            <TabsTrigger value="rules" className="text-xs sm:text-sm">
-              <Bot className="h-3.5 w-3.5 mr-1.5" />
-              Reply rules
-            </TabsTrigger>
+        <ConnectionStrip
+          loading={loading}
+          status={status}
+          connecting={connecting}
+          disconnecting={disconnecting}
+          syncing={syncing}
+          canSync={Boolean(tenant?.id)}
+          onConnect={() => void connectGmail()}
+          onDisconnect={() => void disconnectGmail()}
+          onSync={() => void syncInboxNow()}
+        />
+
+        <Tabs value={tab} onValueChange={setTab} className="mt-6 min-w-0">
+          <TabsList className="h-auto w-full justify-start gap-6 overflow-x-auto rounded-none border-0 border-b border-border bg-transparent p-0">
+            {[
+              { value: 'inbox', label: 'Inbox', count: newCount, hint: 'new' },
+              { value: 'drafts', label: 'Draft replies', count: draftCount, hint: 'to review' },
+              { value: 'rules', label: 'Reply rules', count: null, hint: '' },
+            ].map((t) => (
+              <TabsTrigger
+                key={t.value}
+                value={t.value}
+                className="relative -mb-px h-10 rounded-none border-b-2 border-transparent bg-transparent px-0 text-sm font-medium text-muted-foreground shadow-none transition-colors hover:text-foreground data-[state=active]:border-foreground data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              >
+                {t.label}
+                {t.count ? (
+                  <span
+                    className="ml-2 rounded-full bg-primary px-1.5 py-px text-[10px] font-semibold tabular-nums text-primary-foreground"
+                    aria-label={`${t.count} ${t.hint}`}
+                  >
+                    {t.count}
+                  </span>
+                ) : null}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          <TabsContent value="inbox" className="mt-4">
-            <EmailInboxList refreshKey={inboxRefreshKey} />
+          <TabsContent value="inbox" className="mt-5">
+            <EmailInboxList
+              refreshKey={inboxRefreshKey}
+              onCount={setNewCount}
+              connected={connected}
+              onConnect={() => void connectGmail()}
+            />
           </TabsContent>
 
-          <TabsContent value="gmail" className="mt-4 space-y-4">
-            <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
-              {loading ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading connection status…
-                </div>
-              ) : (
-                <>
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-sm">Gmail connection</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {status?.connected
-                          ? 'Outbound mail and inbox rules create Gmail draft replies for your review.'
-                          : 'Connect Gmail to send emails and draft inbox replies (requires read + compose permissions).'}
-                      </p>
-                    </div>
-                    <Badge variant={status?.connected ? 'default' : 'secondary'}>
-                      {status?.connected ? 'Connected' : 'Not connected'}
-                    </Badge>
-                  </div>
-
-                  {status?.email && (
-                    <p className="text-sm">
-                      Account: <span className="font-medium">{status.email}</span>
-                    </p>
-                  )}
-
-                  {status?.expiresAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Token expires: {new Date(status.expiresAt).toLocaleString()}
-                    </p>
-                  )}
-
-                  {status?.smtpConfigured && (
-                    <p className="text-xs text-muted-foreground">
-                      SMTP fallback is configured on the server.
-                    </p>
-                  )}
-
-                  {status?.inboxScopeNote && (
-                    <p className="text-xs text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-md p-2">
-                      {status.inboxScopeNote}
-                    </p>
-                  )}
-
-                  <div className="flex flex-col sm:flex-row gap-2 pt-2">
-                    {!status?.connected ? (
-                      <Button onClick={() => void connectGmail()} disabled={connecting} className="gap-2">
-                        {connecting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Link2 className="h-4 w-4" />
-                        )}
-                        Connect Gmail
-                      </Button>
-                    ) : (
-                      <>
-                        <Button
-                          variant="outline"
-                          onClick={() => void syncInboxNow()}
-                          disabled={syncing || !tenant?.id}
-                          className="gap-2"
-                        >
-                          {syncing ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Bot className="h-4 w-4" />
-                          )}
-                          Check inbox now
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => void disconnectGmail()}
-                          disabled={disconnecting}
-                          className="gap-2"
-                        >
-                          {disconnecting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Unlink className="h-4 w-4" />
-                          )}
-                          Disconnect Gmail
-                        </Button>
-                      </>
-                    )}
-                  </div>
-
-                  <p className="text-xs text-muted-foreground border-t pt-4">
-                    If you signed up with Google, Gmail may already be connected from login.
-                    Email/password users can connect here without changing their login method.
-                  </p>
-                </>
-              )}
-            </div>
+          <TabsContent value="drafts" className="mt-5">
+            <EmailDraftsList refreshKey={draftRefreshKey} onCount={setDraftCount} onOpenRules={() => setTab('rules')} />
           </TabsContent>
 
-          <TabsContent value="drafts" className="mt-4">
-            <EmailDraftsList refreshKey={draftRefreshKey} />
-          </TabsContent>
-
-          <TabsContent value="rules" className="mt-4">
+          <TabsContent value="rules" className="mt-5">
             <AutoReplyRulesPanel
               platformFilter="email"
               platformOptions={EMAIL_PLATFORM_OPTIONS}
               defaultPlatform="email"
-              description="Rules match inbound Gmail messages by keyword. New unread emails get draft replies in Gmail every few minutes — nothing is sent until you approve."
+              description="When a new email matches a rule, Mako writes a reply and saves it as a Gmail draft. Nothing is sent until you send it."
             />
           </TabsContent>
         </Tabs>
       </PageContainer>
     </PermissionGate>
+  );
+}
+
+function ConnectionStrip({
+  loading,
+  status,
+  connecting,
+  disconnecting,
+  syncing,
+  canSync,
+  onConnect,
+  onDisconnect,
+  onSync,
+}: {
+  loading: boolean;
+  status: GmailStatus | null;
+  connecting: boolean;
+  disconnecting: boolean;
+  syncing: boolean;
+  canSync: boolean;
+  onConnect: () => void;
+  onDisconnect: () => void;
+  onSync: () => void;
+}) {
+  if (loading) {
+    return <div className="h-[72px] animate-pulse rounded-xl border bg-card/60" aria-label="Loading Gmail connection" />;
+  }
+
+  if (status?.connected) {
+    return (
+      <div className="flex flex-col gap-3 rounded-xl border bg-card px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+            <Check className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">
+              Gmail connected<span className="font-normal text-muted-foreground"> · {status.email}</span>
+            </p>
+            <p className="text-xs text-muted-foreground">Lead emails and team invitations send from this address.</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={onSync} disabled={syncing || !canSync}>
+            <RefreshCw className={cn('h-3.5 w-3.5', syncing && 'animate-spin')} />
+            {syncing ? 'Checking…' : 'Check inbox now'}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Gmail connection options">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onClick={onConnect} disabled={connecting} className="flex-col items-start gap-0.5">
+                <span>Reconnect Gmail</span>
+                <span className="text-[11px] text-muted-foreground">If inbox sync or drafts stop working</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={onDisconnect} disabled={disconnecting} className="text-destructive focus:text-destructive">
+                Disconnect Gmail
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    );
+  }
+
+  if (status?.needsReconnect) {
+    return (
+      <div className="flex flex-col gap-3 rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3.5 dark:border-amber-500/30 dark:bg-amber-500/10 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300">
+            <AlertTriangle className="h-4 w-4" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-amber-950 dark:text-amber-100">Gmail access has expired</p>
+            <p className="text-xs text-amber-900/80 dark:text-amber-200/80">
+              Lead emails and team invitations can’t send from {status.email ?? 'your address'} until you reconnect. It only takes a moment and won’t expire again.
+            </p>
+          </div>
+        </div>
+        <Button size="sm" className="h-9 shrink-0" onClick={onConnect} disabled={connecting}>
+          {connecting && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+          Reconnect Gmail
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-5 rounded-xl border bg-card p-5 sm:p-6 md:grid-cols-[1fr_auto] md:items-center">
+      <div className="flex gap-4">
+        <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary sm:flex">
+          <Mail className="h-5 w-5" />
+        </span>
+        <div>
+          <p className="font-display text-base font-semibold">Connect your Gmail</p>
+          <ul className="mt-2 grid gap-1.5 text-sm text-muted-foreground sm:grid-cols-3 sm:gap-4">
+            <li className="flex gap-2"><span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-primary" />Send lead emails from your own address</li>
+            <li className="flex gap-2"><span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-primary" />Email team invitations</li>
+            <li className="flex gap-2"><span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-primary" />Get draft replies to customer emails</li>
+          </ul>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Mako only drafts replies; nothing is sent from your inbox without you. Your sign-in method doesn’t change.
+          </p>
+        </div>
+      </div>
+      <Button onClick={onConnect} disabled={connecting} className="shrink-0">
+        {connecting && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+        Connect Gmail
+      </Button>
+    </div>
   );
 }

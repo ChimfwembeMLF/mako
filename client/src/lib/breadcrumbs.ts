@@ -11,7 +11,7 @@ const ADMIN: BreadcrumbItem = { label: 'Admin', href: '/admin/roles' };
 const CHATBOT: BreadcrumbItem = { label: 'Chatbot', href: '/chatbot' };
 const CONTENT: BreadcrumbItem = { label: 'Posts', href: '/content' };
 const TEAM: BreadcrumbItem = { label: 'Team', href: '/team' };
-const TEMPLATES: BreadcrumbItem = { label: 'Post Templates', href: '/templates' };
+const TEMPLATES: BreadcrumbItem = { label: 'Templates', href: '/templates' };
 const WHATSAPP: BreadcrumbItem = { label: 'WhatsApp', href: '/whatsapp' };
 
 /** Paths where breadcrumbs are hidden (marketing / full-bleed landing). */

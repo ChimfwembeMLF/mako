@@ -41,14 +41,18 @@ export class AuditLogsController {
     @Query('module') module?: string,
     @Query('page') page?: string,
     @Query('take') take?: string,
+    @Query('kind') kind?: string,
+    @Query('from') from?: string,
   ) {
     if (tenantId) {
       return this.service.findFiltered({
         tenantId,
         search,
         module,
-        page: page ? parseInt(page, 10) : 0,
-        take: take ? parseInt(take, 10) : 25,
+        page: page ? parseInt(page, 10) || 0 : 0,
+        take: take ? parseInt(take, 10) || 25 : 25,
+        kind: kind === 'changes' ? 'changes' : 'all',
+        from: from ? new Date(from) : undefined,
       });
     }
     return this.service.findAll();
