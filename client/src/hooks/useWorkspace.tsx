@@ -14,7 +14,7 @@ import { useTenant } from '@/hooks/useTenant';
 
 const STORAGE_KEY = 'active_workspace';
 
-type WorkspaceRow = { id: string; name: string };
+type WorkspaceRow = { id: string; name: string; logoUrl?: string | null };
 
 type WorkspaceContextValue = {
   workspaces: WorkspaceRow[];

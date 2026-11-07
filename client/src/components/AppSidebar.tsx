@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import {
   Brain, Pen, CalendarClock, Zap, Settings, Rocket, Link2, Image, LayoutTemplate,
   Megaphone, GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity, ChevronsUpDown,
-  Building2, CreditCard, Download, ListOrdered, Layers, Target, Mail, MessageCircle, LogOut,
+  Building2, CreditCard, Download, ListOrdered, Target, Mail, MessageCircle, LogOut,
   Inbox, UserPlus, LayoutDashboard, LineChart, Workflow,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { P, type PermissionKey } from "@/lib/permissions";
 import { useWorkspace } from "@/hooks/useWorkspace";
+import { WorkspaceLogo } from "@/components/WorkspaceLogo";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -134,8 +135,8 @@ export function AppSidebar() {
     item.superAdminOnly ? isSuperAdmin : !item.perms || permsLoading || isSuperAdmin || canAny(...item.perms);
   const { signOut } = useAuth();
   const { workspaces, activeWorkspace, setActiveWorkspace, loading: workspacesLoading } = useWorkspace();
-  const activeWorkspaceName =
-    workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name ?? "Workspace";
+  const activeWorkspaceRow = workspaces.find((w) => w.id === activeWorkspace);
+  const activeWorkspaceName = activeWorkspaceRow?.name ?? "Workspace";
 
   return (
     <Sidebar collapsible="icon" className="min-h-0" id="tour-dashboard-nav">
@@ -149,9 +150,12 @@ export function AppSidebar() {
               )}
               title={collapsed ? activeWorkspaceName : undefined}
             >
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary shadow-sm">
-                <Rocket className="h-4 w-4 text-primary-foreground" />
-              </div>
+              <WorkspaceLogo
+                name={activeWorkspaceName}
+                logoUrl={activeWorkspaceRow?.logoUrl}
+                className="h-8 w-8 rounded-md shadow-sm"
+                fallback={<Rocket className="h-4 w-4" />}
+              />
               {!collapsed && (
                 <>
                   <div className="flex-1 text-left min-w-0">
@@ -174,13 +178,18 @@ export function AppSidebar() {
                 <Link to="/workspaces">Create a workspace</Link>
               </DropdownMenuItem>
             ) : (
-              workspaces.map((ws: { id: string; name: string }) => (
+              workspaces.map((ws) => (
                 <DropdownMenuItem
                   key={ws.id}
                   onClick={() => setActiveWorkspace(ws.id)}
                   className={cn("text-xs", ws.id === activeWorkspace && "font-semibold")}
                 >
-                  <Layers className="h-3.5 w-3.5 mr-2 shrink-0" />
+                  <WorkspaceLogo
+                    name={ws.name}
+                    logoUrl={ws.logoUrl}
+                    className="mr-2 h-5 w-5 rounded text-[9px]"
+                    fallbackClassName="bg-muted text-muted-foreground"
+                  />
                   <span className="truncate">{ws.name}</span>
                 </DropdownMenuItem>
               ))

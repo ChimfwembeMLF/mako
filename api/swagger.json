@@ -2040,6 +2040,118 @@
         ]
       }
     },
+    "/api/v1/tenant-members/invitations/{id}/preview": {
+      "get": {
+        "operationId": "TenantMembersController_previewInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/invitations/{id}/accept": {
+      "post": {
+        "operationId": "TenantMembersController_acceptInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
+    "/api/v1/tenant-members/invitations/{id}/decline": {
+      "post": {
+        "operationId": "TenantMembersController_declineInvitation",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InvitationTokenDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Tenant Members"
+        ]
+      }
+    },
     "/api/v1/tenant-members": {
       "post": {
         "operationId": "TenantMembersController_create",
@@ -7624,6 +7736,14 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -7706,6 +7826,14 @@
         "parameters": [
           {
             "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
             "required": true,
             "in": "query",
             "schema": {
@@ -10695,6 +10823,10 @@
         "properties": {}
       },
       "InviteMemberDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "InvitationTokenDto": {
         "type": "object",
         "properties": {}
       },

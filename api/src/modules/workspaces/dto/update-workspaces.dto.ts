@@ -13,7 +13,8 @@ export class WorkspacesUpdateDto {
   @IsString()
   slug?: string;
 
+  /** Send null to remove the logo. */
   @IsOptional()
   @IsString()
-  logoUrl?: string;
+  logoUrl?: string | null;
 }

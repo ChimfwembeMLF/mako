@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState, useRef } from 'react';
 import {
   Building2,
   Check,
-  ImageIcon,
+  ImagePlus,
   Layers,
   Loader2,
   Pencil,
@@ -31,13 +31,16 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { mediaApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { WorkspaceLogo } from '@/components/WorkspaceLogo';
 
 type Workspace = {
   id: string;
   name: string;
   slug: string;
-  logoUrl?: string;
+  logoUrl?: string | null;
 };
+
+const LOGO_MAX_BYTES = 5 * 1024 * 1024;
 
 function slugify(value: string): string {
   return value
@@ -45,12 +48,6 @@ function slugify(value: string): string {
     .trim()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
-}
-
-function workspaceInitials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return (parts[0]?.slice(0, 2) ?? 'WS').toUpperCase();
 }
 
 export default function WorkspacesPage() {
@@ -70,6 +67,7 @@ export default function WorkspacesPage() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Workspace | null>(null);
   const [showForm, setShowForm] = useState(false);
+  const [showLogoLink, setShowLogoLink] = useState(false);
 
   const fetchWorkspaces = useCallback(async () => {
     if (!tenant) return;
@@ -96,6 +94,7 @@ export default function WorkspacesPage() {
     setSlugTouched(false);
     setEditingId(null);
     setShowForm(false);
+    setShowLogoLink(false);
   }
 
   function startCreate() {
@@ -129,7 +128,7 @@ export default function WorkspacesPage() {
         await workspacesApi.update(editingId, {
           name: name.trim(),
           slug: slug.trim(),
-          logoUrl: logoUrl.trim() || undefined,
+          logoUrl: logoUrl.trim() || null,
         });
         toast({ title: 'Workspace updated' });
       } else {
@@ -176,15 +175,26 @@ export default function WorkspacesPage() {
   }
 
   async function handleLogoFile(file?: File) {
-    if (!tenant) return;
-    const scopedWorkspaceId = activeWorkspace ?? undefined;
-    if (!file) return;
+    if (!tenant || !file) return;
+    if (!file.type.startsWith('image/')) {
+      toast({ title: 'Choose an image', description: 'Use a PNG, JPG, SVG or WebP file.', variant: 'destructive' });
+      return;
+    }
+    if (file.size > LOGO_MAX_BYTES) {
+      toast({ title: 'Image too large', description: 'Logos can be up to 5 MB.', variant: 'destructive' });
+      return;
+    }
     setUploadingLogo(true);
     try {
-      const asset = await mediaApi.upload(file, tenant.id, undefined, scopedWorkspaceId);
-      const url = String((asset as any).mediaUrl);
+      // Keep the file in the media library of the workspace being edited.
+      const asset = (await mediaApi.upload(file, tenant.id, undefined, editingId ?? activeWorkspace ?? undefined)) as {
+        mediaUrl?: string;
+        media_url?: string;
+      };
+      const url = asset.mediaUrl ?? asset.media_url;
+      if (!url) throw new Error('The upload did not return a link.');
       setLogoUrl(url);
-      toast({ title: 'Logo uploaded' });
+      toast({ title: 'Logo uploaded', description: editingId ? 'Save changes to keep it.' : undefined });
     } catch (err: unknown) {
       toast({ title: 'Upload failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
@@ -254,27 +264,12 @@ export default function WorkspacesPage() {
                 >
                   <CardContent className="p-4">
                     <div className="flex items-start gap-4">
-                      <div
-                        className={cn(
-                          'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-sm font-semibold overflow-hidden',
-                          isActive
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground',
-                        )}
-                      >
-                        {ws.logoUrl ? (
-                          <img
-                            src={ws.logoUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : (
-                          workspaceInitials(ws.name)
-                        )}
-                      </div>
+                      <WorkspaceLogo
+                        name={ws.name}
+                        logoUrl={ws.logoUrl}
+                        className="h-12 w-12 rounded-xl text-sm"
+                        fallbackClassName={isActive ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}
+                      />
 
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
@@ -389,29 +384,85 @@ export default function WorkspacesPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="ws-logo">Logo URL</Label>
-                    <div className="relative">
-                      <ImageIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Label>Logo</Label>
+                    <div className="flex items-center gap-4">
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          void handleLogoFile(e.dataTransfer.files?.[0]);
+                        }}
+                        disabled={uploadingLogo}
+                        className="group relative rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        aria-label={logoUrl.trim() ? 'Replace logo' : 'Upload logo'}
+                      >
+                        {logoUrl.trim() ? (
+                          <WorkspaceLogo name={name || 'Workspace'} logoUrl={logoUrl} className="h-16 w-16 rounded-xl text-base" />
+                        ) : (
+                          <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-dashed border-border bg-muted/40 text-muted-foreground transition-colors group-hover:border-primary group-hover:text-primary">
+                            <ImagePlus className="h-5 w-5" />
+                          </div>
+                        )}
+                        {uploadingLogo && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/70">
+                            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                          </div>
+                        )}
+                      </button>
+                      <div className="min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            onClick={() => fileRef.current?.click()}
+                            disabled={uploadingLogo}
+                          >
+                            {uploadingLogo ? 'Uploading…' : logoUrl.trim() ? 'Replace' : 'Upload image'}
+                          </Button>
+                          {logoUrl.trim() && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 text-xs text-muted-foreground"
+                              onClick={() => setLogoUrl('')}
+                              disabled={uploadingLogo}
+                            >
+                              Remove
+                            </Button>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">PNG, JPG, SVG or WebP, up to 5 MB. A square image works best.</p>
+                      </div>
+                    </div>
+                    <input
+                      ref={fileRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => void handleLogoFile(e.target.files?.[0])}
+                    />
+                    {showLogoLink ? (
                       <Input
                         id="ws-logo"
                         value={logoUrl}
                         onChange={(e) => setLogoUrl(e.target.value)}
                         placeholder="https://…"
-                        className="pl-9"
+                        className="h-8 text-xs"
+                        aria-label="Logo link"
                       />
-                    </div>
-                    {logoUrl.trim() && (
-                      <div className="flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2">
-                        <img
-                          src={logoUrl.trim()}
-                          alt="Logo preview"
-                          className="h-8 w-8 rounded-md object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.visibility = 'hidden';
-                          }}
-                        />
-                        <span className="text-xs text-muted-foreground">Logo preview</span>
-                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                        onClick={() => setShowLogoLink(true)}
+                      >
+                        Or paste a link to an image
+                      </button>
                     )}
                   </div>
 
