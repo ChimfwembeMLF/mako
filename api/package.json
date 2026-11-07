@@ -44,7 +44,6 @@
     "migrations:show": "yarn migrations:show:dev",
     "migrations:show:dev": "NODE_ENV=development typeorm-ts-node-commonjs migration:show -d database/data-source.ts",
     "migrations:show:prod": "NODE_ENV=production typeorm-ts-node-commonjs migration:show -d database/data-source.ts",
-    "storage:migrate": "ts-node -r ./scripts/polyfill-crypto.ts -r tsconfig-paths/register scripts/migrate-uploads-to-supabase.ts",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "lint:ci": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "test": "jest",
@@ -77,7 +76,6 @@
     "@nestjs/swagger": "^11.2.6",
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.0",
-    "@supabase/supabase-js": "^2.108.1",
     "@types/lodash": "^4.14.191",
     "@types/passport-facebook": "^2.1.11",
     "@types/passport-google-oauth20": "^2.0.11",
@@ -121,8 +119,7 @@
     "rimraf": "^3.0.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.28",
-    "uuid": "^14.0.1",
-    "ws": "^8.21.0"
+    "uuid": "^14.0.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.16",
@@ -142,7 +139,6 @@
     "@types/passport-oauth2": "^1.8.0",
     "@types/supertest": "^2.0.11",
     "@types/uuid": "^10.0.0",
-    "@types/ws": "^8.18.1",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
     "eslint": "^8.0.1",

@@ -139,7 +139,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="min-h-0" id="tour-dashboard-nav">
-      <SidebarHeader className="shrink-0 p-3 border-b border-sidebar-border space-y-2">
+      <SidebarHeader className="h-[65px] shrink-0 justify-center px-3 py-0 border-b border-sidebar-border">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button

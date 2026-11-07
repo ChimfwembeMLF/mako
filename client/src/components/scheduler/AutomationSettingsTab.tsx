@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useWorkspaceAutomationConfig, type AutomationRun } from "../../hooks/api/useWorkspaceAutomationConfig";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { useTenant } from "@/hooks/useTenant";
-import { invokeEdgeFunction } from "@/lib/edgeFunctions";
+import { contentAiApi, queued } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -136,11 +136,7 @@ export function AutomationSettingsTab({ onGenerated, onReviewDrafts }: { onGener
     if (dirty) await handleSave();
     setIsGenerating(true);
     try {
-      const { data, error } = await invokeEdgeFunction("daily-content-workflow", {
-        body: { tenantId: tenant.id, workspaceId: activeWorkspace },
-      });
-      if (error) throw error;
-      const result = data as { generated?: number; errors?: string[] } | null;
+      const result = await queued(contentAiApi.dailyWorkflow(tenant.id, activeWorkspace));
       const generated = result?.generated ?? 0;
       if (generated > 0) {
         toast.success(`${generated} draft${generated === 1 ? "" : "s"} created. Review and approve them before they publish.`);

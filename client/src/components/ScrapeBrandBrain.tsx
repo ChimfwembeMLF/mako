@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { invokeEdgeFunction } from "@/lib/edgeFunctions";
+import { brandProfilesApi } from "@/lib/api";
 
 import { useTenant } from "@/hooks/useTenant";
 
@@ -19,14 +19,11 @@ export function ScrapeBrandBrain({ onResult }: ScrapeBrandBrainProps) {
   async function handleScrape() {
     setLoading(true);
     try {
-      const { data, error } = await invokeEdgeFunction("scrape-brand", {
-        body: { url, tenantId: tenant?.id },
-      });
-
-      if (error) throw error;
+      if (!tenant?.id) throw new Error("No business selected");
+      const data = await brandProfilesApi.scrapeWebsite({ url, tenantId: tenant.id });
       if (!data) throw new Error("No data returned");
 
-      onResult(data as Partial<Record<string, string>>);
+      onResult(data);
       toast({ title: "Brand info loaded!" });
     } catch (e: any) {
       toast({

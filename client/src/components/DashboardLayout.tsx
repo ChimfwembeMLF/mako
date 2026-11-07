@@ -39,7 +39,7 @@ export function DashboardLayout() {
     <SidebarProvider>
       <AppSidebar />
       <PageBreadcrumbProvider>
-        <div className="min-h-screen flex flex-col bg-background flex-1 w-full overflow-hidden" data-product-shell={shell}>
+        <div className="min-h-screen flex flex-col bg-background flex-1 w-full min-w-0 overflow-x-clip" data-product-shell={shell}>
           <AppNavbar />
           <BackendStatusBanner />
 

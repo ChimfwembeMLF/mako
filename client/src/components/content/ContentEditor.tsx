@@ -10,9 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { FormFieldAi } from '@/components/form/FormFieldAi';
-import { contentItemsApi, templatesApi } from '@/lib/api';
+import { contentAiApi, contentItemsApi, queued, templatesApi } from '@/lib/api';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { invokeEdgeFunction } from '@/lib/edgeFunctions';
 import { MediaUpload } from '@/components/MediaUpload';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
 import ImageEditor from '@/components/ImageEditor';
@@ -95,41 +94,39 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
     }
     setGenerating(true);
     try {
-      const { data, error } = await invokeEdgeFunction('generate-content', {
-        body: {
+      const result = await queued(
+        contentAiApi.generate({
           theme,
           draft: content.trim() || undefined,
-          workspace_id: workspaceId,
+          workspaceId,
           tenantId: tenant?.id,
           templateId: templateId || undefined,
-        },
-      });
-      if (!error && data) {
-        const result = data as { error?: string; content?: string; title?: string };
-        if (!result.error) {
-          if (result.content) setContent(plainToHtml(result.content));
-          if (result.title) setTitle(result.title);
-          
-          // Attach template media if any
-          if (templateId) {
-            const tmpl = templates.find(t => t.id === templateId);
-            if (tmpl?.mediaUrls?.length) {
-              const newMedia = tmpl.mediaUrls.map(url => ({
-                url,
-                type: url.match(/\.(mp4|webm|mov)/i) ? 'video' : 'image'
-              }));
-              // Only add media that isn't already attached
-              setPendingMedia(prev => {
-                const existingUrls = new Set(prev.map(p => p.url));
-                const added = newMedia.filter(m => !existingUrls.has(m.url));
-                return [...prev, ...added];
-              });
-            }
+          save: false,
+        }),
+      );
+      if (result) {
+        if (result.content) setContent(plainToHtml(result.content));
+        if (result.title) setTitle(result.title);
+        
+        // Attach template media if any
+        if (templateId) {
+          const tmpl = templates.find(t => t.id === templateId);
+          if (tmpl?.mediaUrls?.length) {
+            const newMedia = tmpl.mediaUrls.map(url => ({
+              url,
+              type: url.match(/\.(mp4|webm|mov)/i) ? 'video' : 'image'
+            }));
+            // Only add media that isn't already attached
+            setPendingMedia(prev => {
+              const existingUrls = new Set(prev.map(p => p.url));
+              const added = newMedia.filter(m => !existingUrls.has(m.url));
+              return [...prev, ...added];
+            });
           }
-          
-          toast({ title: 'Content generated' });
-          return;
         }
+        
+        toast({ title: 'Content generated' });
+        return;
       }
       if (theme.trim() && !content.trim()) {
         setContent(theme.trim());
@@ -202,12 +199,10 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   const handleGenerateImage = async () => {
     setGeneratingImage(true);
     try {
-      const { data, error } = await invokeEdgeFunction('generate-image', {
-        body: { prompt: imagePrompt, contentType: 'content', tenantId: tenant?.id },
-      });
-      if (error) throw error;
-      const result = data as { error?: string; media_url?: string; media_type?: string } | null;
-      if (result?.error) throw new Error(result.error);
+      if (!tenant?.id) throw new Error('No business selected');
+      const result = await queued(
+        contentAiApi.generateImage({ prompt: imagePrompt, contentType: 'content', tenantId: tenant.id }),
+      );
       if (result?.media_url) {
         setPendingMedia((prev) => [...prev, { url: result.media_url!, type: result.media_type || 'image' }]);
       }
@@ -226,12 +221,10 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   const handleGenerateSlideshow = async () => {
     setGeneratingSlideshow(true);
     try {
-      const { data, error } = await invokeEdgeFunction('generate-slideshow', {
-        body: { theme: theme || imagePrompt || 'brand showcase', contentType: 'content', slideCount: 4, tenantId: tenant?.id },
-      });
-      if (error) throw error;
-      const result = data as { error?: string; slides?: string[] } | null;
-      if (result?.error) throw new Error(result.error);
+      if (!tenant?.id) throw new Error('No business selected');
+      const result = await queued(
+        contentAiApi.generateSlideshow({ theme: theme || imagePrompt || 'brand showcase', slideCount: 4, tenantId: tenant.id }),
+      );
       setPendingSlides(result?.slides ?? []);
       toast({ title: 'Slideshow ready' });
     } catch (err: unknown) {

@@ -762,7 +762,6 @@ export const backofficeApi = {
                 nodeEnv: string;
                 apiPublicUrl: string;
                 clientUrl: string;
-                supabaseConfigured: boolean;
                 mistralConfigured: boolean;
                 metaConfigured: boolean;
                 linkedInConfigured: boolean;
@@ -1297,6 +1296,14 @@ export async function resolveQueued<T>(response: T & QueuedJobResponse): Promise
         return waitForQueueJob(response.queue, response.jobId);
     }
     return response;
+}
+
+/**
+ * Awaits an endpoint that answers either with its result or, when queues are on, with a
+ * job to wait for. Either way you get the result.
+ */
+export async function queued<T>(call: Promise<T>): Promise<T> {
+    return (await resolveQueued(await call as T & QueuedJobResponse)) as T;
 }
 
 // ==================== Content AI (Mistral) ====================

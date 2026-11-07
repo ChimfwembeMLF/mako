@@ -13,8 +13,7 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { API_BASE_URL, leadsApi, leadSourcesApi, whatsappContactsApi, whatsappApi } from "@/lib/api";
-import { invokeEdgeFunction } from "@/lib/edgeFunctions";
+import { API_BASE_URL, queued, leadsApi, leadSourcesApi, whatsappContactsApi, whatsappApi } from "@/lib/api";
 import BulkEmailSheet from "@/components/BulkEmailDialog";
 import EmailTemplates from "@/components/EmailTemplates";
 import { Switch } from "@/components/ui/switch";
@@ -405,24 +404,18 @@ const LeadAgent = () => {
     }
     setSendingEmail(true);
     try {
-      const res = await invokeEdgeFunction("send-lead-email", {
-        body: {
-          leadId: lead.id,
-          to: lead.email,
-          subject: emailSubject,
-          htmlBody: emailBody,
-        },
-      });
-      const result = res.data as { success?: boolean; error?: string } | null;
+      const result = await queued(
+        leadsApi.sendEmail({ leadId: lead.id, to: lead.email, subject: emailSubject, htmlBody: emailBody }),
+      );
       if (result?.success) {
         toast({ title: "Email sent!", description: `Email sent to ${lead.email}` });
         setEmailSubject("");
         setEmailBody("");
       } else {
-        toast({ title: "Email failed", description: result?.error || res.error?.message || "Unknown error", variant: "destructive" });
+        toast({ title: "Email failed", description: "The email was not sent.", variant: "destructive" });
       }
     } catch (e: any) {
-      toast({ title: "Error", description: e.message || "Failed to send email", variant: "destructive" });
+      toast({ title: "Email failed", description: e.message || "Failed to send email", variant: "destructive" });
     }
     setSendingEmail(false);
   };

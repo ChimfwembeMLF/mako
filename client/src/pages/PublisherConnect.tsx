@@ -67,7 +67,8 @@ const oauthPlatforms: OAuthPlatform[] = ["facebook", "linkedin", "instagram", "y
 const platforms: {
   id: PlatformId;
   name: string;
-  icon: typeof Facebook;
+  /** Lucide icons and the custom TikTok/Google marks; only className is passed. */
+  icon: React.ComponentType<{ className?: string }>;
   color: string;
   bgColor: string;
   description: string;
@@ -442,12 +443,14 @@ const PublisherConnect = () => {
         return;
       }
 
-      if (result.reason === "missing_scopes") {
+      // Strict null checks are off here, so read the reason with "in" rather than relying on narrowing.
+      const reason = "reason" in result ? result.reason : undefined;
+      if (reason === "missing_scopes") {
         toast({
           title: "WhatsApp permissions needed",
           description: "Redirecting to Meta to grant WhatsApp access…",
         });
-      } else if (result.reason === "no_facebook") {
+      } else if (reason === "no_facebook") {
         toast({
           title: "Sign in with Meta",
           description: "Connect WhatsApp via Meta — or connect Facebook first for a faster setup next time.",

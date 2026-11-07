@@ -60,8 +60,8 @@ export function renderPlatformPostMedia(
 
   if (images.length === 0) return null;
 
-  const imgClass = (extra?: string) =>
-    cn('w-full object-cover', extra);
+  const imgClass = (...extra: Array<string | false | null | undefined>) =>
+    cn('w-full object-cover', ...extra);
 
   if (platform === 'instagram' && images.length > 1) {
     return (

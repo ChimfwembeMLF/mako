@@ -23,8 +23,13 @@ export interface User {
   tenantId?: string;
   roles?: string[];
   permissions?: string[];
-  preferences?: Record<string, any>;
+  preferences?: UserPreferences;
 }
+
+/** Saved per-user settings, e.g. which guided tours have been completed. */
+export type UserPreferences = Record<string, unknown> & {
+  tours?: Record<string, { completed?: boolean }>;
+};
 
 export interface Session {
   accessToken: string;
@@ -37,7 +42,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (data: { email: string; password: string; firstName?: string; lastName?: string }) => Promise<void>;
-  completeOAuthLogin: (token: string) => Promise<void>;
+  completeOAuthLogin: (token: string, refreshToken?: string) => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -93,7 +98,7 @@ function normalizeUser(data: AuthUser | Record<string, unknown>): User {
     email: String(data.email ?? ""),
     firstName: data.firstName as string | undefined,
     lastName: data.lastName as string | undefined,
-    preferences: data.preferences as Record<string, any> | undefined,
+    preferences: data.preferences as UserPreferences | undefined,
     role: role && Object.values(UserRole).includes(role as UserRole)
       ? (role as UserRole)
       : undefined,
