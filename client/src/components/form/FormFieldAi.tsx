@@ -68,9 +68,9 @@ export function FormFieldAi({
         placeholder={resolvedPlaceholder}
         className={className}
         rows={rows}
-        onEnhance={() =>
-          enhanceField(fieldKey, value, onChange, fieldKey)
-        }
+        onEnhance={async () => {
+          await enhanceField(fieldKey, value, onChange, fieldKey);
+        }}
         enhancing={enhancingKey === fieldKey}
       />
 

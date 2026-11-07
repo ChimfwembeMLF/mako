@@ -63,7 +63,7 @@ export function PlatformPreviewPanel({
           })}
         </TabsList>
         {platforms.map((p) => {
-          const payload = displayPayloads[p] ?? { content: '', title };
+          const payload: PlatformPayload = displayPayloads[p] ?? { content: '', title };
           const payloadWithMedia = {
             ...payload,
             media:

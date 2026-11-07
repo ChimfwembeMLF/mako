@@ -1,4 +1,4 @@
-/** Supabase public URLs are used as-is everywhere. */
+/** Public media URLs are used as-is. */
 export function resolvePublicMediaUrl(
   url: string,
   _apiPublicBase?: string,
@@ -8,7 +8,7 @@ export function resolvePublicMediaUrl(
   return url;
 }
 
-/** Normalize stored media URLs — Supabase URLs kept as-is; legacy paths unchanged until migrated. */
+/** Normalize stored media URLs; absolute URLs and /uploads/ paths are kept as-is. */
 export function canonicalMediaUrl(url: string, _apiBase?: string): string {
   if (!url?.trim()) return url;
   if (/^https?:\/\//i.test(url)) return url;

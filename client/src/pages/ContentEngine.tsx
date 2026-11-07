@@ -15,8 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
-import { brandProfilesApi, contentItemsApi } from '@/lib/api';
-import { invokeEdgeFunction } from '@/lib/edgeFunctions';
+import { brandProfilesApi, contentAiApi, contentItemsApi, queued } from '@/lib/api';
 import { PLATFORMS, platformOf } from '@/lib/platforms';
 import { ContentItem } from '@/components/content/types';
 import { ContentEditor } from '@/components/content/ContentEditor';
@@ -382,10 +381,7 @@ const ContentEngine = () => {
   const handleRepurpose = async (id: string) => {
     setRepurposingId(id);
     try {
-      const { data, error } = await invokeEdgeFunction('repurpose-content', { body: { contentId: id } });
-      if (error) throw error;
-      const result = data as { error?: string; repurposed?: number } | null;
-      if (result?.error) throw new Error(result.error);
+      const result = await queued(contentAiApi.repurpose(id));
       toast({ title: 'Repurposed!', description: `${result?.repurposed ?? 0} new versions created.` });
       setPage(1);
       void loadContent({ page: 1 });

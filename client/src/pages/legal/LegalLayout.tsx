@@ -51,14 +51,17 @@ export function LegalSection({
 export function LegalCallout({
   children,
   variant = 'default',
+  className,
 }: {
   children: React.ReactNode;
   variant?: 'default' | 'accent';
+  className?: string;
 }) {
   return (
     <div
       className={cn(
         'rounded-xl border px-4 py-3 text-sm leading-relaxed',
+        className,
         variant === 'accent'
           ? 'border-primary/20 bg-primary/5 text-foreground'
           : 'border-border bg-muted/30 text-muted-foreground',

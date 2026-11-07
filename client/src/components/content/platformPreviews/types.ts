@@ -1,4 +1,6 @@
-import { PlatformPayload } from '@/lib/platforms';
+import type { PlatformPayload } from '@/lib/platforms';
+
+export type { PlatformPayload };
 
 export type PlatformPreviewEngagement = {
   likes?: number;

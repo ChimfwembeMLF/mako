@@ -19,7 +19,7 @@ import {
 import RichTextEditor from "@/components/RichTextEditor";
 import EmailTemplates from "@/components/EmailTemplates";
 import { useToast } from "@/hooks/use-toast";
-import { invokeEdgeFunction } from "@/lib/edgeFunctions";
+import { leadsApi, queued } from "@/lib/api";
 
 interface Lead {
   id: string;
@@ -65,15 +65,9 @@ const BulkEmailSheet = ({ leads }: BulkEmailSheetProps) => {
     for (const lead of eligible) {
       try {
         const personalizedBody = body.replace(/\{\{name\}\}/g, lead.name);
-        const res = await invokeEdgeFunction("send-lead-email", {
-          body: {
-            leadId: lead.id,
-            to: lead.email,
-            subject,
-            htmlBody: personalizedBody,
-          },
-        });
-        const result = res.data as { success?: boolean } | null;
+        const result = await queued(
+          leadsApi.sendEmail({ leadId: lead.id, to: lead.email, subject, htmlBody: personalizedBody }),
+        );
         if (result?.success) {
           sent++;
         } else {

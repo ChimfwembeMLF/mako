@@ -704,7 +704,6 @@ export default function ContentDetailPage() {
                     onAiDraft={(node) => void generateAiReply(node)}
                     onDismiss={(node) => void dismissComment(node)}
                     hideViewLink
-                    fullMedia
                   />
                 ))}
               </div>
