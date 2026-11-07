@@ -231,7 +231,7 @@ function HeroBackdrop() {
         </div>
       </div>
       {/* Keeps the copy readable: a solid wash on phones, a short left-to-right fade on desktop. */}
-      <div className="absolute inset-0 bg-card/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-25% lg:via-card/70 lg:via-38% lg:to-card/0 lg:to-55%" />
+      <div className="absolute inset-0 bg-card/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-30% lg:via-card/85 lg:via-42% lg:to-card/0 lg:to-62%" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-card to-transparent" />
     </div>
   );
@@ -641,7 +641,7 @@ function PlanCard({ plan }: { plan: PublicPlan }) {
         )}
       </div>
       <p className={cn('mt-1 text-xs', featured ? 'text-background/60' : 'text-muted-foreground')}>
-        {free ? 'No card needed, ever' : 'Billed monthly · cancel anytime'}
+        {free ? 'No card needed, ever' : 'Billed monthly · turn off auto-renew anytime'}
       </p>
 
       <Button
@@ -720,8 +720,8 @@ function Pricing() {
         )}
         <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><Smartphone className="h-3.5 w-3.5" /> Mobile money today, cards soon</span>
-          <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Change or cancel your plan anytime</span>
-          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Every plan includes the full workspace</span>
+          <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Upgrade anytime, or turn off auto-renew in Billing</span>
+          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Start on Free, no card needed</span>
         </div>
       </div>
     </section>
