@@ -1661,6 +1661,11 @@ export const mediaApi = {
         const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
         return request<any>(`/api/v1/media/${id}?${qs}`, { method: 'DELETE' });
     },
+    rename: (id: string, tenantId: string, name: string) =>
+        request<{ id: string; name: string }>(`/api/v1/media/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ tenantId, name }),
+        }),
 };
 
 export const templatesApi = {

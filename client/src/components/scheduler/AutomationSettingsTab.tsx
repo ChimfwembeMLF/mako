@@ -15,6 +15,8 @@ import { useTenant } from "@/hooks/useTenant";
 import { contentAiApi, queued } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { Link } from "react-router-dom";
+import { ChevronRight } from "lucide-react";
 
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const PLATFORMS = [
@@ -352,7 +354,8 @@ export function AutomationSettingsTab({ onGenerated, onReviewDrafts }: { onGener
                   const style = RUN_STYLE[run.status];
                   const Icon = style.icon;
                   return (
-                    <li key={run.at} className="space-y-1 px-5 py-3">
+                    <li key={run.at}>
+                      <Link to={`/automations/runs/${encodeURIComponent(run.at)}`} className="group block space-y-1 px-5 py-3 transition-colors hover:bg-muted/40">
                       <div className="flex items-center justify-between gap-2">
                         <span className={cn("flex items-center gap-1.5 text-sm font-semibold", style.className)}>
                           <Icon className="h-4 w-4" /> {style.label}
@@ -360,6 +363,7 @@ export function AutomationSettingsTab({ onGenerated, onReviewDrafts }: { onGener
                         <span className="text-[11px] text-muted-foreground">
                           {new Date(run.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                           {run.trigger === "manual" ? " · manual" : ""}
+                          <ChevronRight className="ml-1 inline h-3 w-3 opacity-50 transition-opacity group-hover:opacity-100" />
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">{run.message}</p>
@@ -368,6 +372,7 @@ export function AutomationSettingsTab({ onGenerated, onReviewDrafts }: { onGener
                           For {new Date(`${run.targetDate}T12:00:00`).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}
                         </p>
                       )}
+                      </Link>
                     </li>
                   );
                 })}

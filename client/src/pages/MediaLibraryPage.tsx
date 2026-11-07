@@ -1,7 +1,7 @@
 import { confirmModal } from '@/components/ConfirmModal';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Check, Copy, Download, HelpCircle, ImageIcon, Loader2, Play, Search, Trash2, Upload, X } from 'lucide-react';
+import { Check, Copy, Download, HelpCircle, ImageIcon, Loader2, Pencil, Play, Search, Trash2, Upload, X } from 'lucide-react';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -22,6 +22,12 @@ type Sort = 'newest' | 'oldest' | 'largest' | 'name';
 
 const MAX_UPLOAD_MB = 50;
 
+/** "Summer banner.png" → { base: "Summer banner", ext: ".png" }; names without a short extension keep it all in base. */
+function splitName(name: string): { base: string; ext: string } {
+  const m = name.match(/^(.*?)(\.[a-z0-9]{1,5})$/i);
+  return m && m[1] ? { base: m[1], ext: m[2] } : { base: name, ext: '' };
+}
+
 export default function MediaLibraryPage() {
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
@@ -38,6 +44,8 @@ export default function MediaLibraryPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [previewId, setPreviewId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
+  const [savingName, setSavingName] = useState(false);
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(24);
   const canUpload = can(P.media.upload);
@@ -137,7 +145,7 @@ export default function MediaLibraryPage() {
     if (!tenant || !activeWorkspace || !ids.length) return;
     const one = ids.length === 1 ? assets.find((a) => a.id === ids[0]) : null;
     const confirmed = await confirmModal(
-      'Posts and templates that already use these files may show a broken image. This can’t be undone.',
+      `Posts and templates that already use ${ids.length === 1 ? 'this file' : 'these files'} may show a broken image. This can’t be undone.`,
       one ? `Delete “${one.name ?? 'this file'}”?` : `Delete ${ids.length} files?`,
       'Delete',
     );
@@ -162,6 +170,39 @@ export default function MediaLibraryPage() {
     );
   }
 
+  async function saveName(a: MediaAsset) {
+    if (!tenant || !renaming) return;
+    const { ext } = splitName(a.name ?? '');
+    const base = renaming.value.replace(/\s+/g, ' ').trim();
+    if (!base) {
+      toast({ title: 'Give the file a name', variant: 'destructive' });
+      return;
+    }
+    const next = `${base}${ext}`;
+    if (next === a.name) {
+      setRenaming(null);
+      return;
+    }
+    if (next.length > 200) {
+      toast({ title: 'That name is too long', description: 'Keep it to 200 characters or fewer.', variant: 'destructive' });
+      return;
+    }
+    const before = a.name;
+    setSavingName(true);
+    setAssets((list) => list.map((x) => (x.id === a.id ? { ...x, name: next } : x)));
+    try {
+      const saved = await mediaApi.rename(a.id, tenant.id, next);
+      setAssets((list) => list.map((x) => (x.id === a.id ? { ...x, name: saved?.name ?? next } : x)));
+      setRenaming(null);
+      toast({ title: 'File renamed' });
+    } catch (err) {
+      setAssets((list) => list.map((x) => (x.id === a.id ? { ...x, name: before } : x)));
+      toast({ title: 'Rename failed', description: err instanceof Error ? err.message : undefined, variant: 'destructive' });
+    } finally {
+      setSavingName(false);
+    }
+  }
+
   async function copyLink(a: MediaAsset) {
     try {
       await navigator.clipboard.writeText(resolveMediaUrl(a.mediaUrl));
@@ -184,6 +225,7 @@ export default function MediaLibraryPage() {
   useEffect(() => {
     if (!preview) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
       if (e.key === 'ArrowRight' && previewIndex < visible.length - 1) setPreviewId(visible[previewIndex + 1].id);
       if (e.key === 'ArrowLeft' && previewIndex > 0) setPreviewId(visible[previewIndex - 1].id);
     };
@@ -211,7 +253,9 @@ export default function MediaLibraryPage() {
             <p className="mt-1 text-sm text-muted-foreground">
               Images and videos for {tenant?.name ?? 'your brand'}, ready to use in posts, templates and ads.
               {assets.length > 0 && (
-                <span className="tabular-nums"> {assets.length.toLocaleString()} files · {formatFileSize(totalBytes)}.</span>
+                <span className="tabular-nums">
+                  {' '}{assets.length.toLocaleString()} {assets.length === 1 ? 'file' : 'files'}{totalBytes > 0 ? ` · ${formatFileSize(totalBytes)}` : ''}.
+                </span>
               )}
             </p>
           </div>
@@ -328,7 +372,7 @@ export default function MediaLibraryPage() {
         {loading ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6">
             {Array.from({ length: 12 }).map((_, i) => (
-              <div key={i} className="aspect-square animate-pulse rounded-xl bg-muted" />
+              <div key={i} className="aspect-square animate-pulse rounded-lg bg-muted" />
             ))}
           </div>
         ) : assets.length === 0 ? (
@@ -357,7 +401,7 @@ export default function MediaLibraryPage() {
                     type="button"
                     onClick={() => (selecting ? toggle(a.id) : setPreviewId(a.id))}
                     className={cn(
-                      'relative block aspect-square w-full overflow-hidden rounded-xl bg-muted ring-offset-2 ring-offset-background transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      'relative block aspect-square w-full overflow-hidden rounded-lg bg-muted ring-offset-2 ring-offset-background transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       isSel && 'ring-2 ring-primary',
                     )}
                     aria-label={`${selecting ? (isSel ? 'Deselect' : 'Select') : 'Open'} ${a.name ?? 'file'}`}
@@ -437,8 +481,25 @@ export default function MediaLibraryPage() {
         )}
       </div>
 
-      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreviewId(null)}>
-        <DialogContent className="max-w-5xl gap-0 overflow-hidden p-0 sm:rounded-2xl">
+      <Dialog
+        open={!!preview}
+        onOpenChange={(o) => {
+          if (!o) {
+            setPreviewId(null);
+            setRenaming(null);
+          }
+        }}
+      >
+        <DialogContent
+          className="max-w-5xl gap-0 overflow-hidden p-0 sm:rounded-2xl"
+          onEscapeKeyDown={(e) => {
+            // While renaming, Esc cancels the rename instead of closing the preview.
+            if (renaming) {
+              e.preventDefault();
+              setRenaming(null);
+            }
+          }}
+        >
           {preview && (
             <div className="grid md:grid-cols-[minmax(0,1fr)_280px]">
               <div className="flex max-h-[70vh] min-h-[260px] items-center justify-center bg-neutral-950">
@@ -450,7 +511,64 @@ export default function MediaLibraryPage() {
               </div>
               <div className="flex flex-col gap-5 p-5">
                 <div className="min-w-0 pr-6">
-                  <DialogTitle className="break-words text-base font-semibold leading-snug">{preview.name ?? 'Untitled'}</DialogTitle>
+                  {renaming?.id === preview.id ? (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void saveName(preview);
+                      }}
+                      className="space-y-2"
+                    >
+                      <DialogTitle className="sr-only">Rename {preview.name ?? 'file'}</DialogTitle>
+                      <label htmlFor="media-name" className="text-xs font-medium text-muted-foreground">File name</label>
+                      <div className="flex items-center rounded-lg border bg-background focus-within:ring-2 focus-within:ring-ring">
+                        <input
+                          id="media-name"
+                          autoFocus
+                          value={renaming.value}
+                          onChange={(e) => setRenaming({ id: preview.id, value: e.target.value })}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setRenaming(null);
+                            }
+                          }}
+                          maxLength={190}
+                          disabled={savingName}
+                          className="h-9 min-w-0 flex-1 bg-transparent px-3 text-sm outline-none"
+                        />
+                        {splitName(preview.name ?? '').ext && (
+                          <span className="pr-3 text-sm text-muted-foreground">{splitName(preview.name ?? '').ext}</span>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="submit" size="sm" className="h-8 gap-1.5 text-xs" disabled={savingName}>
+                          {savingName && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                          Save
+                        </Button>
+                        <Button type="button" size="sm" variant="ghost" className="h-8 text-xs" onClick={() => setRenaming(null)} disabled={savingName}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  ) : (
+                    <div className="flex items-start gap-1.5">
+                      <DialogTitle className="min-w-0 break-words text-base font-semibold leading-snug">{preview.name ?? 'Untitled'}</DialogTitle>
+                      {canUpload && (
+                        <button
+                          type="button"
+                          onClick={() => setRenaming({ id: preview.id, value: splitName(preview.name ?? '').base })}
+                          className="mt-0.5 shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                          aria-label="Rename"
+                          title="Rename"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     {previewIndex + 1} of {visible.length} · use ← → to browse
                   </p>

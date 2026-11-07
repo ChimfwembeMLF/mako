@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, DragEvent, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { sanitizeHtml } from "@/lib/sanitize";
 import {
   CalendarClock, Plus, CheckCircle2, XCircle, Send, Facebook, Linkedin, Instagram,
@@ -159,7 +159,12 @@ function getBrandBg(p: string) {
 
 const Scheduler = () => {
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
-  const [view, setView] = useState<"list" | "calendar" | "automations">("calendar");
+  const [searchParams] = useSearchParams();
+  // Links such as /scheduler?view=automations open straight on that tab.
+  const [view, setView] = useState<"list" | "calendar" | "automations">(() => {
+    const v = searchParams.get("view");
+    return v === "list" || v === "automations" ? v : "calendar";
+  });
   const [listFilter, setListFilter] = useState<ListFilter>("upcoming");
   const [showTeam, setShowTeam] = useState(true);
   const [selectedDayForModal, setSelectedDayForModal] = useState<Date | null>(null);

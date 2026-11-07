@@ -25,6 +25,8 @@ const ContentEngine = lazy(() => import("./pages/ContentEngine"));
 const ContentDetailPage = lazy(() => import("./pages/ContentDetailPage"));
 const EditContent = lazy(() => import("./pages/EditContent"));
 const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
+const CampaignDetailPage = lazy(() => import("./pages/CampaignDetailPage"));
+const AutomationRunPage = lazy(() => import("./pages/AutomationRunPage"));
 const Scheduler = lazy(() => import("./pages/Scheduler"));
 const LeadAgent = lazy(() => import("./pages/LeadAgent"));
 const WhatsappHubPage = lazy(() => import("./pages/WhatsappHubPage"));
@@ -169,6 +171,8 @@ const App = () => (
                   <Route path="/brand-brain" element={<LazyPage><BrandBrain /></LazyPage>} />
                   <Route path="/content" element={<LazyPage><ContentEngine /></LazyPage>} />
                   <Route path="/campaigns" element={<LazyPage><CampaignsPage /></LazyPage>} />
+                  <Route path="/campaigns/:id" element={<LazyPage><CampaignDetailPage /></LazyPage>} />
+                  <Route path="/automations/runs/:runAt" element={<LazyPage><AutomationRunPage /></LazyPage>} />
                   <Route path="/content/edit/:id" element={<LazyPage><EditContent /></LazyPage>} />
                   <Route path="/content/:id" element={<LazyPage><ContentDetailPage /></LazyPage>} />
                   <Route path="/scheduler" element={<LazyPage><Scheduler /></LazyPage>} />

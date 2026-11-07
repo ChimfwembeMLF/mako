@@ -41,7 +41,9 @@ const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = ([
   // The bot builder canvas needs every pixel the layout can give it.
   { path: '/whatsapp/bots/:id', width: 'full' },
   { path: '/whatsapp/bots', width: '6xl' },
-  { path: '/content/:id', width: '4xl' },
+  { path: '/content/:id', width: '6xl' },
+  { path: '/campaigns/:id', width: '6xl' },
+  { path: '/automations/runs/:runAt', width: '6xl' },
   { path: '/chatbot/knowledge', width: '4xl' },
   { path: '/content', width: '6xl' },
   { path: '/media', width: '6xl' },

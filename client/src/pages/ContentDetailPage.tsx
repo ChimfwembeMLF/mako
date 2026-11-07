@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
 import {
+  AlertTriangle,
   ArrowLeft,
+  CalendarClock,
   Loader2,
-  MessageSquareReply,
   Pencil,
+  RefreshCw,
   RotateCcw,
   Send,
-  Clock,
-  AlertTriangle,
 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useToast } from '@/hooks/use-toast';
 import { useWorkspace } from '@/hooks/useWorkspace';
@@ -38,6 +37,10 @@ import { PostMediaGallery } from '@/components/replies/PostMediaGallery';
 import { mergePublicationWithInbox, plainText } from '@/components/replies/postInboxUtils';
 import { RichTextContent } from '@/components/RichTextContent';
 import { normalizeRichContent } from '@/lib/rich-text';
+import { StatusPill } from '@/components/StatusPill';
+import { statusOf, TONE_DOT } from '@/lib/postStatus';
+import { cn } from '@/lib/utils';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
 
 type Publication = {
   id: string;
@@ -73,6 +76,7 @@ type ContentDetails = {
     platforms?: string[];
     platformPayloads?: Record<string, PlatformPayload>;
     campaignTheme?: string;
+    campaignId?: string;
     workspaceId?: string;
     publishFailedReason?: string;
     scheduledDate?: string;
@@ -97,110 +101,44 @@ function toContentItem(item: ContentDetails['item']): ContentItem {
   };
 }
 
-function DraftPlatformSection({
-  platform,
-  draft,
-  scheduledAt,
-  linkedMediaCount,
-}: {
-  platform: string;
-  draft?: PlatformPayload;
-  scheduledAt?: string | null;
-  linkedMediaCount?: number;
-}) {
+/** Where one channel stands, in the words shown on the page. */
+type ChannelState =
+  | { kind: 'published'; pub: Publication }
+  | { kind: 'failed'; pub: Publication }
+  | { kind: 'blocked' }
+  | { kind: 'scheduled'; when: string }
+  | { kind: 'draft' };
+
+const CHANNEL_STATE_LABEL: Record<ChannelState['kind'], { label: string; status: string }> = {
+  published: { label: 'Published', status: 'published' },
+  failed: { label: 'Didn’t publish', status: 'publish_failed' },
+  blocked: { label: 'Needs an image', status: 'review' },
+  scheduled: { label: 'Scheduled', status: 'scheduled' },
+  draft: { label: 'Not published', status: 'draft' },
+};
+
+function PlatformTitle({ platform, size = 16 }: { platform: string; size?: number }) {
   const plat = platformOf(platform);
   const Icon = plat.icon;
-  const needsMedia = platformRequiresMedia(platform);
-  const hasMedia = instagramHasMedia(draft, linkedMediaCount ?? 0);
-  const instagramBlocked = needsMedia && !hasMedia;
-
-  if (!draft) {
-    return (
-      <div className="rounded-xl border border-dashed bg-card p-4 text-sm text-muted-foreground">
-        No draft prepared for {plat.label}.
-      </div>
-    );
-  }
-
   return (
-    <div
-      className={`rounded-xl border bg-card p-4 space-y-3 ${instagramBlocked ? 'border-amber-500/50 ring-1 ring-amber-500/20' : ''}`}
-    >
-      <div className="flex items-center gap-2 flex-wrap">
-        <span
-          className="inline-flex h-8 w-8 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${plat.color}18` }}
-        >
-          <Icon size={16} style={{ color: plat.color }} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">{plat.label}</p>
-          <p className="text-xs text-muted-foreground">Draft — not published yet</p>
-        </div>
-        {scheduledAt && (
-          <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
-            <Clock className="h-3 w-3" />
-            {scheduledAt}
-          </Badge>
-        )}
-        <Badge variant="secondary" className="capitalize text-[10px]">
-          draft
-        </Badge>
-      </div>
-      {instagramBlocked && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-          <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-          <span>
-            Instagram requires at least one image or video. This platform will be skipped when
-            scheduled or manual publish runs until you add attachments.
-          </span>
-        </div>
-      )}
-      {draft.title && <p className="text-sm font-medium">{draft.title}</p>}
-      <RichTextContent html={normalizeRichContent(draft.content ?? '')} />
-      <PostMediaGallery items={draft.media ?? []} variant="full" />
-    </div>
+    <span className="flex items-center gap-2">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ backgroundColor: `${plat.color}18` }}>
+        <Icon size={size - 2} style={{ color: plat.color }} />
+      </span>
+      <span className="truncate">{plat.label}</span>
+    </span>
   );
 }
 
-function FailedPublicationBanner({
-  platform,
-  publications,
-  onRetry,
-  retrying,
-}: {
-  platform: string;
-  publications: Publication[];
-  onRetry: (platform: string) => void;
-  retrying: boolean;
-}) {
-  const latest = publications[0];
-  if (!latest || latest.status !== 'failed') return null;
-  const plat = platformOf(platform);
-
+function DraftPreview({ draft }: { draft?: PlatformPayload }) {
+  if (!draft) {
+    return <p className="text-sm text-muted-foreground">Nothing has been written for this channel yet.</p>;
+  }
   return (
-    <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-2">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <p className="text-sm font-medium text-destructive">{plat.label} publish failed</p>
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="h-7 text-xs text-amber-700 border-amber-500/40"
-          onClick={() => onRetry(platform)}
-          disabled={retrying}
-        >
-          {retrying ? (
-            <Loader2 className="h-3 w-3 animate-spin mr-1" />
-          ) : (
-            <RotateCcw className="h-3 w-3 mr-1" />
-          )}
-          Retry
-        </Button>
-      </div>
-      {latest.errorMessage && (
-        <p className="text-xs text-destructive whitespace-pre-wrap">{latest.errorMessage}</p>
-      )}
+    <div className="space-y-4">
+      {draft.title && <p className="text-base font-semibold">{draft.title}</p>}
+      <RichTextContent html={normalizeRichContent(draft.content ?? '')} />
+      <PostMediaGallery items={draft.media ?? []} variant="full" />
     </div>
   );
 }
@@ -225,6 +163,7 @@ export default function ContentDetailPage() {
   const [fetchingComments, setFetchingComments] = useState(false);
   const [manualText, setManualText] = useState<Record<string, string>>({});
   const [sending, setSending] = useState<string | null>(null);
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
 
   usePageBreadcrumb(data?.item?.title || undefined);
 
@@ -314,13 +253,6 @@ export default function ContentDetailPage() {
     return platforms.filter((p) => pubsByPlatform[p]?.[0]?.status === 'failed');
   }, [platforms, pubsByPlatform]);
 
-  const draftPlatforms = useMemo(() => {
-    return platforms.filter((p) => {
-      const latest = pubsByPlatform[p]?.[0];
-      return !latest || latest.status !== 'published';
-    });
-  }, [platforms, pubsByPlatform]);
-
   const contentItem = useMemo(
     () => (data ? toContentItem(data.item) : null),
     [data],
@@ -330,15 +262,6 @@ export default function ContentDetailPage() {
     if (!data?.item) return null;
     return formatScheduledAt(data.item.scheduledDate, data.item.scheduledTime);
   }, [data]);
-
-  const instagramIssues = useMemo(() => {
-    if (!data) return [];
-    return platforms.filter((p) => {
-      if (!platformRequiresMedia(p)) return false;
-      const draft = data.item.platformPayloads?.[p];
-      return !instagramHasMedia(draft, data.media.length);
-    });
-  }, [data, platforms]);
 
   const editorWorkspaceId = data?.item.workspaceId ?? activeWorkspace ?? null;
 
@@ -474,22 +397,19 @@ export default function ContentDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] text-muted-foreground gap-2">
+      <div className="flex min-h-[40vh] items-center justify-center gap-2 text-muted-foreground">
         <Loader2 className="h-5 w-5 animate-spin" />
-        Loading content…
+        Loading post…
       </div>
     );
   }
 
   if (error || !data) {
     return (
-      <div className="w-full py-12 text-center space-y-4">
-        <p className="text-muted-foreground">{error ?? 'Content not found'}</p>
+      <div className="space-y-4 py-16 text-center">
+        <p className="font-medium">This post doesn’t exist any more</p>
         <Button asChild variant="outline">
-          <Link to="/content">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to content
-          </Link>
+          <Link to="/content"><ArrowLeft className="mr-1.5 h-4 w-4" /> All posts</Link>
         </Button>
       </div>
     );
@@ -497,249 +417,249 @@ export default function ContentDetailPage() {
 
   const { item, media } = data;
   const canReply = can(P.replies.create);
+  const itemStatus = (item.status ?? 'draft').toLowerCase();
+  const isQueued = ['scheduled', 'approved'].includes(itemStatus);
+
+  const stateOf = (platform: string): ChannelState => {
+    const latest = pubsByPlatform[platform]?.[0];
+    if (latest?.status === 'published') return { kind: 'published', pub: latest };
+    if (latest?.status === 'failed') return { kind: 'failed', pub: latest };
+    if (platformRequiresMedia(platform) && !instagramHasMedia(item.platformPayloads?.[platform], media.length)) return { kind: 'blocked' };
+    if (scheduledAtLabel && isQueued) return { kind: 'scheduled', when: scheduledAtLabel };
+    return { kind: 'draft' };
+  };
+  const active = platforms.includes(selectedPlatform ?? '') ? (selectedPlatform as string) : platforms[0];
+  const activeState = active ? stateOf(active) : null;
+  const activeGroup = active ? publishedPostGroups.find((g) => g.platform === active) : undefined;
+  const activeDraft = active
+    ? item.platformPayloads?.[active] ?? buildPlatformPayloads(item.content ?? '', item.title ?? '', [active])[active]
+    : undefined;
   const pendingTotal = publishedPostGroups.reduce((s, p) => s + p.pendingCount, 0);
+  const anyPublished = publishedPostGroups.length > 0;
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-12 min-w-0">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1 min-w-0">
-          <Button asChild variant="ghost" size="sm" className="-ml-2 h-8 text-muted-foreground">
-            <Link to="/content">
-              <ArrowLeft className="h-4 w-4 mr-1" />
-              Content
-            </Link>
-          </Button>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight break-words">{item.title || 'Untitled content'}</h1>
-          <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
-            {item.status && (
-              <Badge variant="secondary" className="capitalize">
-                {item.status}
-              </Badge>
-            )}
-            {scheduledAtLabel && (
-              <Badge variant="outline" className="gap-1">
-                <Clock className="h-3 w-3" />
-                Scheduled {scheduledAtLabel}
-              </Badge>
-            )}
-            {item.created_at && <span>Created {new Date(item.created_at).toLocaleString()}</span>}
-            {item.publishedAt && (
-              <span>· Last published {new Date(item.publishedAt).toLocaleString()}</span>
-            )}
+    <div className="w-full min-w-0 space-y-6 pb-12">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <Link to="/content" className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground">
+            <ArrowLeft className="h-3.5 w-3.5" /> Posts
+          </Link>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="break-words font-display text-2xl font-semibold sm:text-3xl">{item.title || 'Untitled post'}</h1>
+            <StatusPill status={item.status} />
           </div>
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+            {isQueued && scheduledAtLabel && (
+              <span className="flex items-center gap-1"><CalendarClock className="h-3.5 w-3.5" /> Goes out {scheduledAtLabel}</span>
+            )}
+            {item.publishedAt && <span>Published {formatDistanceToNow(new Date(item.publishedAt), { addSuffix: true })}</span>}
+            {item.campaignId && (
+              <Link to={`/campaigns/${item.campaignId}`} className="font-medium text-primary hover:underline">Part of a campaign</Link>
+            )}
+          </p>
         </div>
-        <div className="flex gap-2 flex-wrap w-full sm:w-auto">
+        <div className="flex flex-wrap gap-2">
           {failedPlatforms.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="text-amber-700 border-amber-500/40"
-              onClick={handleRetryAllFailed}
-              disabled={retryingAll || !!retryingPlatform}
-            >
-              {retryingAll ? (
-                <Loader2 className="h-4 w-4 mr-1 animate-spin" />
-              ) : (
-                <RotateCcw className="h-4 w-4 mr-1" />
-              )}
-              Retry failed ({failedPlatforms.length})
+            <Button variant="outline" onClick={handleRetryAllFailed} disabled={retryingAll || !!retryingPlatform} className="gap-1.5">
+              {retryingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+              Retry {failedPlatforms.length === 1 ? platformOf(failedPlatforms[0]).label : `${failedPlatforms.length} channels`}
             </Button>
           )}
-          <Button type="button" variant="outline" size="sm" onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4 mr-1" />
-            Edit
+          <Button variant="outline" onClick={() => setEditOpen(true)} className="gap-1.5">
+            <Pencil className="h-4 w-4" /> Edit
           </Button>
-          <Button type="button" size="sm" onClick={() => setPublishOpen(true)}>
-            <Send className="h-4 w-4 mr-1" />
-            Publish
+          <Button onClick={() => setPublishOpen(true)} className="gap-1.5">
+            <Send className="h-4 w-4" /> {anyPublished ? 'Publish again' : 'Publish'}
           </Button>
         </div>
       </div>
 
-      {item.publishFailedReason && (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          <p className="font-medium">Last publish had errors</p>
-          <p className="text-xs mt-1 whitespace-pre-wrap">{item.publishFailedReason}</p>
+      {platforms.length === 0 ? (
+        <div className="rounded-2xl border border-dashed px-6 py-14 text-center">
+          <p className="font-medium">No channels chosen yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">Edit the post to pick where it should go.</p>
+          <Button variant="outline" className="mt-4" onClick={() => setEditOpen(true)}>Choose channels</Button>
         </div>
-      )}
-
-      {instagramIssues.length > 0 && (
-        <div className="rounded-xl border border-amber-500/40 bg-amber-50 dark:bg-amber-950/20 px-4 py-3 text-sm text-amber-900 dark:text-amber-100">
-          <p className="font-medium flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            Instagram blocked — missing attachments
-          </p>
-          <p className="text-xs mt-1 text-amber-800/90 dark:text-amber-200/90">
-            {instagramIssues.map((p) => platformOf(p).label).join(', ')} will not publish until you
-            add at least one image or video in Edit or Publish.
-          </p>
-        </div>
-      )}
-
-      {scheduledAtLabel && platforms.length > 0 && (
-        <div className="rounded-xl border bg-muted/30 p-4 space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5" />
-            Scheduled posting
-          </p>
-          <ul className="space-y-1.5">
-            {platforms.map((platform) => {
-              const plat = platformOf(platform);
-              const Icon = plat.icon;
-              const blocked =
-                platformRequiresMedia(platform) &&
-                !instagramHasMedia(item.platformPayloads?.[platform], media.length);
-              return (
-                <li key={platform} className="flex items-center gap-2 text-sm flex-wrap">
-                  <Icon size={14} style={{ color: plat.color }} />
-                  <span className="font-medium">{plat.label}</span>
-                  <span className="text-muted-foreground">· {scheduledAtLabel}</span>
-                  {blocked && (
-                    <Badge variant="outline" className="text-[10px] text-amber-700 border-amber-500/40">
-                      No media — skipped
-                    </Badge>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {draftPlatforms.filter((platform) => pubsByPlatform[platform]?.[0]?.status !== 'failed').length >
-        0 && (
-        <div className="space-y-3">
-          <div>
-            <h2 className="text-lg font-semibold">Per-platform content</h2>
-            <p className="text-xs text-muted-foreground mt-1">
-              What will be sent to each channel — visible before publish runs.
-            </p>
-          </div>
-          <div className="grid gap-4">
-            {draftPlatforms.map((platform) => {
-              const latest = pubsByPlatform[platform]?.[0];
-              if (latest?.status === 'failed') return null;
-              const savedDraft = item.platformPayloads?.[platform];
-              const draft =
-                savedDraft ??
-                buildPlatformPayloads(item.content ?? '', item.title ?? '', [platform])[platform];
-              return (
-                <DraftPlatformSection
-                  key={`draft-${platform}`}
-                  platform={platform}
-                  draft={draft}
-                  scheduledAt={scheduledAtLabel}
-                  linkedMediaCount={media.length}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      <div className="rounded-xl border bg-card p-4 space-y-2">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Master draft</p>
-        {item.campaignTheme && (
-          <p className="text-sm text-muted-foreground">{plainText(item.campaignTheme)}</p>
-        )}
-        <RichTextContent html={normalizeRichContent(item.content ?? '')} />
-        {media.length > 0 && (
-          <PostMediaGallery
-            items={media.map((m) => ({
-              url: m.mediaUrl,
-              type: m.mediaType,
-              name: m.name,
-            }))}
-            variant="full"
-          />
-        )}
-      </div>
-
-      {publishedPostGroups.length > 0 && (
-        <>
-          <Separator />
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <MessageSquareReply className="h-5 w-5 text-primary" />
-                <div>
-                  <h2 className="text-lg font-semibold">Published posts & comments</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Live posts with engagement and threaded replies
-                    {pendingTotal > 0 ? ` · ${pendingTotal} awaiting reply` : ''}
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => void fetchComments()}
-                disabled={fetchingComments || !tenant}
-              >
-                {fetchingComments ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Send className="mr-2 h-4 w-4" />
-                )}
-                Pull comments
-              </Button>
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <section className="min-w-0 space-y-4">
+            <div className="flex gap-1 overflow-x-auto border-b" role="tablist" aria-label="Channels">
+              {platforms.map((p) => {
+                const st = stateOf(p);
+                const tone = statusOf(CHANNEL_STATE_LABEL[st.kind].status).tone;
+                const plat = platformOf(p);
+                const Icon = plat.icon;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    role="tab"
+                    aria-selected={p === active}
+                    onClick={() => setSelectedPlatform(p)}
+                    className={cn(
+                      '-mb-px flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors',
+                      p === active ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+                    )}
+                  >
+                    <Icon size={14} style={{ color: plat.color }} />
+                    {plat.label}
+                    <span className={cn('h-1.5 w-1.5 rounded-full', TONE_DOT[tone])} aria-label={CHANNEL_STATE_LABEL[st.kind].label} />
+                  </button>
+                );
+              })}
             </div>
 
-            {loadingComments ? (
-              <div className="flex items-center justify-center py-12 text-muted-foreground gap-2 text-sm">
-                <Loader2 className="h-4 w-4 animate-spin" /> Loading comments…
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {publishedPostGroups.map((post) => (
-                  <PostCommentCard
-                    key={post.key}
-                    post={post}
-                    canReply={canReply}
-                    sendingId={sending}
-                    manualText={manualText}
-                    onDraftChange={(cid, text) => setManualText((p) => ({ ...p, [cid]: text }))}
-                    onSend={(node) => void sendReply(node)}
-                    onAiDraft={(node) => void generateAiReply(node)}
-                    onDismiss={(node) => void dismissComment(node)}
-                    hideViewLink
-                  />
-                ))}
+            {active && activeState && (
+              <div className="space-y-4" role="tabpanel">
+                {activeState.kind === 'failed' && (
+                  <div className="flex flex-col gap-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-destructive">{platformOf(active).label} didn’t publish</p>
+                      {activeState.pub.errorMessage && (
+                        <p className="mt-1 whitespace-pre-wrap text-xs text-destructive/90">{activeState.pub.errorMessage}</p>
+                      )}
+                    </div>
+                    <Button size="sm" variant="outline" className="shrink-0 gap-1.5" onClick={() => handleRetryPlatform(active)} disabled={retryingPlatform === active || retryingAll}>
+                      {retryingPlatform === active ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCcw className="h-3.5 w-3.5" />}
+                      Retry
+                    </Button>
+                  </div>
+                )}
+                {activeState.kind === 'blocked' && (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-300/70 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      {platformOf(active).label} only accepts posts with an image or video, so it will be skipped.{' '}
+                      <button type="button" className="font-medium underline underline-offset-2" onClick={() => setEditOpen(true)}>Add one</button>
+                    </span>
+                  </div>
+                )}
+
+                {activeState.kind === 'published' && activeGroup ? (
+                  <>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm text-muted-foreground">
+                        {activeGroup.pendingCount > 0 ? (
+                          <span className="font-medium text-foreground">{activeGroup.pendingCount} comment{activeGroup.pendingCount === 1 ? '' : 's'} waiting for a reply</span>
+                        ) : (
+                          'Live post and comments'
+                        )}
+                      </p>
+                      <Button variant="outline" size="sm" className="h-8 gap-1.5 text-xs" onClick={() => void fetchComments()} disabled={fetchingComments || !tenant}>
+                        <RefreshCw className={cn('h-3.5 w-3.5', fetchingComments && 'animate-spin')} />
+                        {fetchingComments ? 'Checking…' : 'Check for comments'}
+                      </Button>
+                    </div>
+                    {loadingComments ? (
+                      <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" /> Loading comments…
+                      </div>
+                    ) : (
+                      <PostCommentCard
+                        post={activeGroup}
+                        canReply={canReply}
+                        sendingId={sending}
+                        manualText={manualText}
+                        onDraftChange={(cid, text) => setManualText((p) => ({ ...p, [cid]: text }))}
+                        onSend={(node) => void sendReply(node)}
+                        onAiDraft={(node) => void generateAiReply(node)}
+                        onDismiss={(node) => void dismissComment(node)}
+                        hideViewLink
+                      />
+                    )}
+                  </>
+                ) : (
+                  <article className="rounded-2xl border bg-card">
+                    <header className="flex items-center justify-between gap-3 border-b px-5 py-3 text-sm">
+                      <span className="font-medium"><PlatformTitle platform={active} /></span>
+                      <span className="text-xs text-muted-foreground">
+                        {activeState.kind === 'scheduled' ? `Goes out ${activeState.when}` : activeState.kind === 'failed' ? 'What was sent' : 'Preview of what will be sent'}
+                      </span>
+                    </header>
+                    <div className="px-5 py-5">
+                      <DraftPreview draft={activeDraft} />
+                    </div>
+                  </article>
+                )}
               </div>
             )}
-          </div>
-        </>
-      )}
+          </section>
 
-      {failedPlatforms.length > 0 && (
-        <>
-          <Separator />
-          <div className="space-y-3">
-            <h2 className="text-lg font-semibold">Failed publishes</h2>
-            <div className="grid gap-4">
-              {failedPlatforms.map((platform) => (
-                <FailedPublicationBanner
-                  key={`fail-${platform}`}
-                  platform={platform}
-                  publications={pubsByPlatform[platform] ?? []}
-                  onRetry={handleRetryPlatform}
-                  retrying={retryingPlatform === platform}
-                />
-              ))}
-            </div>
-          </div>
-        </>
-      )}
+          <aside className="space-y-4">
+            <section className="rounded-2xl border bg-card p-5">
+              <h2 className="text-sm font-semibold">Channels</h2>
+              <ul className="mt-3 space-y-1">
+                {platforms.map((p) => {
+                  const st = stateOf(p);
+                  const meta = CHANNEL_STATE_LABEL[st.kind];
+                  const group = publishedPostGroups.find((g) => g.platform === p);
+                  return (
+                    <li key={p}>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedPlatform(p)}
+                        className={cn('flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted', p === active && 'bg-muted')}
+                      >
+                        <PlatformTitle platform={p} size={14} />
+                        <span className="flex shrink-0 flex-col items-end">
+                          <StatusPill status={meta.status} label={meta.label} className="px-2 text-[11px]" />
+                          {group && (group.likeCount || group.commentCount || group.viewCount) ? (
+                            <span className="mt-0.5 text-[10px] tabular-nums text-muted-foreground">
+                              {group.likeCount} likes · {group.commentCount} comments
+                            </span>
+                          ) : null}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+              {pendingTotal > 0 && (
+                <p className="mt-3 border-t pt-3 text-xs text-muted-foreground">{pendingTotal} comment{pendingTotal === 1 ? '' : 's'} waiting for a reply</p>
+              )}
+            </section>
 
-      {platforms.length === 0 && (
-        <p className="text-sm text-muted-foreground rounded-xl border border-dashed p-6 text-center">
-          No platforms selected yet. Edit this content to choose platforms and publish.
-        </p>
+            <section className="rounded-2xl border bg-card p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold">Original draft</h2>
+                <button type="button" onClick={() => setEditOpen(true)} className="text-xs font-medium text-primary hover:underline">Edit</button>
+              </div>
+              {item.campaignTheme && <p className="mt-2 text-xs text-muted-foreground">Theme: {plainText(item.campaignTheme)}</p>}
+              <div className="mt-2 line-clamp-[8] text-sm text-foreground/80 [&_p]:my-0">
+                <RichTextContent html={normalizeRichContent(item.content ?? '')} />
+              </div>
+              {media.length > 0 && (
+                <div className="mt-3 grid grid-cols-4 gap-1.5">
+                  {media.slice(0, 8).map((m) => (
+                    <div key={m.id} className="aspect-square overflow-hidden rounded-md bg-muted">
+                      {/video/.test(m.mediaType ?? '') ? (
+                        <video src={resolveMediaUrl(m.mediaUrl)} className="h-full w-full object-cover" muted />
+                      ) : (
+                        <img src={resolveMediaUrl(m.mediaUrl)} alt={m.name ?? ''} className="h-full w-full object-cover" loading="lazy" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border bg-card p-5">
+              <h2 className="text-sm font-semibold">Details</h2>
+              <dl className="mt-3 grid grid-cols-[96px_minmax(0,1fr)] gap-y-2 text-xs">
+                <dt className="text-muted-foreground">Status</dt>
+                <dd>{statusOf(item.status).label}</dd>
+                {scheduledAtLabel && (<><dt className="text-muted-foreground">{isQueued ? 'Goes out' : 'Was set for'}</dt><dd>{scheduledAtLabel}</dd></>)}
+                {item.publishedAt && (<><dt className="text-muted-foreground">Last published</dt><dd>{new Date(item.publishedAt).toLocaleString()}</dd></>)}
+                {item.created_at && (<><dt className="text-muted-foreground">Created</dt><dd>{new Date(item.created_at).toLocaleString()}</dd></>)}
+                {item.campaignId && (<><dt className="text-muted-foreground">Campaign</dt><dd><Link to={`/campaigns/${item.campaignId}`} className="text-primary hover:underline">Open campaign</Link></dd></>)}
+              </dl>
+            </section>
+          </aside>
+        </div>
       )}
 
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
+        <SheetContent side="right" className="w-full overflow-y-auto p-0 sm:max-w-xl">
           {contentItem && (
             <div className="p-1">
               <ContentEditor
@@ -754,16 +674,9 @@ export default function ContentDetailPage() {
       </Sheet>
 
       <Sheet open={publishOpen} onOpenChange={setPublishOpen}>
-        <SheetContent
-          side="right"
-          className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col overflow-hidden"
-        >
+        <SheetContent side="right" className="flex w-full flex-col overflow-hidden p-0 sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl">
           {contentItem && (
-            <PublishPanel
-              item={contentItem}
-              onCancel={() => setPublishOpen(false)}
-              onPublished={handlePublished}
-            />
+            <PublishPanel item={contentItem} onCancel={() => setPublishOpen(false)} onPublished={handlePublished} />
           )}
         </SheetContent>
       </Sheet>

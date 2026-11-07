@@ -1,9 +1,11 @@
 import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
+  Body,
   Controller,
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Req,
@@ -15,6 +17,17 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MediaService } from './media.service';
+import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+
+class RenameMediaDto {
+  @IsUUID()
+  tenantId: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(200)
+  name: string;
+}
 
 interface JwtUser {
   sub: string;
@@ -52,6 +65,13 @@ export class MediaController {
       contentId,
       workspaceId,
     });
+  }
+
+  /** Anyone who can add files can name them. */
+  @RequirePermission('media.upload')
+  @Patch(':id')
+  rename(@Param('id') id: string, @Body() dto: RenameMediaDto) {
+    return this.media.rename(id, dto.tenantId, dto.name);
   }
 
   @RequirePermission('media.delete')

@@ -156,6 +156,21 @@ export class MediaService {
       .getOne();
   }
 
+  /** Renames a file in the library; the stored file and its link don't change. */
+  async rename(id: string, tenantId: string, name: string) {
+    const clean = name
+      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (!clean) throw new BadRequestException('Name cannot be empty');
+    if (clean.length > 200)
+      throw new BadRequestException('Name must be 200 characters or fewer');
+    const asset = await this.mediaRepo.findOne({ where: { id, tenantId } });
+    if (!asset) throw new NotFoundException('Media not found');
+    asset.name = clean;
+    return this.mediaRepo.save(asset);
+  }
+
   async remove(id: string, tenantId: string) {
     const asset = await this.mediaRepo.findOne({ where: { id, tenantId } });
     if (!asset) throw new NotFoundException('Media not found');
