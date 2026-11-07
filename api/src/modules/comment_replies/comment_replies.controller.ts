@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
@@ -46,6 +47,7 @@ export class CommentRepliesController {
     private readonly queueDispatch: QueueDispatchService,
   ) {}
 
+  @RequirePermission('replies.view')
   @Post('fetch')
   fetch(@Req() req: { user: JwtUser }, @Body() dto: FetchCommentsDto) {
     const userId = String(req.user.sub);
@@ -67,6 +69,7 @@ export class CommentRepliesController {
     });
   }
 
+  @RequirePermission('replies.create')
   @Post(':id/suggest')
   suggest(@Req() req: { user: JwtUser }, @Param('id') id: string) {
     if (this.queueDispatch.isEnabled()) {
@@ -84,6 +87,7 @@ export class CommentRepliesController {
     });
   }
 
+  @RequirePermission('replies.create')
   @Post(':id/send')
   send(
     @Req() req: { user: JwtUser },
@@ -97,6 +101,7 @@ export class CommentRepliesController {
     });
   }
 
+  @RequirePermission('replies.create')
   @Post()
   create(@Body() dto: CommentRepliesCreateDto): Promise<CommentReplies> {
     return this.service.create(dto);
@@ -121,11 +126,13 @@ export class CommentRepliesController {
     return this.service.findOne(id);
   }
 
+  @RequirePermission('replies.create')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: CommentRepliesUpdateDto) {
     return this.service.update(id, dto);
   }
 
+  @RequirePermission('replies.create')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

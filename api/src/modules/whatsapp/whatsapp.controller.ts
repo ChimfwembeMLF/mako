@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Body,
   Controller,
@@ -79,6 +80,7 @@ export class WhatsappController {
     }));
   }
 
+  @RequirePermission('replies.manage_rules')
   @Delete('flows/sessions')
   @ApiOperation({ summary: 'Reset (clear) a flow session for a specific phone' })
   async resetFlowSession(
@@ -102,6 +104,7 @@ export class WhatsappController {
     return this.flowSessions.getConfig(tenantId, workspaceId);
   }
 
+  @RequirePermission('replies.manage_rules')
   @Patch('flows/config')
   @ApiOperation({
     summary: 'Enable/configure WhatsApp menu flow (USSD-style bot)',
@@ -228,6 +231,7 @@ export class WhatsappController {
     };
   }
 
+  @RequirePermission('replies.create')
   @Post('messages/reply')
   async reply(
     @Req() req: { user: JwtUser },

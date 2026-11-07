@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Body,
   Controller,
@@ -12,6 +13,7 @@ import { Repository } from 'typeorm';
 import { ContentItems } from './entities/content_items.entity';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
 import {
   GenerateContentDto,
   GenerateImageDto,
@@ -52,6 +54,7 @@ export class ContentAiController {
     private readonly contentRepo: Repository<ContentItems>,
   ) {}
 
+  @RequirePermission('content.create')
   @Post('generate')
   generate(@Req() req: { user: JwtUser }, @Body() dto: GenerateContentDto) {
     const workspaceId = dto.workspaceId ?? dto.workspace_id;
@@ -80,6 +83,7 @@ export class ContentAiController {
     });
   }
 
+  @RequirePermission('content.create')
   @Post('repurpose')
   repurpose(@Req() req: { user: JwtUser }, @Body() dto: RepurposeContentDto) {
     if (this.queueDispatch.isEnabled()) {
@@ -97,6 +101,7 @@ export class ContentAiController {
     });
   }
 
+  @RequirePermission('content.create')
   @Post('adapt-platforms')
   adapt(@Req() req: { user: JwtUser }, @Body() dto: AdaptPlatformsDto) {
     const workspaceId = dto.workspaceId ?? dto.workspace_id;
@@ -122,6 +127,7 @@ export class ContentAiController {
     });
   }
 
+  @RequirePermission('content.create')
   @Post('generate-image')
   image(@Req() req: { user: JwtUser }, @Body() dto: GenerateImageDto) {
     const payload = {
@@ -145,6 +151,7 @@ export class ContentAiController {
     });
   }
 
+  @RequirePermission('content.create')
   @Post('generate-slideshow')
   slideshow(@Req() req: { user: JwtUser }, @Body() dto: GenerateSlideshowDto) {
     const payload = {
@@ -168,6 +175,8 @@ export class ContentAiController {
     });
   }
 
+  // Scans every tenant's due posts, so only the platform may trigger it by hand.
+  @UseGuards(PlatformAdminGuard)
   @Post('auto-publish')
   runAutoPublish() {
     if (this.queueDispatch.isEnabled()) {
@@ -182,6 +191,7 @@ export class ContentAiController {
     return this.autoPublishService.publishDueItems();
   }
 
+  @RequirePermission('content.publish')
   @Post('daily-workflow')
   runDailyWorkflow(
     @Req() req: { user: JwtUser },
@@ -205,6 +215,7 @@ export class ContentAiController {
     });
   }
 
+  @RequirePermission('content.publish')
   @Post(':contentId/publish')
   async publish(
     @Req() req: { user: JwtUser },

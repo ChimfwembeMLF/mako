@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
@@ -41,6 +42,7 @@ export class BrandProfilesController {
     private readonly access: TenantAccessService,
   ) {}
 
+  @RequirePermission('settings.brand_brain')
   @Post('scrape-website')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -56,6 +58,7 @@ export class BrandProfilesController {
     });
   }
 
+  @RequirePermission('settings.brand_brain')
   @Post('parse-document')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -82,6 +85,7 @@ export class BrandProfilesController {
     });
   }
 
+  @RequirePermission('settings.brand_brain')
   @Post()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -133,6 +137,7 @@ export class BrandProfilesController {
     return this.service.findOne(id);
   }
 
+  @RequirePermission('settings.brand_brain')
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -144,6 +149,7 @@ export class BrandProfilesController {
     return this.service.updateForUser(id, String(req.user.sub), dto);
   }
 
+  @RequirePermission('settings.brand_brain')
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

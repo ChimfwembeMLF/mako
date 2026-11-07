@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { Controller, Get, Post, Query, Req, Res, Body, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { signOAuthState, verifyOAuthState } from '../../common/oauth-state.util';
@@ -145,6 +146,7 @@ export class GoogleDriveController {
     return res.data.files;
   }
 
+  @RequirePermission('media.upload')
   @Post('import')
   @UseGuards(JwtAuthGuard)
   async importFile(

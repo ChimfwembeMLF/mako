@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
@@ -37,6 +38,7 @@ export class ContentItemsController {
     private readonly brandProfiles: BrandProfilesService,
   ) {}
 
+  @RequirePermission('content.create')
   @Post()
   async create(
     @Req() req: { user: JwtUser },
@@ -93,6 +95,7 @@ export class ContentItemsController {
     return this.service.findOne(id);
   }
 
+  @RequirePermission('content.edit')
   @Patch(':id')
   async update(
     @Req() req: { user: JwtUser },
@@ -103,6 +106,7 @@ export class ContentItemsController {
     return this.service.update(id, enriched);
   }
 
+  @RequirePermission('content.edit')
   @Post(':id/media')
   attachMedia(
     @Req() req: { user: JwtUser },
@@ -121,11 +125,13 @@ export class ContentItemsController {
     });
   }
 
+  @RequirePermission('content.delete')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
 
+  @RequirePermission('content.delete')
   @Post('bulk-delete')
   async bulkDelete(
     @Body() body: { ids: string[] },

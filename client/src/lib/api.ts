@@ -1068,7 +1068,31 @@ export const tenantMembersApi = {
             method: 'DELETE',
         }),
     remove: (id: string) => request<any>(`/api/v1/tenant-members/${id}`, { method: 'DELETE' }),
+    previewInvitation: (id: string, token: string) =>
+        request<InvitationPreview>(
+            `/api/v1/tenant-members/invitations/${encodeURIComponent(id)}/preview?token=${encodeURIComponent(token)}`,
+        ),
+    acceptInvitation: (id: string, token: string) =>
+        request<{ tenantId: string }>(`/api/v1/tenant-members/invitations/${encodeURIComponent(id)}/accept`, {
+            method: 'POST',
+            body: JSON.stringify({ token }),
+        }),
+    declineInvitation: (id: string, token: string) =>
+        request<{ declined: boolean }>(`/api/v1/tenant-members/invitations/${encodeURIComponent(id)}/decline`, {
+            method: 'POST',
+            body: JSON.stringify({ token }),
+        }),
 };
+
+export interface InvitationPreview {
+    id: string;
+    email: string;
+    tenantId: string;
+    tenantName: string;
+    invitedBy: string | null;
+    status: 'pending' | 'accepted' | 'revoked' | 'declined' | 'expired';
+    expiresAt: string;
+}
 
 export const profilesApi = {
     findAll: () => request<any[]>('/api/v1/profiles'),
@@ -2955,13 +2979,13 @@ export const notificationsApi = {
     },
 };
 export const adsApi = {
-    createCampaign: (tenantId: string, data: any) =>
+    createCampaign: (tenantId: string, data: any, workspaceId?: string | null) =>
         request('/api/v1/ads/campaigns', {
             method: 'POST',
-            body: JSON.stringify({ ...data, tenantId, launch: true }),
+            body: JSON.stringify({ ...data, tenantId, workspaceId: workspaceId ?? undefined, launch: true }),
         }),
-    getCampaigns: (tenantId: string) =>
-        request<any[]>(`/api/v1/ads/campaigns?tenantId=${tenantId}`),
+    getCampaigns: (tenantId: string, workspaceId?: string | null) =>
+        request<any[]>(`/api/v1/ads/campaigns?${withWorkspace(new URLSearchParams({ tenantId }), workspaceId ?? undefined)}`),
     publishCampaign: (tenantId: string, id: string) =>
         request(`/api/v1/ads/campaigns/${id}/publish`, {
             method: 'POST',
@@ -2976,9 +3000,9 @@ export const adsApi = {
         request<{ spend: number; impressions: number; clicks: number }>(
             `/api/v1/ads/campaigns/${id}/metrics?tenantId=${tenantId}`,
         ),
-    getDashboardStats: (tenantId: string) =>
+    getDashboardStats: (tenantId: string, workspaceId?: string | null) =>
         request<{ activeCampaigns: number; totalSpend: number; totalImpressions: number }>(
-            `/api/v1/ads/dashboard-stats?tenantId=${tenantId}`,
+            `/api/v1/ads/dashboard-stats?${withWorkspace(new URLSearchParams({ tenantId }), workspaceId ?? undefined)}`,
         ),
     getEmbedScript: (tenantId: string, id: string) =>
         request<{ scriptUrl: string; snippet: string }>(

@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import { WhatsappTemplate } from './entities/whatsapp_template.entity';
 import {
@@ -84,6 +85,7 @@ export class WhatsappTemplatesController {
     return this.templates.listFromMeta(creds);
   }
 
+  @RequirePermission('templates.create')
   @Post('sync-all')
   @ApiOperation({ summary: 'Sync all PENDING/APPROVED local templates from Meta' })
   async syncAll(
@@ -96,6 +98,7 @@ export class WhatsappTemplatesController {
     return this.templates.syncAll(tenantId, creds, workspaceId);
   }
 
+  @RequirePermission('templates.create')
   @Post('import-all')
   @ApiOperation({ summary: 'Import all approved Meta templates into Mako' })
   async importAll(
@@ -108,6 +111,7 @@ export class WhatsappTemplatesController {
     return this.templates.importAllFromMeta(tenantId, workspaceId, creds);
   }
 
+  @RequirePermission('templates.create')
   @Post('import')
   @ApiOperation({ summary: 'Import an already-approved Meta template into local registry' })
   async importFromMeta(
@@ -140,12 +144,14 @@ export class WhatsappTemplatesController {
     return this.templates.findByTenant(tenantId, workspaceId);
   }
 
+  @RequirePermission('templates.create')
   @Post()
   @ApiOperation({ summary: 'Create a new DRAFT WhatsApp template' })
   create(@Body() dto: CreateWhatsappTemplateDto) {
     return this.templates.create(dto);
   }
 
+  @RequirePermission('templates.edit')
   @Patch(':id')
   @ApiOperation({ summary: 'Update a DRAFT or REJECTED template' })
   update(
@@ -157,6 +163,7 @@ export class WhatsappTemplatesController {
     return this.templates.update(id, dto, tenantId);
   }
 
+  @RequirePermission('templates.delete')
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a DRAFT or REJECTED template' })
   remove(
@@ -169,6 +176,7 @@ export class WhatsappTemplatesController {
 
   // ─── Per-template Meta actions ────────────────────────────────────────────
 
+  @RequirePermission('templates.activate')
   @Post(':id/submit')
   @ApiOperation({ summary: 'Submit a DRAFT template to Meta for approval' })
   async submit(
@@ -182,6 +190,7 @@ export class WhatsappTemplatesController {
     return this.templates.submit(id, tenantId, creds);
   }
 
+  @RequirePermission('templates.edit')
   @Post(':id/sync')
   @ApiOperation({ summary: 'Pull latest approval status from Meta for one template' })
   async syncOne(

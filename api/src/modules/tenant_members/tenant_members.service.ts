@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Repository, MoreThan } from 'typeorm';
@@ -160,6 +162,11 @@ export class TenantMembersService {
     return [...memberRows, ...pendingRows];
   }
 
+  /**
+   * Every invite, for a new or an existing Mako user, becomes a pending
+   * invitation that the person accepts from the link in the email. Nobody is
+   * added to a tenant without proving they control the invited address.
+   */
   async invite(params: {
     email: string;
     tenantId: string;
@@ -167,9 +174,8 @@ export class TenantMembersService {
     invitedBy: string;
   }): Promise<{
     message: string;
-    member?: TenantMembers;
-    invitation?: TenantMemberInvitation;
-    pending?: boolean;
+    invitation: TenantMemberInvitation;
+    pending: true;
   }> {
     const email = this.normalizeEmail(params.email);
     const user = await this.userService.findOne({ email });
@@ -178,34 +184,11 @@ export class TenantMembersService {
       const existing = await this.repo.findOne({
         where: { tenantId: params.tenantId, userId: user.id },
       });
-
-      if (existing) {
-        if (existing.isActive) {
-          throw new BadRequestException(
-            'User is already a member of this workspace',
-          );
-        }
-        existing.isActive = true;
-        existing.roleId = params.roleId;
-        existing.invitedBy = params.invitedBy;
-        existing.joinedAt = new Date();
-        const member = await this.repo.save(existing);
-        await this.revokePendingInvitations(email, params.tenantId);
-        return { message: 'Member re-activated', member };
+      if (existing?.isActive) {
+        throw new BadRequestException(
+          'User is already a member of this workspace',
+        );
       }
-
-      const member = await this.repo.save(
-        this.repo.create({
-          tenantId: params.tenantId,
-          userId: user.id,
-          roleId: params.roleId,
-          isActive: true,
-          invitedBy: params.invitedBy,
-          joinedAt: new Date(),
-        }),
-      );
-      await this.revokePendingInvitations(email, params.tenantId);
-      return { message: 'Member added successfully', member };
     }
 
     const pending = await this.invitationsRepo.findOne({
@@ -237,20 +220,137 @@ export class TenantMembersService {
       where: { id: params.tenantId },
     });
     const frontendUrl = resolveFrontendUrl(this.config);
-    const signupLink = `${frontendUrl}/auth?email=${encodeURIComponent(email)}`;
+    const acceptLink = `${frontendUrl}/invite?id=${invitation.id}&token=${this.invitationToken(invitation.id)}`;
 
     await this.mailService.sendWorkspaceInviteEmail(
       email,
       tenant?.name ?? 'Workspace',
-      signupLink,
+      acceptLink,
+      Boolean(user),
     );
 
     return {
-      message:
-        'Invitation sent — they can register or sign in with this email to join.',
+      message: user
+        ? 'Invitation sent — they need to accept it from the email before they join.'
+        : 'Invitation sent — they can create an account from the email to join.',
       invitation,
       pending: true,
     };
+  }
+
+  /** Secret for an invitation link: proves the holder received the invite email. */
+  invitationToken(invitationId: string): string {
+    const secret =
+      this.config.get<string>('INVITE_SECRET') ||
+      this.config.get<string>('JWT_SECRET') ||
+      'default_secret';
+    return createHmac('sha256', secret)
+      .update(`tenant-invite:${invitationId}`)
+      .digest('base64url');
+  }
+
+  private assertInvitationToken(invitationId: string, token?: string): void {
+    const expected = Buffer.from(this.invitationToken(invitationId));
+    const given = Buffer.from(String(token ?? ''));
+    if (expected.length !== given.length || !timingSafeEqual(expected, given)) {
+      throw new ForbiddenException('This invitation link is not valid');
+    }
+  }
+
+  /** Loads an invitation for the signed-in user from its emailed link. */
+  private async invitationForUser(
+    invitationId: string,
+    token: string | undefined,
+    userId: string,
+  ): Promise<TenantMemberInvitation> {
+    this.assertInvitationToken(invitationId, token);
+    const inv = await this.invitationsRepo.findOne({ where: { id: invitationId } });
+    if (!inv) throw new NotFoundException('Invitation not found');
+    const user = await this.userService.findOne({ id: userId });
+    if (!user?.email || this.normalizeEmail(user.email) !== inv.email) {
+      throw new ForbiddenException(
+        `This invitation was sent to ${inv.email}. Sign in with that email to accept it.`,
+      );
+    }
+    return inv;
+  }
+
+  async previewInvitation(
+    invitationId: string,
+    token: string | undefined,
+    userId: string,
+  ) {
+    const inv = await this.invitationForUser(invitationId, token, userId);
+    const tenant = await this.tenantsRepo.findOne({ where: { id: inv.tenantId } });
+    const inviter = await this.userService.findOne({ id: inv.invitedBy });
+    const expired = inv.expiresAt.getTime() < Date.now();
+    return {
+      id: inv.id,
+      email: inv.email,
+      tenantId: inv.tenantId,
+      tenantName: tenant?.name ?? 'Workspace',
+      invitedBy:
+        [inviter?.firstName, inviter?.lastName].filter(Boolean).join(' ') ||
+        inviter?.email ||
+        null,
+      status: expired && inv.status === 'pending' ? 'expired' : inv.status,
+      expiresAt: inv.expiresAt,
+    };
+  }
+
+  async acceptInvitation(
+    invitationId: string,
+    token: string | undefined,
+    userId: string,
+  ): Promise<{ tenantId: string; member: TenantMembers }> {
+    const inv = await this.invitationForUser(invitationId, token, userId);
+    if (inv.status !== 'pending') {
+      throw new BadRequestException(`This invitation was already ${inv.status}`);
+    }
+    if (inv.expiresAt.getTime() < Date.now()) {
+      throw new BadRequestException(
+        'This invitation has expired. Ask for a new one.',
+      );
+    }
+
+    const existing = await this.repo.findOne({
+      where: { tenantId: inv.tenantId, userId },
+    });
+    let member: TenantMembers;
+    if (existing) {
+      existing.isActive = true;
+      existing.roleId = inv.roleId;
+      existing.invitedBy = inv.invitedBy;
+      existing.joinedAt = new Date();
+      member = await this.repo.save(existing);
+    } else {
+      member = await this.repo.save(
+        this.repo.create({
+          tenantId: inv.tenantId,
+          userId,
+          roleId: inv.roleId,
+          isActive: true,
+          invitedBy: inv.invitedBy,
+          joinedAt: new Date(),
+        }),
+      );
+    }
+
+    inv.status = 'accepted';
+    inv.acceptedAt = new Date();
+    await this.invitationsRepo.save(inv);
+    return { tenantId: inv.tenantId, member };
+  }
+
+  async declineInvitation(
+    invitationId: string,
+    token: string | undefined,
+    userId: string,
+  ): Promise<void> {
+    const inv = await this.invitationForUser(invitationId, token, userId);
+    if (inv.status !== 'pending') return;
+    inv.status = 'declined';
+    await this.invitationsRepo.save(inv);
   }
 
   async revokeInvitation(id: string, tenantId: string): Promise<void> {
@@ -260,65 +360,6 @@ export class TenantMembersService {
     if (!inv) throw new NotFoundException('Invitation not found');
     inv.status = 'revoked';
     await this.invitationsRepo.save(inv);
-  }
-
-  async acceptPendingInvitations(
-    userId: string,
-    email: string,
-  ): Promise<number> {
-    const normalized = this.normalizeEmail(email);
-    const now = new Date();
-    const pending = await this.invitationsRepo.find({
-      where: { email: normalized, status: 'pending', expiresAt: MoreThan(now) },
-    });
-
-    let accepted = 0;
-    for (const inv of pending) {
-      const existing = await this.repo.findOne({
-        where: { tenantId: inv.tenantId, userId },
-      });
-
-      if (existing) {
-        if (!existing.isActive) {
-          existing.isActive = true;
-          existing.roleId = inv.roleId;
-          existing.invitedBy = inv.invitedBy;
-          existing.joinedAt = new Date();
-          await this.repo.save(existing);
-        }
-      } else {
-        await this.repo.save(
-          this.repo.create({
-            tenantId: inv.tenantId,
-            userId,
-            roleId: inv.roleId,
-            isActive: true,
-            invitedBy: inv.invitedBy,
-            joinedAt: new Date(),
-          }),
-        );
-      }
-
-      inv.status = 'accepted';
-      inv.acceptedAt = now;
-      await this.invitationsRepo.save(inv);
-      accepted += 1;
-    }
-
-    return accepted;
-  }
-
-  private async revokePendingInvitations(
-    email: string,
-    tenantId: string,
-  ): Promise<void> {
-    const pending = await this.invitationsRepo.find({
-      where: { tenantId, email, status: 'pending' },
-    });
-    for (const inv of pending) {
-      inv.status = 'revoked';
-      await this.invitationsRepo.save(inv);
-    }
   }
 
   async update(

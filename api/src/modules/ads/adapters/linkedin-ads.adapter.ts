@@ -37,6 +37,7 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
       tenantId,
       payload.userId,
       AdPlatform.LINKEDIN,
+      payload.campaign.workspaceId,
     );
 
     const { data, headers } = await axios.post<{ id?: string }>(
@@ -92,6 +93,7 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.LINKEDIN,
+      payload.campaign.workspaceId,
     );
 
     await axios.post(
@@ -121,6 +123,7 @@ export class LinkedinAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.LINKEDIN,
+      payload.campaign.workspaceId,
     );
 
     const { data } = await axios.get(

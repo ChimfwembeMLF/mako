@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Body,
   Controller,
@@ -33,6 +34,7 @@ export class TemplatesController {
     return this.templates.findByTenant(tenantId, workspaceId);
   }
 
+  @RequirePermission('templates.create')
   @Post()
   create(@Req() req: { user: JwtUser }, @Body() body: Record<string, unknown>) {
     return this.templates.create({
@@ -50,6 +52,7 @@ export class TemplatesController {
     return this.templates.findOne(id, tenantId, workspaceId);
   }
 
+  @RequirePermission('templates.edit')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -60,6 +63,7 @@ export class TemplatesController {
     return this.templates.update(id, body as any, tenantId, workspaceId);
   }
 
+  @RequirePermission('templates.delete')
   @Delete(':id')
   remove(
     @Param('id') id: string,

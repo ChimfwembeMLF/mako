@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import { AdCampaignEntity } from './entities/ad-campaign.entity';
 import {
@@ -18,6 +19,7 @@ import { Request } from 'express';
 
 interface CreateCampaignDto {
   tenantId: string;
+  workspaceId?: string;
   name: string;
   platform: AdPlatform;
   dailyBudget: number;
@@ -43,6 +45,7 @@ export class AdsController {
     return req.user?.['sub'] as string;
   }
 
+  @RequirePermission('settings.billing')
   @Post('campaigns')
   @ApiOperation({ summary: 'Draft a new AI Ad Campaign' })
   async createCampaign(@Req() req: Request, @Body() dto: CreateCampaignDto) {
@@ -53,6 +56,7 @@ export class AdsController {
     return this.adsService.createCampaign(userId, dto.tenantId, dto);
   }
 
+  @RequirePermission('settings.billing')
   @Post('campaigns/:id/publish')
   @ApiOperation({
     summary: 'Publish a draft campaign to the actual Ad Platform',
@@ -69,6 +73,7 @@ export class AdsController {
     );
   }
 
+  @RequirePermission('settings.billing')
   @Post('campaigns/:id/pause')
   @ApiOperation({ summary: 'Pause an active campaign' })
   async pauseCampaign(
@@ -85,8 +90,12 @@ export class AdsController {
 
   @Get('campaigns')
   @ApiOperation({ summary: 'List all ad campaigns' })
-  async getCampaigns(@Req() req: Request, @Query('tenantId') tenantId: string) {
-    return this.adsService.getCampaigns(this.userId(req), tenantId);
+  async getCampaigns(
+    @Req() req: Request,
+    @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
+  ) {
+    return this.adsService.getCampaigns(this.userId(req), tenantId, workspaceId);
   }
 
   @Get('dashboard-stats')
@@ -94,8 +103,13 @@ export class AdsController {
   async getDashboardStats(
     @Req() req: Request,
     @Query('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
   ) {
-    return this.adsService.getDashboardStats(this.userId(req), tenantId);
+    return this.adsService.getDashboardStats(
+      this.userId(req),
+      tenantId,
+      workspaceId,
+    );
   }
 
   @Get('campaigns/:id/metrics')
@@ -132,6 +146,7 @@ export class AdsController {
     return this.adsService.getBalance(this.userId(req), tenantId);
   }
 
+  @RequirePermission('content.create')
   @Post('ai-assist')
   @ApiOperation({ summary: 'Generate AI assist content for Ads' })
   async generateCampaignAssist(

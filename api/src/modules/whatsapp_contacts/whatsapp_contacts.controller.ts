@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Controller,
   Get,
@@ -23,6 +24,7 @@ import { WhatsappContactsUpdateDto } from './dto/update-whatsapp_contacts.dto';
 export class WhatsappContactsController {
   constructor(private readonly service: WhatsappContactsService) {}
 
+  @RequirePermission('replies.create')
   @Post()
   create(@Body() dto: WhatsappContactsCreateDto): Promise<WhatsappContacts> {
     return this.service.create({
@@ -47,6 +49,7 @@ export class WhatsappContactsController {
     return this.service.findOne(id, tenantId);
   }
 
+  @RequirePermission('replies.create')
   @Patch(':id')
   update(
     @Param('id') id: string,
@@ -56,6 +59,7 @@ export class WhatsappContactsController {
     return this.service.update(id, dto, tenantId);
   }
 
+  @RequirePermission('replies.create')
   @Delete(':id')
   remove(@Param('id') id: string, @Query('tenantId') tenantId: string) {
     return this.service.remove(id, tenantId);

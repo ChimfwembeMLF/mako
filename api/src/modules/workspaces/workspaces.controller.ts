@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
@@ -36,6 +37,7 @@ export class WorkspacesController {
     private readonly access: TenantAccessService,
   ) {}
 
+  @RequirePermission('settings.billing')
   @Post()
   create(
     @Req() req: { user: JwtUser },
@@ -58,11 +60,13 @@ export class WorkspacesController {
     return this.service.findOne(id);
   }
 
+  @RequirePermission('settings.brand_brain')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: WorkspacesUpdateDto) {
     return this.service.update(id, dto);
   }
 
+  @RequirePermission('settings.billing')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);
@@ -73,6 +77,7 @@ export class WorkspacesController {
     return this.service.getAutomationConfig(id);
   }
 
+  @RequirePermission('settings.brand_brain')
   @Patch(':id/automation-config')
   updateAutomationConfig(
     @Param('id') id: string,

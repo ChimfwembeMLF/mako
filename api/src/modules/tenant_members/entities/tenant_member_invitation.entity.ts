@@ -25,7 +25,7 @@ export class TenantMemberInvitation {
   invitedBy: string;
 
   @Column({ type: 'text', default: 'pending' })
-  status: 'pending' | 'accepted' | 'revoked';
+  status: 'pending' | 'accepted' | 'revoked' | 'declined';
 
   @Column({ type: 'timestamptz' })
   expiresAt: Date;

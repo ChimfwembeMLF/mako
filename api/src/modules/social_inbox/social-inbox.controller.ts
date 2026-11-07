@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Body,
   Controller,
@@ -50,6 +51,7 @@ export class SocialInboxController {
     return this.inbox.listMessages(tenantId, conversationId, workspaceId);
   }
 
+  @RequirePermission('replies.view')
   @Post('sync')
   syncInbox(
     @Req() req: { user: JwtUser },
@@ -62,6 +64,7 @@ export class SocialInboxController {
     );
   }
 
+  @RequirePermission('replies.create')
   @Post('messages/draft')
   draftReply(
     @Body()
@@ -70,6 +73,7 @@ export class SocialInboxController {
     return this.dmReply.draftReply(body);
   }
 
+  @RequirePermission('replies.create')
   @Post('messages/reply')
   reply(
     @Req() req: { user: JwtUser },

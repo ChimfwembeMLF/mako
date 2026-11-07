@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Controller,
   Delete,
@@ -34,6 +35,7 @@ export class MediaController {
     return this.media.findByTenant(tenantId, workspaceId);
   }
 
+  @RequirePermission('media.upload')
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   upload(
@@ -52,6 +54,7 @@ export class MediaController {
     });
   }
 
+  @RequirePermission('media.delete')
   @Delete(':id')
   remove(@Param('id') id: string, @Query('tenantId') tenantId: string) {
     return this.media.remove(id, tenantId);

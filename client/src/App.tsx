@@ -62,6 +62,7 @@ const ChatbotKnowledgePage = lazy(() => import("./pages/chatbot/ChatbotKnowledge
 const ChatbotSessionsPage = lazy(() => import("./pages/chatbot/ChatbotSessionsPage"));
 const WorkspacesPage = lazy(() => import("./pages/WorkspacesPage"));
 const SocialCallback = lazy(() => import("./pages/auth/SocialCallback"));
+const InvitePage = lazy(() => import("./pages/auth/InvitePage"));
 const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage"));
 const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
 const DataDeletionPage = lazy(() => import("./pages/legal/DataDeletionPage"));
@@ -100,10 +101,24 @@ function HomeRoute() {
   return <LandingPage />;
 }
 
+/** An invite link opened while signed out resumes here after sign-in (see InvitePage). */
+function pendingInvitePath(): string | null {
+  try {
+    const raw = localStorage.getItem("mako_pending_invite");
+    const inv = raw ? JSON.parse(raw) : null;
+    if (!inv?.id || !inv?.token) return null;
+    return `/invite?id=${encodeURIComponent(inv.id)}&token=${encodeURIComponent(inv.token)}`;
+  } catch {
+    return null;
+  }
+}
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <AppPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
+  const invite = pendingInvitePath();
+  if (invite) return <Navigate to={invite} replace />;
   return <>{children}</>;
 }
 
@@ -134,6 +149,7 @@ const App = () => (
                 {/* Public routes */}
                 <Route path="/auth" element={<PublicOnly><Auth /></PublicOnly>} />
                 <Route path="/auth/callback" element={<LazyPage><SocialCallback /></LazyPage>} />
+                <Route path="/invite" element={<LazyPage><InvitePage /></LazyPage>} />
                 <Route path="/reset-password" element={<LazyPage><ResetPassword /></LazyPage>} />
                 <Route path="/contact/:tenantId" element={<LazyPage><ContactForm /></LazyPage>} />
                 <Route path="/privacy" element={<LazyPage><PrivacyPage /></LazyPage>} />

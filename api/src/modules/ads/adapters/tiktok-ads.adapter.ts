@@ -32,6 +32,7 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
       tenantId,
       payload.userId,
       AdPlatform.TIKTOK,
+      payload.campaign.workspaceId,
     );
     const advertiserId = await this.advertiserId(account);
 
@@ -76,6 +77,7 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.TIKTOK,
+      payload.campaign.workspaceId,
     );
 
     await axios.post(
@@ -105,6 +107,7 @@ export class TiktokAdsAdapter implements AdsProviderAdapter {
       payload.campaign.tenantId,
       payload.userId,
       AdPlatform.TIKTOK,
+      payload.campaign.workspaceId,
     );
 
     const { data } = await axios.get(`${this.apiBase}/report/integrated/get/`, {

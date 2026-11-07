@@ -72,26 +72,36 @@ export class MailService {
   async sendWorkspaceInviteEmail(
     to: string,
     workspaceName: string,
-    signupLink: string,
+    acceptLink: string,
+    hasAccount = false,
   ): Promise<void> {
-    const appName = this.config.get<string>('APP_NAME') ?? 'Mako ';
+    const appName = (this.config.get<string>('APP_NAME') ?? 'Mako').trim();
     const subject = `You've been invited to ${workspaceName} on ${appName}`;
+    const action = hasAccount
+      ? `Sign in with ${to} and accept the invitation:`
+      : `Create your ${appName} account with ${to}, then accept the invitation:`;
     const text = [
       `You've been invited to join "${workspaceName}" on ${appName}.`,
       '',
-      `Create your account or sign in with this email (${to}) to access the workspace:`,
-      signupLink,
+      action,
+      acceptLink,
       '',
-      'This invitation expires in 7 days.',
+      "This invitation expires in 7 days. If you weren't expecting it, you can ignore this email.",
     ].join('\n');
 
     if (!this.isConfigured()) {
       this.logger.warn(
-        `Mail not configured — workspace invite for ${to}: ${signupLink}`,
+        `Mail not configured — workspace invite for ${to}: ${acceptLink}`,
       );
       return;
     }
 
+    const esc = (v: string) =>
+      v
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
     const from = mailFromAddress(this.config);
     await this.mailer.sendMail({
       to,
@@ -99,10 +109,10 @@ export class MailService {
       subject,
       text,
       html: `
-        <p>You've been invited to join <strong>${workspaceName}</strong> on ${appName}.</p>
-        <p>Create your account or sign in with <strong>${to}</strong> to access the workspace:</p>
-        <p><a href="${signupLink}">Accept invitation</a></p>
-        <p>This invitation expires in 7 days.</p>
+        <p>You've been invited to join <strong>${esc(workspaceName)}</strong> on ${esc(appName)}.</p>
+        <p>${esc(action)}</p>
+        <p><a href="${esc(acceptLink)}">Review invitation</a></p>
+        <p>This invitation expires in 7 days. If you weren't expecting it, you can ignore this email.</p>
       `,
     });
 

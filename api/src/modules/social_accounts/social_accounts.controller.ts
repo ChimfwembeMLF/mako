@@ -1,3 +1,5 @@
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Controller,
   Get,
@@ -54,7 +56,13 @@ export class SocialAccountsController {
     private readonly oauth: SocialAccountsOAuthService,
     private readonly config: ConfigService,
     private readonly xWebhook: XWebhookAdminService,
+    private readonly access: TenantAccessService,
   ) {}
+
+  /** Setup tokens carry the tenant chosen at OAuth start; recheck the role when it is used. */
+  private assertCanConnect(userId: string, tenantId: string) {
+    return this.access.assertMember(userId, tenantId, 'content.publish');
+  }
 
   private getUserId(req: Request): string {
     const userId = req.user?.['sub'] || req.user?.['id'];
@@ -102,6 +110,7 @@ export class SocialAccountsController {
   @ApiOperation({
     summary: 'Connect a social account manually (tokens/credentials)',
   })
+  @RequirePermission('content.publish')
   @Post('connect')
   async connect(@Req() req: Request, @Body() dto: SocialAccountsCreateDto) {
     const userId = this.getUserId(req);
@@ -183,6 +192,7 @@ export class SocialAccountsController {
   @ApiOperation({
     summary: 'Start OAuth flow to connect a platform for a tenant',
   })
+  @RequirePermission('content.publish')
   @Get('oauth/:platform/authorize')
   startOAuth(
     @Req() req: Request,
@@ -431,6 +441,7 @@ export class SocialAccountsController {
         'Facebook setup token does not belong to this user',
       );
     }
+    await this.assertCanConnect(userId, payload.tenantId);
 
     const result = await this.oauth.buildFacebookConnectResult(
       payload,
@@ -479,6 +490,7 @@ export class SocialAccountsController {
         'YouTube setup token does not belong to this user',
       );
     }
+    await this.assertCanConnect(userId, payload.tenantId);
 
     const result = this.oauth.buildYoutubeConnectResult(payload, dto.channelId);
 
@@ -517,6 +529,7 @@ export class SocialAccountsController {
     summary:
       'Try WhatsApp setup using an existing Facebook connection (skips Meta login when scopes allow)',
   })
+  @RequirePermission('content.publish')
   @Post('whatsapp/setup-from-meta')
   setupWhatsappFromMeta(
     @Req() req: Request,
@@ -564,6 +577,7 @@ export class SocialAccountsController {
         'WhatsApp setup token does not belong to this user',
       );
     }
+    await this.assertCanConnect(userId, payload.tenantId);
 
     const phone = payload.phones.find((p) => p.id === dto.phoneNumberId);
     if (!phone) {
@@ -602,6 +616,7 @@ export class SocialAccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Disconnect a social account' })
+  @RequirePermission('content.publish')
   @Post(':id/disconnect')
   disconnect(
     @Req() req: Request,
@@ -614,6 +629,7 @@ export class SocialAccountsController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove a social account' })
+  @RequirePermission('content.publish')
   @Delete(':id')
   remove(
     @Req() req: Request,
