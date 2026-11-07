@@ -857,6 +857,7 @@ export const backofficeApi = {
             collection: string;
             qdrantConfigured: boolean;
             qdrant: { reachable: boolean; points: number; error?: string } | null;
+            embedding: { ok: boolean; dimensions?: number; error?: string };
             documents: Record<string, number>;
         }>('/api/v1/backoffice/ai/status'),
     reindexKnowledge: () =>
@@ -2039,6 +2040,24 @@ export const whatsappContactsApi = {
     },
 };
 
+export const whatsappBotsApi = {
+    list: (tenantId: string, workspaceId?: string) => {
+        const qs = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
+        return request<import('@/components/whatsapp/bot-builder/types').WhatsappBot[]>(`/api/v1/whatsapp/bots?${qs}`);
+    },
+    create: (data: { tenantId: string; workspaceId?: string; name: string; template?: 'blank' | 'menu' | 'agent' | 'lead_capture' | 'from_menu_bot' }) =>
+        request<import('@/components/whatsapp/bot-builder/types').WhatsappBot>('/api/v1/whatsapp/bots', { method: 'POST', body: JSON.stringify(data) }),
+    get: (id: string) => request<import('@/components/whatsapp/bot-builder/types').WhatsappBot>(`/api/v1/whatsapp/bots/${id}`),
+    update: (id: string, data: Partial<Pick<import('@/components/whatsapp/bot-builder/types').WhatsappBot, 'name' | 'description' | 'triggers' | 'isDefault' | 'graph'>>) =>
+        request<{ bot: import('@/components/whatsapp/bot-builder/types').WhatsappBot; problems: import('@/components/whatsapp/bot-builder/types').GraphProblem[] }>(
+            `/api/v1/whatsapp/bots/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    publish: (id: string) => request<import('@/components/whatsapp/bot-builder/types').WhatsappBot>(`/api/v1/whatsapp/bots/${id}/publish`, { method: 'POST' }),
+    unpublish: (id: string) => request<import('@/components/whatsapp/bot-builder/types').WhatsappBot>(`/api/v1/whatsapp/bots/${id}/unpublish`, { method: 'POST' }),
+    remove: (id: string) => request<void>(`/api/v1/whatsapp/bots/${id}`, { method: 'DELETE' }),
+    test: (id: string, data: { text: string; interactiveId?: string; graph?: import('@/components/whatsapp/bot-builder/types').BotGraph; state?: import('@/components/whatsapp/bot-builder/types').BotSessionState | null }) =>
+        request<import('@/components/whatsapp/bot-builder/types').SimulateResult>(`/api/v1/whatsapp/bots/${id}/test`, { method: 'POST', body: JSON.stringify(data) }),
+};
+
 export const whatsappApi = {
     listMessages: (tenantId: string, phone?: string, workspaceId?: string) => {
         const q = withWorkspace(new URLSearchParams({ tenantId }), workspaceId);
@@ -2104,6 +2123,8 @@ export const whatsappApi = {
             workspaceId?: string | null;
             platformManaged?: boolean;
             webhookUrl?: string;
+            /** wa.me link customers use to start a chat (includes the workspace code on the shared number). */
+            chatLink?: string;
             graphError?: string;
             message?: string;
         }>(`/api/v1/whatsapp/connection-status?${qs}`);

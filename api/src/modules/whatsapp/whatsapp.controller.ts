@@ -13,10 +13,13 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import { WhatsappMessages } from './entities/whatsapp_messages.entity';
 import { WhatsappMessagingService } from './whatsapp-messaging.service';
 import { WhatsappAccountAuthService } from './whatsapp-account-auth.service';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
+import { Tenants } from '../tenants/entities/tenants.entity';
+import { sharedNumberGreeting } from './whatsapp-inbound.service';
 import { WhatsappFlowSessionService } from './whatsapp-flow-session.service';
 import { UpdateWhatsappFlowConfigDto } from './dto/update-whatsapp-flow-config.dto';
 import {
@@ -40,6 +43,9 @@ export class WhatsappController {
     @InjectRepository(SocialAccounts)
     private readonly socialRepo: Repository<SocialAccounts>,
     private readonly flowSessions: WhatsappFlowSessionService,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
+    private readonly access: TenantAccessService,
   ) {}
 
   private async findWhatsappAccount(
@@ -76,9 +82,11 @@ export class WhatsappController {
   @Delete('flows/sessions')
   @ApiOperation({ summary: 'Reset (clear) a flow session for a specific phone' })
   async resetFlowSession(
+    @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,
     @Query('phone') phone: string,
   ) {
+    await this.access.assertMember(String(req.user.sub), tenantId, 'chatbot.manage');
     await this.flowSessions.clearSession(tenantId, phone);
     return { cleared: true };
   }
@@ -98,11 +106,13 @@ export class WhatsappController {
   @ApiOperation({
     summary: 'Enable/configure WhatsApp menu flow (USSD-style bot)',
   })
-  updateFlowConfig(
+  async updateFlowConfig(
+    @Req() req: { user: JwtUser },
     @Query('tenantId') tenantId: string,
     @Body() dto: UpdateWhatsappFlowConfigDto,
     @Query('workspaceId') workspaceId?: string,
   ) {
+    await this.access.assertMember(String(req.user.sub), tenantId, 'chatbot.manage');
     return this.flowSessions.updateConfig(tenantId, dto, workspaceId);
   }
 
@@ -192,7 +202,19 @@ export class WhatsappController {
 
     const apiBase = (process.env.PUBLIC_API_URL ?? process.env.API_PUBLIC_URL ?? '')
       .replace(/\/$/, '');
+    // On the shared Mako number, customers must come through this link so their first
+    // message carries the workspace's code.
+    let chatLink: string | undefined;
+    const digits = (validation.displayPhoneNumber ?? '').replace(/\D/g, '');
+    if (digits) {
+      const tenant = platformManaged
+        ? await this.tenantsRepo.findOne({ where: { id: account.tenantId } })
+        : null;
+      const text = tenant ? `?text=${encodeURIComponent(sharedNumberGreeting(tenant.name, tenant.slug))}` : '';
+      chatLink = `https://wa.me/${digits}${text}`;
+    }
     return {
+      chatLink,
       connected: true,
       tokenValid: true,
       phoneNumberId: creds.phoneNumberId,
@@ -224,6 +246,8 @@ export class WhatsappController {
     },
   ) {
     const userId = String(req.user.sub);
+    // Sending from the business's number is a reply; viewers and creators can only read.
+    await this.access.assertMember(userId, body.tenantId, 'replies.create');
     const account = await this.findWhatsappAccount(
       body.tenantId,
       userId,

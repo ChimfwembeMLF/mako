@@ -15,13 +15,13 @@ function provider(name: string, defaults: { defaultModel: string; premiumModel: 
   };
 }
 
-function setup(opts: { preferred?: string | null; keys?: Record<string, string> } = {}) {
+function setup(opts: { preferred?: string | null; voice?: string | null; keys?: Record<string, string> } = {}) {
   const mistral = provider('mistral', { defaultModel: 'mistral-small-latest', premiumModel: 'mistral-large-latest' });
   const openai = provider('openai', { defaultModel: 'gpt-4o-mini', premiumModel: 'gpt-4o' });
   const gemini = provider('gemini', { defaultModel: 'gemini-flash', premiumModel: 'gemini-pro' });
   const deepseek = provider('deepseek', { defaultModel: 'deepseek-chat', premiumModel: 'deepseek-reasoner' });
   const parler = { speak: jest.fn(async () => ({ audioData: 'parler', format: 'mp3' })) };
-  const tenants = { findOne: jest.fn(async () => ({ preferredAiProvider: opts.preferred ?? null })) };
+  const tenants = { findOne: jest.fn(async () => ({ preferredAiProvider: opts.preferred ?? null, preferredTtsProvider: opts.voice ?? null })) };
   const keys = opts.keys ?? { OPENAI_API_KEY: 'sk-test', MISTRAL_API_KEY: 'm' };
   const integrations = { getIntegrationWithEnvFallback: jest.fn(async (k: string) => keys[k]) };
   const router = new AiProviderRouter(
@@ -55,11 +55,23 @@ describe('AiProviderRouter', () => {
     expect((await router.complete(msgs, { tenantId: 't1' })).content).toBe('deepseek');
   });
 
-  it('ignores a voice-only preference for chat but keeps it for speech', async () => {
-    const { router, parler } = setup({ preferred: 'self_hosted_parler' });
+  it('never uses a voice-only provider for chat', async () => {
+    const { router } = setup({ preferred: 'self_hosted_parler' });
     expect((await router.complete(msgs, { tenantId: 't1' })).content).toBe('openai');
+  });
+
+  it('keeps the chat provider and the voice separate', async () => {
+    const { router, parler, gemini } = setup({ preferred: 'gemini', voice: 'self_hosted_parler', keys: { GEMINI_API_KEY: 'g' } });
+    expect((await router.complete(msgs, { tenantId: 't1' })).content).toBe('gemini');
     await router.speak('hello', { tenantId: 't1' });
     expect(parler.speak).toHaveBeenCalled();
+    expect(gemini.speak).not.toHaveBeenCalled();
+  });
+
+  it("uses the chat provider's own voice when no voice is chosen", async () => {
+    const { router, openai } = setup({ preferred: 'openai' });
+    await router.speak('hello', { tenantId: 't1' });
+    expect(openai.speak).toHaveBeenCalled();
   });
 
   it("translates a chatbot's saved Mistral model for other providers", async () => {

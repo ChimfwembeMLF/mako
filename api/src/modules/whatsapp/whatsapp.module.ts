@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { WhatsappContacts } from '../whatsapp_contacts/entities/whatsapp_contacts.entity';
@@ -23,6 +23,14 @@ import { ConfigurableMenuFlow } from './flows/configurable-menu.flow';
 import { WhatsappFlowAiService } from './whatsapp-flow-ai.service';
 import { WhatsappController } from './whatsapp.controller';
 
+import { WhatsappBot } from './bots/whatsapp-bot.entity';
+import { WhatsappBotsService } from './bots/whatsapp-bots.service';
+import { WhatsappBotAgentService } from './bots/whatsapp-bot-agent.service';
+import { WhatsappBotsController } from './bots/whatsapp-bots.controller';
+import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
+import { KnowledgeSearchModule } from '../chatbot/knowledge-search.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+
 @Module({
   imports: [
     TypeOrmModule.forFeature([
@@ -33,13 +41,20 @@ import { WhatsappController } from './whatsapp.controller';
       BrandProfiles,
       WhatsappFlowConfig,
       WhatsappFlowSession,
+      WhatsappBot,
     ]),
     LeadsModule,
     AutoReplyRulesModule,
     AiModule,
     SocialAccountsModule,
+    BrandProfilesModule,
+    KnowledgeSearchModule,
+    // Notifications → Queues → WhatsApp, so this import is a forward reference.
+    forwardRef(() => NotificationsModule),
   ],
   providers: [
+    WhatsappBotsService,
+    WhatsappBotAgentService,
     WhatsappAccountAuthService,
     WhatsappMessagingService,
     WhatsappPublishingService,
@@ -51,7 +66,7 @@ import { WhatsappController } from './whatsapp.controller';
     ConfigurableMenuFlow,
     WhatsappFlowAiService,
   ],
-  controllers: [WhatsappController],
+  controllers: [WhatsappBotsController, WhatsappController],
   exports: [
     WhatsappAccountAuthService,
     WhatsappMessagingService,

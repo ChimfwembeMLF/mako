@@ -33,6 +33,7 @@ import {
   isWhatsappPlatformEnabled,
   WhatsappCredentials,
 } from '../whatsapp/whatsapp-platform.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 export type WhatsappSetupFromMetaResult =
   | {
@@ -295,7 +296,7 @@ export class SocialAccountsService {
       access_token: string;
       expires_in?: number;
     }>(
-      `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${params.toString()}`,
     );
 
     if (!data.access_token) {
@@ -333,7 +334,7 @@ export class SocialAccountsService {
       access_token: string;
       expires_in?: number;
     }>(
-      `https://graph.facebook.com/v18.0/oauth/access_token?${params.toString()}`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${params.toString()}`,
     );
 
     if (!data.access_token) {
@@ -580,7 +581,7 @@ export class SocialAccountsService {
   ): Promise<{ valid: boolean; message?: string }> {
     try {
       await axios.get(
-        `https://graph.facebook.com/v19.0/${creds.phoneNumberId}`,
+        `https://graph.facebook.com/${META_GRAPH_VERSION}/${creds.phoneNumberId}`,
         {
           params: { fields: 'id', access_token: creds.accessToken },
         },

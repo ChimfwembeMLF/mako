@@ -9,8 +9,9 @@ import { CommentReplies } from '../comment_replies/entities/comment_replies.enti
 import { YoutubePublishingService } from './youtube-publishing.service';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { summarizeAxiosError } from './publish-error.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
-const GRAPH_API = 'https://graph.facebook.com/v20.0';
+const GRAPH_API = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
 @Injectable()
 export class SendCommentReplyService {

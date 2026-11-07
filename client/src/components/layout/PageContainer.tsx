@@ -26,7 +26,7 @@ export function pageWidthClass(width: PageWidth): string {
 }
 
 /** Match dashboard routes to the same max-width their page content uses. */
-const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = [
+const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = ([
   { path: '/templates/:id', width: '2xl' },
   { path: '/team/:userId/permissions', width: '3xl' },
   { path: '/approvals', width: '3xl' },
@@ -38,6 +38,9 @@ const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = [
   { path: '/team', width: '4xl' },
   { path: '/billing', width: '4xl' },
   { path: '/ads', width: 'full' },
+  // The bot builder canvas needs every pixel the layout can give it.
+  { path: '/whatsapp/bots/:id', width: 'full' },
+  { path: '/whatsapp/bots', width: '6xl' },
   { path: '/content/:id', width: '4xl' },
   { path: '/chatbot/knowledge', width: '4xl' },
   { path: '/content', width: '6xl' },
@@ -47,7 +50,7 @@ const ROUTE_PAGE_WIDTH: { path: string; width: PageWidth }[] = [
   { path: '/admin/backoffice', width: '6xl' },
   { path: '/chatbot/sessions', width: '6xl' },
   { path: '/chatbot', width: '6xl' },
-].sort((a, b) => b.path.length - a.path.length);
+] as { path: string; width: PageWidth }[]).sort((a, b) => b.path.length - a.path.length);
 
 export function resolvePageWidth(pathname: string): PageWidth {
   for (const { path, width } of ROUTE_PAGE_WIDTH) {

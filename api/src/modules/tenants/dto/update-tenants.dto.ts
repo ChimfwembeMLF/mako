@@ -31,7 +31,11 @@ export class TenantsUpdateDto {
 
   @IsOptional()
   @IsEnum(IntegrationProvider)
-  preferredAiProvider?: IntegrationProvider;
+  preferredAiProvider?: IntegrationProvider | null;
+
+  @IsOptional()
+  @IsEnum(IntegrationProvider)
+  preferredTtsProvider?: IntegrationProvider | null;
 
   @IsOptional()
   @IsDate()

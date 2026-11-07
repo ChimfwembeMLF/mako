@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CheckCircle2, ExternalLink, Key, Loader2, XCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, Key, Loader2, XCircle, Sparkles } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +49,8 @@ const GoogleDriveIcon = (props: any) => (
   </svg>
 );
 
-const DEFAULT_PROVIDER = "mistral";
+/** No stored preference: Mako's platform default provider, included in the plan. */
+const DEFAULT_PROVIDER = "default";
 
 type Provider = {
   id: string;
@@ -61,22 +62,21 @@ type Provider = {
 
 const AI_PROVIDERS: Provider[] = [
   {
-    id: "mistral",
-    name: "Mistral AI",
-    icon: MistralIcon,
-    note: "Built in and included in your plan. Add your own key to use your Mistral account instead.",
-    keyUrl: "https://console.mistral.ai/api-keys",
+    id: DEFAULT_PROVIDER,
+    name: "Mako AI",
+    icon: (props: { className?: string }) => <Sparkles {...props} />,
+    note: "Included in your plan. Mako picks the provider and keeps it running.",
   },
-  { id: "openai", name: "OpenAI", icon: OpenAIIcon, note: "Use your OpenAI account.", keyUrl: "https://platform.openai.com/api-keys" },
-  { id: "gemini", name: "Google Gemini", icon: GeminiIcon, note: "Use your Google AI account.", keyUrl: "https://aistudio.google.com/apikey" },
-  { id: "deepseek", name: "DeepSeek", icon: DeepSeekIcon, note: "Use your DeepSeek account.", keyUrl: "https://platform.deepseek.com/api_keys" },
-  {
-    id: "self_hosted_parler",
-    name: "Self-Hosted Parler",
-    icon: MistralIcon,
-    note: "Voice only, and no key needed. Text still runs on Mistral.",
-  },
+  { id: "openai", name: "OpenAI", icon: OpenAIIcon, note: "Use your own OpenAI account.", keyUrl: "https://platform.openai.com/api-keys" },
+  { id: "mistral", name: "Mistral AI", icon: MistralIcon, note: "Use your own Mistral account.", keyUrl: "https://console.mistral.ai/api-keys" },
+  { id: "gemini", name: "Google Gemini", icon: GeminiIcon, note: "Use your own Google AI account.", keyUrl: "https://aistudio.google.com/apikey" },
+  { id: "deepseek", name: "DeepSeek", icon: DeepSeekIcon, note: "Use your own DeepSeek account.", keyUrl: "https://platform.deepseek.com/api_keys" },
 ];
+
+const VOICES = [
+  { id: null, name: "Match my AI provider", note: "Uses the voice of the provider above (Mistral Voxtral for Mako AI)." },
+  { id: "self_hosted_parler", name: "Self-hosted Parler", note: "Mako's own voice server. Describe the voice you want in chatbot settings." },
+] as const;
 
 type TestState = { status: "testing" } | { status: "ok" } | { status: "failed"; message: string };
 
@@ -117,8 +117,19 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
   });
 
   const { mutateAsync: setActiveProvider, isPending: isUpdatingTenant } = useMutation({
-    mutationFn: (preferredAiProvider: string) => tenantsApi.update(tenantId, { preferredAiProvider }),
+    // "default" is stored as no preference, so the workspace follows Mako's platform default.
+    mutationFn: (preferredAiProvider: string) =>
+      tenantsApi.update(tenantId, { preferredAiProvider: preferredAiProvider === DEFAULT_PROVIDER ? null : preferredAiProvider }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["tenant", tenantId] }),
+  });
+
+  const { mutateAsync: setVoice, isPending: isUpdatingVoice } = useMutation({
+    mutationFn: (preferredTtsProvider: string | null) => tenantsApi.update(tenantId, { preferredTtsProvider }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["tenant", tenantId] });
+      toast({ title: "Voice updated" });
+    },
+    onError: (err) => showError("Couldn't change the voice", err),
   });
 
   const [editing, setEditing] = useState<string | null>(null);
@@ -175,7 +186,7 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
     const isActive = provider.id === activeId;
     const confirmed = await confirmModal(
       isActive
-        ? "Mako is using this key now. Removing it switches your workspace back to Mistral AI, which is included in your plan."
+        ? "Mako is using this key now. Removing it switches your workspace back to Mako AI, which is included in your plan."
         : `Your ${provider.name} key will be deleted from Mako.`,
       `Remove ${provider.name} key?`,
       "Remove key",
@@ -245,9 +256,9 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
             AI provider
           </CardTitle>
           <CardDescription>
-            Mistral AI is included in your plan. To use another provider, add your own API key. That provider bills
-            you directly, and that usage doesn't count toward your plan's AI limit. Keys are encrypted and can't be
-            viewed after saving.
+            Chatbot replies, WhatsApp agents and all writing use the provider selected here. Mako AI is included in
+            your plan. To use your own account with a provider, add its API key: it bills you directly, and that
+            usage doesn't count toward your plan's AI limit. Keys are encrypted and can't be viewed after saving.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -259,7 +270,7 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
             const takesKey = Boolean(provider.keyUrl);
             const config = savedConfig(provider.id);
             const isActive = provider.id === activeId;
-            const usable = Boolean(config) || !takesKey || provider.id === DEFAULT_PROVIDER;
+            const usable = Boolean(config) || !takesKey;
             return (
               <div
                 key={provider.id}
@@ -359,6 +370,29 @@ export function IntegrationSettings({ tenantId }: IntegrationSettingsProps) {
                       </div>
                     </div>
                   </form>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card className="border-border/50">
+        <CardHeader>
+          <CardTitle className="text-base font-display">Read-aloud voice</CardTitle>
+          <CardDescription>The voice your chatbot uses when it reads replies aloud. Separate from the AI provider.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {VOICES.map((voice) => {
+            const active = (tenant?.preferredTtsProvider ?? null) === voice.id;
+            return (
+              <div key={voice.name} className={`flex flex-wrap items-center gap-x-4 gap-y-3 rounded-lg border p-4 ${active ? "border-primary bg-primary/5" : ""}`}>
+                <div className="min-w-0 flex-1 basis-48">
+                  <div className="flex items-center gap-2 text-sm font-medium">{voice.name}{active && <Badge>In use</Badge>}</div>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{voice.note}</p>
+                </div>
+                {canManage && !active && (
+                  <Button size="sm" disabled={isUpdatingVoice} onClick={() => void setVoice(voice.id)}>Use this</Button>
                 )}
               </div>
             );

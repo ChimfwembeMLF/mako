@@ -35,7 +35,11 @@ export class Tenants {
     enum: IntegrationProvider,
     nullable: true,
   })
-  preferredAiProvider?: IntegrationProvider;
+  preferredAiProvider?: IntegrationProvider | null;
+
+  /** Read-aloud voice provider, chosen separately from the chat provider. */
+  @Column({ name: 'preferred_tts_provider', type: 'text', nullable: true })
+  preferredTtsProvider?: IntegrationProvider | null;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0 })
   adsBalance: number;

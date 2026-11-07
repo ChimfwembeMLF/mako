@@ -5,6 +5,7 @@ import { whatsappApi, whatsappTemplatesApi } from '@/lib/api';
 import { useTenant } from '@/hooks/useTenant';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -47,6 +48,9 @@ export function WhatsAppInbox() {
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
   const { toast } = useToast();
+  const { can, isSuperAdmin, loading: permissionsLoading } = usePermissions();
+  // Sending from the business number needs the "Create replies" permission (checked by the API too).
+  const canReply = permissionsLoading || isSuperAdmin || can('replies.create');
   const isMobile = useIsMobile();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedPhone, setSelectedPhone] = useState<string | null>(null);
@@ -306,6 +310,11 @@ export function WhatsAppInbox() {
                 ))}
               </div>
 
+              {!canReply ? (
+                <div className="shrink-0 border-t p-3 text-center text-xs text-muted-foreground">
+                  You can read this conversation. Ask a workspace admin for reply access to answer.
+                </div>
+              ) : (
               <div className="p-3 border-t space-y-2 shrink-0">
                 <div className="flex items-start gap-2 rounded-md border bg-muted/30 p-2">
                   <Checkbox
@@ -364,6 +373,7 @@ export function WhatsAppInbox() {
                   Send
                 </Button>
               </div>
+              )}
             </CardContent>
           </Card>
         )

@@ -25,19 +25,16 @@ describe('AiUsageTrackerService.assertWithinLimit', () => {
     expect(subscriptions.assertCanUseAi).toHaveBeenCalledWith('t');
   });
 
-  it('does not treat a Parler entry as a way around plan limits', async () => {
-    const { service, subscriptions } = setup(IntegrationProvider.SELF_HOSTED_PARLER, [
-      IntegrationProvider.SELF_HOSTED_PARLER,
-    ]);
+  it('applies plan limits when the workspace has not chosen a provider, even with a saved key', async () => {
+    // Text then runs on the platform default with the platform key, so it counts against the plan.
+    const { service, subscriptions } = setup(null, [IntegrationProvider.MISTRAL]);
     await service.assertWithinLimit('t', 'u');
     expect(subscriptions.assertCanUseAi).toHaveBeenCalledWith('t');
   });
 
-  it('skips limits under Parler when text runs on a tenant Mistral key', async () => {
-    const { service, subscriptions } = setup(IntegrationProvider.SELF_HOSTED_PARLER, [
-      IntegrationProvider.MISTRAL,
-    ]);
+  it('applies plan limits when the chosen provider has no saved key', async () => {
+    const { service, subscriptions } = setup(IntegrationProvider.GEMINI, [IntegrationProvider.OPENAI]);
     await service.assertWithinLimit('t', 'u');
-    expect(subscriptions.assertCanUseAi).not.toHaveBeenCalled();
+    expect(subscriptions.assertCanUseAi).toHaveBeenCalledWith('t');
   });
 });

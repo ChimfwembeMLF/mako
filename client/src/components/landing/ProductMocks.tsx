@@ -55,7 +55,6 @@ export function ScreenshotFrame({
   className = '',
   variant = 'float',
   device = 'desktop',
-  float = false,
   eager = false,
 }: {
   src: string;
@@ -66,8 +65,6 @@ export function ScreenshotFrame({
   /** float = bare image on page bg; chrome = browser frame */
   variant?: ScreenshotVariant;
   device?: ScreenshotDevice;
-  /** Gentle hover float animation (hero) */
-  float?: boolean;
   /** Load straight away (above the fold) instead of lazily */
   eager?: boolean;
 }) {
@@ -105,7 +102,7 @@ export function ScreenshotFrame({
 
   return (
     <div className={cn(DEVICE_SIZE_CLASS[device], className)}>
-      <div className={cn('relative group', float && 'landing-float motion-reduce:animate-none')}>
+      <div className="relative group">
         <div
           className="pointer-events-none absolute inset-[8%] -z-10 landing-glow opacity-80 transition-opacity duration-500 group-hover:opacity-100"
           aria-hidden

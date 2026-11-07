@@ -51,9 +51,15 @@ describe("IntegrationSettings", () => {
     vi.mocked(tenantIntegrationConfigsApi.testConfig).mockResolvedValue({ ok: true });
   });
 
-  it("shows Mistral in use by default", async () => {
+  it("shows Mako AI in use when no provider is chosen", async () => {
     show();
-    expect(await within(row("Mistral AI")).findByText("In use")).toBeTruthy();
+    expect(await within(row("Mako AI")).findByText("In use")).toBeTruthy();
+  });
+
+  it("needs your own key before Mistral can be chosen", () => {
+    show();
+    expect(within(row("Mistral AI")).queryByRole("button", { name: "Use this" })).toBeNull();
+    expect(within(row("Mistral AI")).getByRole("button", { name: "Add key" })).toBeTruthy();
   });
 
   it("won't let you pick a provider with no key", () => {
@@ -62,11 +68,13 @@ describe("IntegrationSettings", () => {
     expect(within(row("OpenAI")).getByRole("button", { name: "Add key" })).toBeTruthy();
   });
 
-  it("offers no key field for Parler", () => {
-    show();
-    const parler = within(row("Self-Hosted Parler"));
+  it("chooses the self-hosted voice without changing the AI provider", async () => {
+    show("openai");
+    const parler = within(row("Self-hosted Parler"));
     expect(parler.queryByRole("button", { name: "Add key" })).toBeNull();
-    expect(parler.getByRole("button", { name: "Use this" })).toBeTruthy();
+    fireEvent.click(parler.getByRole("button", { name: "Use this" }));
+    await waitFor(() => expect(tenantsApi.update).toHaveBeenCalledWith("t1", { preferredTtsProvider: "self_hosted_parler" }));
+    expect(tenantsApi.update).not.toHaveBeenCalledWith("t1", expect.objectContaining({ preferredAiProvider: expect.anything() }));
   });
 
   it("saves a key, then tests it and shows the result", async () => {
@@ -109,14 +117,14 @@ describe("IntegrationSettings", () => {
     expect(hook.deleteConfig).not.toHaveBeenCalled();
   });
 
-  it("switches back to Mistral when the key in use is removed", async () => {
+  it("switches back to Mako AI when the key in use is removed", async () => {
     hook.configs = [savedKey("openai")];
     vi.mocked(confirmModal).mockResolvedValue(true);
     show("openai");
     await within(row("OpenAI")).findByText("In use");
     fireEvent.click(within(row("OpenAI")).getByRole("button", { name: "Remove" }));
     await waitFor(() => expect(hook.deleteConfig).toHaveBeenCalledWith("openai"));
-    expect(tenantsApi.update).toHaveBeenCalledWith("t1", { preferredAiProvider: "mistral" });
+    expect(tenantsApi.update).toHaveBeenCalledWith("t1", { preferredAiProvider: null });
   });
 
   it("is read-only without permission", () => {

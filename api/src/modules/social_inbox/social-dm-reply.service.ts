@@ -9,6 +9,7 @@ import { WhatsappMessages } from '../whatsapp/entities/whatsapp_messages.entity'
 import { SocialMessages } from './entities/social_messages.entity';
 import { scopeWhere } from '../../common/workspace-scope.util';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 @Injectable()
 export class SocialDmReplyService {
@@ -178,8 +179,8 @@ export class SocialDmReplyService {
     // Messages for both Messenger and Instagram are sent from the linked Page.
     const pageId = account.metadata?.page_id;
     const endpoint = pageId
-      ? `https://graph.facebook.com/v19.0/${pageId}/messages`
-      : 'https://graph.facebook.com/v19.0/me/messages';
+      ? `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/messages`
+      : `https://graph.facebook.com/${META_GRAPH_VERSION}/me/messages`;
 
     let externalMessageId: string | undefined;
     try {

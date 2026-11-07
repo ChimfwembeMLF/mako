@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { BadRequestException } from '@nestjs/common';
+import { META_GRAPH_VERSION } from '../../../common/meta-graph-version';
 
 type GraphErrorBody = {
   error?: {
@@ -29,7 +30,7 @@ export async function assertMetaAdsPermissions(
   try {
     const { data } = await axios.get<{
       data?: Array<{ permission: string; status: string }>;
-    }>('https://graph.facebook.com/v19.0/me/permissions', {
+    }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/permissions`, {
       params: { access_token: accessToken },
     });
 
@@ -65,7 +66,7 @@ export async function fetchMetaAdAccountId(
   try {
     const { data } = await axios.get<{
       data?: Array<{ id: string; account_id?: string; name?: string }>;
-    }>('https://graph.facebook.com/v19.0/me/adaccounts', {
+    }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/adaccounts`, {
       params: {
         access_token: accessToken,
         fields: 'id,account_id,name',

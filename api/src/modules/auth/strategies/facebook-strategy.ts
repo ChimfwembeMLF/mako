@@ -3,9 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { Profile, Strategy } from 'passport-facebook';
 import { createOAuthCookieStateStore } from '../../../common/oauth-cookie-state.store';
+import { META_GRAPH_VERSION } from '../../../common/meta-graph-version';
 
 function resolveFacebookGraphVersion(raw: string | undefined): string {
-  const version = raw?.trim() || 'v18.0';
+  const version = raw?.trim() || META_GRAPH_VERSION;
   return version.startsWith('v') ? version : `v${version}`;
 }
 

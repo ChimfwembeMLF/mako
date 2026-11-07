@@ -29,6 +29,8 @@ const Scheduler = lazy(() => import("./pages/Scheduler"));
 const LeadAgent = lazy(() => import("./pages/LeadAgent"));
 const WhatsappHubPage = lazy(() => import("./pages/WhatsappHubPage"));
 const WhatsappTemplatesPage = lazy(() => import("./pages/WhatsappTemplatesPage"));
+const WhatsappBotsPage = lazy(() => import("./pages/whatsapp/WhatsappBotsPage"));
+const WhatsappBotBuilderPage = lazy(() => import("./pages/whatsapp/WhatsappBotBuilderPage"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const ContactForm = lazy(() => import("./pages/ContactForm"));
@@ -157,6 +159,8 @@ const App = () => (
                   <Route path="/leads" element={<LazyPage><LeadAgent /></LazyPage>} />
                   <Route path="/whatsapp" element={<LazyPage><WhatsappHubPage /></LazyPage>} />
                   <Route path="/whatsapp/templates" element={<LazyPage><WhatsappTemplatesPage /></LazyPage>} />
+                  <Route path="/whatsapp/bots" element={<LazyPage><WhatsappBotsPage /></LazyPage>} />
+                  <Route path="/whatsapp/bots/:id" element={<LazyPage><WhatsappBotBuilderPage /></LazyPage>} />
                   <Route path="/analytics" element={<LazyPage><Analytics /></LazyPage>} />
                   <Route path="/reports" element={<LazyPage><ReportsPage /></LazyPage>} />
                   <Route path="/publisher" element={<LazyPage><PublisherConnect /></LazyPage>} />

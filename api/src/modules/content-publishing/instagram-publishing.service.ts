@@ -11,6 +11,7 @@ import {
   formatContentForPlatform,
   formatPlainPostText,
 } from '../../common/text-format.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 @Injectable()
 export class InstagramPublishingService {
@@ -92,7 +93,7 @@ export class InstagramPublishingService {
         }
 
         const containerRes = await axios.post(
-          `https://graph.facebook.com/v19.0/${igAccountId}/media`,
+          `https://graph.facebook.com/${META_GRAPH_VERSION}/${igAccountId}/media`,
           containerPayload,
         );
 
@@ -127,7 +128,7 @@ export class InstagramPublishingService {
         creationId = containerIds[0];
       } else {
         const carouselRes = await axios.post(
-          `https://graph.facebook.com/v19.0/${igAccountId}/media`,
+          `https://graph.facebook.com/${META_GRAPH_VERSION}/${igAccountId}/media`,
           {
             media_type: 'CAROUSEL',
             children: containerIds,
@@ -145,7 +146,7 @@ export class InstagramPublishingService {
       }
 
       const publishRes = await axios.post(
-        `https://graph.facebook.com/v19.0/${igAccountId}/media_publish`,
+        `https://graph.facebook.com/${META_GRAPH_VERSION}/${igAccountId}/media_publish`,
         { creation_id: creationId, access_token: igToken },
       );
 

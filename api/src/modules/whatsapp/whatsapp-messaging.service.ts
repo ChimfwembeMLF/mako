@@ -6,6 +6,7 @@ import {
   isPlatformManagedWhatsappAccount,
   WhatsappCredentials,
 } from './whatsapp-platform.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 export type { WhatsappCredentials } from './whatsapp-platform.util';
 
@@ -18,7 +19,7 @@ export type SendMessageResult = {
 @Injectable()
 export class WhatsappMessagingService {
   private readonly logger = new Logger(WhatsappMessagingService.name);
-  private readonly graphVersion = 'v19.0';
+  private readonly graphVersion = META_GRAPH_VERSION;
 
   constructor(private readonly config: ConfigService) {}
 

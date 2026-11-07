@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Logger,
   Post,
   Query,
   RawBodyRequest,
@@ -26,6 +27,7 @@ import { XAccountActivityInboundService } from '../social_inbox/x-account-activi
 import { XWebhookAdminService } from '../social_inbox/x-webhook-admin.service';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
+import { integrationSetting } from '../system_settings/services/platform-integrations.service';
 
 class DataDeletionRequestDto {
   @IsEmail()
@@ -45,6 +47,8 @@ class DataProtectionConsentDto {
 @ApiTags('Legal')
 @Controller()
 export class LegalController {
+  private readonly logger = new Logger(LegalController.name);
+
   constructor(
     private readonly deletion: DataDeletionService,
     private readonly consent: DataProtectionConsentService,
@@ -136,7 +140,7 @@ export class LegalController {
     @Query('hub.verify_token') token?: string,
     @Query('hub.challenge') challenge?: string,
   ) {
-    const expected = this.config.get<string>('META_WEBHOOK_VERIFY_TOKEN') ?? '';
+    const expected = this.metaSetting('META_WEBHOOK_VERIFY_TOKEN');
     if (mode === 'subscribe' && token && expected && token === expected) {
       return res.status(200).send(challenge ?? '');
     }
@@ -150,9 +154,8 @@ export class LegalController {
     @Body() body: unknown,
   ) {
     const secret =
-      this.config.get<string>('FACEBOOK_APP_SECRET') ??
-      this.config.get<string>('META_APP_SECRET') ??
-      '';
+      this.metaSetting('FACEBOOK_APP_SECRET') ||
+      this.metaSetting('META_APP_SECRET');
     const signature = req.headers['x-hub-signature-256'];
     if (
       !isValidHmacSignature(
@@ -168,11 +171,30 @@ export class LegalController {
       await this.queueDispatch.enqueueWhatsappInbound({ body });
       return { received: true };
     }
+    // Answer Meta straight away. Bots and AI agents can take several seconds, and Meta
+    // treats slow answers as failures, resends them and eventually disables the webhook.
+    setImmediate(() => {
+      this.handleMetaEvent(body).catch((err) =>
+        this.logger.error(
+          `Meta webhook processing failed: ${err instanceof Error ? err.message : err}`,
+          err instanceof Error ? err.stack : undefined,
+        ),
+      );
+    });
+    return { received: true };
+  }
+
+  private handleMetaEvent(body: unknown) {
     const object = (body as { object?: string })?.object;
     if (object === 'page' || object === 'instagram') {
       return this.socialMessagingInbound.handleMetaWebhook(body);
     }
     return this.whatsappInbound.handleMetaWebhook(body);
+  }
+
+  /** Backoffice → Integrations first, then the server environment. */
+  private metaSetting(key: string): string {
+    return integrationSetting(key) ?? this.config.get<string>(key)?.trim() ?? '';
   }
 
   @Post('api/v1/webhooks/meta/deauthorize')

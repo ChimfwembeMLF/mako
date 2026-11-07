@@ -1,4 +1,10 @@
 import { ConfigService } from '@nestjs/config';
+import { integrationSetting } from '../system_settings/services/platform-integrations.service';
+
+/** Backoffice → Integrations wins over the server environment, like the other platform keys. */
+function setting(config: ConfigService, key: string): string | undefined {
+  return integrationSetting(key) ?? config.get<string>(key)?.trim() ?? undefined;
+}
 
 export type WhatsappCredentials = {
   phoneNumberId: string;
@@ -10,19 +16,15 @@ export type WhatsappCredentials = {
 export type WhatsappConnectionMode = 'platform' | 'oauth';
 
 export function isWhatsappPlatformEnabled(config: ConfigService): boolean {
-  if (config.get<string>('WHATSAPP_PLATFORM_ENABLED') === 'false') {
+  if (setting(config, 'WHATSAPP_PLATFORM_ENABLED') === 'false') {
     return false;
   }
-  const phoneNumberId = config
-    .get<string>('WHATSAPP_PLATFORM_PHONE_NUMBER_ID')
-    ?.trim();
-  const accessToken = config
-    .get<string>('WHATSAPP_PLATFORM_ACCESS_TOKEN')
-    ?.trim();
+  const phoneNumberId = setting(config, 'WHATSAPP_PLATFORM_PHONE_NUMBER_ID');
+  const accessToken = setting(config, 'WHATSAPP_PLATFORM_ACCESS_TOKEN');
   if (phoneNumberId && accessToken) {
     return true;
   }
-  return config.get<string>('WHATSAPP_PLATFORM_ENABLED') === 'true';
+  return setting(config, 'WHATSAPP_PLATFORM_ENABLED') === 'true';
 }
 
 export function getWhatsappPlatformCredentials(
@@ -30,15 +32,11 @@ export function getWhatsappPlatformCredentials(
 ): WhatsappCredentials | null {
   if (!isWhatsappPlatformEnabled(config)) return null;
 
-  const phoneNumberId = config
-    .get<string>('WHATSAPP_PLATFORM_PHONE_NUMBER_ID')
-    ?.trim();
-  const accessToken = config
-    .get<string>('WHATSAPP_PLATFORM_ACCESS_TOKEN')
-    ?.trim();
+  const phoneNumberId = setting(config, 'WHATSAPP_PLATFORM_PHONE_NUMBER_ID');
+  const accessToken = setting(config, 'WHATSAPP_PLATFORM_ACCESS_TOKEN');
   if (!phoneNumberId || !accessToken) return null;
 
-  const wabaId = config.get<string>('WHATSAPP_PLATFORM_WABA_ID')?.trim();
+  const wabaId = setting(config, 'WHATSAPP_PLATFORM_WABA_ID');
 
   return {
     phoneNumberId,

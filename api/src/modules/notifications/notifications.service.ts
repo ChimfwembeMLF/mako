@@ -46,7 +46,8 @@ export type NotificationType =
   | 'subscription_expired'
   | 'weekly_digest'
   | 'hot_lead'
-  | 'comment_pending';
+  | 'comment_pending'
+  | 'whatsapp_handoff';
 
 export type NotifyInput = {
   tenantId: string;

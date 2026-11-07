@@ -42,12 +42,13 @@ export class AiUsageTrackerService {
       where: { id: tenantId },
     });
 
-    const preferred = tenant?.preferredAiProvider || IntegrationProvider.MISTRAL;
-    // Parler only does voice: text runs on Mistral, so only a Mistral key avoids platform spend.
-    const provider =
-      preferred === IntegrationProvider.SELF_HOSTED_PARLER
-        ? IntegrationProvider.MISTRAL
-        : preferred;
+    // Only a workspace that chose a provider and saved its own key for it skips plan limits;
+    // everyone else runs on the platform's default provider and counts against their plan.
+    const provider = tenant?.preferredAiProvider;
+    if (!provider) {
+      await this.subscriptions.assertCanUseAi(tenantId);
+      return;
+    }
 
     const customConfig = await this.configRepo.findOne({
       where: { tenantId, provider },

@@ -38,8 +38,12 @@ export class BackofficeController {
       this.qdrant.isConfigured(),
       this.knowledgeDocs.statusCounts(),
     ]);
-    const qdrant = qdrantConfigured ? await this.qdrant.status(collection) : null;
-    return { defaultProvider, embedProvider, embedModel, collection, qdrantConfigured, qdrant, documents };
+    const [qdrant, embedding] = await Promise.all([
+      qdrantConfigured ? this.qdrant.status(collection) : Promise.resolve(null),
+      // Embeds a short phrase, so a down or misconfigured embedding server shows up here.
+      this.knowledgeEmbeddings.check(),
+    ]);
+    return { defaultProvider, embedProvider, embedModel, collection, qdrantConfigured, qdrant, embedding, documents };
   }
 
   /** Re-processes every knowledge document into the current vector store and embedding model. */

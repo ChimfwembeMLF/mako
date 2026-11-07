@@ -522,7 +522,7 @@ export default function ChatbotPage() {
                   </div>
                   {(draft.widgetTtsEnabled ?? false) && tenantId && (
                     <div className="space-y-4 pt-4 border-t">
-                      {tenant?.preferredAiProvider === "self_hosted_parler" ? (
+                      {tenant?.preferredTtsProvider === "self_hosted_parler" ? (
                         <ParlerVoiceSettings
                           tenantId={tenantId}
                           selectedDescription={draft.parlerVoiceDescription ?? ""}

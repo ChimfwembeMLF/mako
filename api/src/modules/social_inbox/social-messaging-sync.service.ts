@@ -10,6 +10,7 @@ import {
 } from './entities/social_messages.entity';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 import { scopeWhere } from '../../common/workspace-scope.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 @Injectable()
 export class SocialMessagingSyncService {
@@ -139,7 +140,7 @@ export class SocialMessagingSyncService {
       : pageId;
 
     const res = await axios.get(
-      `https://graph.facebook.com/v19.0/${pageId}/conversations`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/conversations`,
       {
         params: {
           access_token: token,

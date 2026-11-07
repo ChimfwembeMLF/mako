@@ -51,15 +51,15 @@ export class AiProviderRouter {
     return this.mistralService.premiumModel;
   }
 
-  /** The workspace's stored preference, which may also be a voice-only provider. */
-  private async getTenantPreference(tenantId?: string): Promise<IntegrationProvider | null> {
-    if (!tenantId) return null;
+  /** The workspace's chosen chat and voice providers. */
+  private async getTenantPreferences(tenantId?: string): Promise<{ chat: IntegrationProvider | null; voice: IntegrationProvider | null }> {
+    if (!tenantId) return { chat: null, voice: null };
     try {
       const tenant = await this.tenantsRepo.findOne({ where: { id: tenantId } });
-      return tenant?.preferredAiProvider ?? null;
+      return { chat: tenant?.preferredAiProvider ?? null, voice: tenant?.preferredTtsProvider ?? null };
     } catch (err) {
       this.logger.warn(`Failed to fetch preferred AI provider for tenant ${tenantId}`, err);
-      return null;
+      return { chat: null, voice: null };
     }
   }
 
@@ -75,10 +75,10 @@ export class AiProviderRouter {
     return key?.trim() ? chosen : IntegrationProvider.MISTRAL;
   }
 
-  /** Chat provider: the workspace's choice when it is a chat provider, otherwise the platform default. */
-  private async getProvider(tenantId?: string): Promise<IntegrationProvider> {
-    const preferred = await this.getTenantPreference(tenantId);
-    if (preferred && CHAT_PROVIDERS.has(preferred)) return preferred;
+  /** Chat provider: the workspace's own choice, otherwise the platform default. */
+  async getProvider(tenantId?: string): Promise<IntegrationProvider> {
+    const { chat } = await this.getTenantPreferences(tenantId);
+    if (chat && CHAT_PROVIDERS.has(chat)) return chat;
     return this.getPlatformDefault();
   }
 
@@ -162,7 +162,9 @@ export class AiProviderRouter {
       return this.parlerTtsService.speak(text, { description: options.description, tenantId: options.tenantId });
     }
 
-    const provider = (await this.getTenantPreference(options?.tenantId)) ?? IntegrationProvider.MISTRAL;
+    // The workspace's voice choice; otherwise its chat provider's voice; otherwise Mistral.
+    const prefs = await this.getTenantPreferences(options?.tenantId);
+    const provider = prefs.voice ?? (prefs.chat && CHAT_PROVIDERS.has(prefs.chat) ? prefs.chat : IntegrationProvider.MISTRAL);
 
     if (provider === IntegrationProvider.OPENAI) return this.openAiService.speak(text, options as any);
     if (provider === IntegrationProvider.GEMINI) return this.geminiService.speak(text, options);

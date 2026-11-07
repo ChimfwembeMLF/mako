@@ -23,7 +23,6 @@ import { ChatApiKeyService } from './services/chat-api-key.service';
 import { ChatbotAccessService } from './services/chatbot-access.service';
 import { KnowledgeDocumentService } from './services/knowledge-document.service';
 import { KnowledgeIngestService } from './services/knowledge-ingest.service';
-import { VectorStoreService } from './services/vector-store.service';
 import { RagOrchestratorService } from './services/rag-orchestrator.service';
 import { MistralChatbotLibraryService } from './services/mistral-chatbot-library.service';
 import { ChatbotTtsVoiceService } from './services/chatbot-tts-voice.service';
@@ -31,8 +30,7 @@ import { WidgetApiKeyGuard } from './guards/widget-api-key.guard';
 import { ChatbotWidgetSeedService } from './chatbot-widget-seed.service';
 import { WidgetSuggestionsService } from './services/widget-suggestions.service';
 
-import { QdrantService } from './services/qdrant.service';
-import { KnowledgeEmbeddingService } from './services/knowledge-embedding.service';
+import { KnowledgeSearchModule } from './knowledge-search.module';
 import { SystemSettingsModule } from '../system_settings/system_settings.module';
 
 @Module({
@@ -49,6 +47,7 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     BullModule.registerQueue({ name: QUEUE_AI }),
     AiModule,
     SystemSettingsModule,
+    KnowledgeSearchModule,
     BrandProfilesModule,
     MediaModule,
     forwardRef(() => QueuesModule),
@@ -62,9 +61,6 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     ChatbotAccessService,
     KnowledgeDocumentService,
     KnowledgeIngestService,
-    VectorStoreService,
-    QdrantService,
-    KnowledgeEmbeddingService,
     RagOrchestratorService,
     MistralChatbotLibraryService,
     ChatbotTtsVoiceService,
@@ -76,8 +72,7 @@ import { SystemSettingsModule } from '../system_settings/system_settings.module'
     ChatbotConfigService,
     KnowledgeIngestService,
     ChatbotWidgetSeedService,
-    QdrantService,
-    KnowledgeEmbeddingService,
+    KnowledgeSearchModule,
     KnowledgeDocumentService,
   ],
 })

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { SocialDmReplyService } from './social-dm-reply.service';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 jest.mock('./social-dm-auto-reply.service', () => ({ SocialDmAutoReplyService: class {} }));
 jest.mock('../whatsapp/whatsapp-account-auth.service', () => ({ WhatsappAccountAuthService: class {} }));
@@ -50,7 +51,7 @@ describe('SocialDmReplyService.sendReply (Meta)', () => {
 
     expect(res).toEqual({ sent: true });
     expect(post).toHaveBeenCalledWith(
-      'https://graph.facebook.com/v19.0/PAGE1/messages',
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/PAGE1/messages`,
       { recipient: { id: 'IGSID1' }, message: { text: 'Hi!' } },
       { params: { access_token: 'TOKEN' } },
     );

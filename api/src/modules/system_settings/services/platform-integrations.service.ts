@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { SystemSettingsService } from '../system_settings.service';
 import { EncryptionService } from '../../tenants/services/encryption.service';
 
@@ -10,8 +10,21 @@ export type EncryptedValue = {
   authTag: string;
 };
 
+/**
+ * The last values loaded from Backoffice → Integrations, for code that reads settings
+ * synchronously (e.g. the WhatsApp platform number). Kept fresh by the service below.
+ */
+let loadedIntegrations: Record<string, string> = {};
+let refreshIntegrations: (() => void) | null = null;
+
+/** A Backoffice → Integrations value if one is saved, otherwise undefined (callers fall back to env). */
+export function integrationSetting(key: string): string | undefined {
+  refreshIntegrations?.();
+  return loadedIntegrations[key]?.trim() || undefined;
+}
+
 @Injectable()
-export class PlatformIntegrationsService {
+export class PlatformIntegrationsService implements OnModuleInit {
   private readonly logger = new Logger(PlatformIntegrationsService.name);
   private cache: Record<string, string> | null = null;
   private lastFetchTime = 0;
@@ -21,6 +34,15 @@ export class PlatformIntegrationsService {
     private readonly settings: SystemSettingsService,
     private readonly encryption: EncryptionService,
   ) {}
+
+  async onModuleInit() {
+    refreshIntegrations = () => {
+      if (Date.now() - this.lastFetchTime >= this.CACHE_TTL_MS) {
+        void this.getAllIntegrations().catch(() => undefined);
+      }
+    };
+    await this.getAllIntegrations().catch(() => undefined);
+  }
 
   async getAllIntegrations(): Promise<Record<string, string>> {
     const now = Date.now();
@@ -49,11 +71,13 @@ export class PlatformIntegrationsService {
 
       this.cache = result;
       this.lastFetchTime = now;
+      loadedIntegrations = result;
       return result;
     } catch (e) {
       // If not found, return empty object and cache it
       this.cache = {};
       this.lastFetchTime = now;
+      loadedIntegrations = {};
       return {};
     }
   }
@@ -92,7 +116,9 @@ export class PlatformIntegrationsService {
       description: 'Global platform integration keys (encrypted)',
     });
 
-    // Invalidate cache
+    // Invalidate cache, and reload so synchronous readers see the new values straight away.
     this.cache = null;
+    this.lastFetchTime = 0;
+    await this.getAllIntegrations().catch(() => undefined);
   }
 }

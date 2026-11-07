@@ -9,6 +9,7 @@ import { AiProviderRouter } from '../ai/services/ai-provider-router.service';
 import { PromptBuilderService } from '../ai/services/prompt-builder.service';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { SocialMessages } from './entities/social_messages.entity';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 @Injectable()
 export class SocialDmAutoReplyService {
@@ -111,8 +112,8 @@ export class SocialDmAutoReplyService {
     }
     const pageId = account.metadata?.page_id;
     const endpoint = pageId
-      ? `https://graph.facebook.com/v20.0/${pageId}/messages`
-      : 'https://graph.facebook.com/v20.0/me/messages';
+      ? `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/messages`
+      : `https://graph.facebook.com/${META_GRAPH_VERSION}/me/messages`;
     try {
       await axios.post(
         endpoint,

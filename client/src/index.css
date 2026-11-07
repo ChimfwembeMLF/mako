@@ -210,20 +210,6 @@
   }
 }
 
-@keyframes landing-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
-  }
-}
-
-.landing-float {
-  animation: landing-float 7s ease-in-out infinite;
-}
-
 /* Chart series colours, validated for colour-blind separation on each surface. */
 :root {
   --chart-1: #2a78d6;
@@ -234,12 +220,6 @@
   --chart-1: #3987e5;
   --chart-2: #d95926;
   --chart-3: #199e70;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-float {
-    animation: none;
-  }
 }
 
 /* Tiptap editor styles */

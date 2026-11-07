@@ -14,6 +14,7 @@ import { SocialPublishAccountService } from './social-publish-account.service';
 import { summarizeAxiosError } from './publish-error.util';
 import { logOnce } from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 type FetchedComment = {
   externalCommentId: string;
@@ -267,7 +268,7 @@ export class FetchCommentsService {
     }
 
     const res = await axios.get(
-      `https://graph.facebook.com/v19.0/${postId}/comments`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${postId}/comments`,
       {
         params: {
           access_token: token,
@@ -328,7 +329,7 @@ export class FetchCommentsService {
     }
 
     const res = await axios.get(
-      `https://graph.facebook.com/v19.0/${mediaId}/comments`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${mediaId}/comments`,
       {
         params: {
           access_token: token,

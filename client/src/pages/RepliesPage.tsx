@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   commentRepliesApi,
   contentPublicationsApi,
@@ -36,6 +37,7 @@ function countPending(posts: PostInboxGroup[]) {
 }
 
 export default function RepliesPage() {
+  const [searchParams] = useSearchParams();
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
   const { can } = usePermissions();
@@ -202,7 +204,10 @@ export default function RepliesPage() {
           </div>
         </div>
 
-        <Tabs defaultValue="inbox" className="min-w-0">
+        <Tabs
+          defaultValue={['inbox', 'comments', 'messages', 'rules'].includes(searchParams.get('tab') ?? '') ? searchParams.get('tab')! : 'inbox'}
+          className="min-w-0"
+        >
           <TabsList className="h-auto flex-wrap justify-start gap-1 p-1">
             <TabsTrigger value="inbox" className="text-xs sm:text-sm">
               <Inbox className="h-3.5 w-3.5 mr-1.5" />

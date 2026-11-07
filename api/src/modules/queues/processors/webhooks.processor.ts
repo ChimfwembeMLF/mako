@@ -1,5 +1,6 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
+import { ModuleRef } from '@nestjs/core';
 import { Job } from 'bullmq';
 import {
   QUEUE_WEBHOOKS,
@@ -9,6 +10,7 @@ import {
   LeadWebhookJobData,
 } from '../queue.constants';
 import { WhatsappInboundService } from '../../whatsapp/whatsapp-inbound.service';
+import { SocialMessagingInboundService } from '../../social_inbox/social-messaging-inbound.service';
 import { LeadsService } from '../../leads/leads.service';
 import { LeadClassifyService } from '../../leads/services/lead-classify.service';
 import { LeadSourcesService } from '../../lead_sources/lead_sources.service';
@@ -19,6 +21,7 @@ export class WebhooksProcessor extends WorkerHost {
 
   constructor(
     private readonly whatsappInbound: WhatsappInboundService,
+    private readonly moduleRef: ModuleRef,
     private readonly leads: LeadsService,
     private readonly classify: LeadClassifyService,
     private readonly leadSources: LeadSourcesService,
@@ -28,16 +31,29 @@ export class WebhooksProcessor extends WorkerHost {
 
   async process(job: Job): Promise<unknown> {
     switch (job.name) {
-      case JOB_WHATSAPP_INBOUND:
-        return this.whatsappInbound.handleMetaWebhook(
-          (job as Job<WhatsappInboundJobData>).data.body,
-        );
+      case JOB_WHATSAPP_INBOUND: {
+        // Every Meta webhook is queued under this job: route Facebook and Instagram DMs too.
+        const body = (job as Job<WhatsappInboundJobData>).data.body;
+        const object = (body as { object?: string })?.object;
+        if (object === 'page' || object === 'instagram') {
+          return this.socialInbound().handleMetaWebhook(body);
+        }
+        return this.whatsappInbound.handleMetaWebhook(body);
+      }
       case JOB_LEAD_WEBHOOK:
         return this.handleLeadWebhook(job as Job<LeadWebhookJobData>);
       default:
         this.logger.warn(`Unknown job: ${job.name}`);
         return null;
     }
+  }
+
+  /**
+   * Looked up when needed: importing the social inbox module here would make a module
+   * cycle (social inbox → comment replies → queues).
+   */
+  private socialInbound(): SocialMessagingInboundService {
+    return this.moduleRef.get(SocialMessagingInboundService, { strict: false });
   }
 
   private async handleLeadWebhook(job: Job<LeadWebhookJobData>) {

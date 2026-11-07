@@ -5,8 +5,9 @@ import axios from 'axios';
 import { SocialInsights } from './entities/social_insights.entity';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { scopeWhere } from '../../common/workspace-scope.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
-const GRAPH_API = 'https://graph.facebook.com/v20.0';
+const GRAPH_API = `https://graph.facebook.com/${META_GRAPH_VERSION}`;
 
 @Injectable()
 export class PageInsightsService {

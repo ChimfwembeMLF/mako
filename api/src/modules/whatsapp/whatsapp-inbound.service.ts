@@ -1,12 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { Tenants } from '../tenants/entities/tenants.entity';
 import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
 import { WhatsappContacts } from '../whatsapp_contacts/entities/whatsapp_contacts.entity';
 import { WhatsappMessages } from './entities/whatsapp_messages.entity';
 import { WhatsappMessagingService } from './whatsapp-messaging.service';
 import { WhatsappLeadService } from './whatsapp-lead.service';
 import { WhatsappAutoReplyService } from './whatsapp-auto-reply.service';
+import { WhatsappBotsService } from './bots/whatsapp-bots.service';
 import { WhatsappFlowEngineService } from './whatsapp-flow-engine.service';
 
 type InboundWaMessage = {
@@ -22,9 +24,19 @@ type InboundWaMessage = {
   };
 };
 
+/** "ref:acme" in a customer's first message picks the workspace on the shared Mako number. */
+const SHARED_NUMBER_REF = /\bref[:#\s]+([a-z0-9][a-z0-9-]{1,62})\b/i;
+
+/** The text a business's customers send first on the shared number, so they reach the right workspace. */
+export function sharedNumberGreeting(businessName: string, slug: string): string {
+  return `Hi ${businessName}! (ref:${slug})`;
+}
+
 @Injectable()
 export class WhatsappInboundService {
   private readonly logger = new Logger(WhatsappInboundService.name);
+  /** Messages from the same customer are handled one at a time, in the order they arrive. */
+  private readonly conversations = new Map<string, Promise<unknown>>();
 
   constructor(
     @InjectRepository(SocialAccounts)
@@ -33,10 +45,13 @@ export class WhatsappInboundService {
     private readonly contactsRepo: Repository<WhatsappContacts>,
     @InjectRepository(WhatsappMessages)
     private readonly messagesRepo: Repository<WhatsappMessages>,
+    @InjectRepository(Tenants)
+    private readonly tenantsRepo: Repository<Tenants>,
     private readonly messaging: WhatsappMessagingService,
     private readonly leads: WhatsappLeadService,
     private readonly autoReply: WhatsappAutoReplyService,
     private readonly flowEngine: WhatsappFlowEngineService,
+    private readonly bots: WhatsappBotsService,
   ) {}
 
   async handleMetaWebhook(body: unknown): Promise<{ received: boolean }> {
@@ -73,24 +88,27 @@ export class WhatsappInboundService {
 
         for (const msg of value.messages ?? []) {
           if (!msg.from) continue;
-
-          const { tenantId, account } = await this.resolveInboundContext(
-            phoneNumberId,
-            msg.from,
-          );
-          if (!tenantId) continue;
-
+          const from = msg.from;
           const parsed = this.parseInboundMessage(msg);
           if (!parsed) continue;
 
-          await this.processInbound({
-            tenantId,
-            fromPhone: msg.from,
-            body: parsed.text,
-            interactiveId: parsed.interactiveId,
-            waMessageId: msg.id,
-            account,
-            attachments: parsed.mediaAttachment ? [parsed.mediaAttachment] : [],
+          await this.inOrder(`${phoneNumberId ?? ''}:${from}`, async () => {
+            const { tenantId, account } = await this.resolveInboundContext(
+              phoneNumberId,
+              from,
+              parsed.text,
+            );
+            if (!tenantId) return;
+
+            await this.processInbound({
+              tenantId,
+              fromPhone: from,
+              body: parsed.text,
+              interactiveId: parsed.interactiveId,
+              waMessageId: msg.id,
+              account,
+              attachments: parsed.mediaAttachment ? [parsed.mediaAttachment] : [],
+            });
           });
         }
 
@@ -101,6 +119,22 @@ export class WhatsappInboundService {
     }
 
     return { received: true };
+  }
+
+  /**
+   * Runs one customer's messages one after another. Meta can deliver two quick messages
+   * at once; handled together, both would read the same bot step and answer twice.
+   */
+  private inOrder(key: string, task: () => Promise<void>): Promise<void> {
+    const previous = this.conversations.get(key) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(task);
+    this.conversations.set(key, current);
+    void current
+      .catch(() => undefined)
+      .finally(() => {
+        if (this.conversations.get(key) === current) this.conversations.delete(key);
+      });
+    return current;
   }
 
   private parseInboundMessage(msg: InboundWaMessage): {
@@ -282,7 +316,23 @@ export class WhatsappInboundService {
       ? this.messaging.credentialsFromAccount(params.account)
       : null;
     if (creds) {
-      const handledByFlow = await this.flowEngine.tryHandleInbound({
+      // Live visual bots come first; the older menu bot runs only when none apply.
+      const handledByBot = await this.bots.tryHandleInbound({
+        tenantId: params.tenantId,
+        workspaceId,
+        phone,
+        text: params.body,
+        interactiveId: params.interactiveId,
+        creds,
+        contactId: contact.id,
+        leadId,
+      });
+      if (handledByBot) return;
+
+      // The classic menu bot is being retired: it only answers in workspaces without a live
+      // visual bot, so the two never compete. Keyword auto-replies still apply.
+      const classicAllowed = !(await this.bots.hasLiveBot(params.tenantId, workspaceId));
+      const handledByFlow = classicAllowed && await this.flowEngine.tryHandleInbound({
         tenantId: params.tenantId,
         workspaceId,
         phone,
@@ -308,12 +358,14 @@ export class WhatsappInboundService {
   private async resolveInboundContext(
     phoneNumberId: string | undefined,
     fromPhone: string,
+    text: string,
   ): Promise<{ tenantId?: string; account: SocialAccounts | null }> {
     const platform = this.messaging.getPlatformCredentials();
 
     if (platform && phoneNumberId === platform.phoneNumberId) {
-      const tenantId = await this.resolvePlatformTenantForInbound(fromPhone);
+      const tenantId = await this.resolvePlatformTenantForInbound(fromPhone, text);
       if (!tenantId) {
+        await this.askForSharedNumberRef(platform, fromPhone);
         return { tenantId: undefined, account: null };
       }
       const account = await this.accountsRepo.findOne({
@@ -328,36 +380,77 @@ export class WhatsappInboundService {
     return { tenantId: account?.tenantId, account };
   }
 
+  /**
+   * Which workspace a message on the shared Mako number belongs to. A "ref:<code>" in the
+   * message wins (it comes from the business's chat link), then the workspace this
+   * customer last spoke with, then the only workspace on the shared number.
+   */
   private async resolvePlatformTenantForInbound(
     fromPhone: string,
+    text: string,
   ): Promise<string | undefined> {
     const phone = this.messaging.normalizePhone(fromPhone);
+    const managed = await this.platformManagedTenantIds();
 
-    const contacts = await this.contactsRepo.find({ where: { phone } });
-    if (contacts.length === 1) return contacts[0].tenantId;
-    if (contacts.length > 1) {
-      const recent = await this.messagesRepo.findOne({
-        where: { phone },
-        order: { created_at: 'DESC' },
-      });
-      return recent?.tenantId ?? contacts[0].tenantId;
+    const ref = SHARED_NUMBER_REF.exec(text)?.[1]?.toLowerCase();
+    if (ref && managed.length) {
+      const tenant = await this.tenantsRepo.findOne({ where: { slug: ref, id: In(managed) } });
+      if (tenant) return tenant.id;
     }
 
-    const recentOutbound = await this.messagesRepo.findOne({
-      where: { phone, direction: 'outbound' },
+    const recent = await this.messagesRepo.findOne({
+      where: { phone },
       order: { created_at: 'DESC' },
     });
-    if (recentOutbound?.tenantId) return recentOutbound.tenantId;
+    if (recent?.tenantId) return recent.tenantId;
 
-    const platformAccounts = await this.accountsRepo.find({
+    const contacts = await this.contactsRepo.find({ where: { phone } });
+    if (contacts.length) return contacts[0].tenantId;
+
+    if (managed.length === 1) return managed[0];
+    return undefined;
+  }
+
+  private async platformManagedTenantIds(): Promise<string[]> {
+    const accounts = await this.accountsRepo.find({
       where: { platform: 'whatsapp', connected: true },
     });
-    const enabled = platformAccounts.filter(
-      (a) => a.metadata?.platform_managed === true,
-    );
-    if (enabled.length === 1) return enabled[0].tenantId;
+    return [
+      ...new Set(
+        accounts
+          .filter((a) => a.metadata?.platform_managed === true)
+          .map((a) => a.tenantId),
+      ),
+    ];
+  }
 
-    return undefined;
+  /** Recently asked, by phone, so a customer isn't sent the same prompt for every message. */
+  private readonly refPrompts = new Map<string, number>();
+
+  /**
+   * A new customer wrote to the shared number without a business code. Rather than drop
+   * the message silently, ask them to use the business's link. Names are never listed,
+   * so customers can't see which businesses use the number.
+   */
+  private async askForSharedNumberRef(
+    creds: { phoneNumberId: string; accessToken: string },
+    fromPhone: string,
+  ) {
+    const phone = this.messaging.normalizePhone(fromPhone);
+    const last = this.refPrompts.get(phone) ?? 0;
+    if (Date.now() - last < 6 * 3600_000) return;
+    this.refPrompts.set(phone, Date.now());
+    if (this.refPrompts.size > 5000) this.refPrompts.clear();
+    this.logger.warn(
+      `Shared WhatsApp number: no workspace for ${phone.slice(0, -4)}**** (no ref code); asked the customer for one`,
+    );
+    await this.messaging
+      .sendSessionText(
+        creds,
+        phone,
+        "Hi! This number is shared by several businesses, so we couldn't tell who you're trying to reach. Please open the WhatsApp link the business shared with you, or reply with their code like this: ref:their-code",
+      )
+      .catch(() => undefined);
   }
 
   private async resolveAccountByPhoneNumberId(

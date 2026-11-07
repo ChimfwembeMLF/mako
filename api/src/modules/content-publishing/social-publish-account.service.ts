@@ -15,6 +15,7 @@ import {
   logOnce,
 } from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 @Injectable()
 export class SocialPublishAccountService {
@@ -99,7 +100,7 @@ export class SocialPublishAccountService {
     try {
       const { data } = await axios.get<{
         data?: Array<{ id: string; name?: string; access_token?: string }>;
-      }>('https://graph.facebook.com/v19.0/me/accounts', {
+      }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/accounts`, {
         params: { access_token: userToken, fields: 'id,name,access_token' },
       });
 

@@ -16,8 +16,9 @@ import {
 import { CreateWhatsappTemplateDto } from './dto/create-whatsapp-template.dto';
 import { UpdateWhatsappTemplateDto } from './dto/update-whatsapp-template.dto';
 import { WhatsappCredentials } from '../whatsapp/whatsapp-platform.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
-const GRAPH_VERSION = 'v19.0';
+const GRAPH_VERSION = META_GRAPH_VERSION;
 
 @Injectable()
 export class WhatsappTemplatesService {

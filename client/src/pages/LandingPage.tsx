@@ -3,11 +3,11 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { plansApi, type PublicPlan } from '@/lib/api';
-import { formatPriceZmw, planFeatureBullets } from '@/lib/plans';
+import { planFeatureBullets } from '@/lib/plans';
 import {
   Brain, Pen, CalendarClock, BarChart3, CheckCircle2, ArrowRight,
   Menu, X, MessageSquareReply, Shield, Link2,
-  TrendingUp, Users, Globe, Loader2,
+  TrendingUp, Users, Globe, Check, Smartphone,
 } from 'lucide-react';
 import {
   ScreenshotFrame,
@@ -210,8 +210,8 @@ function HeroBackdrop() {
   const [loaded, setLoaded] = useState(false);
   return (
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden" aria-hidden>
-      <div className="absolute inset-0 [perspective:1800px]">
-        <div className="landing-float absolute left-[8%] top-[10%] w-[150%] sm:left-[20%] sm:w-[110%] lg:left-[25%] lg:top-[14%] lg:w-[75%]">
+      <div className="absolute inset-0">
+        <div className="absolute left-[8%] top-[8%] w-[170%] sm:left-[20%] sm:w-[125%] lg:left-[38%] lg:top-[15%] lg:w-[88%]">
           <img
             src="/screenshots/mako-dashboard-desktop.webp"
             alt=""
@@ -222,15 +222,16 @@ function HeroBackdrop() {
             onLoad={() => setLoaded(true)}
             className={cn(
               'w-full h-auto rounded-3xl border border-border/60 shadow-2xl',
-              '[transform:rotateX(18deg)_rotateY(-24deg)_rotateZ(7deg)] [transform-origin:left_center]',
+              // A flat tilt of a few degrees; change the angle here.
+              '-rotate-6 [transform-origin:left_center]',
               'transition-opacity duration-700 ease-out motion-reduce:transition-none',
               loaded ? 'opacity-100' : 'opacity-0',
             )}
           />
         </div>
       </div>
-      {/* Keeps the copy readable: a solid wash on phones, a left-to-right fade on desktop. */}
-      <div className="absolute inset-0 bg-card/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-40% lg:via-card/85 lg:via-55% lg:to-card/0" />
+      {/* Keeps the copy readable: a solid wash on phones, a short left-to-right fade on desktop. */}
+      <div className="absolute inset-0 bg-card/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-25% lg:via-card/70 lg:via-38% lg:to-card/0 lg:to-55%" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-card to-transparent" />
     </div>
   );
@@ -583,6 +584,98 @@ function FeaturesGrid() {
   );
 }
 
+/** One line under each plan name, so visitors can see who it's for at a glance. */
+const PLAN_TAGLINES: Record<PublicPlan['key'], string> = {
+  free: 'Try Mako with one brand',
+  starter: 'For small teams posting every day',
+  pro: 'For agencies and growing brands',
+};
+
+function PlanStat({ value, label, inverted }: { value: number | null; label: string; inverted?: boolean }) {
+  return (
+    <div className="min-w-0">
+      <p className="font-display text-lg font-bold tabular-nums leading-none">
+        {value === null ? '∞' : value.toLocaleString('en-ZM')}
+      </p>
+      <p className={cn('mt-1 truncate text-[11px] uppercase tracking-wide', inverted ? 'text-background/60' : 'text-muted-foreground')}>
+        {label}
+      </p>
+    </div>
+  );
+}
+
+function PlanCard({ plan }: { plan: PublicPlan }) {
+  const featured = plan.highlight;
+  const free = plan.priceZmw === 0;
+  return (
+    <div
+      className={cn(
+        'relative flex h-full flex-col rounded-2xl border p-6 sm:p-7 transition-[transform,box-shadow] duration-200 motion-reduce:transition-none',
+        featured
+          ? // Raised: taller by the negative margins, so the extra padding doesn't squeeze the content.
+          'border-foreground bg-foreground text-background shadow-2xl md:-my-4 md:h-[calc(100%+2rem)] md:py-9'
+          : 'border-border/80 bg-card hover:-translate-y-1 hover:shadow-card motion-reduce:hover:translate-y-0',
+      )}
+    >
+      {featured && (
+        <span className="absolute -top-3 left-6 rounded-full bg-primary px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-primary-foreground shadow-sm">
+          Most popular
+        </span>
+      )}
+
+      {/* Headings get the page text colour globally; set it so the dark card's title shows. */}
+      <h3 className={cn('font-display text-xl font-bold', featured && 'text-background')}>{plan.label}</h3>
+      <p className={cn('mt-1 text-sm', featured ? 'text-background/70' : 'text-muted-foreground')}>
+        {PLAN_TAGLINES[plan.key] ?? ''}
+      </p>
+
+      <div className="mt-6 flex items-baseline gap-1.5">
+        {free ? (
+          <span className="font-display text-5xl font-bold tracking-tight">Free</span>
+        ) : (
+          <>
+            <span className={cn('text-sm font-semibold', featured ? 'text-background/70' : 'text-muted-foreground')}>ZMW</span>
+            <span className="font-display text-5xl font-bold tracking-tight tabular-nums">{plan.priceZmw.toLocaleString('en-ZM')}</span>
+            <span className={cn('text-sm', featured ? 'text-background/70' : 'text-muted-foreground')}>/month</span>
+          </>
+        )}
+      </div>
+      <p className={cn('mt-1 text-xs', featured ? 'text-background/60' : 'text-muted-foreground')}>
+        {free ? 'No card needed, ever' : 'Billed monthly · cancel anytime'}
+      </p>
+
+      <Button
+        asChild
+        size="lg"
+        variant={featured ? 'default' : 'outline'}
+        className={cn('mt-6 w-full shrink-0 rounded-xl', !featured && 'bg-transparent')}
+      >
+        <Link to="/auth?mode=signup">{free ? 'Start free' : `Choose ${plan.label}`}</Link>
+      </Button>
+
+      <div className={cn('mt-6 grid grid-cols-3 gap-3 border-y py-4', featured ? 'border-background/15' : 'border-border/70')}>
+        <PlanStat value={plan.aiCallsLimit} label="AI / month" inverted={featured} />
+        <PlanStat value={plan.seatLimit} label="Seats" inverted={featured} />
+        <PlanStat value={plan.tenantLimit} label={plan.tenantLimit === 1 ? 'Workspace' : 'Workspaces'} inverted={featured} />
+      </div>
+
+      <ul className="mt-5 flex-1 space-y-3">
+        {planFeatureBullets(plan).map((f) => (
+          <li key={f} className={cn('flex gap-2.5 text-sm leading-snug', featured ? 'text-background/85' : 'text-body')}>
+            <span className={cn(
+              'mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full',
+              featured ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary',
+            )}>
+              <Check className="h-2.5 w-2.5" strokeWidth={3} />
+            </span>
+            {f}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function Pricing() {
   const [plans, setPlans] = useState<PublicPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -597,52 +690,39 @@ function Pricing() {
 
   return (
     <section id="pricing" className="py-section bg-card">
-      <div className="w-full px-4 sm:px-6">
+      <div className="mx-auto w-full max-w-[1100px] px-4 sm:px-6">
         <Reveal>
           <SectionHeader
             label="Pricing"
             title="Plans that scale with you"
-            desc="Pay monthly in ZMW. Mobile money supported today."
-            className="mb-12"
+            desc="Simple monthly pricing in Kwacha. Pay with mobile money."
+            className="mb-14"
           />
         </Reveal>
         {loading ? (
-          <div className="flex justify-center py-12 text-muted-foreground gap-2">
-            <Loader2 className="h-5 w-5 animate-spin" /> Loading plans…
+          <div className="grid gap-6 md:grid-cols-3" aria-busy="true" aria-label="Loading plans">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="h-[30rem] animate-pulse rounded-2xl border border-border/60 bg-muted/40" />
+            ))}
           </div>
+        ) : plans.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            Plans couldn't load right now. <Link to="/auth?mode=signup" className="font-medium text-primary underline-offset-4 hover:underline">Start free</Link> and pick a plan later.
+          </p>
         ) : (
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid items-stretch gap-6 md:grid-cols-3 md:gap-5 lg:gap-6">
             {plans.map((p, i) => (
-              <Reveal key={p.key} delay={i * 90}>
-                <div className={cn(
-                  'relative rounded-xl border p-6 h-full flex flex-col transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:shadow-lg overflow-hidden group motion-reduce:hover:translate-y-0',
-                  p.highlight ? 'border-primary bg-primary/[0.04] ring-1 ring-primary/20 hover:shadow-primary/20' : 'border-border/80 bg-card hover:border-primary/40',
-                )}>
-                  <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent opacity-0 transition-opacity duration-200 group-hover:opacity-100 pointer-events-none" />
-                  {p.highlight && (
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-2">Most popular</p>
-                  )}
-                  <h3 className="font-bold text-xl">{p.label}</h3>
-                  <p className="text-3xl font-bold mt-2 tracking-tight">{formatPriceZmw(p.priceZmw)}<span className="text-sm font-normal text-muted-foreground">/mo</span></p>
-                  <ul className="space-y-2.5 mt-6 flex-1">
-                    {planFeatureBullets(p).map((f) => (
-                      <li key={f} className="flex gap-2 text-sm text-muted-foreground leading-snug">
-                        <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0 mt-0.5" />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Button className={`mt-6 w-full rounded-xl ${p.highlight ? '' : ''}`} variant={p.highlight ? 'default' : 'outline'} asChild>
-                    <Link to="/auth?mode=signup">Get started</Link>
-                  </Button>
-                </div>
+              <Reveal key={p.key} delay={i * 90} className="h-full">
+                <PlanCard plan={p} />
               </Reveal>
             ))}
           </div>
         )}
-        <p className="text-center text-xs text-muted-foreground mt-6">
-          Mobile money available today · Card payments coming soon
-        </p>
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+          <span className="flex items-center gap-1.5"><Smartphone className="h-3.5 w-3.5" /> Mobile money today, cards soon</span>
+          <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Change or cancel your plan anytime</span>
+          <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5" /> Every plan includes the full workspace</span>
+        </div>
       </div>
     </section>
   );

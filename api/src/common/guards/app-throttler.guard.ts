@@ -7,6 +7,13 @@ const SKIP_PATH_PREFIXES = [
   '/admin/queues',
 ];
 
+/**
+ * Signed event webhooks. Meta and X deliver every customer's events from a few shared
+ * addresses, so a per-IP limit would reject real traffic and make them retry or disable
+ * the webhook. Each request is still checked against the app secret before anything runs.
+ */
+const SKIP_EXACT_PATHS = ['/api/v1/webhooks/meta', '/api/v1/webhooks/x'];
+
 @Injectable()
 export class AppThrottlerGuard extends ThrottlerGuard {
   protected async shouldSkip(context: ExecutionContext): Promise<boolean> {
@@ -19,7 +26,10 @@ export class AppThrottlerGuard extends ThrottlerGuard {
 
     const request = context.switchToHttp().getRequest<{ url?: string }>();
     const path = request.url?.split('?')[0] ?? '';
-    if (SKIP_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))) {
+    if (
+      SKIP_EXACT_PATHS.includes(path.replace(/\/$/, '')) ||
+      SKIP_PATH_PREFIXES.some((prefix) => path.startsWith(prefix))
+    ) {
       return true;
     }
 

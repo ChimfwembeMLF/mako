@@ -10,6 +10,7 @@ import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
 import { SocialAuthRegisterDto } from './dtos/social-auth.dto';
 import { FindOptionsWhere } from 'typeorm';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 type FacebookUserData = {
   id?: string;
@@ -136,7 +137,7 @@ export class FacebookAuthService {
       expires_in?: number;
       error?: { message: string };
     }>(
-      `https://graph.facebook.com/v19.0/oauth/access_token?${params.toString()}`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${params.toString()}`,
     );
 
     if (data.error) {
@@ -170,7 +171,7 @@ export class FacebookAuthService {
       access_token?: string;
       error?: { message: string };
     }>(
-      `https://graph.facebook.com/v19.0/oauth/access_token?${params.toString()}`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${params.toString()}`,
     );
 
     if (data.error) {
@@ -191,7 +192,7 @@ export class FacebookAuthService {
     const { data } = await axios.get<{
       data?: any[];
       error?: { message: string };
-    }>(`https://graph.facebook.com/v19.0/me/accounts`, {
+    }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/accounts`, {
       params: { access_token: token },
     });
 

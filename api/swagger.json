@@ -4580,6 +4580,253 @@
         ]
       }
     },
+    "/api/v1/whatsapp/bots": {
+      "get": {
+        "operationId": "WhatsappBotsController_list",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      },
+      "post": {
+        "operationId": "WhatsappBotsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateBotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/bots/{id}": {
+      "get": {
+        "operationId": "WhatsappBotsController_get",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      },
+      "patch": {
+        "operationId": "WhatsappBotsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateBotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      },
+      "delete": {
+        "operationId": "WhatsappBotsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/bots/{id}/publish": {
+      "post": {
+        "operationId": "WhatsappBotsController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/bots/{id}/unpublish": {
+      "post": {
+        "operationId": "WhatsappBotsController_unpublish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      }
+    },
+    "/api/v1/whatsapp/bots/{id}/test": {
+      "post": {
+        "operationId": "WhatsappBotsController_test",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TestBotDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "WhatsApp bots"
+        ]
+      }
+    },
     "/api/v1/whatsapp/flows/sessions": {
       "get": {
         "operationId": "WhatsappController_listFlowSessions",
@@ -6811,117 +7058,6 @@
         ]
       }
     },
-    "/api/v1/lead-source": {
-      "post": {
-        "operationId": "LeadSourcesController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LeadSourcesCreateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Lead Source"
-        ]
-      },
-      "get": {
-        "operationId": "LeadSourcesController_findAll",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Lead Source"
-        ]
-      }
-    },
-    "/api/v1/lead-source/{id}": {
-      "get": {
-        "operationId": "LeadSourcesController_findOne",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Lead Source"
-        ]
-      },
-      "patch": {
-        "operationId": "LeadSourcesController_update",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LeadSourcesUpdateDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Lead Source"
-        ]
-      },
-      "delete": {
-        "operationId": "LeadSourcesController_remove",
-        "parameters": [
-          {
-            "name": "id",
-            "required": true,
-            "in": "path",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "Lead Source"
-        ]
-      }
-    },
     "/api/v1/notifications": {
       "get": {
         "operationId": "NotificationsController_list",
@@ -7174,6 +7310,117 @@
         ],
         "tags": [
           "Notifications"
+        ]
+      }
+    },
+    "/api/v1/lead-source": {
+      "post": {
+        "operationId": "LeadSourcesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadSourcesCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead Source"
+        ]
+      },
+      "get": {
+        "operationId": "LeadSourcesController_findAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead Source"
+        ]
+      }
+    },
+    "/api/v1/lead-source/{id}": {
+      "get": {
+        "operationId": "LeadSourcesController_findOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead Source"
+        ]
+      },
+      "patch": {
+        "operationId": "LeadSourcesController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LeadSourcesUpdateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead Source"
+        ]
+      },
+      "delete": {
+        "operationId": "LeadSourcesController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Lead Source"
         ]
       }
     },
@@ -10643,6 +10890,18 @@
           "setupToken",
           "phoneNumberId"
         ]
+      },
+      "CreateBotDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "UpdateBotDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TestBotDto": {
+        "type": "object",
+        "properties": {}
       },
       "WhatsappMenuItemDto": {
         "type": "object",

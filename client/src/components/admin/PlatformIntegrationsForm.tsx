@@ -19,7 +19,7 @@ const INTEGRATION_GROUPS = [
       { key: 'DEEPSEEK_API_KEY', label: 'DeepSeek API Key', placeholder: '...' },
       { key: 'PARLER_TTS_URL', label: 'Self-Hosted Parler TTS URL', placeholder: 'http://mako-tts:8000' },
       { key: 'AI_DEFAULT_PROVIDER', label: 'Default AI provider (openai, gemini, deepseek or mistral)', placeholder: 'openai' },
-      { key: 'KNOWLEDGE_EMBED_PROVIDER', label: 'Chatbot document search model provider (openai, gemini or mistral)', placeholder: 'openai' },
+      { key: 'KNOWLEDGE_EMBED_PROVIDER', label: 'Document search provider (self_hosted, openai, gemini or mistral)', placeholder: 'self_hosted' },
     ],
   },
   {
@@ -29,6 +29,16 @@ const INTEGRATION_GROUPS = [
     fields: [
       { key: 'QDRANT_URL', label: 'Qdrant URL (internal Docker network address)', placeholder: 'http://mako-qdrant:6333' },
       { key: 'QDRANT_API_KEY', label: 'Qdrant API Key', placeholder: '...' },
+    ],
+  },
+  {
+    name: 'Embeddings server (TEI, Ollama or Infinity)',
+    category: 'infra',
+    iconUrls: ['https://cdn.simpleicons.org/huggingface'],
+    fields: [
+      { key: 'EMBEDDINGS_URL', label: 'Embeddings server URL (internal Docker network address)', placeholder: 'http://mako-embeddings' },
+      { key: 'EMBEDDINGS_MODEL', label: 'Model name', placeholder: 'intfloat/multilingual-e5-small' },
+      { key: 'EMBEDDINGS_API_KEY', label: 'API key (only if the server requires one)', placeholder: '...' },
     ],
   },
   {

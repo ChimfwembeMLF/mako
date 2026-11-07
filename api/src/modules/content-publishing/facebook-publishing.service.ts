@@ -12,6 +12,7 @@ import {
   formatContentForPlatform,
   formatPlainPostText,
 } from '../../common/text-format.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 @Injectable()
 export class FacebookPublishingService {
@@ -118,7 +119,7 @@ export class FacebookPublishingService {
       }
 
       const postRes = await axios.post(
-        `https://graph.facebook.com/v19.0/${pageId}/feed`,
+        `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/feed`,
         postBody,
       );
 
@@ -160,7 +161,7 @@ export class FacebookPublishingService {
     try {
       const { data } = await axios.get<{
         data?: Array<{ id: string; name?: string; tasks?: string[] }>;
-      }>('https://graph.facebook.com/v19.0/me/accounts', {
+      }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/accounts`, {
         params: {
           access_token: userToken,
           fields: 'id,name,tasks,access_token',
@@ -215,7 +216,7 @@ export class FacebookPublishingService {
       form.append('published', 'false');
       form.append('access_token', pageToken);
       const res = await axios.post(
-        `https://graph.facebook.com/v19.0/${pageId}/photos`,
+        `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/photos`,
         form,
         { headers: form.getHeaders() },
       );
@@ -223,7 +224,7 @@ export class FacebookPublishingService {
     }
 
     const res = await axios.post(
-      `https://graph.facebook.com/v19.0/${pageId}/photos`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/photos`,
       {
         url: mediaUrl,
         published: false,
@@ -240,7 +241,7 @@ export class FacebookPublishingService {
     description: string,
   ): Promise<string | null> {
     const res = await axios.post(
-      `https://graph.facebook.com/v19.0/${pageId}/videos`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}/videos`,
       {
         file_url: mediaUrl,
         description,

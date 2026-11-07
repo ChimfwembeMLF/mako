@@ -61,13 +61,19 @@ export class TenantsController {
     @Body() dto: TenantsUpdateDto,
   ) {
     const userId = req.user?.['sub'];
-    if (dto.preferredAiProvider === IntegrationProvider.GOOGLE_DRIVE) {
-      throw new BadRequestException('Google Drive is not an AI provider');
+    const chatProviders: Array<IntegrationProvider | null> = [
+      IntegrationProvider.MISTRAL, IntegrationProvider.OPENAI, IntegrationProvider.GEMINI, IntegrationProvider.DEEPSEEK, null,
+    ];
+    if (dto.preferredAiProvider !== undefined && !chatProviders.includes(dto.preferredAiProvider)) {
+      throw new BadRequestException('Choose a chat provider: Mistral, OpenAI, Gemini or DeepSeek');
+    }
+    if (dto.preferredTtsProvider === IntegrationProvider.GOOGLE_DRIVE) {
+      throw new BadRequestException('Google Drive is not a voice provider');
     }
     await this.access.assertMember(
       userId,
       id,
-      dto.preferredAiProvider !== undefined ? 'settings.billing' : 'settings.view',
+      dto.preferredAiProvider !== undefined || dto.preferredTtsProvider !== undefined ? 'settings.billing' : 'settings.view',
     );
     if (dto.ownerId !== undefined) await this.access.assertSuperAdmin(userId);
     return this.service.update(id, dto);

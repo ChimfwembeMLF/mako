@@ -119,7 +119,7 @@ function GrowthBars({ data }: { data: Array<{ month: string; count: number }> })
   );
 }
 
-const PROVIDER_LABEL: Record<string, string> = { openai: 'OpenAI', mistral: 'Mistral', gemini: 'Gemini', deepseek: 'DeepSeek' };
+const PROVIDER_LABEL: Record<string, string> = { openai: 'OpenAI', mistral: 'Mistral', gemini: 'Gemini', deepseek: 'DeepSeek', self_hosted: 'Self-hosted' };
 
 /** Which engines answer chats and index chatbot documents, and the vector database's state. */
 function AiKnowledgeCard({ onOpenIntegrations }: { onOpenIntegrations: () => void }) {
@@ -179,8 +179,13 @@ function AiKnowledgeCard({ onOpenIntegrations }: { onOpenIntegrations: () => voi
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground">Document search model</p>
-                <p className="mt-1 font-semibold">{status.embedModel}</p>
+                <p className="mt-1 break-all font-semibold">{status.embedModel}</p>
                 <p className="text-xs text-muted-foreground">{PROVIDER_LABEL[status.embedProvider] ?? status.embedProvider}, same for every workspace</p>
+                {status.embedding.ok ? (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-medium text-green-700 dark:text-green-400"><CheckCircle2 className="h-3.5 w-3.5" /> Working · {status.embedding.dimensions} dimensions</p>
+                ) : (
+                  <p className="mt-1 break-words text-xs font-medium text-destructive">Not working: {status.embedding.error}</p>
+                )}
               </div>
               <div className="rounded-lg bg-muted/40 p-3">
                 <p className="text-xs text-muted-foreground">Vector database</p>

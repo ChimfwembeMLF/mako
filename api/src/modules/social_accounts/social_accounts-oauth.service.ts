@@ -18,6 +18,7 @@ import {
   twitterScopesToParam,
 } from './social_accounts-oauth.scopes';
 import { resolveTwitterPublisherScopes } from '../../common/twitter-config.util';
+import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
 
 export type SocialOAuthPlatform =
   | 'facebook'
@@ -566,7 +567,7 @@ export class SocialAccountsOAuthService {
     try {
       const { data } = await axios.get<{
         data?: { scopes?: string[]; is_valid?: boolean };
-      }>('https://graph.facebook.com/v19.0/debug_token', {
+      }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/debug_token`, {
         params: {
           input_token: accessToken,
           access_token: `${appId}|${appSecret}`,
@@ -588,7 +589,7 @@ export class SocialAccountsOAuthService {
       scope: scopesToParam(WHATSAPP_PUBLISHER_SCOPES),
       response_type: 'code',
     });
-    return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
+    return `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params.toString()}`;
   }
 
   private async listWhatsAppPhoneNumbers(
@@ -606,7 +607,7 @@ export class SocialAccountsOAuthService {
     try {
       const { data: bizData } = await axios.get<{
         data?: Array<{ id: string; name?: string }>;
-      }>('https://graph.facebook.com/v19.0/me/businesses', {
+      }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/businesses`, {
         params: { fields: 'id,name', access_token: accessToken },
       });
 
@@ -615,7 +616,7 @@ export class SocialAccountsOAuthService {
           const { data: wabaData } = await axios.get<{
             data?: Array<{ id: string; name?: string }>;
           }>(
-            `https://graph.facebook.com/v19.0/${biz.id}/owned_whatsapp_business_accounts`,
+            `https://graph.facebook.com/${META_GRAPH_VERSION}/${biz.id}/owned_whatsapp_business_accounts`,
             { params: { fields: 'id,name', access_token: accessToken } },
           );
 
@@ -654,7 +655,7 @@ export class SocialAccountsOAuthService {
         display_phone_number?: string;
         verified_name?: string;
       }>;
-    }>(`https://graph.facebook.com/v19.0/${wabaId}/phone_numbers`, {
+    }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/${wabaId}/phone_numbers`, {
       params: {
         fields: 'id,display_phone_number,verified_name',
         access_token: accessToken,
@@ -692,7 +693,7 @@ export class SocialAccountsOAuthService {
                 }>;
               };
             };
-          }>(`https://graph.facebook.com/v19.0/${page.id}`, {
+          }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/${page.id}`, {
             params: {
               fields:
                 'whatsapp_business_account{id,name,phone_numbers{id,display_phone_number,verified_name}}',
@@ -734,7 +735,7 @@ export class SocialAccountsOAuthService {
       scope: scopesToParam(FACEBOOK_PUBLISHER_SCOPES),
       response_type: 'code',
     });
-    return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
+    return `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params.toString()}`;
   }
 
   private linkedInAuthorizeUrl(state: string, redirectUri: string): string {
@@ -756,7 +757,7 @@ export class SocialAccountsOAuthService {
       response_type: 'code',
       state,
     });
-    return `https://www.facebook.com/v19.0/dialog/oauth?${params.toString()}`;
+    return `https://www.facebook.com/${META_GRAPH_VERSION}/dialog/oauth?${params.toString()}`;
   }
 
   private googleAuthorizeUrl(state: string, redirectUri: string): string {
@@ -889,7 +890,7 @@ export class SocialAccountsOAuthService {
       const { data } = await axios.get<{
         instagram_business_account?: { id: string };
         error?: { message: string };
-      }>(`https://graph.facebook.com/v19.0/${pageId}`, {
+      }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/${pageId}`, {
         params: {
           fields: 'instagram_business_account',
           access_token: pageToken,
@@ -918,7 +919,7 @@ export class SocialAccountsOAuthService {
       username?: string;
       name?: string;
       error?: { message: string };
-    }>(`https://graph.facebook.com/v19.0/${igBusinessId}`, {
+    }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/${igBusinessId}`, {
       params: { fields: 'id,username,name', access_token: accessToken },
     });
 
@@ -1011,7 +1012,7 @@ export class SocialAccountsOAuthService {
       access_token?: string;
       error?: { message: string };
     }>(
-      `https://graph.facebook.com/v19.0/oauth/access_token?${params.toString()}`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${params.toString()}`,
     );
 
     if (data.error || !data.access_token) {
@@ -1034,7 +1035,7 @@ export class SocialAccountsOAuthService {
       access_token?: string;
       expires_in?: number;
     }>(
-      `https://graph.facebook.com/v19.0/oauth/access_token?${params.toString()}`,
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/oauth/access_token?${params.toString()}`,
     );
 
     if (!data.access_token) {
@@ -1053,7 +1054,7 @@ export class SocialAccountsOAuthService {
 
   private async getFacebookProfile(token: string) {
     const { data } = await axios.get<{ id?: string; name?: string }>(
-      'https://graph.facebook.com/v19.0/me',
+      `https://graph.facebook.com/${META_GRAPH_VERSION}/me`,
       { params: { fields: 'id,name', access_token: token } },
     );
     return data;
@@ -1067,7 +1068,7 @@ export class SocialAccountsOAuthService {
         category?: string;
         access_token?: string;
       }>;
-    }>('https://graph.facebook.com/v19.0/me/accounts', {
+    }>(`https://graph.facebook.com/${META_GRAPH_VERSION}/me/accounts`, {
       params: { fields: 'id,name,category,access_token', access_token: token },
     });
     return data.data ?? [];

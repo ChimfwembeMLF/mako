@@ -13,6 +13,10 @@ export interface Tenant {
   logo_url: string | null;
   owner_id: string;
   themeConfig?: Record<string, unknown>;
+  /** Chat AI provider the workspace chose; null means Mako's default. */
+  preferredAiProvider?: string | null;
+  /** Read-aloud voice provider, chosen separately. */
+  preferredTtsProvider?: string | null;
 }
 
 export interface TenantMember {
