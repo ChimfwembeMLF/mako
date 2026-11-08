@@ -9,7 +9,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { ModuleRef } from '@nestjs/core';
-import { Repository, MoreThan } from 'typeorm';
+import { In, Repository, MoreThan } from 'typeorm';
 import { TenantMembers } from './entities/tenant_members.entity';
 import { TenantMemberInvitation } from './entities/tenant_member_invitation.entity';
 import { TenantMembersCreateDto } from './dto/create-tenant_members.dto';
@@ -20,6 +20,8 @@ import { Tenants } from '../tenants/entities/tenants.entity';
 import { MailService } from '../mail/mail.service';
 import { resolveFrontendUrl } from '../../common/env-urls.util';
 import { GmailService } from '../auth/gmail.service';
+import { Roles } from '../auth/rbac/roles/entities/roles.entity';
+import { Workspaces } from '../workspaces/entities/workspaces.entity';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -55,6 +57,33 @@ export class TenantMembersService {
     } catch {
       return null;
     }
+  }
+
+  /** Roles belong to one organization; a role from another one can't be handed out here. */
+  private async assertRoleInTenant(roleId: string, tenantId: string): Promise<void> {
+    const role = await this.repo.manager
+      .getRepository(Roles)
+      .findOne({ where: { id: roleId }, select: { id: true, tenantId: true } });
+    if (!role || role.tenantId !== tenantId) {
+      throw new BadRequestException("Choose one of this organization's roles");
+    }
+  }
+
+  /** De-duplicates workspace ids and checks they all belong to the tenant; empty means all workspaces. */
+  async cleanWorkspaceIds(
+    ids: string[] | null | undefined,
+    tenantId: string,
+  ): Promise<string[] | null> {
+    if (!ids?.length) return null;
+    const unique = [...new Set(ids)];
+    const found = await this.repo.manager.getRepository(Workspaces).find({
+      where: { id: In(unique), tenantId },
+      select: { id: true },
+    });
+    if (found.length !== unique.length) {
+      throw new BadRequestException("One of those workspaces isn't in this organization");
+    }
+    return unique;
   }
 
   /**
@@ -169,6 +198,7 @@ export class TenantMembersService {
       id: inv.id,
       email: inv.email,
       roleId: inv.roleId,
+      workspaceIds: inv.workspaceIds ?? null,
       status: 'pending' as const,
       invitedAt: inv.created_at,
       expiresAt: inv.expiresAt,
@@ -191,6 +221,7 @@ export class TenantMembersService {
           tenantId: member.tenantId,
           userId: member.userId,
           roleId: member.roleId,
+          workspaceIds: member.workspaceIds ?? null,
           isActive: member.isActive,
           joinedAt: member.joinedAt,
           status: 'active' as const,
@@ -217,6 +248,7 @@ export class TenantMembersService {
       tenantId,
       userId: null,
       roleId: inv.roleId,
+      workspaceIds: inv.workspaceIds,
       isActive: false,
       joinedAt: inv.invitedAt,
       status: 'pending' as const,
@@ -241,6 +273,8 @@ export class TenantMembersService {
     tenantId: string;
     roleId: string;
     invitedBy: string;
+    /** Workspaces they'll be able to use; empty or missing means all of them. */
+    workspaceIds?: string[] | null;
   }): Promise<{
     message: string;
     invitation: TenantMemberInvitation;
@@ -252,6 +286,8 @@ export class TenantMembersService {
     emailProblem?: string;
   }> {
     const email = this.normalizeEmail(params.email);
+    await this.assertRoleInTenant(params.roleId, params.tenantId);
+    const workspaceIds = await this.cleanWorkspaceIds(params.workspaceIds, params.tenantId);
     const user = await this.userService.findOne({ email });
 
     if (user) {
@@ -276,6 +312,7 @@ export class TenantMembersService {
       pending.roleId = params.roleId;
       pending.invitedBy = params.invitedBy;
       pending.expiresAt = expiresAt;
+      pending.workspaceIds = workspaceIds;
       invitation = await this.invitationsRepo.save(pending);
     } else {
       invitation = await this.invitationsRepo.save(
@@ -286,6 +323,7 @@ export class TenantMembersService {
           invitedBy: params.invitedBy,
           status: 'pending',
           expiresAt,
+          workspaceIds,
         }),
       );
     }
@@ -413,6 +451,7 @@ export class TenantMembersService {
       existing.roleId = inv.roleId;
       existing.invitedBy = inv.invitedBy;
       existing.joinedAt = new Date();
+      existing.workspaceIds = inv.workspaceIds ?? null;
       member = await this.repo.save(existing);
     } else {
       member = await this.repo.save(
@@ -423,6 +462,7 @@ export class TenantMembersService {
           isActive: true,
           invitedBy: inv.invitedBy,
           joinedAt: new Date(),
+          workspaceIds: inv.workspaceIds ?? null,
         }),
       );
     }
@@ -453,11 +493,32 @@ export class TenantMembersService {
     await this.invitationsRepo.save(inv);
   }
 
+  /**
+   * Changes a member's role, whether they're active, or which workspaces they can use.
+   * Who the membership belongs to (user and organization) never changes here.
+   */
   async update(
     id: string,
-    dto: TenantMembersUpdateDto,
+    dto: Pick<TenantMembersUpdateDto, 'roleId' | 'isActive'> & { workspaceIds?: string[] | null },
   ): Promise<TenantMembers> {
-    await this.repo.update(id, dto as any);
+    const member = await this.findOne(id);
+    if (dto.roleId !== undefined) {
+      await this.assertRoleInTenant(dto.roleId, member.tenantId);
+      member.roleId = dto.roleId;
+    }
+    if (dto.isActive !== undefined) member.isActive = dto.isActive;
+    if (dto.workspaceIds !== undefined) {
+      const next = await this.cleanWorkspaceIds(dto.workspaceIds, member.tenantId);
+      const tenant = await this.tenantsRepo.findOne({
+        where: { id: member.tenantId },
+        select: { id: true, ownerId: true },
+      });
+      if (next && tenant?.ownerId === member.userId) {
+        throw new BadRequestException("The organization's owner always has every workspace");
+      }
+      member.workspaceIds = next;
+    }
+    await this.repo.save(member);
     return this.findOne(id);
   }
 

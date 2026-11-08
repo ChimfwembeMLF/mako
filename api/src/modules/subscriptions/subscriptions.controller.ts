@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { IsBoolean } from 'class-validator';
@@ -21,6 +22,7 @@ export class SubscriptionsController {
     return this.subscriptions.getSummary(tenantId);
   }
 
+  @RequirePermission('settings.billing')
   @Patch('tenant/:tenantId/auto-renew')
   async setAutoRenew(
     @Param('tenantId') tenantId: string,

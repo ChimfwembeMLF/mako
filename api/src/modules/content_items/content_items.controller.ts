@@ -59,6 +59,7 @@ export class ContentItemsController {
     return this.service.create(enriched);
   }
 
+  @RequirePermission('content.view')
   @Get()
   findAll(
     @Req() req: { user: JwtUser },
@@ -85,11 +86,13 @@ export class ContentItemsController {
     });
   }
 
+  @RequirePermission('content.view')
   @Get(':id/details')
   getDetails(@Param('id') id: string) {
     return this.service.getDetails(id);
   }
 
+  @RequirePermission('content.view')
   @Get(':id')
   findOne(@Param('id') id: string): Promise<ContentItems> {
     return this.service.findOne(id);

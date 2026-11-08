@@ -37,6 +37,11 @@ export class TenantAccessService {
     }
   }
 
+  /** Workspaces the user may use in the tenant; null means all of them. */
+  allowedWorkspaceIds(userId: string, tenantId: string): Promise<string[] | null> {
+    return this.rbac.allowedWorkspaceIds(userId, tenantId);
+  }
+
   memberTenantIds(userId: string): Promise<string[]> {
     return this.rbac.memberTenantIds(userId);
   }

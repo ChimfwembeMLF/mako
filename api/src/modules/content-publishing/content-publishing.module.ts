@@ -22,6 +22,7 @@ import { CommentReplyAiService } from './comment-reply-ai.service';
 import { SocialCommentAutoReplyService } from './social-comment-auto-reply.service';
 import { PublishMediaResolverService } from './publish-media-resolver.service';
 import { SocialPublishAccountService } from './social-publish-account.service';
+import { NewChannelPublishingService } from './new-channel-publishing.service';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
 
 @Module({
@@ -40,6 +41,7 @@ import { WhatsappModule } from '../whatsapp/whatsapp.module';
     WhatsappModule,
   ],
   providers: [
+    NewChannelPublishingService,
     PublishMediaResolverService,
     SocialPublishAccountService,
     FacebookPublishingService,
@@ -66,6 +68,8 @@ import { WhatsappModule } from '../whatsapp/whatsapp.module';
     PublicationEngagementService,
     CommentReplyAiService,
     SocialCommentAutoReplyService,
+    SocialPublishAccountService,
+    NewChannelPublishingService,
     WhatsappModule,
   ],
 })

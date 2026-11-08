@@ -33,6 +33,7 @@ export class FacebookPublishingService {
         content.userId,
         'facebook',
         content.workspaceId,
+        content.accountId,
       );
 
       if (!socialAccount) {

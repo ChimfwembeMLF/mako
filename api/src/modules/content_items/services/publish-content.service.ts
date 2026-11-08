@@ -1,3 +1,12 @@
+import { NewChannelPublishingService } from '../../content-publishing/new-channel-publishing.service';
+import {
+  accountDefaults,
+  appendDefaultHashtags,
+} from '../../social_accounts/account-defaults';
+import {
+  SocialPublishAccountService,
+  pickDefaultAccount,
+} from '../../content-publishing/social-publish-account.service';
 import { Injectable, NotFoundException, Optional } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -38,6 +47,8 @@ type PlatformPayloadStored = {
   whatsappTemplate?: string;
   whatsappTemplateLanguage?: string;
   whatsappUseTemplate?: boolean;
+  /** Which connected account of this platform to post from. */
+  accountId?: string;
 };
 
 @Injectable()
@@ -59,6 +70,8 @@ export class PublishContentService {
     private readonly youtube: YoutubePublishingService,
     private readonly tiktok: TiktokPublishingService,
     @Optional() private readonly notifications?: NotificationsService,
+    @Optional() private readonly accounts?: SocialPublishAccountService,
+    @Optional() private readonly newChannels?: NewChannelPublishingService,
   ) {}
 
   async publish(params: {
@@ -122,9 +135,36 @@ export class PublishContentService {
 
     for (const platform of platformsToRun) {
       const pp = platformPayloads[platform];
-      const publishedContent = formatContentForPlatform(
+      const chosenAccountId =
+        typeof pp?.accountId === 'string' && pp.accountId
+          ? pp.accountId
+          : undefined;
+      // The same account the platform service posted from (see getForPublish).
+      const socialAccount = chosenAccountId
+        ? await this.socialRepo.findOne({
+            where: { id: chosenAccountId, tenantId: item.tenantId, platform },
+          })
+        : pickDefaultAccount(
+            await this.socialRepo.find({
+              where: {
+                tenantId: item.tenantId,
+                workspaceId: item.workspaceId,
+                platform,
+                connected: true,
+              },
+              order: { created_at: 'ASC' },
+            }),
+            params.userId,
+          );
+
+      // The account's default hashtags ride along unless the post already has them.
+      const publishedContent = appendDefaultHashtags(
+        formatContentForPlatform(
+          platform,
+          htmlToPublishPlainText(pp?.content ?? item.content, platform),
+        ),
+        accountDefaults(socialAccount).hashtags,
         platform,
-        htmlToPublishPlainText(pp?.content ?? item.content, platform),
       );
       const publishedTitle = pp?.title ?? item.title;
 
@@ -135,6 +175,7 @@ export class PublishContentService {
         userId: params.userId,
         tenantId: item.tenantId,
         workspaceId: item.workspaceId,
+        accountId: chosenAccountId,
       };
 
       let media: MediaAttachment[];
@@ -205,26 +246,23 @@ export class PublishContentService {
         continue;
       }
 
-      const socialAccount =
-        (await this.socialRepo.findOne({
-          where: {
-            tenantId: item.tenantId,
-            workspaceId: item.workspaceId,
-            userId: params.userId,
-            platform,
-            connected: true,
-          },
-        })) ??
-        (await this.socialRepo.findOne({
-          where: {
-            tenantId: item.tenantId,
-            workspaceId: item.workspaceId,
-            platform,
-            connected: true,
-          },
-        }));
-
       const result = await this.dispatch(platform, payload, media, pp);
+      const firstComment = accountDefaults(socialAccount).firstComment;
+      if (
+        result.published &&
+        result.externalPostId &&
+        firstComment &&
+        socialAccount
+      ) {
+        const added = await this.accounts?.postFirstComment(
+          socialAccount,
+          platform,
+          result.externalPostId,
+          firstComment,
+        );
+        if (!added)
+          result.message = `${result.message} · the first comment couldn't be added`;
+      }
       results[platform] = {
         published: result.published,
         message: result.message,
@@ -455,6 +493,24 @@ export class PublishContentService {
         return this.youtube.publishPost(content, media);
       case 'tiktok':
         return this.tiktok.publishPost(content, media);
+      case 'threads':
+      case 'pinterest':
+      case 'google_business':
+      case 'telegram': {
+        if (!this.newChannels)
+          return {
+            published: false,
+            message: `${platform} publishing is not available`,
+          };
+        const p = platform.toLowerCase();
+        if (p === 'threads')
+          return this.newChannels.publishThreads(content, media);
+        if (p === 'pinterest')
+          return this.newChannels.publishPinterest(content, media);
+        if (p === 'google_business')
+          return this.newChannels.publishGoogleBusiness(content, media);
+        return this.newChannels.publishTelegram(content, media);
+      }
       default:
         return {
           published: false,

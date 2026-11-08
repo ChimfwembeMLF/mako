@@ -33,6 +33,7 @@ export class WhatsappContactsController {
     });
   }
 
+  @RequirePermission('leads.view')
   @Get()
   findByTenant(
     @Query('tenantId') tenantId: string,
@@ -41,6 +42,7 @@ export class WhatsappContactsController {
     return this.service.findByTenant(tenantId, workspaceId);
   }
 
+  @RequirePermission('leads.view')
   @Get(':id')
   async findOne(
     @Param('id') id: string,

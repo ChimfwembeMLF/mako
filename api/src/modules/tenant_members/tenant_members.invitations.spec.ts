@@ -3,13 +3,47 @@ import { TenantMembersService } from './tenant_members.service';
 
 jest.mock('../user/user.service', () => ({ UserService: class {} }));
 jest.mock('../mail/mail.service', () => ({ MailService: class {} }));
+jest.mock('../auth/rbac/roles/entities/roles.entity', () => ({ Roles: class Roles {} }));
+jest.mock('../workspaces/entities/workspaces.entity', () => ({ Workspaces: class Workspaces {} }));
+import { Roles } from '../auth/rbac/roles/entities/roles.entity';
+import { Workspaces } from '../workspaces/entities/workspaces.entity';
+
+const WS_A = '44444444-4444-4444-8444-444444444444';
+const WS_B = '55555555-5555-4555-8555-555555555555';
 
 const INV_ID = '11111111-1111-4111-8111-111111111111';
 
-function setup(opts: { user?: object | null; member?: object | null; invitation?: object | null; gmailError?: string; smtp?: boolean } = {}) {
+function setup(
+  opts: {
+    user?: object | null;
+    member?: object | null;
+    invitation?: object | null;
+    gmailError?: string;
+    smtp?: boolean;
+    /** Role id -> its tenant. */
+    roles?: Record<string, string>;
+    /** Workspace ids that belong to t1. */
+    workspaces?: string[];
+    ownerId?: string;
+  } = {},
+) {
+  const roles = opts.roles ?? { r1: 't1' };
+  const tenantWorkspaces = opts.workspaces ?? [WS_A, WS_B];
+  const manager = {
+    getRepository: (entity: unknown) =>
+      entity === Roles
+        ? { findOne: async ({ where }: any) => (roles[where.id] ? { id: where.id, tenantId: roles[where.id] } : null) }
+        : entity === Workspaces
+          ? {
+              find: async ({ where }: any) =>
+                (where.id._value as string[]).filter((id) => where.tenantId === 't1' && tenantWorkspaces.includes(id)).map((id) => ({ id })),
+            }
+          : {},
+  };
   const saved: unknown[] = [];
   const members = {
     findOne: jest.fn().mockResolvedValue(opts.member ?? null),
+    manager,
     create: jest.fn((x) => x),
     save: jest.fn(async (x) => {
       saved.push(x);
@@ -21,7 +55,7 @@ function setup(opts: { user?: object | null; member?: object | null; invitation?
     create: jest.fn((x) => ({ id: INV_ID, ...x })),
     save: jest.fn(async (x) => x),
   };
-  const tenants = { findOne: jest.fn().mockResolvedValue({ id: 't1', name: 'Acme' }) };
+  const tenants = { findOne: jest.fn().mockResolvedValue({ id: 't1', name: 'Acme', ownerId: opts.ownerId ?? 'owner' }) };
   const users = { findOne: jest.fn().mockResolvedValue(opts.user ?? null) };
   const mail = {
     sendWorkspaceInviteEmail: jest.fn().mockResolvedValue(true),
@@ -153,5 +187,53 @@ describe('TenantMembersService invitations', () => {
     await service.declineInvitation(INV_ID, service.invitationToken(INV_ID), 'u-ann');
     expect(inv.status).toBe('declined');
     expect(members.save).not.toHaveBeenCalled();
+  });
+
+  describe('workspace access', () => {
+    it('saves the chosen workspaces on the invitation', async () => {
+      const { service, invitations } = setup({});
+      await service.invite({ email: 'ann@example.com', tenantId: 't1', roleId: 'r1', invitedBy: 'owner', workspaceIds: [WS_A, WS_A] });
+      expect(invitations.create.mock.calls[0][0]).toMatchObject({ workspaceIds: [WS_A] });
+    });
+
+    it('gives every workspace when none are chosen', async () => {
+      const { service, invitations } = setup({});
+      await service.invite({ email: 'ann@example.com', tenantId: 't1', roleId: 'r1', invitedBy: 'owner', workspaceIds: [] });
+      expect(invitations.create.mock.calls[0][0]).toMatchObject({ workspaceIds: null });
+    });
+
+    it("refuses a workspace from another organization", async () => {
+      const { service } = setup({ workspaces: [WS_A] });
+      await expect(
+        service.invite({ email: 'ann@example.com', tenantId: 't1', roleId: 'r1', invitedBy: 'owner', workspaceIds: [WS_B] }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it("refuses a role from another organization", async () => {
+      const { service } = setup({ roles: { r1: 't2' } });
+      await expect(
+        service.invite({ email: 'ann@example.com', tenantId: 't1', roleId: 'r1', invitedBy: 'owner' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('carries the workspaces onto the membership when accepted', async () => {
+      const inv = pendingInvite({ workspaceIds: [WS_A] });
+      const { service, saved } = setup({ invitation: inv, user: { id: 'u-ann', email: 'ann@example.com' } });
+      await service.acceptInvitation(INV_ID, service.invitationToken(INV_ID), 'u-ann');
+      expect(saved[0]).toMatchObject({ userId: 'u-ann', workspaceIds: [WS_A] });
+    });
+
+    it("changes a member's workspaces but never who the membership belongs to", async () => {
+      const member = { id: 'm1', tenantId: 't1', userId: 'u-ann', roleId: 'r1', isActive: true };
+      const { service, members } = setup({ member });
+      await service.update('m1', { workspaceIds: [WS_B], userId: 'someone-else', tenantId: 't9' } as never);
+      expect(members.save).toHaveBeenCalledWith(expect.objectContaining({ userId: 'u-ann', tenantId: 't1', workspaceIds: [WS_B] }));
+    });
+
+    it("won't limit the organization's owner", async () => {
+      const member = { id: 'm1', tenantId: 't1', userId: 'u-owner', roleId: 'r1', isActive: true };
+      const { service } = setup({ member, ownerId: 'u-owner' });
+      await expect(service.update('m1', { workspaceIds: [WS_A] })).rejects.toBeInstanceOf(BadRequestException);
+    });
   });
 });

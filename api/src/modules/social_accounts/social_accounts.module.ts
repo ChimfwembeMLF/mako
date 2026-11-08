@@ -6,6 +6,9 @@ import { SocialAccounts } from './entities/social_accounts.entity';
 import { SocialAccountsService } from './social_accounts.service';
 import { SocialAccountsController } from './social_accounts.controller';
 import { SocialAccountsOAuthService } from './social_accounts-oauth.service';
+import { SocialAccountHealthService } from './social-account-health.service';
+import { ChannelConnectorsService } from './channel-connectors.service';
+import { TelegramConnectService } from './telegram-connect.service';
 import { TenantMembersModule } from '../tenant_members/tenant_members.module';
 import { XWebhookModule } from '../social_inbox/x-webhook.module';
 
@@ -23,8 +26,14 @@ import { XWebhookModule } from '../social_inbox/x-webhook.module';
       }),
     }),
   ],
-  providers: [SocialAccountsService, SocialAccountsOAuthService],
+  providers: [
+    SocialAccountsService,
+    SocialAccountsOAuthService,
+    SocialAccountHealthService,
+    ChannelConnectorsService,
+    TelegramConnectService,
+  ],
   controllers: [SocialAccountsController],
-  exports: [SocialAccountsService],
+  exports: [SocialAccountsService, SocialAccountHealthService],
 })
 export class SocialAccountsModule {}

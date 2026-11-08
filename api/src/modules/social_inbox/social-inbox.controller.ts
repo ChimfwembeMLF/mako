@@ -29,6 +29,7 @@ export class SocialInboxController {
     private readonly dmReply: SocialDmReplyService,
   ) {}
 
+  @RequirePermission('replies.view')
   @Get('conversations')
   listConversations(
     @Query('tenantId') tenantId: string,
@@ -42,6 +43,7 @@ export class SocialInboxController {
     );
   }
 
+  @RequirePermission('replies.view')
   @Get('messages')
   listMessages(
     @Query('tenantId') tenantId: string,

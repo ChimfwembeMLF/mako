@@ -12,6 +12,8 @@ export interface ContentToPublish {
   userId: string;
   tenantId: string;
   workspaceId?: string;
+  /** The connected account chosen for this platform; otherwise the workspace default is used. */
+  accountId?: string;
 }
 
 export interface MediaAttachment {

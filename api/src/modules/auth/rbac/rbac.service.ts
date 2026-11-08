@@ -68,6 +68,20 @@ export class RbacService {
     return tenant?.ownerId === userId;
   }
 
+  /**
+   * The workspaces a user may use in a tenant, or null for all of them: owners,
+   * platform admins and members with no limit set see every workspace.
+   */
+  async allowedWorkspaceIds(userId: string, tenantId: string): Promise<string[] | null> {
+    if (await this.isTenantOwner(userId, tenantId)) return null;
+    if (await this.isSuperAdmin(userId)) return null;
+    const member = await this.membersRepo.findOne({
+      where: { userId, tenantId, isActive: true },
+      select: { id: true, workspaceIds: true },
+    });
+    return member?.workspaceIds?.length ? member.workspaceIds : null;
+  }
+
   async memberTenantIds(userId: string): Promise<string[]> {
     const memberships = await this.membersRepo.find({
       where: { userId, isActive: true },

@@ -81,8 +81,14 @@ function clearUserCache() {
   sessionStorage.removeItem(USER_CACHE_KEY);
 }
 
+/**
+ * Remembers the account's own organization as the starting one. An organization the
+ * user already switched to is kept: this runs on every page load, and overwriting it
+ * sent people who belong to several organizations back to their own each time.
+ * Signing out clears the choice, and an organization they've left falls back safely.
+ */
 function persistActiveTenant(tenant?: TenantSummary) {
-  if (tenant?.id) {
+  if (tenant?.id && !localStorage.getItem('brandpilot_active_tenant')) {
     localStorage.setItem('brandpilot_active_tenant', tenant.id);
   }
 }
@@ -106,9 +112,18 @@ function normalizeUser(data: AuthUser | Record<string, unknown>): User {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  // On a reload in the same tab, start from the cached profile so the app appears at
+  // once; the token is still checked below and a bad one signs the user out as before.
+  const [initial] = useState(() => {
+    const token = getAuthToken();
+    const cached = token ? readCachedUser() : null;
+    return { token, cached };
+  });
+  const [user, setUser] = useState<User | null>(initial.cached);
+  const [session, setSession] = useState<Session | null>(
+    initial.cached && initial.token ? { accessToken: initial.token, user: initial.cached } : null,
+  );
+  const [loading, setLoading] = useState(!initial.cached);
 
   const setAuthData = useCallback((token: string, userData: User, refreshToken?: string) => {
     setAuthToken(token);

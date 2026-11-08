@@ -47,7 +47,8 @@ export type NotificationType =
   | 'weekly_digest'
   | 'hot_lead'
   | 'comment_pending'
-  | 'whatsapp_handoff';
+  | 'whatsapp_handoff'
+  | 'social_account_attention';
 
 export type NotifyInput = {
   tenantId: string;

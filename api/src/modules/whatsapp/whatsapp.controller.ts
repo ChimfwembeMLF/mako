@@ -64,6 +64,7 @@ export class WhatsappController {
     return accounts.find((a) => a.userId === userId) ?? accounts[0] ?? null;
   }
 
+  @RequirePermission('chatbot.view')
   @Get('flows/sessions')
   @ApiOperation({ summary: 'List all active flow sessions for a tenant' })
   async listFlowSessions(
@@ -119,6 +120,7 @@ export class WhatsappController {
     return this.flowSessions.updateConfig(tenantId, dto, workspaceId);
   }
 
+  @RequirePermission('replies.view')
   @Get('messages')
   async listMessages(
     @Query('tenantId') tenantId: string,
@@ -327,6 +329,7 @@ export class WhatsappController {
     };
   }
 
+  @RequirePermission('replies.view')
   @Get('conversations')
   async conversations(
     @Query('tenantId') tenantId: string,

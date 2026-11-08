@@ -2,6 +2,7 @@ import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
+  ForbiddenException,
   Controller,
   Get,
   Post,
@@ -39,10 +40,14 @@ export class WorkspacesController {
 
   @RequirePermission('settings.billing')
   @Post()
-  create(
+  async create(
     @Req() req: { user: JwtUser },
     @Body() dto: WorkspacesCreateDto,
   ): Promise<Workspaces> {
+    // A member limited to some workspaces would be locked out of a new one.
+    if (await this.access.allowedWorkspaceIds(String(req.user.sub), dto.tenantId)) {
+      throw new ForbiddenException('Only members with access to every workspace can create workspaces');
+    }
     return this.service.create(dto, String(req.user.sub));
   }
 
@@ -51,8 +56,19 @@ export class WorkspacesController {
     @Req() req: { user: { sub: string } },
     @Query('tenantId') tenantId?: string,
   ): Promise<Workspaces[]> {
-    if (tenantId) return this.service.findAll(tenantId);
-    return this.service.findForTenants(await this.access.memberTenantIds(req.user.sub));
+    const userId = req.user.sub;
+    const all = tenantId
+      ? await this.service.findAll(tenantId)
+      : await this.service.findForTenants(await this.access.memberTenantIds(userId));
+    // Members limited to some workspaces only see those.
+    const allowedByTenant = new Map<string, string[] | null>();
+    for (const t of new Set(all.map((w) => w.tenantId))) {
+      allowedByTenant.set(t, await this.access.allowedWorkspaceIds(userId, t));
+    }
+    return all.filter((w) => {
+      const allowed = allowedByTenant.get(w.tenantId);
+      return !allowed || allowed.includes(w.id);
+    });
   }
 
   @Get(':id')

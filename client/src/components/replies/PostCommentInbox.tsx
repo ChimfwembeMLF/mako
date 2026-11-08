@@ -126,16 +126,19 @@ export function PostCommentInbox({
   );
 
   const detailPane = selected ? (
-    <PostCommentCard
-      post={selected}
-      canReply={canReply}
-      sendingId={sendingId}
-      manualText={manualText}
-      onDraftChange={onDraftChange}
-      onSend={onSend}
-      onAiDraft={onAiDraft}
-      onDismiss={onDismiss}
-    />
+    // The panel has a fixed height, so a long comment thread scrolls inside it.
+    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1">
+      <PostCommentCard
+        post={selected}
+        canReply={canReply}
+        sendingId={sendingId}
+        manualText={manualText}
+        onDraftChange={onDraftChange}
+        onSend={onSend}
+        onAiDraft={onAiDraft}
+        onDismiss={onDismiss}
+      />
+    </div>
   ) : (
     <div className="h-full rounded-lg border border-dashed flex items-center justify-center text-sm text-muted-foreground p-6 text-center min-h-[280px]">
       Select a post to view its comment thread.
@@ -149,8 +152,9 @@ export function PostCommentInbox({
       hasSelection={Boolean(selected)}
       onBack={() => setSelectedKey(null)}
       backLabel="Posts"
-      listMinHeight="min-h-[420px] md:min-h-[560px]"
-      detailMinHeight="min-h-[420px] md:min-h-[560px]"
+      // A fixed-height panel sized to the space under the tabs: the post list and the
+      // thread scroll inside it instead of stretching the page to fit every post.
+      listMinHeight="md:h-[calc(100dvh-24rem)] md:min-h-[440px]"
     />
   );
 }

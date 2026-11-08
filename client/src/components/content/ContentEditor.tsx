@@ -70,7 +70,8 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
   }, [item]);
 
   useEffect(() => {
-    if (!tenant?.id) {
+    // Templates belong to a workspace; wait until we know which one.
+    if (!tenant?.id || !workspaceId) {
       setTemplates([]);
       return;
     }

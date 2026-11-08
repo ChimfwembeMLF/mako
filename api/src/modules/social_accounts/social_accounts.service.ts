@@ -68,9 +68,22 @@ export class SocialAccountsService {
     );
   }
 
+  /**
+   * What the browser may see. Tokens never leave the server, and neither do
+   * credentials saved in metadata by manual connect (X API key and secrets,
+   * WhatsApp access token): publishing reads those from the database itself.
+   */
   toPublicAccount(account: SocialAccounts) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { accessToken, refreshToken, ...safe } = account;
-    return safe;
+    const metadata = account.metadata
+      ? Object.fromEntries(
+          Object.entries(account.metadata).filter(
+            ([key]) => !/secret|token|password|api_?key|credential/i.test(key),
+          ),
+        )
+      : account.metadata;
+    return { ...safe, metadata };
   }
 
   async assertTenantAccess(userId: string, tenantId: string) {
@@ -139,7 +152,8 @@ export class SocialAccountsService {
     const isMeta =
       account.platform === 'facebook' ||
       account.platform === 'instagram' ||
-      account.platform === 'whatsapp';
+      account.platform === 'whatsapp' ||
+      account.platform === 'threads';
     const bufferMs = isMeta ? 15 * 24 * 60 * 60 * 1000 : 5 * 60 * 1000;
 
     const expiresSoon =
@@ -173,7 +187,9 @@ export class SocialAccountsService {
       !account.refreshToken &&
       account.platform !== 'facebook' &&
       account.platform !== 'instagram' &&
-      account.platform !== 'whatsapp'
+      account.platform !== 'whatsapp' &&
+      // Threads renews its long-lived token without a refresh token.
+      account.platform !== 'threads'
     ) {
       return account;
     }
@@ -184,7 +200,11 @@ export class SocialAccountsService {
         return account;
       }
 
-      Object.assign(account, refreshed);
+      // Keep the saved refresh token when a provider doesn't send a new one.
+      Object.assign(
+        account,
+        Object.fromEntries(Object.entries(refreshed).filter(([, v]) => v !== undefined)),
+      );
       return this.repo.save(account);
     } catch (error) {
       if (isTokenAuthError(error) || isRecoverableMetaTokenError(error)) {
@@ -250,7 +270,27 @@ export class SocialAccountsService {
       case 'facebook':
         return this.refreshFacebookToken(account.accessToken);
       case 'instagram':
-        return this.refreshInstagramToken(account.accessToken);
+        return account.metadata?.login_type === 'instagram'
+          ? this.refreshLongLivedToken(
+              'https://graph.instagram.com/refresh_access_token',
+              'ig_refresh_token',
+              account.accessToken,
+            )
+          : this.refreshInstagramToken(account.accessToken);
+      case 'threads':
+        return this.refreshLongLivedToken(
+          'https://graph.threads.net/refresh_access_token',
+          'th_refresh_token',
+          account.accessToken,
+        );
+      case 'pinterest':
+        return account.refreshToken
+          ? this.refreshPinterestToken(account.refreshToken)
+          : undefined;
+      case 'google_business':
+        return account.refreshToken
+          ? this.refreshGoogleToken(account.refreshToken)
+          : undefined;
       case 'whatsapp':
         return account.accessToken?.trim()
           ? this.refreshFacebookToken(account.accessToken)
@@ -276,6 +316,39 @@ export class SocialAccountsService {
       default:
         return undefined;
     }
+  }
+
+  /** Instagram Login and Threads renew a long-lived token by exchanging the current one. */
+  private async refreshLongLivedToken(url: string, grantType: string, accessToken: string) {
+    const { data } = await axios.get<{ access_token: string; expires_in?: number }>(url, {
+      params: { grant_type: grantType, access_token: accessToken },
+      timeout: 20_000,
+    });
+    if (!data.access_token) throw new Error('Token refresh failed');
+    return {
+      accessToken: data.access_token,
+      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+    };
+  }
+
+  private async refreshPinterestToken(refreshToken: string) {
+    const id = this.config.get<string>('PINTEREST_APP_ID');
+    const secret = this.config.get<string>('PINTEREST_APP_SECRET');
+    if (!id || !secret) throw new Error('Pinterest credentials are not configured');
+    const { data } = await axios.post<{ access_token: string; refresh_token?: string; expires_in?: number }>(
+      'https://api.pinterest.com/v5/oauth/token',
+      new URLSearchParams({ grant_type: 'refresh_token', refresh_token: refreshToken }).toString(),
+      {
+        auth: { username: id, password: secret },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        timeout: 20_000,
+      },
+    );
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : undefined,
+    };
   }
 
   private async refreshFacebookToken(accessToken: string) {
@@ -417,15 +490,162 @@ export class SocialAccountsService {
   async findByTenant(tenantId: string, userId: string, workspaceId?: string) {
     await this.assertTenantAccess(userId, tenantId);
     const accounts = await this.repo.find({
-      where: scopeWhereIncludingTenantWide<SocialAccounts>(tenantId, workspaceId, {
-        connected: true,
-      }),
+      where: scopeWhereIncludingTenantWide<SocialAccounts>(
+        tenantId,
+        workspaceId,
+        {
+          connected: true,
+        },
+      ),
       order: { created_at: 'DESC' },
     });
     const refreshed = await Promise.all(
       accounts.map(async (account) => this.refreshAccessTokenIfNeeded(account)),
     );
     return refreshed.map((a) => this.toPublicAccount(a));
+  }
+
+  /**
+   * Everything the Social accounts page shows: connected accounts plus ones that lost
+   * access recently (so they can be reconnected rather than silently vanishing), each
+   * with who connected it and its recent publishing activity.
+   */
+  async findForManagement(
+    tenantId: string,
+    userId: string,
+    workspaceId?: string,
+  ) {
+    await this.assertTenantAccess(userId, tenantId);
+    const all = await this.repo.find({
+      where: scopeWhereIncludingTenantWide<SocialAccounts>(
+        tenantId,
+        workspaceId,
+        {},
+      ),
+      order: { created_at: 'ASC' },
+    });
+    const cutoff = Date.now() - 60 * 24 * 60 * 60 * 1000;
+    const connectedKeys = new Set(
+      all
+        .filter((a) => a.connected)
+        .map((a) => `${a.platform}:${a.externalId ?? a.id}`),
+    );
+    const rows = all.filter((a) => {
+      if (a.connected) return true;
+      const at = a.metadata?.auth_error_at;
+      return (
+        typeof at === 'string' &&
+        new Date(at).getTime() > cutoff &&
+        !connectedKeys.has(`${a.platform}:${a.externalId ?? a.id}`)
+      );
+    });
+    if (!rows.length) return [];
+
+    const ids = rows.map((a) => a.id);
+    const manager = this.repo.manager;
+    const activity: Array<{
+      social_account_id: string;
+      status: string;
+      last_at: Date;
+      last_error: string | null;
+    }> = await manager.query(
+      `SELECT DISTINCT ON (social_account_id, status)
+                social_account_id, status, COALESCE(published_at, created_at) AS last_at, error_message AS last_error
+           FROM content_publications
+          WHERE social_account_id = ANY($1)
+          ORDER BY social_account_id, status, COALESCE(published_at, created_at) DESC`,
+      [ids],
+    );
+    const userIds = [...new Set(rows.map((a) => a.userId).filter(Boolean))];
+    const people: Array<{
+      id: string;
+      first_name: string | null;
+      last_name: string | null;
+      email: string | null;
+      member: boolean;
+    }> = userIds.length
+      ? await manager.query(
+          `SELECT u.id, u.first_name, u.last_name, u.email,
+                    EXISTS (SELECT 1 FROM tenant_members m WHERE m.user_id = u.id AND m.tenant_id = $2 AND m.is_active) AS member
+               FROM users u WHERE u.id = ANY($1)`,
+          [userIds, tenantId],
+        )
+      : [];
+
+    const refreshed = await Promise.all(
+      rows.map((account) =>
+        account.connected ? this.refreshAccessTokenIfNeeded(account) : account,
+      ),
+    );
+    return refreshed.map((account) => {
+      const mine = activity.filter((r) => r.social_account_id === account.id);
+      const published = mine.find((r) => r.status === 'published');
+      const failed = mine.find((r) => r.status === 'failed');
+      const person = people.find((p) => p.id === account.userId);
+      return {
+        ...this.toPublicAccount(account),
+        activity: {
+          lastPublishedAt: published?.last_at ?? null,
+          lastFailedAt: failed?.last_at ?? null,
+          lastError: failed?.last_error ?? null,
+        },
+        connectedBy: person
+          ? {
+              name:
+                [person.first_name, person.last_name]
+                  .filter(Boolean)
+                  .join(' ') || person.email,
+              email: person.email,
+              stillMember: Boolean(person.member),
+            }
+          : null,
+      };
+    });
+  }
+
+  /** Makes this the account posts go out from by default for its platform in its workspace. */
+  async setDefault(id: string, tenantId: string, userId: string) {
+    const acc = await this.findOneForTenant(id, tenantId, userId);
+    if (!acc.connected)
+      throw new ForbiddenException(
+        'Reconnect this account before making it the default',
+      );
+    const siblings = await this.repo.find({
+      where: {
+        ...scopeWhere<SocialAccounts>(tenantId, acc.workspaceId ?? undefined),
+        platform: acc.platform,
+      },
+    });
+    for (const s of siblings) {
+      const isDefault = s.id === acc.id;
+      if (Boolean(s.metadata?.is_default) === isDefault) continue;
+      s.metadata = { ...(s.metadata ?? {}), is_default: isDefault };
+      await this.repo.save(s);
+    }
+    return this.toPublicAccount({
+      ...acc,
+      metadata: { ...(acc.metadata ?? {}), is_default: true },
+    });
+  }
+
+  /** Saves default hashtags and first comment for posts from this account. */
+  async setDefaults(
+    id: string,
+    tenantId: string,
+    userId: string,
+    defaults: { hashtags?: string | null; firstComment?: string | null },
+  ) {
+    const acc = await this.findOneForTenant(id, tenantId, userId);
+    const clean = (v: string | null | undefined, max: number) =>
+      typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : undefined;
+    acc.metadata = {
+      ...(acc.metadata ?? {}),
+      defaults: {
+        hashtags: clean(defaults.hashtags, 500),
+        firstComment: clean(defaults.firstComment, 2000),
+      },
+    };
+    return this.toPublicAccount(await this.repo.save(acc));
   }
 
   async findByUser(userId: string) {

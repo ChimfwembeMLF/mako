@@ -43,6 +43,7 @@ export class TemplatesController {
     } as any);
   }
 
+  @RequirePermission('templates.view')
   @Get(':id')
   findOne(
     @Param('id') id: string,

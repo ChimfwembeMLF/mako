@@ -11,13 +11,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { PermissionGate } from '@/components/PermissionGate';
 import { Field, FormSection, FormRow, FormActions, FormInput, formSelectProps } from '@/components/forms';
-import { Users, Mail, UserCog, Trash2, Copy, RotateCw } from 'lucide-react';
+import { Users, Mail, UserCog, Trash2, Copy, RotateCw, Layers } from 'lucide-react';
+import { useWorkspace } from '@/hooks/useWorkspace';
+import { useAuth } from '@/hooks/useAuth';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { WorkspaceAccessPicker } from '@/components/team/WorkspaceAccessPicker';
+import { describeWorkspaceAccess } from '@/lib/workspaceAccess';
 
 interface Member {
   id: string;
   userId: string | null;
   isActive: boolean;
   roleId: string | null;
+  /** null means every workspace. */
+  workspaceIds?: string[] | null;
   joinedAt: string;
   status?: 'active' | 'pending';
   profile: { fullName: string | null; email: string | null; avatarUrl: string | null } | null;
@@ -33,6 +40,11 @@ export default function TeamPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('');
+  const [inviteWorkspaces, setInviteWorkspaces] = useState<string[] | null>(null);
+  const { workspaces } = useWorkspace();
+  const { user } = useAuth();
+  const [editingAccess, setEditingAccess] = useState<{ id: string; value: string[] | null } | null>(null);
+  const [savingAccess, setSavingAccess] = useState(false);
   const [loading, setLoading] = useState(true);
   const [inviting, setInviting] = useState(false);
   const [resendingId, setResendingId] = useState<string | null>(null);
@@ -59,9 +71,9 @@ export default function TeamPage() {
   }
 
   /** Sends (or re-sends) an invite and reports honestly whether the email went out. */
-  async function sendInvite(email: string, roleId: string): Promise<boolean> {
+  async function sendInvite(email: string, roleId: string, workspaceIds?: string[] | null): Promise<boolean> {
     if (!tenant) return false;
-    const res = await tenantMembersApi.invite({ email, tenantId: tenant.id, roleId });
+    const res = await tenantMembersApi.invite({ email, tenantId: tenant.id, roleId, workspaceIds: workspaceIds ?? undefined });
     await logAudit({ tenantId: tenant.id, action: 'team.invite', metadata: { email } });
     if (res.emailSent === false && res.acceptLink) {
       setShareLink({ email, link: res.acceptLink, problem: res.emailProblem });
@@ -80,9 +92,10 @@ export default function TeamPage() {
     if (!inviteEmail.trim() || !inviteRole || !tenant) return;
     setInviting(true);
     try {
-      await sendInvite(inviteEmail.trim(), inviteRole);
+      await sendInvite(inviteEmail.trim(), inviteRole, inviteWorkspaces);
       setInviteEmail('');
       setInviteRole('');
+      setInviteWorkspaces(myLimit);
       load();
     } catch (err: unknown) {
       toast({ title: 'Invite failed', description: err instanceof Error ? err.message : 'Invite failed', variant: 'destructive' });
@@ -96,7 +109,7 @@ export default function TeamPage() {
     if (!email || !member.roleId) return;
     setResendingId(member.id);
     try {
-      await sendInvite(email, member.roleId);
+      await sendInvite(email, member.roleId, member.workspaceIds);
       load();
     } catch (err: unknown) {
       toast({ title: 'Resend failed', description: err instanceof Error ? err.message : 'Resend failed', variant: 'destructive' });
@@ -112,6 +125,22 @@ export default function TeamPage() {
       toast({ title: 'Invite link copied' });
     } catch {
       toast({ title: 'Could not copy', description: 'Select the link and copy it manually.', variant: 'destructive' });
+    }
+  }
+
+  async function saveAccess() {
+    if (!tenant || !editingAccess) return;
+    setSavingAccess(true);
+    try {
+      await tenantMembersApi.update(editingAccess.id, { workspaceIds: editingAccess.value });
+      await logAudit({ tenantId: tenant.id, action: 'team.workspaces_changed', metadata: { member_id: editingAccess.id, workspace_ids: editingAccess.value } });
+      toast({ title: 'Workspace access updated' });
+      setEditingAccess(null);
+      load();
+    } catch (err: unknown) {
+      toast({ title: 'Could not update access', description: err instanceof Error ? err.message : undefined, variant: 'destructive' });
+    } finally {
+      setSavingAccess(false);
     }
   }
 
@@ -137,6 +166,11 @@ export default function TeamPage() {
     load();
     toast({ title: 'Member removed' });
   }
+
+  // If you're limited to some workspaces, you can only hand out those.
+  const myLimit = members.find((m) => m.userId && m.userId === user?.id)?.workspaceIds ?? null;
+  const workspaceOptions = workspaces.map((w) => ({ id: w.id, name: w.name, logoUrl: w.logoUrl }));
+  const hasManyWorkspaces = workspaceOptions.length > 1;
 
   const roleName = (roleId: string | null) => roles.find((r) => r.id === roleId)?.name ?? 'Unknown';
 
@@ -178,6 +212,21 @@ export default function TeamPage() {
                 </Select>
               </Field>
             </FormRow>
+            {hasManyWorkspaces && (
+              <Field label="Workspaces">
+                <WorkspaceAccessPicker
+                  workspaces={workspaceOptions}
+                  value={inviteWorkspaces}
+                  onChange={setInviteWorkspaces}
+                  allowAll={!myLimit}
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {myLimit
+                    ? 'Leave all off to give them the same workspaces you have.'
+                    : 'They’ll only see and work in the workspaces you pick. Their role applies in each one.'}
+                </p>
+              </Field>
+            )}
             <FormActions className="justify-start sm:justify-end">
               <Button onClick={handleInvite} disabled={inviting || !inviteEmail || !inviteRole} className="gap-1.5 h-10 rounded-lg">
                 <Mail className="h-4 w-4" /> {inviting ? 'Sending…' : 'Send invite'}
@@ -244,6 +293,16 @@ export default function TeamPage() {
                   <p className="text-xs text-muted-foreground truncate">
                     {member.status === 'pending' ? 'Invitation not accepted yet' : member.profile?.email}
                   </p>
+                  {hasManyWorkspaces && (
+                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Layers className="h-3 w-3 shrink-0" />
+                      <span className="truncate">
+                        {member.userId && member.userId === tenant?.owner_id
+                          ? 'All workspaces · owner'
+                          : describeWorkspaceAccess(member.workspaceIds, workspaceOptions)}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -270,6 +329,43 @@ export default function TeamPage() {
                   </Select>
                 ) : (
                   <Badge variant="secondary">{roleName(member.roleId)}</Badge>
+                )}
+                {hasManyWorkspaces && member.status !== 'pending' && can(P.team.assignRoles) && member.userId && member.userId !== tenant?.owner_id && member.userId !== user?.id && (
+                  <Popover
+                    open={editingAccess?.id === member.id}
+                    onOpenChange={(open) => setEditingAccess(open ? { id: member.id, value: member.workspaceIds ?? null } : null)}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg" aria-label={`Workspaces for ${member.profile?.fullName ?? member.profile?.email ?? 'member'}`}>
+                        <Layers className="h-4 w-4" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="w-80 space-y-3">
+                      <div>
+                        <p className="text-sm font-semibold">Workspace access</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">Which workspaces {member.profile?.fullName ?? 'they'} can see and work in.</p>
+                      </div>
+                      {editingAccess?.id === member.id && (
+                        <WorkspaceAccessPicker
+                          workspaces={workspaceOptions}
+                          value={editingAccess.value}
+                          onChange={(value) => setEditingAccess({ id: member.id, value })}
+                          allowAll={!myLimit}
+                          disabled={savingAccess}
+                        />
+                      )}
+                      <div className="flex justify-end gap-2 pt-1">
+                        <Button size="sm" variant="ghost" onClick={() => setEditingAccess(null)} disabled={savingAccess}>Cancel</Button>
+                        <Button
+                          size="sm"
+                          onClick={() => void saveAccess()}
+                          disabled={savingAccess || (editingAccess?.value !== null && !editingAccess?.value?.length)}
+                        >
+                          {savingAccess ? 'Saving…' : 'Save'}
+                        </Button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 )}
                 {member.status !== 'pending' && can(P.team.assignPermissions) && member.userId && (
                   <Button size="icon" variant="ghost" className="h-9 w-9 rounded-lg" asChild>

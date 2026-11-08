@@ -6,6 +6,9 @@ import {
   NestInterceptor,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { ROUTE_ARGS_METADATA } from '@nestjs/common/constants';
+import { RouteParamtypes } from '@nestjs/common/enums/route-paramtypes.enum';
+import { getMetadataStorage } from 'class-validator';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { isUUID } from 'class-validator';
 import { from, Observable, switchMap } from 'rxjs';
@@ -61,7 +64,8 @@ export class TenantScopeInterceptor implements NestInterceptor {
       TENANT_RESOURCE_KEY,
       [context.getHandler(), context.getClass()],
     );
-    if (resource) tenantIds.add(await this.resourceTenant(resource, req.params));
+    const record = resource ? await this.resourceRecord(resource, req.params) : undefined;
+    if (resource) tenantIds.add(record?.tenantId);
 
     // Without a tenant these list every tenant's records.
     const named = [...tenantIds].some(Boolean);
@@ -78,6 +82,7 @@ export class TenantScopeInterceptor implements NestInterceptor {
       req.query?.workspaceId,
       req.body?.workspaceId,
     ].filter((w): w is string => typeof w === 'string' && w.length > 0);
+    const workspaceTenants = new Map<string, string>();
     for (const workspaceId of workspaceIds) {
       const workspaceTenant = isUUID(workspaceId)
         ? await this.workspaceTenant(workspaceId)
@@ -90,6 +95,11 @@ export class TenantScopeInterceptor implements NestInterceptor {
         throw new ForbiddenException('Workspace does not belong to this organization');
       }
       tenantIds.add(workspaceTenant);
+      workspaceTenants.set(workspaceId, workspaceTenant);
+    }
+    // A record opened by id counts as naming its workspace (a workspace record is its own).
+    if (record?.workspaceId && typeof record.tenantId === 'string') {
+      workspaceTenants.set(record.workspaceId, record.tenantId);
     }
 
     const checked: string[] = [];
@@ -100,6 +110,8 @@ export class TenantScopeInterceptor implements NestInterceptor {
       }
       checked.push(tenantId);
     }
+
+    await this.assertWorkspaceAccess(userId, checked, workspaceTenants, context);
 
     const permission = this.reflector.getAllAndOverride<string>(
       REQUIRED_PERMISSION_KEY,
@@ -127,16 +139,65 @@ export class TenantScopeInterceptor implements NestInterceptor {
     return ws?.tenantId;
   }
 
+  /**
+   * Members limited to some workspaces can only touch those: a named workspace (or a
+   * record's workspace) must be on their list, and a route that is scoped by workspace
+   * must be told which one, or it would answer across every workspace.
+   */
+  private async assertWorkspaceAccess(
+    userId: string,
+    tenants: string[],
+    workspaceTenants: Map<string, string>,
+    context: ExecutionContext,
+  ): Promise<void> {
+    for (const tenantId of tenants) {
+      const allowed = await this.rbac.allowedWorkspaceIds(userId, tenantId);
+      if (!allowed) continue;
+      const named = [...workspaceTenants].filter(([, t]) => t === tenantId).map(([w]) => w);
+      if (named.some((w) => !allowed.includes(w))) {
+        throw new ForbiddenException('You do not have access to this workspace');
+      }
+      if (!named.length && this.routeTakesWorkspace(context)) {
+        throw new ForbiddenException('Choose one of your workspaces');
+      }
+    }
+  }
+
+  /** Whether the route reads a workspaceId query (directly or through a query DTO). */
+  private routeTakesWorkspace(context: ExecutionContext): boolean {
+    const cls = context.getClass?.();
+    const handler = context.getHandler();
+    if (!cls || !handler?.name) return false;
+    const args: Record<string, { index: number; data?: unknown }> =
+      Reflect.getMetadata(ROUTE_ARGS_METADATA, cls, handler.name) ?? {};
+    const paramTypes: unknown[] = Reflect.getMetadata('design:paramtypes', cls.prototype, handler.name) ?? [];
+    return Object.entries(args).some(([key, arg]) => {
+      if (Number(key.split(':')[0]) !== RouteParamtypes.QUERY) return false;
+      if (arg.data === 'workspaceId') return true;
+      if (arg.data !== undefined) return false;
+      const dto = paramTypes[arg.index];
+      if (typeof dto !== 'function') return false;
+      return getMetadataStorage()
+        .getTargetValidationMetadatas(dto as new () => unknown, '', true, false)
+        .some((m) => m.propertyName === 'workspaceId');
+    });
+  }
+
   /** Unknown records fall through so the route answers with its usual 404. */
-  private async resourceTenant(
+  private async resourceRecord(
     { entity, param, field }: TenantResourceOptions,
     params: Record<string, unknown> = {},
-  ): Promise<unknown> {
+  ): Promise<{ tenantId?: unknown; workspaceId?: string } | undefined> {
     const id = params[param];
     if (typeof id !== 'string' || !isUUID(id)) return undefined;
     const record = await this.dataSource
       .getRepository(entity)
       .findOne({ where: { [field]: id } });
-    return record?.tenantId;
+    if (!record) return undefined;
+    const workspaceId = entity === Workspaces ? record.id : record.workspaceId;
+    return {
+      tenantId: record.tenantId,
+      workspaceId: typeof workspaceId === 'string' && workspaceId ? workspaceId : undefined,
+    };
   }
 }

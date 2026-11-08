@@ -33,6 +33,10 @@ export class TenantMembers {
   @Column({ type: 'timestamptz' })
   joinedAt: Date;
 
+  /** Workspaces this member can use; null means all of them. */
+  @Column({ type: 'uuid', array: true, nullable: true })
+  workspaceIds?: string[] | null;
+
   @ManyToOne(() => Tenants, { nullable: false })
   @JoinColumn({ name: 'tenant_id' })
   tenant: Tenants;

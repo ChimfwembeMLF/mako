@@ -33,6 +33,7 @@ export class LinkedInPublishingService {
       content.userId,
       'linkedin',
       content.workspaceId,
+      content.accountId,
     );
 
     if (!socialAccount) {
@@ -54,8 +55,11 @@ export class LinkedInPublishingService {
     try {
       const liToken = socialAccount.accessToken;
       const liPersonId = this.accounts.getLinkedInPersonId(socialAccount);
+      // A company Page account posts as the organization, otherwise as the member.
+      const orgId = socialAccount.metadata?.organization_id as string | undefined;
+      const ownerUrn = orgId ? `urn:li:organization:${orgId}` : `urn:li:person:${liPersonId}`;
 
-      if (!liToken || !liPersonId) {
+      if (!liToken || (!liPersonId && !orgId)) {
         return {
           published: false,
           message:
@@ -90,7 +94,7 @@ export class LinkedInPublishingService {
             'https://api.linkedin.com/v2/assets?action=registerUpload',
             {
               registerUploadRequest: {
-                owner: `urn:li:person:${liPersonId}`,
+                owner: ownerUrn,
                 recipes: [recipe],
                 serviceRelationships: [
                   {
@@ -148,7 +152,7 @@ export class LinkedInPublishingService {
       }
 
       const postBody: Record<string, unknown> = {
-        author: `urn:li:person:${liPersonId}`,
+        author: ownerUrn,
         lifecycleState: 'PUBLISHED',
         specificContent: {
           'com.linkedin.ugc.ShareContent': {

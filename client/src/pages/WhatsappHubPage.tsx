@@ -90,7 +90,8 @@ export default function WhatsappHubPage() {
   }, [status?.webhookUrl]);
 
   const load = useCallback(async () => {
-    if (!tenantId) return;
+    // The number, templates and bots belong to a workspace; wait until we know which one.
+    if (!tenantId || !workspaceId) return;
     try {
       const [conn, templates, convos, flow, botList] = await Promise.all([
         whatsappApi.connectionStatus(tenantId, workspaceId),

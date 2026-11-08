@@ -107,6 +107,7 @@ export class CommentRepliesController {
     return this.service.create(dto);
   }
 
+  @RequirePermission('replies.view')
   @Get('inbox')
   getInbox(
     @Query('tenantId') tenantId: string,
@@ -116,11 +117,13 @@ export class CommentRepliesController {
     return this.inbox.getInbox(tenantId, contentId, workspaceId);
   }
 
+  @RequirePermission('replies.view')
   @Get()
   findAll(@Query('tenantId') tenantId?: string): Promise<CommentReplies[]> {
     return this.service.findAll(tenantId);
   }
 
+  @RequirePermission('replies.view')
   @Get(':id')
   findOne(@Param('id') id: string): Promise<CommentReplies> {
     return this.service.findOne(id);

@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import { Deposits } from '../deposits/entities/deposits.entity';
 import {
@@ -48,6 +49,7 @@ export class PaymentsController {
     return this.payments.quoteToZmw(Number(amount), currency);
   }
 
+  @RequirePermission('settings.billing')
   @Post('deposits/initiate')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -66,6 +68,7 @@ export class PaymentsController {
     return this.payments.initiateDeposit(body);
   }
 
+  @RequirePermission('settings.billing')
   @Post('ads-deposit')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -106,6 +109,7 @@ export class PaymentsController {
     return this.payments.checkDepositStatus(depositId);
   }
 
+  @RequirePermission('settings.billing')
   @Get('deposits/tenant/:tenantId')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -114,6 +118,7 @@ export class PaymentsController {
   }
 
   @TenantResource(Deposits, { param: 'depositId', field: 'depositId' })
+  @RequirePermission('settings.billing')
   @Get('deposits/:depositId/invoice')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -136,6 +141,7 @@ export class PaymentsController {
   }
 
   @TenantResource(Deposits, { param: 'depositId', field: 'depositId' })
+  @RequirePermission('settings.billing')
   @Post('deposits/:depositId/refund-request')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

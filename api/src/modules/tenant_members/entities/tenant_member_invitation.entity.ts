@@ -30,6 +30,10 @@ export class TenantMemberInvitation {
   @Column({ type: 'timestamptz' })
   expiresAt: Date;
 
+  /** Workspaces the invitee will be able to use; null means all of them. */
+  @Column({ type: 'uuid', array: true, nullable: true })
+  workspaceIds?: string[] | null;
+
   @Column({ type: 'timestamptz', nullable: true })
   acceptedAt?: Date;
 

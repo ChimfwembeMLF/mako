@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { Controller, Get, Req, UseGuards, Query } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { AiAnalyticsService, AiAnalyticsReport } from './ai-analytics.service';
@@ -20,6 +21,7 @@ export class AnalyticsController {
     private readonly insightsRepo: Repository<SocialInsights>,
   ) {}
 
+  @RequirePermission('analytics.view')
   @Get('platform-dashboard')
   getPlatformDashboard(
     @Query('tenantId') tenantId: string,
@@ -47,6 +49,7 @@ export class AnalyticsController {
     return this.platformDashboard.getDashboard(tenantId, workspaceId);
   }
 
+  @RequirePermission('analytics.view')
   @Get('performance')
   getPerformance(
     @Req() req: any,
@@ -59,6 +62,7 @@ export class AnalyticsController {
     return this.performance.getReport(tenantId, workspaceId, Number(days));
   }
 
+  @RequirePermission('analytics.view')
   @Get('insights')
   async getInsights(
     @Req() req: any,
@@ -85,6 +89,7 @@ export class AnalyticsController {
     return query.orderBy('insights.date', 'ASC').getMany();
   }
 
+  @RequirePermission('analytics.view')
   @Get('ai-report')
   async getAiReport(
     @Req() req: any,

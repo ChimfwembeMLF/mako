@@ -1,6 +1,8 @@
+import { IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
 import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
+  Patch,
   Controller,
   Get,
   Post,
@@ -21,12 +23,23 @@ import { Request, Response } from 'express';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { resolveFrontendUrl } from '../../common/env-urls.util';
-import { getTwitterConfig, resolveTwitterPublisherScopes } from '../../common/twitter-config.util';
+import {
+  getTwitterConfig,
+  resolveTwitterPublisherScopes,
+} from '../../common/twitter-config.util';
 import { SocialAccountsService } from './social_accounts.service';
+import { SocialAccountHealthService } from './social-account-health.service';
+import {
+  CONNECTOR_PROVIDERS,
+  ChannelConnectorsService,
+  isConnectorProvider,
+} from './channel-connectors.service';
+import { TelegramConnectService } from './telegram-connect.service';
 import {
   SocialAccountsOAuthService,
   SocialOAuthPlatform,
   OAuthConnectState,
+  callbackHost,
 } from './social_accounts-oauth.service';
 import { SocialAccountsCreateDto } from './dto/create-social_accounts.dto';
 import { WhatsappFinalizeDto } from './dto/whatsapp-finalize.dto';
@@ -44,7 +57,47 @@ const OAUTH_PLATFORMS: SocialOAuthPlatform[] = [
   'whatsapp',
   'tiktok',
   'twitter',
+  ...CONNECTOR_PROVIDERS,
 ];
+
+class FinalizeChannelSetupDto {
+  @IsString()
+  setupToken: string;
+
+  @IsString()
+  choiceId: string;
+}
+
+class TelegramConnectDto {
+  @IsUUID()
+  tenantId: string;
+
+  @IsOptional()
+  @IsUUID()
+  workspaceId?: string;
+
+  /** From @BotFather, e.g. 123456:ABC-DEF... */
+  @IsString()
+  @MaxLength(200)
+  botToken: string;
+
+  /** @channelname, a group invite-free username, or a numeric chat id. */
+  @IsString()
+  @MaxLength(200)
+  chat: string;
+}
+
+class AccountDefaultsDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  hashtags?: string | null;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  firstComment?: string | null;
+}
 
 @ApiTags('Social Accounts')
 @Controller('api/v1/social-accounts')
@@ -57,6 +110,9 @@ export class SocialAccountsController {
     private readonly config: ConfigService,
     private readonly xWebhook: XWebhookAdminService,
     private readonly access: TenantAccessService,
+    private readonly health: SocialAccountHealthService,
+    private readonly connectors: ChannelConnectorsService,
+    private readonly telegram: TelegramConnectService,
   ) {}
 
   /** Setup tokens carry the tenant chosen at OAuth start; recheck the role when it is used. */
@@ -100,7 +156,9 @@ export class SocialAccountsController {
     );
     if (!result.ok) {
       this.logger.warn(
-        `X Account Activity subscription skipped: ${result.message ?? 'unknown'}`,
+        `X Account Activity subscription skipped: ${
+          result.message ?? 'unknown'
+        }`,
       );
     }
   }
@@ -225,12 +283,14 @@ export class SocialAccountsController {
     }
     const state = this.oauth.encodeState(connectState);
 
-    const redirectUrl = this.oauth.getAuthorizeUrl(
-      oauthPlatform,
-      state,
-      redirectUri,
-      connectState.codeVerifier,
-    );
+    const redirectUrl = isConnectorProvider(oauthPlatform)
+      ? this.connectors.authorizeUrl(oauthPlatform, state, redirectUri)
+      : this.oauth.getAuthorizeUrl(
+          oauthPlatform,
+          state,
+          redirectUri,
+          connectState.codeVerifier,
+        );
 
     this.logger.log(
       `OAuth authorize ${platform} → redirect_uri=${redirectUri}`,
@@ -279,13 +339,15 @@ export class SocialAccountsController {
     }
 
     const decoded = this.oauth.decodeState(state);
-    if (!decoded || decoded.provider !== platform) {
+    if (!decoded || callbackHost(decoded.provider) !== platform) {
       const message = encodeURIComponent(
         'Invalid OAuth state — please start connect again from Publisher',
       );
       return res.redirect(`${fallbackReturn}?error=${message}`);
     }
 
+    // A shared callback (e.g. Google's) carries the real provider in the state.
+    platform = decoded.provider;
     const returnUrl = decoded.returnUrl || fallbackReturn;
     const separator = returnUrl.includes('?') ? '&' : '?';
 
@@ -353,6 +415,59 @@ export class SocialAccountsController {
         );
       }
 
+      if (isConnectorProvider(platform)) {
+        const prepared = await this.connectors.prepare(
+          platform,
+          code,
+          decoded.redirectUri,
+        );
+        if (prepared.kind === 'choose') {
+          if (!prepared.choices.length) {
+            throw new BadRequestException(
+              platform === 'linkedin_page'
+                ? 'No company Pages found where you are an admin.'
+                : platform === 'pinterest'
+                ? 'No boards found. Create a board on Pinterest, then connect again.'
+                : 'No business locations found for this Google account.',
+            );
+          }
+          const setupToken = this.connectors.createSetupToken({
+            userId: decoded.userId,
+            tenantId: decoded.tenantId,
+            workspaceId: decoded.workspaceId,
+            platform: prepared.platform,
+            title: prepared.title,
+            accessToken: prepared.accessToken,
+            refreshToken: prepared.refreshToken,
+            expiresAt: prepared.expiresAt,
+            choices: prepared.choices,
+          });
+          return res.redirect(
+            `${returnUrl}${separator}channel_setup=${encodeURIComponent(
+              setupToken,
+            )}`,
+          );
+        }
+        const one = prepared.result;
+        await this.service.connectAccount({
+          tenantId: decoded.tenantId,
+          workspaceId: decoded.workspaceId,
+          userId: decoded.userId,
+          platform: one.platform,
+          accountName: one.accountName,
+          externalId: one.externalId,
+          username: one.username,
+          accessToken: one.accessToken,
+          refreshToken: one.refreshToken,
+          expiresAt: one.expiresAt,
+          metadata: one.metadata,
+          connected: true,
+        });
+        return res.redirect(
+          `${returnUrl}${separator}connected=${one.platform}`,
+        );
+      }
+
       const result = await this.oauth.handleCallback(
         platform as SocialOAuthPlatform,
         code,
@@ -406,10 +521,24 @@ export class SocialAccountsController {
       return err.message;
     }
     if (axios.isAxiosError(err)) {
-      const fb = err.response?.data as
-        | { error?: { message?: string } }
+      const data = err.response?.data as
+        | { error?: string | { message?: string }; error_description?: string }
         | undefined;
-      return fb?.error?.message || err.message;
+      // OAuth token endpoints (Google, LinkedIn) reply { error, error_description }.
+      if (typeof data?.error === 'string') {
+        return data.error === 'invalid_grant'
+          ? 'That sign-in expired or was already used. Please connect again.'
+          : data.error_description || data.error;
+      }
+      const message = data?.error?.message || err.message;
+      // Business Profile APIs allow zero calls until Google approves access.
+      if (
+        /mybusiness\w*\.googleapis\.com/.test(message) ||
+        (/quota/i.test(message) && /business/i.test(message))
+      ) {
+        return 'Google hasn’t approved Business Profile API access for this app yet. Request access in Google Cloud, then connect again.';
+      }
+      return message;
     }
     return err instanceof Error ? err.message : 'Connection failed';
   }
@@ -611,6 +740,142 @@ export class SocialAccountsController {
       },
       connected: true,
     });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'What can be picked after signing in (company Pages, boards, locations)',
+  })
+  @Get('channel-setup')
+  channelSetup(@Req() req: Request, @Query('token') token: string) {
+    const payload = this.connectors.verifySetupToken(token);
+    if (payload.userId !== this.getUserId(req)) {
+      throw new BadRequestException('This setup link belongs to someone else.');
+    }
+    return {
+      platform: payload.platform,
+      title: payload.title,
+      choices: payload.choices.map((c) => ({
+        id: c.id,
+        name: c.name,
+        subtitle: c.subtitle,
+      })),
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Connect the Page, board or location picked after signing in',
+  })
+  @Post('channel-setup/finalize')
+  async finalizeChannelSetup(
+    @Req() req: Request,
+    @Body() dto: FinalizeChannelSetupDto,
+  ) {
+    const userId = this.getUserId(req);
+    const payload = this.connectors.verifySetupToken(dto.setupToken);
+    if (payload.userId !== userId) {
+      throw new BadRequestException('This setup link belongs to someone else.');
+    }
+    await this.assertCanConnect(userId, payload.tenantId);
+    const choice = payload.choices.find((c) => c.id === dto.choiceId);
+    if (!choice)
+      throw new BadRequestException('Pick one of the listed options.');
+    return this.service.connectAccount({
+      tenantId: payload.tenantId,
+      workspaceId: payload.workspaceId,
+      userId,
+      platform: choice.account.platform,
+      accountName: choice.account.accountName,
+      externalId: choice.account.externalId,
+      username: choice.account.username,
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken,
+      expiresAt: payload.expiresAt ? new Date(payload.expiresAt) : undefined,
+      metadata: choice.account.metadata,
+      connected: true,
+    });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Connect a Telegram bot to a channel or group' })
+  @RequirePermission('content.publish')
+  @Post('telegram/connect')
+  connectTelegram(@Req() req: Request, @Body() dto: TelegramConnectDto) {
+    return this.telegram.connect({ ...dto, userId: this.getUserId(req) });
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Accounts with health, activity and who connected them (Social accounts page)',
+  })
+  @Get('tenant/:tenantId/manage')
+  manage(
+    @Req() req: Request,
+    @Param('tenantId') tenantId: string,
+    @Query('workspaceId') workspaceId?: string,
+  ) {
+    return this.service.findForManagement(
+      tenantId,
+      this.getUserId(req),
+      workspaceId,
+    );
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Make this the default account for its platform' })
+  @RequirePermission('content.publish')
+  @Post(':id/default')
+  makeDefault(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Query('tenantId') tenantId: string,
+  ) {
+    return this.service.setDefault(id, tenantId, this.getUserId(req));
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Default hashtags and first comment for posts from this account',
+  })
+  @RequirePermission('content.publish')
+  @Patch(':id/defaults')
+  saveDefaults(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Query('tenantId') tenantId: string,
+    @Body() dto: AccountDefaultsDto,
+  ) {
+    return this.service.setDefaults(id, tenantId, this.getUserId(req), dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Check the connection still works and has the permissions it needs',
+  })
+  @RequirePermission('content.publish')
+  @Post(':id/check')
+  async check(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Query('tenantId') tenantId: string,
+  ) {
+    const account = await this.service.findOneForTenant(
+      id,
+      tenantId,
+      this.getUserId(req),
+    );
+    return this.health.check(account);
   }
 
   @UseGuards(JwtAuthGuard)

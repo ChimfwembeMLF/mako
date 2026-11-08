@@ -46,6 +46,7 @@ export class ContentCampaignsController {
     });
   }
 
+  @RequirePermission('content.view')
   @Get()
   list(
     @Query('tenantId') tenantId: string,
@@ -54,6 +55,7 @@ export class ContentCampaignsController {
     return this.campaigns.findByTenant(tenantId, workspaceId);
   }
 
+  @RequirePermission('content.view')
   @Get(':id')
   getOne(@Param('id') id: string, @Query('tenantId') tenantId: string) {
     return this.campaigns.findOne(id, tenantId);

@@ -9,6 +9,10 @@ import {
   Video,
   LucideIcon,
   Youtube,
+  AtSign,
+  Pin,
+  Store,
+  Send,
 } from 'lucide-react';
 import { publishablePlatforms } from '@/lib/platform-capabilities';
 import {
@@ -192,6 +196,90 @@ const ALL_PLATFORM_DEFS: PlatformDef[] = [
     },
   },
   {
+    value: 'threads',
+    label: 'Threads',
+    icon: AtSign,
+    color: '#000000',
+    maxChars: 500,
+    previewType: 'social',
+    media: {
+      maxAttachments: 1,
+      maxImages: 1,
+      maxVideos: 1,
+      maxImageSizeMB: 8,
+      maxVideoSizeMB: 1024,
+      maxVideoDurationSec: 300,
+      recommendedImageSize: '1080×1350 px',
+      aspectRatio: '4:5 or 1:1',
+      supportsVideo: true,
+      supportsCarousel: false,
+      mediaNotes: 'Text up to 500 characters, with one optional image or video.',
+    },
+  },
+  {
+    value: 'pinterest',
+    label: 'Pinterest',
+    icon: Pin,
+    color: '#e60023',
+    maxChars: 800,
+    previewType: 'social',
+    media: {
+      maxAttachments: 1,
+      maxImages: 1,
+      maxVideos: 0,
+      maxImageSizeMB: 20,
+      maxVideoSizeMB: 0,
+      maxVideoDurationSec: 0,
+      recommendedImageSize: '1000×1500 px',
+      aspectRatio: '2:3',
+      supportsVideo: false,
+      supportsCarousel: false,
+      mediaNotes: 'Every Pin needs an image. The first line becomes the Pin title.',
+    },
+  },
+  {
+    value: 'google_business',
+    label: 'Google Business',
+    icon: Store,
+    color: '#1a73e8',
+    maxChars: 1500,
+    previewType: 'social',
+    media: {
+      maxAttachments: 1,
+      maxImages: 1,
+      maxVideos: 0,
+      maxImageSizeMB: 5,
+      maxVideoSizeMB: 0,
+      maxVideoDurationSec: 0,
+      recommendedImageSize: '1200×900 px',
+      aspectRatio: '4:3',
+      supportsVideo: false,
+      supportsCarousel: false,
+      mediaNotes: 'Shows as an update on your Google listing. One optional photo.',
+    },
+  },
+  {
+    value: 'telegram',
+    label: 'Telegram',
+    icon: Send,
+    color: '#229ed9',
+    maxChars: 4096,
+    previewType: 'social',
+    media: {
+      maxAttachments: 1,
+      maxImages: 1,
+      maxVideos: 1,
+      maxImageSizeMB: 10,
+      maxVideoSizeMB: 50,
+      maxVideoDurationSec: 0,
+      recommendedImageSize: 'Any',
+      aspectRatio: 'Any',
+      supportsVideo: true,
+      supportsCarousel: false,
+      mediaNotes: 'With a photo or video, the text is limited to 1,024 characters.',
+    },
+  },
+  {
     value: 'ad_copy',
     label: 'Ad Copy',
     icon: Megaphone,
@@ -243,6 +331,8 @@ export type PlatformPayload = {
   whatsappTemplate?: string;
   whatsappTemplateLanguage?: string;
   whatsappUseTemplate?: boolean;
+  /** Which connected account of this platform to post from; empty uses the workspace default. */
+  accountId?: string;
 };
 
 export function stripHtml(html: string): string {

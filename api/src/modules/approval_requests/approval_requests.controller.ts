@@ -29,6 +29,7 @@ export class ApprovalRequestsController {
     return this.service.create(dto);
   }
 
+  @RequirePermission('approvals.view')
   @Get()
   findAll(
     @Query('tenantId') tenantId?: string,
@@ -48,6 +49,7 @@ export class ApprovalRequestsController {
     return this.service.findAll();
   }
 
+  @RequirePermission('approvals.view')
   @Get(':id')
   findOne(@Param('id') id: string): Promise<ApprovalRequests> {
     return this.service.findOne(id);

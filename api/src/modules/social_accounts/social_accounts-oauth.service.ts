@@ -28,7 +28,13 @@ export type SocialOAuthPlatform =
   | 'youtube'
   | 'whatsapp'
   | 'tiktok'
-  | 'twitter';
+  | 'twitter'
+  // Newer channels, handled by ChannelConnectorsService.
+  | 'instagram_login'
+  | 'threads'
+  | 'linkedin_page'
+  | 'pinterest'
+  | 'google_business';
 
 export interface WhatsAppPhoneOption {
   id: string;
@@ -127,6 +133,21 @@ export interface OAuthConnectResult {
   metadata?: Record<string, unknown>;
 }
 
+/** Providers that share another platform's OAuth app, and so its callback URL. */
+const SHARED_CALLBACK: Partial<
+  Record<SocialOAuthPlatform, SocialOAuthPlatform>
+> = {
+  google_business: 'google',
+  linkedin_page: 'linkedin',
+};
+
+/** The platform whose callback route a provider returns through. */
+export function callbackHost(
+  platform: SocialOAuthPlatform,
+): SocialOAuthPlatform {
+  return SHARED_CALLBACK[platform] ?? platform;
+}
+
 @Injectable()
 export class SocialAccountsOAuthService {
   private readonly logger = new Logger(SocialAccountsOAuthService.name);
@@ -160,17 +181,24 @@ export class SocialAccountsOAuthService {
   }
 
   getCallbackUrl(apiBaseUrl: string, platform: SocialOAuthPlatform): string {
-    const envKey = `${platform.toUpperCase()}_SOCIAL_CALLBACK_URL`;
-    const fromEnv = this.config.get<string>(envKey);
-    if (fromEnv?.trim()) {
-      return fromEnv.trim().replace(/\/$/, '');
-    }
+    const own = this.config
+      .get<string>(`${platform.toUpperCase()}_SOCIAL_CALLBACK_URL`)
+      ?.trim();
+    if (own) return own.replace(/\/$/, '');
+
+    // Sign-ins that use an existing app return through that app's registered
+    // callback, so nothing new has to be registered with Google or LinkedIn.
+    const host = callbackHost(platform);
+    const fromEnv = this.config
+      .get<string>(`${host.toUpperCase()}_SOCIAL_CALLBACK_URL`)
+      ?.trim();
+    if (fromEnv) return fromEnv.replace(/\/$/, '');
 
     const base = (
       this.config.get<string>('API_BASE_URL') || apiBaseUrl
     ).replace(/\/$/, '');
 
-    return `${base}/api/v1/social-accounts/oauth/${platform}/callback`;
+    return `${base}/api/v1/social-accounts/oauth/${host}/callback`;
   }
 
   attachTikTokPkce(state: OAuthConnectState): OAuthConnectState {

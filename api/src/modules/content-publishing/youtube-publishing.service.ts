@@ -31,6 +31,7 @@ export class YoutubePublishingService {
         content.userId,
         'youtube',
         content.workspaceId,
+        content.accountId,
       );
 
       if (!account) {

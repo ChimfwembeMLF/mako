@@ -238,6 +238,7 @@ export class LeadsController {
     return this.service.create(dto);
   }
 
+  @RequirePermission('leads.view')
   @Get()
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -248,6 +249,7 @@ export class LeadsController {
     return this.service.findAll(tenantId, workspaceId);
   }
 
+  @RequirePermission('leads.view')
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

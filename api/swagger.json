@@ -2278,7 +2278,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/TenantMembersUpdateDto"
+                "$ref": "#/components/schemas/UpdateMemberDto"
               }
             }
           }
@@ -4629,6 +4629,253 @@
           }
         ],
         "summary": "Finalize WhatsApp connect after selecting a phone number",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/channel-setup": {
+      "get": {
+        "operationId": "SocialAccountsController_channelSetup",
+        "parameters": [
+          {
+            "name": "token",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "What can be picked after signing in (company Pages, boards, locations)",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/channel-setup/finalize": {
+      "post": {
+        "operationId": "SocialAccountsController_finalizeChannelSetup",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalizeChannelSetupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect the Page, board or location picked after signing in",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/telegram/connect": {
+      "post": {
+        "operationId": "SocialAccountsController_connectTelegram",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramConnectDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Connect a Telegram bot to a channel or group",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/tenant/{tenantId}/manage": {
+      "get": {
+        "operationId": "SocialAccountsController_manage",
+        "parameters": [
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "workspaceId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Accounts with health, activity and who connected them (Social accounts page)",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/{id}/default": {
+      "post": {
+        "operationId": "SocialAccountsController_makeDefault",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Make this the default account for its platform",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/{id}/defaults": {
+      "patch": {
+        "operationId": "SocialAccountsController_saveDefaults",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDefaultsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Default hashtags and first comment for posts from this account",
+        "tags": [
+          "Social Accounts"
+        ]
+      }
+    },
+    "/api/v1/social-accounts/{id}/check": {
+      "post": {
+        "operationId": "SocialAccountsController_check",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tenantId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "summary": "Check the connection still works and has the permissions it needs",
         "tags": [
           "Social Accounts"
         ]
@@ -10886,7 +11133,7 @@
         "type": "object",
         "properties": {}
       },
-      "TenantMembersUpdateDto": {
+      "UpdateMemberDto": {
         "type": "object",
         "properties": {}
       },
@@ -11074,6 +11321,18 @@
           "setupToken",
           "phoneNumberId"
         ]
+      },
+      "FinalizeChannelSetupDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "TelegramConnectDto": {
+        "type": "object",
+        "properties": {}
+      },
+      "AccountDefaultsDto": {
+        "type": "object",
+        "properties": {}
       },
       "CreateBotDto": {
         "type": "object",

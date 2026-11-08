@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Controller,
   Get,
   Post,
@@ -16,10 +17,16 @@ import { TenantAccessService } from '../auth/rbac/tenant-access.service';
 import { TenantMembersService } from './tenant_members.service';
 import { TenantMembers } from './entities/tenant_members.entity';
 import { TenantMembersCreateDto } from './dto/create-tenant_members.dto';
-import { TenantMembersUpdateDto } from './dto/update-tenant_members.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
-import { IsEmail, IsString, IsUUID } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsUUID,
+} from 'class-validator';
 
 class InviteMemberDto {
   @IsEmail()
@@ -30,6 +37,29 @@ class InviteMemberDto {
 
   @IsUUID()
   roleId: string;
+
+  /** Workspaces they'll be able to use; leave out for all of them. */
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  workspaceIds?: string[];
+}
+
+/** What can change about a membership. Who it belongs to never does. */
+class UpdateMemberDto {
+  @IsOptional()
+  @IsUUID()
+  roleId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
+
+  /** null or [] gives access to every workspace. */
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  workspaceIds?: string[] | null;
 }
 
 class InvitationTokenDto {
@@ -51,7 +81,8 @@ export class TenantMembersController {
   async invite(@Req() req: Request, @Body() dto: InviteMemberDto) {
     const userId = req.user?.['sub'];
     await this.access.assertMember(userId, dto.tenantId, 'team.invite');
-    return this.service.invite({ ...dto, invitedBy: userId });
+    const workspaceIds = await this.workspacesYouCanGrant(userId, dto.tenantId, dto.workspaceIds);
+    return this.service.invite({ ...dto, workspaceIds, invitedBy: userId });
   }
 
   /** Invitation details for the person it was sent to (link from the email). */
@@ -134,11 +165,34 @@ export class TenantMembersController {
   async update(
     @Req() req: Request,
     @Param('id') id: string,
-    @Body() dto: TenantMembersUpdateDto,
+    @Body() dto: UpdateMemberDto,
   ) {
+    const userId = req.user?.['sub'];
     const member = await this.service.findOne(id);
-    await this.access.assertMember(req.user?.['sub'], member.tenantId, 'team.assign_roles');
-    return this.service.update(id, dto);
+    await this.access.assertMember(userId, member.tenantId, 'team.assign_roles');
+    const update: UpdateMemberDto = { roleId: dto.roleId, isActive: dto.isActive };
+    if (dto.workspaceIds !== undefined) {
+      update.workspaceIds = await this.workspacesYouCanGrant(userId, member.tenantId, dto.workspaceIds);
+    }
+    return this.service.update(id, update);
+  }
+
+  /**
+   * Nobody can hand out access they don't have: a member limited to some workspaces
+   * can only grant those, and leaving the choice empty means "the ones I have".
+   */
+  private async workspacesYouCanGrant(
+    userId: string,
+    tenantId: string,
+    requested: string[] | null | undefined,
+  ): Promise<string[] | null> {
+    const yours = await this.access.allowedWorkspaceIds(userId, tenantId);
+    if (!yours) return requested?.length ? requested : null;
+    if (!requested?.length) return yours;
+    if (requested.some((w) => !yours.includes(w))) {
+      throw new ForbiddenException('You can only give access to workspaces you can use yourself');
+    }
+    return requested;
   }
 
   @UseGuards(JwtAuthGuard)

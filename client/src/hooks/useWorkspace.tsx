@@ -34,8 +34,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [workspaces, setWorkspaces] = useState<WorkspaceRow[]>([]);
   const [activeWorkspace, setActiveWorkspaceState] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Loading until the first list arrives, so pages don't fetch before they know the
+  // workspace (members limited to some workspaces are refused workspace-less requests).
+  const [loading, setLoading] = useState(true);
   const [workspaceVersion, setWorkspaceVersion] = useState(0);
+  /** The organization the current list belongs to. */
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
 
   // The server rejects a workspace from another organization, so drop the old
   // one the moment the organization changes instead of after the new list loads.
@@ -46,6 +50,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setWorkspaces([]);
       setActiveWorkspaceState(null);
       loadedTenantId.current = null;
+      setLoading(false);
       return;
     }
     if (loadedTenantId.current !== tenant.id) {
@@ -69,9 +74,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setWorkspaces([]);
       setActiveWorkspaceState(null);
     } finally {
+      setLoadedFor(tenant.id);
       setLoading(false);
     }
   }, [tenant]);
+
+  // Right after the organization changes the list still belongs to the old one, so
+  // report "loading" with no workspace until the new list is in.
+  const stale = Boolean(tenant && loadedFor !== tenant.id);
 
   useEffect(() => {
     void load();
@@ -90,15 +100,15 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
-      workspaces,
-      activeWorkspace,
-      defaultWorkspaceId: activeWorkspace,
+      workspaces: stale ? [] : workspaces,
+      activeWorkspace: stale ? null : activeWorkspace,
+      defaultWorkspaceId: stale ? null : activeWorkspace,
       setActiveWorkspace,
-      loading,
+      loading: loading || stale,
       refetch: load,
       workspaceVersion,
     }),
-    [workspaces, activeWorkspace, setActiveWorkspace, loading, load, workspaceVersion],
+    [workspaces, activeWorkspace, setActiveWorkspace, loading, stale, load, workspaceVersion],
   );
 
   return <WorkspaceContext.Provider value={value}>{children}</WorkspaceContext.Provider>;

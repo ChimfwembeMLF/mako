@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
   Controller,
@@ -25,6 +26,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class ApprovalWorkflowsController {
   constructor(private readonly service: ApprovalWorkflowsService) {}
 
+  @RequirePermission('admin.maker_checker')
   @Post()
   create(@Body() dto: ApprovalWorkflowsCreateDto): Promise<ApprovalWorkflows> {
     return this.service.create(dto);
@@ -40,11 +42,13 @@ export class ApprovalWorkflowsController {
     return this.service.findOne(id);
   }
 
+  @RequirePermission('admin.maker_checker')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: ApprovalWorkflowsUpdateDto) {
     return this.service.update(id, dto);
   }
 
+  @RequirePermission('admin.maker_checker')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

@@ -1,4 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, Query } from '@nestjs/common';
+import { IsOptional, IsUUID } from 'class-validator';
 import { lastValueFrom, of } from 'rxjs';
 import { TenantScopeInterceptor } from './tenant-scope.interceptor';
 
@@ -21,6 +22,8 @@ const run = (
     granted = [] as string[],
     owner = false,
     workspaces = {} as Record<string, string>,
+    allowedWorkspaces = null as string[] | null,
+    controller = undefined as unknown,
   } = {},
 ) => {
   const rbac = {
@@ -28,6 +31,7 @@ const run = (
     isSuperAdmin: jest.fn(async () => superAdmin),
     hasPermission: jest.fn(async (_u: string, _t: string, p: string) => granted.includes(p)),
     isTenantOwner: jest.fn(async () => owner),
+    allowedWorkspaceIds: jest.fn(async () => allowedWorkspaces),
   };
   const reflector = {
     getAllAndOverride: jest.fn((key: string) =>
@@ -38,7 +42,7 @@ const run = (
   const dataSource = {
     getRepository: (entity: unknown) => {
       if (entity === Workspaces) {
-        return { findOne: async ({ where }: any) => (workspaces[where.id] ? { tenantId: workspaces[where.id] } : null) };
+        return { findOne: async ({ where }: any) => (workspaces[where.id] ? { id: where.id, tenantId: workspaces[where.id] } : null) };
       }
       return { findOne };
     },
@@ -46,7 +50,7 @@ const run = (
   const next = { handle: jest.fn(() => of('ok')) };
   const context = {
     getHandler: () => ({ name: handler }),
-    getClass: () => undefined,
+    getClass: () => controller,
     getType: () => 'http',
     switchToHttp: () => ({ getRequest: () => req }),
   };
@@ -186,6 +190,77 @@ describe('TenantScopeInterceptor', () => {
     it('rejects an unknown workspace', async () => {
       const req = { ...user, query: { tenantId: mine, workspaceId: '66666666-6666-4666-8666-666666666666' } };
       await expect(run(req, undefined, undefined, { workspaces }).result).rejects.toThrow('Workspace not found');
+    });
+  });
+
+  describe('workspace limits', () => {
+    const wsA = '77777777-7777-4777-8777-777777777777';
+    const wsB = '88888888-8888-4888-8888-888888888888';
+    const workspaces = { [wsA]: mine, [wsB]: mine };
+    const limited = { workspaces, allowedWorkspaces: [wsA] };
+
+    class ListQuery {
+      @IsOptional()
+      @IsUUID()
+      workspaceId?: string;
+    }
+    class Routes {
+      byParam(@Query('tenantId') _t: string, @Query('workspaceId') _w?: string) {}
+      byDto(@Query() _q: ListQuery) {}
+      tenantWide(@Query('tenantId') _t: string) {}
+    }
+
+    it('lets a limited member use their workspace', async () => {
+      const req = { ...user, query: { tenantId: mine, workspaceId: wsA } };
+      await expect(run(req, undefined, undefined, limited).result).resolves.toBe('ok');
+    });
+
+    it('keeps a limited member out of another workspace in the same organization', async () => {
+      const req = { ...user, query: { tenantId: mine, workspaceId: wsB } };
+      await expect(run(req, undefined, undefined, limited).result).rejects.toThrow(
+        'You do not have access to this workspace',
+      );
+    });
+
+    it("blocks a record that lives in a workspace they can't use", async () => {
+      const resource = { entity: class {}, param: 'id', field: 'id' };
+      const req = { ...user, params: { id: '99999999-9999-4999-8999-999999999999' } };
+      await expect(
+        run(req, resource, { tenantId: mine, workspaceId: wsB }, limited).result,
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      await expect(
+        run(req, resource, { tenantId: mine, workspaceId: wsA }, limited).result,
+      ).resolves.toBe('ok');
+    });
+
+    it('treats a workspace record as its own workspace', async () => {
+      const resource = { entity: Workspaces, param: 'id', field: 'id' };
+      await expect(
+        run({ ...user, params: { id: wsB } }, resource, undefined, limited).result,
+      ).rejects.toThrow('You do not have access to this workspace');
+    });
+
+    it('makes a limited member name a workspace on workspace-scoped lists', async () => {
+      for (const handler of ['byParam', 'byDto']) {
+        await expect(
+          run({ ...user, query: { tenantId: mine } }, undefined, undefined, { ...limited, controller: Routes, handler }).result,
+        ).rejects.toThrow('Choose one of your workspaces');
+      }
+    });
+
+    it('leaves organization-wide routes alone', async () => {
+      await expect(
+        run({ ...user, query: { tenantId: mine } }, undefined, undefined, { ...limited, controller: Routes, handler: 'tenantWide' }).result,
+      ).resolves.toBe('ok');
+    });
+
+    it('does not restrict members who can use every workspace', async () => {
+      await expect(
+        run({ ...user, query: { tenantId: mine, workspaceId: wsB } }, undefined, undefined, { workspaces }).result,
+      ).resolves.toBe('ok');
+      await expect(
+        run({ ...user, query: { tenantId: mine } }, undefined, undefined, { workspaces, controller: Routes, handler: 'byParam' }).result,
+      ).resolves.toBe('ok');
     });
   });
 

@@ -42,12 +42,14 @@ export class TwitterPublishingService {
         content.userId,
         'twitter',
         content.workspaceId,
+        content.accountId,
       )) ??
       (await this.accounts.getForPublish(
         content.tenantId,
         content.userId,
         'x',
         content.workspaceId,
+        content.accountId,
       ));
 
     if (!socialAccount) {
@@ -148,8 +150,9 @@ export class TwitterPublishingService {
     } catch (err) {
       if (isTokenAuthError(err) && !retried) {
         try {
-          const refreshed =
-            await this.socialAccounts.forceRefreshToken(socialAccount);
+          const refreshed = await this.socialAccounts.forceRefreshToken(
+            socialAccount,
+          );
           return this.publishWithAccount(refreshed, content, media, true);
         } catch (refreshErr) {
           this.logger.warn(
@@ -167,9 +170,7 @@ export class TwitterPublishingService {
     }
   }
 
-  private oauth1Credentials(
-    account: SocialAccounts,
-  ): OAuth1Credentials | null {
+  private oauth1Credentials(account: SocialAccounts): OAuth1Credentials | null {
     const meta = account.metadata ?? {};
     const consumerKey = String(meta.api_key ?? '').trim();
     const consumerSecret = String(meta.api_secret ?? '').trim();
@@ -224,7 +225,10 @@ export class TwitterPublishingService {
     const chunkSize = 4 * 1024 * 1024;
     let segment = 0;
     for (let i = 0; i < totalBytes; i += chunkSize) {
-      const chunk = mediaBuffer.subarray(i, Math.min(i + chunkSize, totalBytes));
+      const chunk = mediaBuffer.subarray(
+        i,
+        Math.min(i + chunkSize, totalBytes),
+      );
       const appendParams = {
         command: 'APPEND',
         media_id: mediaId,

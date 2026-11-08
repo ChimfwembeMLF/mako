@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import {
   Controller,
   Delete,
@@ -123,6 +124,7 @@ export class MailController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission('leads.view')
   @Get('drafts')
   @ApiOperation({ summary: 'List AI-generated Gmail draft replies' })
   async listDrafts(
@@ -149,6 +151,7 @@ export class MailController {
 
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
+  @RequirePermission('leads.view')
   @Get('inbox')
   @ApiOperation({ summary: 'List received Gmail inbox messages' })
   async listInbox(

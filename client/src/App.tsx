@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { ConfirmModalProvider } from "@/components/ConfirmModal";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -18,62 +18,97 @@ import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/auth/Auth";
 import MobileDownloadPage from "./pages/MobileDownloadPage";
 
-const Index = lazy(() => import("./pages/Index"));
-const SocialDashboardPage = lazy(() => import("./pages/social/SocialDashboardPage"));
-const BrandBrain = lazy(() => import("./pages/BrandBrain"));
-const ContentEngine = lazy(() => import("./pages/ContentEngine"));
-const ContentDetailPage = lazy(() => import("./pages/ContentDetailPage"));
-const EditContent = lazy(() => import("./pages/EditContent"));
-const CampaignsPage = lazy(() => import("./pages/CampaignsPage"));
-const CampaignDetailPage = lazy(() => import("./pages/CampaignDetailPage"));
-const AutomationRunPage = lazy(() => import("./pages/AutomationRunPage"));
-const Scheduler = lazy(() => import("./pages/Scheduler"));
-const LeadAgent = lazy(() => import("./pages/LeadAgent"));
-const WhatsappHubPage = lazy(() => import("./pages/WhatsappHubPage"));
-const WhatsappTemplatesPage = lazy(() => import("./pages/WhatsappTemplatesPage"));
-const WhatsappBotsPage = lazy(() => import("./pages/whatsapp/WhatsappBotsPage"));
-const WhatsappBotBuilderPage = lazy(() => import("./pages/whatsapp/WhatsappBotBuilderPage"));
-const Analytics = lazy(() => import("./pages/Analytics"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const ContactForm = lazy(() => import("./pages/ContactForm"));
-const ResetPassword = lazy(() => import("./pages/ResetPassword"));
-const PublisherConnect = lazy(() => import("./pages/PublisherConnect"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+/** Page bundles, kept so they can be fetched in the background once the app is idle. */
+const pageLoaders: Array<() => Promise<unknown>> = [];
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches React.lazy's own signature
+function lazyPage<T extends React.ComponentType<any>>(load: () => Promise<{ default: T }>) {
+  pageLoaders.push(load);
+  return lazy(load);
+}
+
+/**
+ * Fetches every page bundle while the browser is idle, one at a time, so switching
+ * pages is instant. Skipped when the visitor has asked to save data.
+ */
+function usePreloadPages(enabled: boolean) {
+  useEffect(() => {
+    if (!enabled) return;
+    const connection = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
+    let cancelled = false;
+    const ric = (window as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    const idle = (cb: () => void) => (ric ? ric.call(window, cb) : window.setTimeout(cb, 300));
+    const queue = [...pageLoaders];
+    const next = () => {
+      if (cancelled) return;
+      const load = queue.shift();
+      if (!load) return;
+      load().catch(() => {}).finally(() => idle(next));
+    };
+    const start = window.setTimeout(() => idle(next), 1500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(start);
+    };
+  }, [enabled]);
+}
+
+const Index = lazyPage(() => import("./pages/Index"));
+const SocialDashboardPage = lazyPage(() => import("./pages/social/SocialDashboardPage"));
+const BrandBrain = lazyPage(() => import("./pages/BrandBrain"));
+const ContentEngine = lazyPage(() => import("./pages/ContentEngine"));
+const ContentDetailPage = lazyPage(() => import("./pages/ContentDetailPage"));
+const EditContent = lazyPage(() => import("./pages/EditContent"));
+const CampaignsPage = lazyPage(() => import("./pages/CampaignsPage"));
+const CampaignDetailPage = lazyPage(() => import("./pages/CampaignDetailPage"));
+const AutomationRunPage = lazyPage(() => import("./pages/AutomationRunPage"));
+const Scheduler = lazyPage(() => import("./pages/Scheduler"));
+const LeadAgent = lazyPage(() => import("./pages/LeadAgent"));
+const WhatsappHubPage = lazyPage(() => import("./pages/WhatsappHubPage"));
+const WhatsappTemplatesPage = lazyPage(() => import("./pages/WhatsappTemplatesPage"));
+const WhatsappBotsPage = lazyPage(() => import("./pages/whatsapp/WhatsappBotsPage"));
+const WhatsappBotBuilderPage = lazyPage(() => import("./pages/whatsapp/WhatsappBotBuilderPage"));
+const Analytics = lazyPage(() => import("./pages/Analytics"));
+const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
+const ContactForm = lazyPage(() => import("./pages/ContactForm"));
+const ResetPassword = lazyPage(() => import("./pages/ResetPassword"));
+const PublisherConnect = lazyPage(() => import("./pages/PublisherConnect"));
+const NotFound = lazyPage(() => import("./pages/NotFound"));
 
 // RBAC & admin pages
-const RolesPage = lazy(() => import("./pages/admin/RolesPage"));
-const MakerCheckerConfigPage = lazy(() => import("./pages/admin/MakerCheckerConfigPage"));
-const SystemSettingsPage = lazy(() => import("./pages/admin/SystemSettingsPage"));
-const BackofficePage = lazy(() => import("./pages/admin/BackofficePage"));
-const QueueJobsPage = lazy(() => import("./pages/admin/QueueJobsPage"));
-const TeamPage = lazy(() => import("./pages/team/TeamPage"));
-const UserPermissionsPage = lazy(() => import("./pages/team/UserPermissionsPage"));
-const ApprovalsPage = lazy(() => import("./pages/ApprovalsPage"));
-const MediaLibraryPage = lazy(() => import("./pages/MediaLibraryPage"));
-const AdsPage = lazy(() => import('./pages/AdsPage'));
-const TemplatesPage = lazy(() => import("./pages/TemplatesPage"));
-const TemplateEditPage = lazy(() => import("./pages/TemplateEditPage"));
-const RepliesPage = lazy(() => import("./pages/RepliesPage"));
-const MailDashboardPage = lazy(() => import("./pages/MailDashboardPage"));
-const AuditLogsPage = lazy(() => import("./pages/AuditLogsPage"));
-const BillingPage = lazy(() => import("./pages/BillingPage"));
-const ExportPage = lazy(() => import("./pages/ExportPage"));
-const ReportsPage = lazy(() => import("./pages/ReportsPage"));
-const ChatbotPage = lazy(() => import("./pages/chatbot/ChatbotPage"));
-const ChatbotKnowledgePage = lazy(() => import("./pages/chatbot/ChatbotKnowledgePage"));
-const ChatbotSessionsPage = lazy(() => import("./pages/chatbot/ChatbotSessionsPage"));
-const WorkspacesPage = lazy(() => import("./pages/WorkspacesPage"));
-const SocialCallback = lazy(() => import("./pages/auth/SocialCallback"));
-const InvitePage = lazy(() => import("./pages/auth/InvitePage"));
-const PrivacyPage = lazy(() => import("./pages/legal/PrivacyPage"));
-const TermsPage = lazy(() => import("./pages/legal/TermsPage"));
-const DataDeletionPage = lazy(() => import("./pages/legal/DataDeletionPage"));
+const RolesPage = lazyPage(() => import("./pages/admin/RolesPage"));
+const MakerCheckerConfigPage = lazyPage(() => import("./pages/admin/MakerCheckerConfigPage"));
+const SystemSettingsPage = lazyPage(() => import("./pages/admin/SystemSettingsPage"));
+const BackofficePage = lazyPage(() => import("./pages/admin/BackofficePage"));
+const QueueJobsPage = lazyPage(() => import("./pages/admin/QueueJobsPage"));
+const TeamPage = lazyPage(() => import("./pages/team/TeamPage"));
+const UserPermissionsPage = lazyPage(() => import("./pages/team/UserPermissionsPage"));
+const ApprovalsPage = lazyPage(() => import("./pages/ApprovalsPage"));
+const MediaLibraryPage = lazyPage(() => import("./pages/MediaLibraryPage"));
+const AdsPage = lazyPage(() => import('./pages/AdsPage'));
+const TemplatesPage = lazyPage(() => import("./pages/TemplatesPage"));
+const TemplateEditPage = lazyPage(() => import("./pages/TemplateEditPage"));
+const RepliesPage = lazyPage(() => import("./pages/RepliesPage"));
+const MailDashboardPage = lazyPage(() => import("./pages/MailDashboardPage"));
+const AuditLogsPage = lazyPage(() => import("./pages/AuditLogsPage"));
+const BillingPage = lazyPage(() => import("./pages/BillingPage"));
+const ExportPage = lazyPage(() => import("./pages/ExportPage"));
+const ReportsPage = lazyPage(() => import("./pages/ReportsPage"));
+const ChatbotPage = lazyPage(() => import("./pages/chatbot/ChatbotPage"));
+const ChatbotKnowledgePage = lazyPage(() => import("./pages/chatbot/ChatbotKnowledgePage"));
+const ChatbotSessionsPage = lazyPage(() => import("./pages/chatbot/ChatbotSessionsPage"));
+const WorkspacesPage = lazyPage(() => import("./pages/WorkspacesPage"));
+const SocialCallback = lazyPage(() => import("./pages/auth/SocialCallback"));
+const InvitePage = lazyPage(() => import("./pages/auth/InvitePage"));
+const PrivacyPage = lazyPage(() => import("./pages/legal/PrivacyPage"));
+const TermsPage = lazyPage(() => import("./pages/legal/TermsPage"));
+const DataDeletionPage = lazyPage(() => import("./pages/legal/DataDeletionPage"));
 import { SuperAdminRoute } from "@/components/SuperAdminRoute";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { ChatbotWidgetLoader } from "@/components/ChatbotWidgetLoader";
 import { DataProtectionBanner } from "@/components/DataProtectionBanner";
 import { OfflineGate } from "@/components/OfflineGate";
-import { AppPageLoader } from "@/components/AppPageLoader";
+import { RouteProgress } from "@/components/RouteProgress";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -86,18 +121,18 @@ const queryClient = new QueryClient({
   },
 });
 
-function PageLoader() {
-  return <AppPageLoader />;
-}
-
+/**
+ * Navigations run as transitions (see BrowserRouter below), so the current page stays
+ * on screen while the next one's code loads; this bar only shows on a first visit.
+ */
 function LazyPage({ children }: { children: React.ReactNode }) {
-  return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
+  return <Suspense fallback={<RouteProgress />}>{children}</Suspense>;
 }
 
 function HomeRoute() {
   const { user, loading } = useAuth();
   if (loading) {
-    return <AppPageLoader />;
+    return <RouteProgress />;
   }
   if (user) return <Navigate to="/dashboard" replace />;
   return <LandingPage />;
@@ -117,7 +152,8 @@ function pendingInvitePath(): string | null {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <AppPageLoader />;
+  usePreloadPages(Boolean(user));
+  if (loading) return <RouteProgress />;
   if (!user) return <Navigate to="/auth" replace />;
   const invite = pendingInvitePath();
   if (invite) return <Navigate to={invite} replace />;
@@ -126,7 +162,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicOnly({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  if (loading) return <AppPageLoader />;
+  if (loading) return <RouteProgress />;
   if (user) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
@@ -143,7 +179,7 @@ const App = () => (
             <Toaster />
       <ConfirmModalProvider />
             <Sonner />
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true }}>
               <OfflineGate>
               <ChatbotWidgetLoader />
               <DataProtectionBanner />

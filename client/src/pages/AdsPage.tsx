@@ -11,6 +11,8 @@ import { useFxQuoteToZmw } from '@/hooks/useFxQuote';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useTenant } from '../hooks/useTenant';
 import { useToast } from '@/hooks/use-toast';
+import { usePermissions } from '@/hooks/usePermissions';
+import { P } from '@/lib/permissions';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TenantBillingRecords } from '@/components/TenantBillingRecords';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -68,6 +70,9 @@ export default function AdsPage() {
   const { activeWorkspace } = useWorkspace();
   const { tenant } = useTenant();
   const { toast } = useToast();
+  const { can } = usePermissions();
+  // Topping up spends the organization's money, so it needs billing access.
+  const canBill = can(P.settings.billing);
   const [campaigns, setCampaigns] = useState<AdCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -103,7 +108,8 @@ export default function AdsPage() {
   );
 
   const loadData = useCallback(async () => {
-    if (!tenant) return;
+    // Campaigns belong to a workspace; wait until we know which one.
+    if (!tenant || !activeWorkspace) return;
     setLoading(true);
     try {
       const [bal, list, dash] = await Promise.all([
@@ -237,6 +243,7 @@ export default function AdsPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {canBill ? (
             <Button
               size="sm"
               onClick={() => {
@@ -247,7 +254,10 @@ export default function AdsPage() {
             >
               Top up
             </Button>
-            <span className="text-[11px] text-background/50">Mobile Money · balance kept in ZMW</span>
+            ) : null}
+            <span className="text-[11px] text-background/50">
+              {canBill ? 'Mobile Money · balance kept in ZMW' : 'Ask someone with billing access to top up.'}
+            </span>
           </div>
         </div>
 
@@ -278,7 +288,7 @@ export default function AdsPage() {
         <TabsList className="h-auto w-full justify-start gap-6 overflow-x-auto rounded-none border-0 border-b border-border bg-transparent p-0">
           {[
             { value: 'campaigns', label: 'Campaigns' },
-            { value: 'history', label: 'Top-up history' },
+            ...(canBill ? [{ value: 'history', label: 'Top-up history' }] : []),
           ].map((t) => (
             <TabsTrigger
               key={t.value}
@@ -480,7 +490,7 @@ export default function AdsPage() {
         </TabsContent>
 
         <TabsContent value="history" className="mt-5">
-          {tenant?.id && <TenantBillingRecords tenantId={tenant.id} filterPlan="ADS_TOPUP" />}
+          {tenant?.id && canBill && <TenantBillingRecords tenantId={tenant.id} filterPlan="ADS_TOPUP" />}
         </TabsContent>
       </Tabs>
 

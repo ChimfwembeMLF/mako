@@ -530,6 +530,39 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
           <PlatformPickerCarousel values={selectedPlatforms} onChange={setSelectedPlatforms} />
         </div>
 
+        {(() => {
+          // Only platforms with more than one connected account need a choice.
+          const choices = selectedPlatforms
+            .map((p) => ({ platform: p, accounts: connectedAccounts.filter((a) => a.connected && a.platform === p) }))
+            .filter((c) => c.accounts.length > 1);
+          if (!choices.length) return null;
+          return (
+            <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
+              <Label className="text-sm font-medium">Post from</Label>
+              {choices.map(({ platform, accounts }) => {
+                const fallback = accounts.find((a) => a.metadata?.is_default === true) ?? accounts[0];
+                return (
+                  <div key={platform} className="grid gap-1.5 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center">
+                    <span className="text-xs font-medium">{platformOf(platform).label}</span>
+                    <Select
+                      value={platformPayloads[platform]?.accountId || 'default'}
+                      onValueChange={(v) => updatePayload(platform, { accountId: v === 'default' ? undefined : v })}
+                    >
+                      <SelectTrigger className="h-9 bg-background text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="default">Default ({fallback?.accountName ?? 'first account'})</SelectItem>
+                        {accounts.map((a) => (
+                          <SelectItem key={a.id} value={a.id}>{a.accountName || a.username || a.id}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         {selectedPlatforms.includes('whatsapp') && (
           <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
             <Label className="text-sm font-medium">WhatsApp broadcast template</Label>

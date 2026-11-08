@@ -340,7 +340,7 @@ const ContentEngine = () => {
   };
 
   const checkBrandBrain = async () => {
-    if (!tenant) return;
+    if (!tenant || !activeWorkspace) return;
     try {
       const profile = await brandProfilesApi.getMine(tenant.id, activeWorkspace ?? undefined);
       setHasBrandBrain(Boolean(profile?.companyName || profile?.description));

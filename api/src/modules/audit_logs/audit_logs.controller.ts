@@ -1,3 +1,4 @@
+import { RequirePermission } from '../auth/rbac/require-permission.decorator';
 import { PlatformAdminGuard } from '../auth/rbac/platform-admin.guard';
 import { TenantResource } from '../auth/rbac/tenant-resource.decorator';
 import {
@@ -34,6 +35,7 @@ export class AuditLogsController {
     return this.service.create({ ...dto, userId });
   }
 
+  @RequirePermission('audit.view')
   @Get()
   findAll(
     @Query('tenantId') tenantId?: string,
@@ -58,6 +60,7 @@ export class AuditLogsController {
     return this.service.findAll();
   }
 
+  @RequirePermission('audit.view')
   @Get(':id')
   findOne(@Param('id') id: string): Promise<AuditLogs> {
     return this.service.findOne(id);

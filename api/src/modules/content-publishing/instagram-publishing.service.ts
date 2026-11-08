@@ -12,6 +12,7 @@ import {
   formatPlainPostText,
 } from '../../common/text-format.util';
 import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
+import { instagramGraphBase } from './instagram-graph.util';
 
 @Injectable()
 export class InstagramPublishingService {
@@ -32,6 +33,7 @@ export class InstagramPublishingService {
         content.userId,
         'instagram',
         content.workspaceId,
+        content.accountId,
       );
 
       if (!socialAccount) {
@@ -45,6 +47,8 @@ export class InstagramPublishingService {
       const igAccountId =
         socialAccount.externalId ??
         socialAccount.metadata?.instagram_business_account_id;
+      // Accounts connected with Instagram Login use Instagram's own Graph host.
+      const graphBase = instagramGraphBase(socialAccount);
 
       if (!igToken || !igAccountId) {
         return {
@@ -93,7 +97,7 @@ export class InstagramPublishingService {
         }
 
         const containerRes = await axios.post(
-          `https://graph.facebook.com/${META_GRAPH_VERSION}/${igAccountId}/media`,
+          `${graphBase}/${igAccountId}/media`,
           containerPayload,
         );
 
@@ -128,7 +132,7 @@ export class InstagramPublishingService {
         creationId = containerIds[0];
       } else {
         const carouselRes = await axios.post(
-          `https://graph.facebook.com/${META_GRAPH_VERSION}/${igAccountId}/media`,
+          `${graphBase}/${igAccountId}/media`,
           {
             media_type: 'CAROUSEL',
             children: containerIds,
@@ -146,7 +150,7 @@ export class InstagramPublishingService {
       }
 
       const publishRes = await axios.post(
-        `https://graph.facebook.com/${META_GRAPH_VERSION}/${igAccountId}/media_publish`,
+        `${graphBase}/${igAccountId}/media_publish`,
         { creation_id: creationId, access_token: igToken },
       );
 

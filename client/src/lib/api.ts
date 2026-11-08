@@ -57,6 +57,21 @@ export interface SocialAccount {
     metadata?: Record<string, unknown>;
 }
 
+export type AccountHealth = {
+    status: 'ok' | 'revoked' | 'error' | 'unchecked';
+    message: string;
+    checkedAt: string;
+    missing: Array<{ feature: 'Posts' | 'Comments' | 'Messages' | 'Ads' | 'Drive'; permissions: string[] }>;
+};
+
+/** An account as the Social accounts page sees it. */
+export interface ManagedSocialAccount extends SocialAccount {
+    workspaceId?: string | null;
+    created_at?: string;
+    activity: { lastPublishedAt: string | null; lastFailedAt: string | null; lastError: string | null };
+    connectedBy: { name: string | null; email: string | null; stillMember: boolean } | null;
+}
+
 export interface SocialAccountsCreateDto {
     tenantId: string;
     userId?: string;
@@ -569,6 +584,41 @@ export const socialAccountsApi = {
 
     getMyAccounts: () => request<any>('/api/v1/social-accounts/me'),
 
+    /** Connected accounts plus ones that lost access, with activity and who connected them. */
+    manage: (tenantId: string, workspaceId?: string) => {
+        const q = withWorkspace(new URLSearchParams(), workspaceId).toString();
+        return request<ManagedSocialAccount[]>(`/api/v1/social-accounts/tenant/${tenantId}/manage${q ? `?${q}` : ''}`);
+    },
+
+    check: (id: string, tenantId: string) =>
+        request<AccountHealth>(`/api/v1/social-accounts/${id}/check?tenantId=${encodeURIComponent(tenantId)}`, { method: 'POST' }),
+
+    makeDefault: (id: string, tenantId: string) =>
+        request<SocialAccount>(`/api/v1/social-accounts/${id}/default?tenantId=${encodeURIComponent(tenantId)}`, { method: 'POST' }),
+
+    saveDefaults: (id: string, tenantId: string, defaults: { hashtags?: string; firstComment?: string }) =>
+        request<SocialAccount>(`/api/v1/social-accounts/${id}/defaults?tenantId=${encodeURIComponent(tenantId)}`, {
+            method: 'PATCH',
+            body: JSON.stringify(defaults),
+        }),
+
+    channelSetup: (token: string) =>
+        request<{ provider: string; title?: string; choices: Array<{ id: string; name: string; subtitle?: string }> }>(
+            `/api/v1/social-accounts/channel-setup?token=${encodeURIComponent(token)}`,
+        ),
+
+    finalizeChannelSetup: (setupToken: string, choiceId: string) =>
+        request<SocialAccount>(`/api/v1/social-accounts/channel-setup/finalize`, {
+            method: 'POST',
+            body: JSON.stringify({ setupToken, choiceId }),
+        }),
+
+    connectTelegram: (input: { tenantId: string; workspaceId?: string; botToken: string; chat: string }) =>
+        request<SocialAccount>(`/api/v1/social-accounts/telegram/connect`, {
+            method: 'POST',
+            body: JSON.stringify(input),
+        }),
+
     disconnect: (id: string, tenantId?: string) =>
         request<any>(
             `/api/v1/social-accounts/${id}/disconnect${tenantId ? `?tenantId=${encodeURIComponent(tenantId)}` : ''}`,
@@ -1048,7 +1098,7 @@ export const userPermissionsApi = {
 };
 
 export const tenantMembersApi = {
-    invite: (data: { email: string; tenantId: string; roleId: string }) =>
+    invite: (data: { email: string; tenantId: string; roleId: string; workspaceIds?: string[] }) =>
         request<{ message: string; pending: true; emailSent: boolean; emailVia: 'gmail' | 'smtp' | null; acceptLink?: string; emailProblem?: string }>('/api/v1/tenant-members/invite', { method: 'POST', body: JSON.stringify(data) }),
     findAll: (tenantId?: string, detailed = false) => {
         const params = new URLSearchParams();

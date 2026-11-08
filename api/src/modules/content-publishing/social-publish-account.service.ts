@@ -16,6 +16,8 @@ import {
 } from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
 import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
+import { FIRST_COMMENT_PLATFORMS } from '../social_accounts/account-defaults';
+import { instagramGraphBase } from './instagram-graph.util';
 
 @Injectable()
 export class SocialPublishAccountService {
@@ -28,21 +30,30 @@ export class SocialPublishAccountService {
     private readonly config: ConfigService,
   ) {}
 
+  /**
+   * The account a post goes out from. A chosen account is used only if it is still
+   * connected in this workspace (never swapped silently for another); otherwise the
+   * workspace's default for the platform, then the poster's own, then the oldest.
+   */
   async getForPublish(
     tenantId: string,
     userId: string,
     platform: string,
     workspaceId?: string,
+    accountId?: string,
   ): Promise<SocialAccounts | null> {
     const baseWhere = scopeWhere<SocialAccounts>(tenantId, workspaceId);
-    const account =
-      (await this.repo.findOne({
-        where: { ...baseWhere, userId, platform, connected: true },
-      })) ??
-      (await this.repo.findOne({
-        where: { ...baseWhere, platform, connected: true },
-      }));
-
+    if (accountId) {
+      const chosen = await this.repo.findOne({
+        where: { ...baseWhere, id: accountId, platform, connected: true },
+      });
+      return chosen ? this.prepareAccount(chosen) : null;
+    }
+    const candidates = await this.repo.find({
+      where: { ...baseWhere, platform, connected: true },
+      order: { created_at: 'ASC' },
+    });
+    const account = pickDefaultAccount(candidates, userId);
     if (!account) return null;
 
     return this.prepareAccount(account);
@@ -159,6 +170,47 @@ export class SocialPublishAccountService {
     }
   }
 
+  /**
+   * Adds the account's first comment under a post it just published. Returns false if
+   * it couldn't (the post itself is fine either way).
+   */
+  async postFirstComment(
+    account: SocialAccounts,
+    platform: string,
+    externalPostId: string,
+    message: string,
+  ): Promise<boolean> {
+    if (!FIRST_COMMENT_PLATFORMS.includes(platform) || !message.trim())
+      return true;
+    const token =
+      platform === 'instagram'
+        ? this.getInstagramToken(account)
+        : this.getFacebookPageToken(account);
+    if (!token) return false;
+    try {
+      const base =
+        platform === 'instagram'
+          ? instagramGraphBase(account)
+          : `https://graph.facebook.com/${META_GRAPH_VERSION}`;
+      await axios.post(
+        `${base}/${externalPostId}/comments`,
+        null,
+        {
+          params: { message: message.trim(), access_token: token },
+          timeout: 15_000,
+        },
+      );
+      return true;
+    } catch (err) {
+      this.logger.warn(
+        `First comment on ${platform} post ${externalPostId} failed: ${summarizeAxiosError(
+          err,
+        )}`,
+      );
+      return false;
+    }
+  }
+
   getFacebookPageToken(account: SocialAccounts): string | null {
     return account.metadata?.page_token ?? account.accessToken ?? null;
   }
@@ -170,4 +222,16 @@ export class SocialPublishAccountService {
   getLinkedInPersonId(account: SocialAccounts): string | null {
     return account.metadata?.person_id ?? account.externalId ?? null;
   }
+}
+
+/** The workspace default (metadata.is_default), else the poster's own account, else the oldest. */
+export function pickDefaultAccount<
+  T extends { userId?: string; metadata?: Record<string, unknown> | null },
+>(accounts: T[], userId?: string): T | null {
+  return (
+    accounts.find((a) => a.metadata?.is_default === true) ??
+    accounts.find((a) => userId && a.userId === userId) ??
+    accounts[0] ??
+    null
+  );
 }

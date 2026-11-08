@@ -135,8 +135,9 @@ export class WhatsappFlowSessionService {
     tenantId: string,
     workspaceId?: string,
   ): Promise<WhatsappFlowSession[]> {
+    // Sessions belong to a phone number for the whole organization; they have no workspace.
+    void workspaceId;
     const where: Record<string, unknown> = { tenantId };
-    if (workspaceId) where.workspaceId = workspaceId;
     const now = new Date();
     const rows = await this.sessions.find({
       where,

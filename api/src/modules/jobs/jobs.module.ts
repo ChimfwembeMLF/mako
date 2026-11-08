@@ -1,4 +1,9 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { SocialAccounts } from '../social_accounts/entities/social_accounts.entity';
+import { SocialAccountsModule } from '../social_accounts/social_accounts.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { SocialAccountHealthCron } from './social-account-health.cron';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ContentItemsModule } from '../content_items/content_items.module';
 import { ContentPublishingModule } from '../content-publishing/content-publishing.module';
@@ -28,6 +33,9 @@ import { BackofficeModule } from '../backoffice/backoffice.module';
     AnalyticsModule,
     MailModule,
     BackofficeModule,
+    SocialAccountsModule,
+    NotificationsModule,
+    TypeOrmModule.forFeature([SocialAccounts]),
   ],
   providers: [
     AutoPublishCron,
@@ -38,6 +46,7 @@ import { BackofficeModule } from '../backoffice/backoffice.module';
     CheckPawapayDepositsCron,
     SyncInsightsCron,
     SyncGmailInboxCron,
+    SocialAccountHealthCron,
   ],
 })
 export class JobsModule {}
