@@ -30,6 +30,7 @@ import { TenantBootstrapService } from '../tenants/tenant-bootstrap.service';
 import { TenantSummaryDto } from '../tenants/dto/tenant-summary.dto';
 import { TenantMembersService } from '../tenant_members/tenant_members.service';
 import { RoleType } from '../../constants';
+import { SMS_MESSAGES } from '../sms/sms-messages';
 
 function parseDurationToMs(duration: string): number {
   const match = duration.match(/^(\d+)([smhd])$/);
@@ -273,8 +274,7 @@ export class AuthService {
     try {
       await this.sms.send({
         to: user.phone,
-        message:
-          "Mako: Your password was just changed. If this wasn't you, reset it now and contact Mako support.",
+        message: SMS_MESSAGES.passwordChanged(),
       });
     } catch {
       this.logger.warn(`Password changed alert failed for user ${user.id}`);

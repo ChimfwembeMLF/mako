@@ -4,6 +4,7 @@ import { randomInt } from 'crypto';
 import { SmsService } from '../sms/sms.service';
 import { UserEntity } from '../user/user.entity';
 import { UserService } from '../user/user.service';
+import { SMS_MESSAGES } from '../sms/sms-messages';
 
 export type PhoneCodePurpose = 'verify_phone' | 'reset_password';
 
@@ -15,10 +16,8 @@ const MAX_SENDS_PER_WINDOW = 5;
 const MAX_ATTEMPTS = 5;
 
 const MESSAGES: Record<PhoneCodePurpose, (code: string) => string> = {
-  verify_phone: (code) =>
-    `Your Mako verification code is ${code}. It expires in 10 minutes. Do not share this code.`,
-  reset_password: (code) =>
-    `Your Mako password reset code is ${code}. It expires in 10 minutes. Do not share this code.`,
+  verify_phone: SMS_MESSAGES.verifyPhone,
+  reset_password: SMS_MESSAGES.resetPassword,
 };
 
 /** One-time SMS codes. Only a hash is stored, and each user has one active code at a time. */

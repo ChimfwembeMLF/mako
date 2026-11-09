@@ -2,6 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { mailFromAddress } from './mail-transport.util';
+import { renderEmail, RenderedEmail } from './templates/email-layout';
+import {
+  notificationEmail,
+  passwordResetEmail,
+  plainEmail,
+  SystemEmail,
+  workspaceInviteEmail,
+} from './templates/system-emails';
+import { resolveFrontendUrl } from '../../common/env-urls.util';
 
 @Injectable()
 export class MailService {
@@ -11,6 +20,23 @@ export class MailService {
     private readonly mailer: MailerService,
     private readonly config: ConfigService,
   ) {}
+
+  private get appName(): string {
+    return (this.config.get<string>('APP_NAME') ?? 'Mako').trim() || 'Mako';
+  }
+
+  /** Puts a catalogue email into the branded layout. */
+  render(email: SystemEmail): RenderedEmail & { subject: string } {
+    const appUrl =
+      resolveFrontendUrl(this.config) || 'https://mako.tekreminnovations.com';
+    const logoUrl =
+      this.config.get<string>('EMAIL_LOGO_URL')?.trim() ||
+      `${appUrl}/mako-logo.png`;
+    return {
+      subject: email.subject,
+      ...renderEmail(email.content, { logoUrl, appUrl, appName: this.appName }),
+    };
+  }
 
   isSmtpConfigured(): boolean {
     return this.isConfigured();
@@ -34,15 +60,6 @@ export class MailService {
   }
 
   async sendPasswordResetEmail(to: string, resetLink: string): Promise<void> {
-    const subject = 'Reset your Mako password';
-    const text = [
-      'You requested a password reset for your Mako account.',
-      '',
-      `Reset your password: ${resetLink}`,
-      '',
-      'This link expires in 1 hour. If you did not request this, you can ignore this email.',
-    ].join('\n');
-
     if (!this.isConfigured()) {
       // The link is a live credential, so it only appears in local development logs.
       this.logger.warn(
@@ -53,19 +70,16 @@ export class MailService {
       return;
     }
 
-    const from = mailFromAddress(this.config);
+    const { subject, text, html } = this.render(
+      passwordResetEmail({ resetLink, appName: this.appName }),
+    );
     await this.mailer.sendMail({
       to,
-      from,
+      from: mailFromAddress(this.config),
       subject,
       text,
-      html: `
-        <p>You requested a password reset for your Mako account.</p>
-        <p><a href="${resetLink}">Reset your password</a></p>
-        <p>This link expires in 1 hour. If you did not request this, you can ignore this email.</p>
-      `,
+      html,
     });
-
     this.logger.log(`Password reset email sent to ${to}`);
   }
 
@@ -77,35 +91,9 @@ export class MailService {
     hasAccount?: boolean;
     inviterName?: string | null;
   }): { subject: string; text: string; html: string } {
-    const { to, workspaceName, acceptLink } = params;
-    const appName = (this.config.get<string>('APP_NAME') ?? 'Mako').trim();
-    const who = params.inviterName?.trim();
-    const subject = who
-      ? `${who} invited you to ${workspaceName} on ${appName}`
-      : `You've been invited to ${workspaceName} on ${appName}`;
-    const intro = who
-      ? `${who} invited you to join "${workspaceName}" on ${appName}.`
-      : `You've been invited to join "${workspaceName}" on ${appName}.`;
-    const action = params.hasAccount
-      ? `Sign in with ${to} and accept the invitation:`
-      : `Create your ${appName} account with ${to}, then accept the invitation:`;
-    const footer =
-      "This invitation expires in 7 days. If you weren't expecting it, you can ignore this email.";
-    const text = [intro, '', action, acceptLink, '', footer].join('\n');
-
-    const esc = (v: string) =>
-      v
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    const html = `
-        <p>${who ? `${esc(who)} invited you` : "You've been invited"} to join <strong>${esc(workspaceName)}</strong> on ${esc(appName)}.</p>
-        <p>${esc(action)}</p>
-        <p><a href="${esc(acceptLink)}">Review invitation</a></p>
-        <p>${esc(footer)}</p>
-      `;
-    return { subject, text, html };
+    return this.render(
+      workspaceInviteEmail({ ...params, appName: this.appName }),
+    );
   }
 
   /** Sends a workspace invitation over SMTP. Returns false when SMTP is not set up or the send fails. */
@@ -145,6 +133,19 @@ export class MailService {
     return true;
   }
 
+  /** A notification (approval reminders, account alerts, …) in the branded layout. */
+  notificationContent(params: {
+    title: string;
+    body: string;
+    link?: string | null;
+  }) {
+    const appUrl =
+      resolveFrontendUrl(this.config) || 'https://mako.tekreminnovations.com';
+    return this.render(
+      notificationEmail({ ...params, appUrl, appName: this.appName }),
+    );
+  }
+
   async sendGenericEmail(
     to: string,
     subject: string,
@@ -155,13 +156,16 @@ export class MailService {
       this.logger.warn(`Mail not configured — would send to ${to}: ${subject}`);
       return;
     }
-    const from = mailFromAddress(this.config);
+    // Without HTML of its own, the message still goes out in the branded layout.
+    const rendered = html
+      ? null
+      : this.render(plainEmail({ subject, text, appName: this.appName }));
     await this.mailer.sendMail({
       to,
-      from,
+      from: mailFromAddress(this.config),
       subject,
-      text,
-      html: html ?? `<pre>${text}</pre>`,
+      text: rendered?.text ?? text,
+      html: html ?? rendered!.html,
     });
     this.logger.log(`Email sent to ${to}: ${subject}`);
   }

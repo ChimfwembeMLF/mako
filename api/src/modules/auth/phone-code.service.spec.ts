@@ -29,7 +29,7 @@ describe('PhoneCodeService', () => {
     const [{ to, type, message }] = sms.send.mock.calls[0];
     expect(to).toBe('260971234567');
     expect(type).toBe('OTP');
-    expect(message).toMatch(/^Your Mako verification code is \d{6}\./);
+    expect(message).toMatch(/^Mako: Your verification code is \d{6}\./);
     expect(message.length).toBeLessThanOrEqual(160);
     expect(JSON.stringify(target)).not.toContain(`"${sentCode(sms)}"`);
   });

@@ -148,6 +148,7 @@ export class NotificationsService {
         input.title,
         input.body,
         row?.id,
+        input.link,
       );
     }
 
@@ -812,20 +813,23 @@ export class NotificationsService {
     subject: string,
     body: string,
     notificationId?: string,
+    link?: string | null,
   ): Promise<void> {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user?.email) return;
 
-    const text = `${body}\n\n— Mako `;
+    // Branded, with a button to the thing the notification is about.
+    const email = this.mail.notificationContent({ title: subject, body, link });
     if (this.queueDispatch?.isEnabled()) {
       await this.queueDispatch.enqueueEmail({
         to: user.email,
-        subject,
-        body: text,
+        subject: email.subject,
+        body: email.text,
+        html: email.html,
         userId,
       });
     } else {
-      await this.mail.sendGenericEmail(user.email, subject, text);
+      await this.mail.sendGenericEmail(user.email, email.subject, email.text, email.html);
     }
 
     if (notificationId) {

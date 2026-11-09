@@ -41,7 +41,7 @@ export default function TeamPage() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('');
   const [inviteWorkspaces, setInviteWorkspaces] = useState<string[] | null>(null);
-  const { workspaces } = useWorkspace();
+  const { workspaces, activeWorkspace } = useWorkspace();
   const { user } = useAuth();
   const [editingAccess, setEditingAccess] = useState<{ id: string; value: string[] | null } | null>(null);
   const [savingAccess, setSavingAccess] = useState(false);
@@ -52,6 +52,12 @@ export default function TeamPage() {
   const [shareLink, setShareLink] = useState<{ email: string; link: string; problem?: string } | null>(null);
 
   useEffect(() => { if (tenant) load(); }, [tenant]);
+
+  // New invites start with just the workspace you're in; "All workspaces" is a deliberate choice.
+  const [inviteAccessTouched, setInviteAccessTouched] = useState(false);
+  useEffect(() => {
+    if (!inviteAccessTouched && activeWorkspace) setInviteWorkspaces([activeWorkspace]);
+  }, [activeWorkspace, inviteAccessTouched]);
 
   async function load() {
     if (!tenant) return;
@@ -95,7 +101,8 @@ export default function TeamPage() {
       await sendInvite(inviteEmail.trim(), inviteRole, inviteWorkspaces);
       setInviteEmail('');
       setInviteRole('');
-      setInviteWorkspaces(myLimit);
+      setInviteWorkspaces(activeWorkspace ? [activeWorkspace] : myLimit);
+      setInviteAccessTouched(false);
       load();
     } catch (err: unknown) {
       toast({ title: 'Invite failed', description: err instanceof Error ? err.message : 'Invite failed', variant: 'destructive' });
@@ -170,7 +177,6 @@ export default function TeamPage() {
   // If you're limited to some workspaces, you can only hand out those.
   const myLimit = members.find((m) => m.userId && m.userId === user?.id)?.workspaceIds ?? null;
   const workspaceOptions = workspaces.map((w) => ({ id: w.id, name: w.name, logoUrl: w.logoUrl }));
-  const hasManyWorkspaces = workspaceOptions.length > 1;
 
   const roleName = (roleId: string | null) => roles.find((r) => r.id === roleId)?.name ?? 'Unknown';
 
@@ -212,23 +218,29 @@ export default function TeamPage() {
                 </Select>
               </Field>
             </FormRow>
-            {hasManyWorkspaces && (
-              <Field label="Workspaces">
-                <WorkspaceAccessPicker
-                  workspaces={workspaceOptions}
-                  value={inviteWorkspaces}
-                  onChange={setInviteWorkspaces}
-                  allowAll={!myLimit}
-                />
-                <p className="mt-2 text-xs text-muted-foreground">
-                  {myLimit
-                    ? 'Leave all off to give them the same workspaces you have.'
-                    : 'They’ll only see and work in the workspaces you pick. Their role applies in each one.'}
-                </p>
-              </Field>
-            )}
+            <Field label="Which workspaces can they use?">
+              <WorkspaceAccessPicker
+                workspaces={workspaceOptions}
+                value={inviteWorkspaces}
+                onChange={(v) => {
+                  setInviteAccessTouched(true);
+                  setInviteWorkspaces(v);
+                }}
+                allowAll={!myLimit}
+                defaultSelection={activeWorkspace ? [activeWorkspace] : undefined}
+              />
+              <p className="mt-2 text-xs text-muted-foreground">
+                {myLimit
+                  ? 'You can only give access to workspaces you use yourself.'
+                  : 'Their role applies in every workspace they can use. You can change this later.'}
+              </p>
+            </Field>
             <FormActions className="justify-start sm:justify-end">
-              <Button onClick={handleInvite} disabled={inviting || !inviteEmail || !inviteRole} className="gap-1.5 h-10 rounded-lg">
+              <Button
+                onClick={handleInvite}
+                disabled={inviting || !inviteEmail || !inviteRole || (inviteWorkspaces !== null && inviteWorkspaces.length === 0)}
+                className="gap-1.5 h-10 rounded-lg"
+              >
                 <Mail className="h-4 w-4" /> {inviting ? 'Sending…' : 'Send invite'}
               </Button>
             </FormActions>
@@ -293,16 +305,14 @@ export default function TeamPage() {
                   <p className="text-xs text-muted-foreground truncate">
                     {member.status === 'pending' ? 'Invitation not accepted yet' : member.profile?.email}
                   </p>
-                  {hasManyWorkspaces && (
-                    <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
                       <Layers className="h-3 w-3 shrink-0" />
                       <span className="truncate">
                         {member.userId && member.userId === tenant?.owner_id
                           ? 'All workspaces · owner'
                           : describeWorkspaceAccess(member.workspaceIds, workspaceOptions)}
                       </span>
-                    </p>
-                  )}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -330,7 +340,7 @@ export default function TeamPage() {
                 ) : (
                   <Badge variant="secondary">{roleName(member.roleId)}</Badge>
                 )}
-                {hasManyWorkspaces && member.status !== 'pending' && can(P.team.assignRoles) && member.userId && member.userId !== tenant?.owner_id && member.userId !== user?.id && (
+                {member.status !== 'pending' && can(P.team.assignRoles) && member.userId && member.userId !== tenant?.owner_id && member.userId !== user?.id && (
                   <Popover
                     open={editingAccess?.id === member.id}
                     onOpenChange={(open) => setEditingAccess(open ? { id: member.id, value: member.workspaceIds ?? null } : null)}
@@ -351,6 +361,7 @@ export default function TeamPage() {
                           value={editingAccess.value}
                           onChange={(value) => setEditingAccess({ id: member.id, value })}
                           allowAll={!myLimit}
+                          defaultSelection={activeWorkspace ? [activeWorkspace] : undefined}
                           disabled={savingAccess}
                         />
                       )}
