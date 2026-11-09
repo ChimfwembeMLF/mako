@@ -327,7 +327,12 @@ async function request<T>(
     }
 
     const contentType = response.headers.get('content-type') ?? '';
+    // NestJS answers "nothing found" (a handler returning null) with 200 and an empty
+    // body. Treat any empty body as null rather than an error, or callers mistake it
+    // for a failure.
     if (!contentType.includes('application/json')) {
+        const body = await response.text();
+        if (!body.trim()) return null as T;
         throw new ApiError(
             'Server returned a non-JSON response (often a cached app page). Hard-refresh or clear site data, then retry.',
             { status: response.status },
@@ -1743,12 +1748,16 @@ export const templatesApi = {
 };
 
 // ==================== Content Items ====================
+export type ContentStatusGroup = 'drafts' | 'scheduled' | 'published' | 'failed';
+
 export type PaginatedContentItemsResponse = {
     items: Record<string, unknown>[];
     total: number;
     page: number;
     limit: number;
     totalPages: number;
+    /** Posts per tab for the current search and platform. */
+    statusCounts?: Record<ContentStatusGroup | 'all', number>;
 };
 
 export type ContentItemsListParams = {
@@ -1758,6 +1767,7 @@ export type ContentItemsListParams = {
     limit?: number;
     search?: string;
     platform?: string;
+    status?: ContentStatusGroup;
 };
 
 export const contentItemsApi = {
@@ -1775,6 +1785,7 @@ export const contentItemsApi = {
         if (params?.limit != null) qs.set('limit', String(params.limit));
         if (params?.search?.trim()) qs.set('search', params.search.trim());
         if (params?.platform?.trim()) qs.set('platform', params.platform.trim());
+        if (params?.status) qs.set('status', params.status);
         if (params?.includeMedia) qs.set('includeMedia', 'true');
         const query = qs.toString();
         return request<any>(query ? `/api/v1/content-items?${query}` : '/api/v1/content-items');

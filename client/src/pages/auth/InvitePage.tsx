@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, MailCheck, ShieldAlert, Users } from 'lucide-react';
+import { Loader2, MailCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { AuthLayout } from '@/components/auth/AuthLayout';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
 import { useToast } from '@/hooks/use-toast';
@@ -120,42 +120,47 @@ export default function InvitePage() {
     navigate('/auth', { replace: true });
   }
 
-  const shell = (children: React.ReactNode) => (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-10">
-      <Card className="w-full max-w-md">
-        <CardContent className="p-6 space-y-4 text-center">{children}</CardContent>
-      </Card>
-    </div>
+  const shell = (title: React.ReactNode, subtitle: React.ReactNode, children?: React.ReactNode) => (
+    <AuthLayout title={title} subtitle={subtitle}>
+      {children}
+    </AuthLayout>
   );
+  const wideButton = 'h-12 w-full rounded-full text-base font-semibold';
 
   if (!id || !token) {
     return shell(
-      <>
-        <ShieldAlert className="h-8 w-8 mx-auto text-destructive" />
-        <h1 className="text-lg font-semibold">This invitation link is incomplete</h1>
-        <p className="text-sm text-muted-foreground">Open the link from your invitation email again.</p>
-        <Button asChild variant="outline">
-          <Link to="/">Go to Mako</Link>
-        </Button>
-      </>,
+      'This invitation link is incomplete',
+      'Part of the link is missing. Open it again from your invitation email.',
+      <Button asChild variant="outline" className={wideButton}>
+        <Link to="/">Go to Mako</Link>
+      </Button>,
     );
   }
 
   if (authLoading || (user && loading && !invite && !error)) {
-    return shell(<Loader2 className="h-6 w-6 mx-auto animate-spin text-muted-foreground" />);
+    return shell(
+      'Opening your invitation…',
+      undefined,
+      <div className="flex justify-center py-6">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>,
+    );
   }
 
   if (!user) {
     return shell(
+      "You've been invited to Mako",
+      'Sign in, or create an account, with the email address the invitation was sent to. You will come straight back here to accept it.',
       <>
-        <MailCheck className="h-8 w-8 mx-auto text-primary" />
-        <h1 className="text-lg font-semibold">You've been invited to a Mako workspace</h1>
-        <p className="text-sm text-muted-foreground">
-          Sign in, or create an account, with the email address the invitation was sent to. You'll come
-          back here to accept it.
-        </p>
-        <Button asChild className="w-full">
-          <Link to="/auth">Sign in or create account</Link>
+        <div className="mb-6 flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4 text-sm">
+          <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+          <p className="text-muted-foreground">Your invitation is saved on this device while you sign in.</p>
+        </div>
+        <Button asChild className={wideButton}>
+          <Link to="/auth">Sign in</Link>
+        </Button>
+        <Button asChild variant="outline" className={`${wideButton} mt-3`}>
+          <Link to="/auth?mode=signup">Create an account</Link>
         </Button>
       </>,
     );
@@ -163,25 +168,23 @@ export default function InvitePage() {
 
   if (error) {
     return shell(
-      <>
-        <ShieldAlert className="h-8 w-8 mx-auto text-destructive" />
-        <h1 className="text-lg font-semibold">We couldn't open this invitation</h1>
-        <p className="text-sm text-muted-foreground">{error}</p>
-        <div className="flex flex-col sm:flex-row gap-2 justify-center">
-          <Button variant="outline" onClick={() => void switchAccount()}>
-            Use a different account
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              clearPendingInvite();
-              navigate('/dashboard', { replace: true });
-            }}
-          >
-            Go to dashboard
-          </Button>
-        </div>
-      </>,
+      "We couldn't open this invitation",
+      error,
+      <div className="flex flex-col gap-3">
+        <Button variant="outline" className={wideButton} onClick={() => void switchAccount()}>
+          Use a different account
+        </Button>
+        <Button
+          variant="ghost"
+          className={wideButton}
+          onClick={() => {
+            clearPendingInvite();
+            navigate('/dashboard', { replace: true });
+          }}
+        >
+          Go to dashboard
+        </Button>
+      </div>,
     );
   }
 
@@ -195,39 +198,55 @@ export default function InvitePage() {
           ? 'This invitation has expired. Ask the person who invited you to send a new one.'
           : 'This invitation is no longer active.';
     return shell(
-      <>
-        <Users className="h-8 w-8 mx-auto text-muted-foreground" />
-        <h1 className="text-lg font-semibold">{invite.tenantName}</h1>
-        <p className="text-sm text-muted-foreground">{reason}</p>
-        <Button
-          onClick={() => {
-            clearPendingInvite();
-            navigate('/dashboard', { replace: true });
-          }}
-        >
-          Go to dashboard
-        </Button>
-      </>,
+      invite.tenantName,
+      reason,
+      <Button
+        className={wideButton}
+        onClick={() => {
+          clearPendingInvite();
+          navigate('/dashboard', { replace: true });
+        }}
+      >
+        Go to dashboard
+      </Button>,
     );
   }
 
   return shell(
+    `Join ${invite.tenantName}?`,
+    `${invite.invitedBy ? `${invite.invitedBy} invited you` : "You've been invited"} to work together on Mako.`,
     <>
-      <Users className="h-8 w-8 mx-auto text-primary" />
-      <h1 className="text-lg font-semibold">Join {invite.tenantName}?</h1>
-      <p className="text-sm text-muted-foreground">
-        {invite.invitedBy ? `${invite.invitedBy} invited ` : "You've been invited as "}
-        <strong className="text-foreground">{invite.email}</strong> to work in{' '}
-        <strong className="text-foreground">{invite.tenantName}</strong> on Mako. Its members will see your
-        name and email, and you'll be able to switch to it from the sidebar.
+      <dl className="mb-6 divide-y divide-border/60 rounded-2xl border border-border/70 bg-card text-sm">
+        <div className="flex items-center gap-3 p-4">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <Users className="h-5 w-5" />
+          </span>
+          <div className="min-w-0">
+            <dt className="text-xs text-muted-foreground">Organisation</dt>
+            <dd className="truncate font-medium">{invite.tenantName}</dd>
+          </div>
+        </div>
+        <div className="flex justify-between gap-3 px-4 py-3">
+          <dt className="text-muted-foreground">Invited email</dt>
+          <dd className="truncate font-medium">{invite.email}</dd>
+        </div>
+        {invite.invitedBy && (
+          <div className="flex justify-between gap-3 px-4 py-3">
+            <dt className="text-muted-foreground">Invited by</dt>
+            <dd className="truncate font-medium">{invite.invitedBy}</dd>
+          </div>
+        )}
+      </dl>
+      <p className="mb-6 text-xs leading-relaxed text-muted-foreground">
+        Its members will see your name and email. You can switch to it from the sidebar, and leave it any time.
       </p>
-      <div className="flex flex-col sm:flex-row gap-2 justify-center pt-1">
-        <Button onClick={() => void accept()} disabled={acting !== null}>
-          {acting === 'accept' && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+      <div className="flex flex-col gap-3">
+        <Button className={wideButton} onClick={() => void accept()} disabled={acting !== null}>
+          {acting === 'accept' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Accept invitation
         </Button>
-        <Button variant="outline" onClick={() => void decline()} disabled={acting !== null}>
-          {acting === 'decline' && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        <Button variant="ghost" className={wideButton} onClick={() => void decline()} disabled={acting !== null}>
+          {acting === 'decline' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Decline
         </Button>
       </div>

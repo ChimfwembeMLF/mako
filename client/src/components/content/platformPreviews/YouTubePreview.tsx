@@ -1,7 +1,7 @@
 import { RichTextContent } from '@/components/RichTextContent';
 import { htmlToPlainText } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
-import { YouTubeThumbnail } from './shared';
+import { YouTubeThumbnail, ReadMore } from './shared';
 import type { SocialPreviewProps } from './types';
 
 export function YouTubePreview({
@@ -25,11 +25,12 @@ export function YouTubePreview({
           <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
             Description
           </p>
+<ReadMore lines={3} moreLabel="…more" lessLabel="Show less">
           {mode === 'published' ? (
             <p className="whitespace-pre-wrap text-muted-foreground">{plain}</p>
           ) : (
             <RichTextContent html={payload.content ?? ''} className="text-muted-foreground" />
-          )}
+          )}</ReadMore>
         </div>
       )}
     </div>

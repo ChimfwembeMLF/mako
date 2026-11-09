@@ -3,7 +3,7 @@ import { Globe, MessageCircle, Share2, ThumbsUp } from 'lucide-react';
 import { RichTextContent } from '@/components/RichTextContent';
 import { htmlToPlainText } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
-import { FacebookImageGrid, MediaCarousel, PreviewAvatar } from './shared';
+import { FacebookImageGrid, MediaCarousel, PreviewAvatar, ReadMore } from './shared';
 import { EngagementStats } from './EngagementStats';
 import type { SocialPreviewProps } from './types';
 
@@ -37,11 +37,12 @@ export function FacebookPreview({
 
       {(plain || mode === 'draft') && (
         <div className="px-3 pb-2 text-[15px] leading-snug">
+<ReadMore lines={5} moreLabel="See more" lessLabel="See less">
           {mode === 'published' ? (
             <p className="whitespace-pre-wrap">{plain}</p>
           ) : (
             <RichTextContent html={payload.content ?? ''} emptyPlaceholder="What's on your mind?" />
-          )}
+          )}</ReadMore>
         </div>
       )}
 

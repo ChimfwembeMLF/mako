@@ -4,7 +4,7 @@ import { resolveMediaUrl } from '@/lib/mediaUrl';
 import { RichTextContent } from '@/components/RichTextContent';
 import { htmlToPlainText } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
-import { MediaCarousel, PreviewAvatar } from './shared';
+import { MediaCarousel, PreviewAvatar, ReadMore } from './shared';
 import { EngagementStats } from './EngagementStats';
 import type { SocialPreviewProps } from './types';
 
@@ -40,11 +40,12 @@ export function LinkedInPreview({
         {payload.title && (
           <p className="font-semibold mb-1">{payload.title}</p>
         )}
+<ReadMore lines={3} moreLabel="…see more" lessLabel="see less">
         {mode === 'published' ? (
           <p className="whitespace-pre-wrap">{plain}</p>
         ) : (
           <RichTextContent html={payload.content ?? ''} emptyPlaceholder="Share an update…" />
-        )}
+        )}</ReadMore>
       </div>
 
       {videos.length > 0 ? (

@@ -1,3 +1,4 @@
+import { ReadMore } from './shared';
 import { CheckCheck } from 'lucide-react';
 import { RichTextContent } from '@/components/RichTextContent';
 import { htmlToPlainText } from '@/lib/rich-text';
@@ -39,6 +40,7 @@ export function WhatsAppPreview({
       >
         <div className="flex justify-end">
           <div className="max-w-[85%] rounded-lg rounded-tr-none bg-[#dcf8c6] dark:bg-[#005c4b] px-3 py-2 shadow-sm">
+<ReadMore lines={12} moreLabel="Read more" lessLabel="Show less" buttonClassName="text-sm text-[#027eb5]">
             {mode === 'published' ? (
               <p className="text-sm whitespace-pre-wrap text-[#111b21] dark:text-[#e9edef]">{plain}</p>
             ) : (
@@ -47,7 +49,7 @@ export function WhatsAppPreview({
                 emptyPlaceholder="Broadcast message…"
                 className="text-sm text-[#111b21] dark:text-[#e9edef]"
               />
-            )}
+            )}</ReadMore>
             <p className="text-[10px] text-[#667781] mt-1 flex items-center justify-end gap-1">
               12:30 <CheckCheck className="h-3 w-3 text-[#53bdeb]" />
             </p>

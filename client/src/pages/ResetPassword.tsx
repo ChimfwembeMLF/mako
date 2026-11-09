@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Check, Loader2, ShieldAlert } from "lucide-react";
 import { authApi } from "@/lib/api";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Field, FormInput } from "@/components/forms";
-import { Lock, Rocket } from "lucide-react";
-import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
+import { AuthLayout, PasswordField } from "@/components/auth/AuthLayout";
+import { cn } from "@/lib/utils";
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -17,24 +17,23 @@ const ResetPassword = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  const longEnough = password.length >= 6;
+  const matches = confirmPassword.length > 0 && password === confirmPassword;
+
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) return;
-    if (password !== confirmPassword) {
-      toast({ title: "Passwords don't match", variant: "destructive" });
-      return;
-    }
-    if (password.length < 6) {
-      toast({ title: "Password must be at least 6 characters", variant: "destructive" });
-      return;
-    }
+    if (!token || !longEnough || !matches) return;
     setLoading(true);
     try {
       await authApi.resetPassword(token, password);
-      toast({ title: "Password updated!", description: "You can now sign in with your new password." });
+      toast({ title: "Password changed", description: "Sign in with your new password." });
       navigate("/auth");
     } catch (error: unknown) {
-      toast({ title: "Error", description: error instanceof Error ? error.message : "Failed to reset password", variant: "destructive" });
+      toast({
+        title: "Couldn't change your password",
+        description: error instanceof Error ? error.message : "The link may have expired. Request a new one.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -42,49 +41,48 @@ const ResetPassword = () => {
 
   if (!token) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <div className="w-full max-w-md space-y-6">
-          <AppBreadcrumbs />
-          <Card className="shadow-card border-border/50 rounded-xl">
-            <CardContent className="p-8 text-center text-muted-foreground">
-              <p>Invalid or expired reset link. Please request a new password reset.</p>
-              <Button variant="link" className="mt-4" onClick={() => navigate("/auth")}>Back to Sign In</Button>
-            </CardContent>
-          </Card>
+      <AuthLayout title="This link doesn't work" subtitle="Reset links expire after a while, and each one can only be used once.">
+        <div className="flex items-start gap-3 rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm">
+          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+          <p>Request a new reset email from the sign-in page, then use the newest link.</p>
         </div>
-      </div>
+        <Button asChild className="mt-6 h-12 w-full rounded-full text-base font-semibold">
+          <Link to="/auth">Back to sign in</Link>
+        </Button>
+      </AuthLayout>
     );
   }
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        <AppBreadcrumbs />
-        <div className="text-center space-y-2">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary shadow-elevated">
-            <Rocket className="h-7 w-7 text-primary-foreground" />
-          </div>
-          <h1 className="text-2xl font-bold font-display">Set New Password</h1>
-          <p className="text-sm text-muted-foreground">Enter your new password below</p>
-        </div>
+  const rule = (ok: boolean, text: string) => (
+    <li className={cn("flex items-center gap-1.5", ok ? "text-green-700 dark:text-green-400" : "text-muted-foreground")}>
+      <Check className={cn("h-3.5 w-3.5", !ok && "opacity-30")} /> {text}
+    </li>
+  );
 
-        <Card className="shadow-card border-border/50 rounded-xl">
-          <CardContent className="pt-6">
-            <form onSubmit={handleReset} className="space-y-4">
-              <Field label="New password" htmlFor="password" required hint="At least 6 characters">
-                <FormInput id="password" type="password" icon={Lock} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} />
-              </Field>
-              <Field label="Confirm password" htmlFor="confirm" required>
-                <FormInput id="confirm" type="password" icon={Lock} placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required minLength={6} />
-              </Field>
-              <Button type="submit" disabled={loading} className="w-full h-11 rounded-lg bg-primary border-0">
-                {loading ? "Updating…" : "Update Password"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+  return (
+    <AuthLayout title="Choose a new password" subtitle="Pick something you haven't used for Mako before.">
+      <form onSubmit={handleReset} className="space-y-4">
+        <div className="space-y-1.5">
+          <Label htmlFor="password">New password</Label>
+          <PasswordField id="password" value={password} onChange={setPassword} autoComplete="new-password" />
+        </div>
+        <div className="space-y-1.5">
+          <Label htmlFor="confirm">Type it again</Label>
+          <PasswordField id="confirm" value={confirmPassword} onChange={setConfirmPassword} autoComplete="new-password" />
+        </div>
+        <ul className="space-y-1 text-xs" aria-live="polite">
+          {rule(longEnough, "At least 6 characters")}
+          {rule(matches, "Both passwords match")}
+        </ul>
+        <Button type="submit" disabled={loading || !longEnough || !matches} className="h-12 w-full rounded-full text-base font-semibold">
+          {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {loading ? "Changing…" : "Change password"}
+        </Button>
+      </form>
+      <Link to="/auth" className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back to sign in
+      </Link>
+    </AuthLayout>
   );
 };
 

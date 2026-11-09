@@ -1,29 +1,44 @@
 import { confirmModal } from "@/components/ConfirmModal";
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useWorkspace } from '@/hooks/useWorkspace';
 import {
-  Pen, Sparkles, Copy, Check, Trash2, Loader2, RefreshCw, Pencil,
-  ChevronDown, ChevronUp, Send, Eye, Search, List, HelpCircle
+  Plus, Sparkles, Trash2, Loader2, Pencil, Send, Eye, Search, HelpCircle, MoreHorizontal,
+  Copy, Repeat2, FileText, Megaphone, X, ChevronLeft, ChevronRight, Video,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useTenant } from '@/hooks/useTenant';
-import { brandProfilesApi, contentAiApi, contentItemsApi, queued } from '@/lib/api';
+import { brandProfilesApi, contentAiApi, contentItemsApi, queued, type ContentStatusGroup } from '@/lib/api';
 import { PLATFORMS, platformOf } from '@/lib/platforms';
+import { getPostDisplayStatus, POST_STATUS_META } from '@/lib/post-status';
+import { resolveMediaUrl } from '@/lib/mediaUrl';
+import { cn } from '@/lib/utils';
+import { isBrandVoiceStarted } from '@/lib/onboarding-gate';
 import { ContentItem } from '@/components/content/types';
 import { ContentEditor } from '@/components/content/ContentEditor';
 import { PublishPanel } from '@/components/content/PublishPanel';
 import { TourService } from '@/services/tour.service';
 import { contentEngineTourConfig } from './ContentEngine.tour';
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 10;
+
+type Tab = 'all' | ContentStatusGroup;
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'drafts', label: 'Drafts' },
+  { id: 'scheduled', label: 'Scheduled' },
+  { id: 'published', label: 'Published' },
+  { id: 'failed', label: 'Failed' },
+];
 
 function plainText(html: string): string {
   return html
@@ -31,135 +46,219 @@ function plainText(html: string): string {
     .replace(/<\/p>\s*<p>/gi, '\n\n')
     .replace(/<[^>]*>/g, '')
     .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
     .trim();
 }
 
-function ContentCard({
+function shortDate(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', ...(sameYear ? {} : { year: 'numeric' }) });
+}
+
+/** When a post goes out, went out, or was written, in the words a planner would use. */
+function whenLabel(item: ContentItem): string {
+  const status = getPostDisplayStatus({
+    status: item.status ?? 'draft',
+    scheduled_date: item.scheduled_date ?? null,
+    scheduled_time: item.scheduled_time ?? null,
+    publish_failed_reason: item.publish_failed_reason,
+  });
+  if ((status === 'scheduled' || status === 'overdue' || status === 'needs_approval') && item.scheduled_date) {
+    const time = item.scheduled_time ? ` · ${item.scheduled_time.slice(0, 5)}` : '';
+    return `${status === 'overdue' ? 'Was due' : 'Goes out'} ${shortDate(item.scheduled_date)}${time}`;
+  }
+  return `Created ${shortDate(item.created_at)}`;
+}
+
+function StatusBadge({ item }: { item: ContentItem }) {
+  const status = getPostDisplayStatus({
+    status: item.status ?? 'draft',
+    scheduled_date: item.scheduled_date ?? null,
+    scheduled_time: item.scheduled_time ?? null,
+    publish_failed_reason: item.publish_failed_reason,
+  });
+  const meta = POST_STATUS_META[status];
+  const Icon = meta.icon;
+  return (
+    <span
+      className={cn('inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium', meta.badge)}
+      title={status === 'failed' && item.publish_failed_reason ? item.publish_failed_reason : meta.hint}
+    >
+      <Icon className="h-3 w-3" />
+      {meta.label}
+    </span>
+  );
+}
+
+function Thumb({ item }: { item: ContentItem }) {
+  const [broken, setBroken] = useState(false);
+  const showImage = item.preview_url && item.preview_type !== 'video' && !broken;
+  return (
+    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border/60 bg-muted/60">
+      {showImage ? (
+        <img
+          src={resolveMediaUrl(item.preview_url!)}
+          alt=""
+          loading="lazy"
+          onError={() => setBroken(true)}
+          className="h-full w-full object-cover"
+        />
+      ) : (
+        <span className="flex h-full w-full items-center justify-center text-muted-foreground/60">
+          {item.preview_type === 'video' ? <Video className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+        </span>
+      )}
+      {(item.media_count ?? 0) > 1 && (
+        <span className="absolute bottom-0.5 right-0.5 rounded bg-black/60 px-1 text-[9px] font-semibold text-white">
+          +{(item.media_count ?? 1) - 1}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PlatformIcons({ platforms }: { platforms: string[] }) {
+  if (!platforms.length) return <span className="text-xs text-muted-foreground">No channels yet</span>;
+  return (
+    <div className="flex items-center -space-x-1">
+      {platforms.slice(0, 4).map((p) => {
+        const plat = platformOf(p);
+        const Icon = plat.icon;
+        return (
+          <span
+            key={p}
+            title={plat.label}
+            className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted"
+          >
+            <Icon size={12} style={{ color: plat.color }} />
+          </span>
+        );
+      })}
+      {platforms.length > 4 && (
+        <span className="flex h-6 min-w-6 items-center justify-center rounded-full border-2 border-card bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
+          +{platforms.length - 4}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PostRow({
   item,
-  isActive,
-  onCopy,
-  onDelete,
+  selected,
+  onSelect,
   onEdit,
   onPublish,
   onRepurpose,
-  copiedId,
-  repurposingId,
-  isSelected,
-  onSelectChange,
+  onCopy,
+  onDelete,
+  repurposing,
 }: {
   item: ContentItem;
-  isActive?: boolean;
-  onCopy: (id: string, content: string) => void;
-  onDelete: (id: string) => void;
-  onEdit: (item: ContentItem) => void;
-  onPublish: (item: ContentItem) => void;
-  onRepurpose: (id: string) => void;
-  copiedId: string | null;
-  repurposingId: string | null;
-  isSelected: boolean;
-  onSelectChange: (id: string, selected: boolean) => void;
+  selected: boolean;
+  onSelect: (selected: boolean) => void;
+  onEdit: () => void;
+  onPublish: () => void;
+  onRepurpose: () => void;
+  onCopy: () => void;
+  onDelete: () => void;
+  repurposing: boolean;
 }) {
-  const platforms = item.platforms?.length ? item.platforms : [];
-  const [expanded, setExpanded] = useState(false);
+  const navigate = useNavigate();
+  const platforms = item.platforms ?? [];
+  const published = item.status === 'published';
+  const snippet = plainText(item.content ?? '');
 
   return (
-    <div
-      className={`rounded-xl border bg-card p-3 sm:p-4 transition-all flex gap-3 sm:gap-4 min-w-0 ${
-        isActive ? 'border-primary ring-2 ring-primary/20 shadow-sm' : 'hover:border-primary/30'
-      }`}
+    <li
+      className={cn(
+        'group relative flex items-center gap-3 px-3 py-3 transition-colors sm:gap-4 sm:px-4',
+        selected ? 'bg-primary/5' : 'hover:bg-muted/40',
+      )}
     >
-      <div className="flex items-start pt-1.5 shrink-0">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={(checked) => onSelectChange(item.id, !!checked)}
-        />
-      </div>
-      <div className="flex-1 min-w-0 flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex-1 min-w-0 space-y-1.5">
-            <div className="flex items-center gap-2 flex-wrap">
-              {item.title && <span className="text-sm font-semibold break-words">{item.title}</span>}
-              {isActive && (
-                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
-                  Editing
-                </Badge>
-              )}
-              {item.status && (
-                <Badge variant="secondary" className="text-[10px] capitalize">
-                  {item.status}
-                </Badge>
-              )}
-            </div>
-            {item.campaign_theme && (
-              <p className="text-xs text-muted-foreground line-clamp-2 sm:line-clamp-1">
-                {plainText(item.campaign_theme)}
-              </p>
-            )}
-          </div>
-          <div className="flex gap-1.5 shrink-0 self-stretch sm:self-auto">
-            <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" asChild>
-              <Link to={`/content/${item.id}`}>
-                <Eye className="h-3 w-3 mr-1" />
-                Details
-              </Link>
-            </Button>
-            <Button type="button" size="sm" variant="outline" className="h-8 flex-1 sm:flex-none text-xs" onClick={() => onPublish(item)}>
-              <Send className="h-3 w-3 mr-1" />
-              Publish
-            </Button>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-destructive hover:text-destructive"
-              onClick={() => onDelete(item.id)}
-              title="Delete"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+      <Checkbox
+        checked={selected}
+        onCheckedChange={(v) => onSelect(Boolean(v))}
+        aria-label={`Select ${item.title || 'post'}`}
+        // Above the row-wide title link, so ticking the box selects instead of opening the post.
+        className="relative z-10 shrink-0"
+      />
+      <Thumb item={item} />
 
-        {platforms.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            {platforms.map((p) => {
-              const plat = platformOf(p);
-              const Icon = plat.icon;
-              return (
-                <span
-                  key={p}
-                  className="inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full"
-                >
-                  <Icon size={11} style={{ color: plat.color }} />
-                  {plat.label}
-                </span>
-              );
-            })}
-          </div>
-        )}
-
-        <div>
-          <p
-            className={`text-sm text-muted-foreground leading-relaxed whitespace-pre-wrap ${expanded ? '' : 'line-clamp-2'}`}
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2">
+          {/* The title is the row's main link; the whole row opens the post. */}
+          <Link
+            to={`/content/${item.id}`}
+            className="truncate text-sm font-medium text-foreground after:absolute after:inset-0 after:content-[''] focus-visible:outline-none focus-visible:after:rounded-lg focus-visible:after:ring-2 focus-visible:after:ring-ring"
           >
-            {plainText(item.content ?? '')}
-          </p>
-          {(item.content?.length ?? 0) > 120 && (
-            <button
-              type="button"
-              onClick={() => setExpanded((v) => !v)}
-              className="text-xs text-primary mt-1 flex items-center gap-1 hover:underline"
-            >
-              {expanded ? <><ChevronUp size={11} /> Show less</> : <><ChevronDown size={11} /> Show more</>}
-            </button>
-          )}
+            {item.title || 'Untitled post'}
+          </Link>
+          <span className="hidden md:inline-flex">
+            <StatusBadge item={item} />
+          </span>
         </div>
-
-        {item.created_at && (
-          <p className="text-[11px] text-muted-foreground">{new Date(item.created_at).toLocaleString()}</p>
-        )}
+        <p className="mt-0.5 truncate text-[13px] text-muted-foreground">{snippet || 'No text yet'}</p>
+        {/* Phones: status, channels and date share one line so the title gets the full width. */}
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 md:hidden">
+          <StatusBadge item={item} />
+          <PlatformIcons platforms={platforms} />
+          <span className="text-xs text-muted-foreground">{whenLabel(item)}</span>
+        </div>
       </div>
-    </div>
+
+      <div className="hidden w-28 shrink-0 md:block">
+        <PlatformIcons platforms={platforms} />
+      </div>
+      <span className="hidden w-36 shrink-0 text-xs text-muted-foreground lg:block">{whenLabel(item)}</span>
+
+      {/* Sit above the row link so these stay clickable. */}
+      <div className="relative z-10 flex shrink-0 items-center justify-end gap-1 sm:w-[132px]">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          className="hidden h-8 gap-1.5 rounded-full text-xs sm:inline-flex"
+          onClick={published ? () => navigate(`/content/${item.id}`) : onPublish}
+        >
+          {published ? <Eye className="h-3.5 w-3.5" /> : <Send className="h-3.5 w-3.5" />}
+          {published ? 'View' : 'Publish'}
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button type="button" size="icon" variant="ghost" className="h-8 w-8 rounded-full" aria-label={`More actions for ${item.title || 'post'}`}>
+              {repurposing ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onClick={onPublish} className="gap-2 sm:hidden">
+              <Send className="h-4 w-4" /> Publish
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onEdit} className="gap-2">
+              <Pencil className="h-4 w-4" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="gap-2">
+              <Link to={`/content/${item.id}`}>
+                <Eye className="h-4 w-4" /> Details
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onRepurpose} disabled={repurposing} className="gap-2">
+              <Repeat2 className="h-4 w-4" /> Repurpose
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onCopy} className="gap-2">
+              <Copy className="h-4 w-4" /> Copy text
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={onDelete} className="gap-2 text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+    </li>
   );
 }
 
@@ -168,91 +267,51 @@ const ContentEngine = () => {
   const { tenant } = useTenant();
   const { activeWorkspace, workspaceVersion } = useWorkspace();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [generatedContent, setGeneratedContent] = useState<ContentItem[]>([]);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const [items, setItems] = useState<ContentItem[]>([]);
   const [hasBrandBrain, setHasBrandBrain] = useState<boolean | null>(null);
   const [repurposingId, setRepurposingId] = useState<string | null>(null);
+  const [composerOpen, setComposerOpen] = useState(false);
   const [activeItem, setActiveItem] = useState<ContentItem | null>(null);
   const [publishItem, setPublishItem] = useState<ContentItem | null>(null);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
-  const [loadingContent, setLoadingContent] = useState(false);
+  const [counts, setCounts] = useState<Record<Tab, number> | null>(null);
+  const [loading, setLoading] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [platformFilter, setPlatformFilter] = useState('all');
-  const { toast } = useToast();
+  const [tab, setTab] = useState<Tab>('all');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
-  const [mobileView, setMobileView] = useState<'compose' | 'library'>('compose');
 
-  const handleSelectChange = (id: string, selected: boolean) => {
-    setSelectedIds((prev) =>
-      selected ? [...prev, id] : prev.filter((x) => x !== id)
-    );
+  const mapContentItem = (item: Record<string, unknown>): ContentItem => {
+    const preview = item.previewMedia as { mediaUrl?: string; mediaType?: string } | null | undefined;
+    return {
+      id: String(item.id),
+      content: String(item.content ?? ''),
+      content_type: String(item.contentType ?? ''),
+      platforms: item.platforms as string[] | undefined,
+      platformPayloads: item.platformPayloads as ContentItem['platformPayloads'],
+      title: String(item.title ?? ''),
+      campaign_theme: String(item.campaignTheme ?? ''),
+      status: String(item.status ?? 'draft'),
+      created_at: String(item.created_at ?? ''),
+      scheduled_date: (item.scheduledDate as string | null) ?? null,
+      scheduled_time: (item.scheduledTime as string | null) ?? null,
+      publish_failed_reason: (item.publishFailedReason as string | null) ?? null,
+      preview_url: preview?.mediaUrl ?? null,
+      preview_type: preview?.mediaType ?? null,
+      media_count: Number(item.mediaCount ?? 0),
+    };
   };
-
-  const handleSelectAllPage = () => {
-    const pageIds = generatedContent.map((c) => c.id);
-    setSelectedIds((prev) => {
-      const filtered = prev.filter((id) => !pageIds.includes(id));
-      return [...filtered, ...pageIds];
-    });
-  };
-
-  const handleDeselectAllPage = () => {
-    const pageIds = generatedContent.map((c) => c.id);
-    setSelectedIds((prev) => prev.filter((id) => !pageIds.includes(id)));
-  };
-
-  const isAllPageSelected =
-    generatedContent.length > 0 &&
-    generatedContent.every((c) => selectedIds.includes(c.id));
-
-  const handleBulkDelete = async () => {
-    if (!selectedIds.length) return;
-    const confirmed = await confirmModal(`Are you sure you want to delete ${selectedIds.length} selected items?`);
-    if (!confirmed) return;
-    setDeletingBulk(true);
-    try {
-      await contentItemsApi.bulkDelete(selectedIds);
-      toast({
-        title: 'Bulk delete successful',
-        description: `Successfully deleted ${selectedIds.length} content items.`,
-      });
-      setSelectedIds([]);
-      void loadContent();
-    } catch (err: any) {
-      toast({
-        title: 'Bulk delete failed',
-        description: err.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setDeletingBulk(false);
-    }
-  };
-
-  useEffect(() => {
-    setSelectedIds([]);
-  }, [page, searchQuery, platformFilter, activeWorkspace]);
-
-  const mapContentItem = (item: Record<string, unknown>): ContentItem => ({
-    id: String(item.id),
-    content: String(item.content ?? ''),
-    content_type: String(item.contentType ?? ''),
-    platforms: item.platforms as string[] | undefined,
-    platformPayloads: item.platformPayloads as ContentItem['platformPayloads'],
-    title: String(item.title ?? ''),
-    campaign_theme: String(item.campaignTheme ?? ''),
-    status: String(item.status ?? 'draft'),
-    created_at: String(item.created_at ?? ''),
-  });
 
   const loadContent = useCallback(async (opts?: { page?: number }) => {
     if (!user) return;
     const requestPage = opts?.page ?? page;
-    setLoadingContent(true);
+    setLoading(true);
     try {
       const result = await contentItemsApi.findPage({
         tenantId: tenant?.id,
@@ -261,18 +320,20 @@ const ContentEngine = () => {
         limit: PAGE_SIZE,
         search: searchQuery || undefined,
         platform: platformFilter !== 'all' ? platformFilter : undefined,
+        status: tab !== 'all' ? tab : undefined,
       });
-      setGeneratedContent((result.items ?? []).map(mapContentItem));
+      setItems((result.items ?? []).map(mapContentItem));
       setTotal(result.total ?? 0);
       setTotalPages(result.totalPages ?? 1);
+      setCounts(result.statusCounts ?? null);
     } catch {
-      setGeneratedContent([]);
+      setItems([]);
       setTotal(0);
       setTotalPages(1);
     } finally {
-      setLoadingContent(false);
+      setLoading(false);
     }
-  }, [user, tenant?.id, activeWorkspace, page, searchQuery, platformFilter]);
+  }, [user, tenant?.id, activeWorkspace, page, searchQuery, platformFilter, tab]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchQuery(searchInput.trim()), 300);
@@ -281,15 +342,29 @@ const ContentEngine = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [searchQuery, platformFilter, activeWorkspace]);
+    setSelectedIds([]);
+  }, [searchQuery, platformFilter, tab, activeWorkspace]);
 
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [page]);
+
+  // Switching workspace closes any open post. The first workspace to load is not a
+  // switch, so a link that opens a post (?publish= or ?edit=) keeps it open.
+  const lastWorkspaceRef = useRef<string | null | undefined>(undefined);
   useEffect(() => {
     if (!user) return;
     setPage(1);
-    setActiveItem(null);
-    setPublishItem(null);
-    setSearchParams({}, { replace: true });
     void checkBrandBrain();
+    const previous = lastWorkspaceRef.current;
+    lastWorkspaceRef.current = activeWorkspace;
+    if (previous !== undefined && previous !== null && previous !== activeWorkspace) {
+      setActiveItem(null);
+      setPublishItem(null);
+      setComposerOpen(false);
+      setSearchParams({}, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, tenant?.id, activeWorkspace, workspaceVersion]);
 
   useEffect(() => {
@@ -298,62 +373,64 @@ const ContentEngine = () => {
   }, [page, loadContent, user, activeWorkspace]);
 
   useEffect(() => {
-    if (user) {
-      const timer = setTimeout(() => {
-        TourService.autoStartTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
-      }, 500);
-      return () => clearTimeout(timer);
-    }
+    if (!user) return;
+    const timer = setTimeout(() => {
+      TourService.autoStartTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig);
+    }, 500);
+    return () => clearTimeout(timer);
   }, [user]);
 
+  // Deep links: ?new=1 opens the composer, ?edit=<id> edits a post, ?publish=<id> opens publishing.
   useEffect(() => {
     const editId = searchParams.get('edit');
     const publishId = searchParams.get('publish');
+    if (searchParams.get('new')) {
+      setActiveItem(null);
+      setComposerOpen(true);
+      return;
+    }
     if (!editId && !publishId) return;
-
-    async function loadItem(id: string, mode: 'edit' | 'publish') {
+    void (async () => {
       try {
-        const data = await contentItemsApi.findOne(id);
-        if (data) {
-          const mapped = mapContentItem(data);
-          if (mode === 'publish') setPublishItem(mapped);
-          else setActiveItem(mapped);
+        const data = await contentItemsApi.findOne((publishId ?? editId)!);
+        if (!data) return;
+        const mapped = mapContentItem(data);
+        if (publishId) setPublishItem(mapped);
+        else {
+          setActiveItem(mapped);
+          setComposerOpen(true);
         }
       } catch {
-        /* item missing */
+        /* the post no longer exists */
       }
-    }
-
-    if (publishId) void loadItem(publishId, 'publish');
-    else if (editId) void loadItem(editId, 'edit');
+    })();
   }, [searchParams]);
-
-  const resetDraft = () => {
-    setActiveItem(null);
-    setSearchParams({}, { replace: true });
-    setMobileView('library');
-  };
-
-  const closePublish = () => {
-    setPublishItem(null);
-    setSearchParams({}, { replace: true });
-  };
 
   const checkBrandBrain = async () => {
     if (!tenant || !activeWorkspace) return;
     try {
       const profile = await brandProfilesApi.getMine(tenant.id, activeWorkspace ?? undefined);
-      setHasBrandBrain(Boolean(profile?.companyName || profile?.description));
+      setHasBrandBrain(isBrandVoiceStarted(profile));
     } catch {
       setHasBrandBrain(false);
     }
   };
 
+  const openNew = () => {
+    setActiveItem(null);
+    setComposerOpen(true);
+  };
+
   const openEdit = (item: ContentItem) => {
     setActiveItem(item);
+    setComposerOpen(true);
     setSearchParams({ edit: item.id }, { replace: true });
-    setMobileView('compose');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const closeComposer = () => {
+    setComposerOpen(false);
+    setActiveItem(null);
+    setSearchParams({}, { replace: true });
   };
 
   const openPublish = (item: ContentItem) => {
@@ -361,45 +438,80 @@ const ContentEngine = () => {
     setSearchParams({ publish: item.id }, { replace: true });
   };
 
-  const copyContent = (id: string, content: string) => {
-    navigator.clipboard.writeText(plainText(content));
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const closePublish = () => {
+    setPublishItem(null);
+    setSearchParams({}, { replace: true });
   };
 
-  const deleteContent = async (id: string) => {
-    await contentItemsApi.remove(id);
-    if (generatedContent.length === 1 && page > 1) {
-      setPage((p) => p - 1);
-    } else {
-      void loadContent();
+  const copyContent = async (item: ContentItem) => {
+    try {
+      await navigator.clipboard.writeText(plainText(item.content ?? ''));
+      toast({ title: 'Copied', description: 'The post text is on your clipboard.' });
+    } catch {
+      toast({ title: "Couldn't copy", variant: 'destructive' });
     }
-    if (activeItem?.id === id) resetDraft();
-    if (publishItem?.id === id) closePublish();
+  };
+
+  const deleteOne = async (item: ContentItem) => {
+    const ok = await confirmModal(
+      'It will be removed from your posts. Anything already published stays on the networks.',
+      `Delete “${item.title || 'Untitled post'}”?`,
+      'Delete',
+    );
+    if (!ok) return;
+    try {
+      await contentItemsApi.remove(item.id);
+      toast({ title: 'Post deleted' });
+      if (items.length === 1 && page > 1) setPage((p) => p - 1);
+      else void loadContent();
+      if (activeItem?.id === item.id) closeComposer();
+      if (publishItem?.id === item.id) closePublish();
+    } catch (err: unknown) {
+      toast({ title: "Couldn't delete", description: err instanceof Error ? err.message : undefined, variant: 'destructive' });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (!selectedIds.length) return;
+    const n = selectedIds.length;
+    const ok = await confirmModal(
+      'They will be removed from your posts. Anything already published stays on the networks.',
+      `Delete ${n} post${n === 1 ? '' : 's'}?`,
+      'Delete',
+    );
+    if (!ok) return;
+    setDeletingBulk(true);
+    try {
+      await contentItemsApi.bulkDelete(selectedIds);
+      toast({ title: `${n} post${n === 1 ? '' : 's'} deleted` });
+      setSelectedIds([]);
+      void loadContent();
+    } catch (err: unknown) {
+      toast({ title: "Couldn't delete", description: err instanceof Error ? err.message : undefined, variant: 'destructive' });
+    } finally {
+      setDeletingBulk(false);
+    }
   };
 
   const handleRepurpose = async (id: string) => {
     setRepurposingId(id);
     try {
       const result = await queued(contentAiApi.repurpose(id));
-      toast({ title: 'Repurposed!', description: `${result?.repurposed ?? 0} new versions created.` });
+      toast({ title: 'Repurposed', description: `${result?.repurposed ?? 0} new versions created.` });
+      setTab('all');
       setPage(1);
       void loadContent({ page: 1 });
     } catch (err: unknown) {
-      toast({
-        title: 'Repurpose failed',
-        description: err instanceof Error ? err.message : String(err),
-        variant: 'destructive',
-      });
+      toast({ title: 'Repurpose failed', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
       setRepurposingId(null);
     }
   };
 
   const handleSaved = () => {
+    closeComposer();
     setPage(1);
     void loadContent({ page: 1 });
-    resetDraft();
   };
 
   const handlePublished = () => {
@@ -407,249 +519,263 @@ const ContentEngine = () => {
     closePublish();
   };
 
+  const filtering = Boolean(searchQuery) || platformFilter !== 'all';
+  const allOnPageSelected = items.length > 0 && items.every((c) => selectedIds.includes(c.id));
   const showingFrom = total === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
   const showingTo = Math.min(page * PAGE_SIZE, total);
 
   return (
-    <div className="w-full space-y-5 sm:space-y-6 pb-8 sm:pb-10 min-w-0">
+    <div className="w-full min-w-0 space-y-5 pb-10">
       {/* Header */}
-      <div id="tour-ce-header" className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 border border-primary/30 flex items-center justify-center shrink-0">
-            <Pen size={18} className="text-primary" />
-          </div>
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight">Posts</h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">Create, refine, and publish across platforms</p>
-          </div>
+      <div id="tour-ce-header" className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Posts</h1>
+          <p className="text-sm text-muted-foreground">
+            {counts ? `${counts.all} post${counts.all === 1 ? '' : 's'} in this workspace. ` : ''}
+            Write, review and publish to every channel.
+          </p>
         </div>
-        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-          <Button variant="outline" size="icon" className="h-9 w-9 hidden lg:flex" onClick={() => TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig)} title="Help/Tour">
-            <HelpCircle className="w-4 h-4" />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden h-9 w-9 rounded-full lg:inline-flex"
+            onClick={() => TourService.startTour('content_engine', contentEngineTourConfig.steps, undefined, contentEngineTourConfig.driverConfig)}
+            aria-label="Take the tour"
+            title="Take the tour"
+          >
+            <HelpCircle className="h-4 w-4" />
           </Button>
-          <Button asChild variant="outline" size="sm" className="h-9">
-            <Link to="/campaigns">AI Campaigns</Link>
+          <Button asChild variant="outline" className="h-10 gap-2 rounded-full">
+            <Link to="/campaigns">
+              <Megaphone className="h-4 w-4" /> AI campaign
+            </Link>
           </Button>
-          <span className={`text-xs px-3 py-1.5 rounded-full border font-medium whitespace-nowrap ${
-            hasBrandBrain === true ? 'bg-green-500/10 text-green-700 border-green-500/30' :
-            hasBrandBrain === false ? 'bg-amber-500/10 text-amber-700 border-amber-500/30' :
-            'bg-muted text-muted-foreground'
-          }`}>
-            {hasBrandBrain === null ? 'Checking…' : hasBrandBrain ? 'Brand voice active' : 'No Brand voice'}
-          </span>
+          <Button id="tour-ce-controls" onClick={openNew} className="h-10 flex-1 gap-2 rounded-full sm:flex-none">
+            <Plus className="h-4 w-4" /> New post
+          </Button>
         </div>
       </div>
 
       {hasBrandBrain === false && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start sm:items-center gap-3">
-          <Sparkles size={15} className="text-amber-500 shrink-0 mt-0.5 sm:mt-0" />
-          <p className="text-sm leading-relaxed">
-            <strong className="text-amber-600">Set up Brand voice</strong> — the AI uses it to match your brand voice.
+        <div className="flex flex-col gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 sm:flex-row sm:items-center">
+          <Sparkles className="h-5 w-5 shrink-0 text-amber-600" />
+          <p className="flex-1 text-sm">
+            <span className="font-medium">Posts will sound generic until you set up Brand voice.</span>{' '}
+            <span className="text-muted-foreground">It takes a few minutes, and Mako can fill most of it from your website.</span>
           </p>
+          <Button asChild size="sm" variant="outline" className="shrink-0 rounded-full">
+            <Link to="/brand-brain">Set up Brand voice</Link>
+          </Button>
         </div>
       )}
 
-      {/* Mobile View Toggle */}
-      <div className="lg:hidden flex bg-muted p-1 rounded-lg">
-        <button
-          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
-            mobileView === 'compose' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => setMobileView('compose')}
-        >
-          <Pen size={14} />
-          Compose
-        </button>
-        <button
-          className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${
-            mobileView === 'library' ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground'
-          }`}
-          onClick={() => setMobileView('library')}
-        >
-          <List size={14} />
-          Library
-        </button>
-      </div>
-
-      {/* Main layout: compose always visible + library */}
-      <div className="grid gap-5 sm:gap-6 lg:grid-cols-5 lg:items-start">
-        <div id="tour-ce-controls" className={`lg:col-span-2 lg:sticky lg:top-4 min-w-0 ${mobileView === 'compose' ? 'block' : 'hidden lg:block'}`}>
-          <ContentEditor
-            item={activeItem}
-            workspaceId={activeWorkspace}
-            onReset={resetDraft}
-            onSaved={handleSaved}
-          />
+      <section id="tour-ce-results" className="overflow-hidden rounded-2xl border border-border/70 bg-card">
+        {/* Status tabs */}
+        <div className="flex gap-1 overflow-x-auto border-b border-border/60 px-2 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Filter posts by status">
+          {TABS.map((t) => {
+            const active = tab === t.id;
+            const n = counts?.[t.id];
+            return (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={active}
+                onClick={() => setTab(t.id)}
+                className={cn(
+                  'relative flex shrink-0 items-center gap-1.5 rounded-t-lg px-3 pb-2.5 pt-2 text-sm transition-colors',
+                  active ? 'font-medium text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  "after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:content-['']",
+                  active ? 'after:bg-primary' : 'after:bg-transparent',
+                )}
+              >
+                {t.label}
+                {n !== undefined && (
+                  <span
+                    className={cn(
+                      'rounded-full px-1.5 text-[11px] tabular-nums leading-5',
+                      t.id === 'failed' && n > 0 ? 'bg-destructive/10 text-destructive' : 'bg-muted text-muted-foreground',
+                    )}
+                  >
+                    {n}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        <div id="tour-ce-results" className={`lg:col-span-3 space-y-3 min-w-0 ${mobileView === 'library' ? 'block' : 'hidden lg:block'}`}>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h2 className="text-sm font-semibold">Content library</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {total === 0
-                  ? 'No items'
-                  : `Showing ${showingFrom}–${showingTo} of ${total}`}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <div className="relative flex-1 sm:w-[200px]">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+        {/* Toolbar, or the bulk actions while posts are selected */}
+        <div className="flex min-h-[60px] flex-col gap-2 border-b border-border/60 px-3 py-3 sm:flex-row sm:items-center sm:px-4">
+          {selectedIds.length > 0 ? (
+            <>
+              <div className="flex flex-1 items-center gap-3">
+                <Checkbox
+                  checked={allOnPageSelected}
+                  onCheckedChange={(v) => {
+                    const pageIds = items.map((c) => c.id);
+                    setSelectedIds((prev) =>
+                      v ? [...new Set([...prev, ...pageIds])] : prev.filter((id) => !pageIds.includes(id)),
+                    );
+                  }}
+                  aria-label="Select all on this page"
+                />
+                <span className="text-sm font-medium">{selectedIds.length} selected</span>
+                <Button type="button" variant="ghost" size="sm" className="h-8 gap-1 text-xs" onClick={() => setSelectedIds([])}>
+                  <X className="h-3.5 w-3.5" /> Clear
+                </Button>
+              </div>
+              <Button type="button" variant="destructive" size="sm" className="h-8 gap-1.5 rounded-full text-xs" onClick={() => void handleBulkDelete()} disabled={deletingBulk}>
+                {deletingBulk ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                Delete selected
+              </Button>
+            </>
+          ) : (
+            <>
+              <div className="relative flex-1 sm:max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  placeholder="Search by title…"
-                  className="h-9 pl-8"
+                  placeholder="Search titles and text"
+                  aria-label="Search posts"
+                  className="h-9 rounded-full pl-9"
                 />
               </div>
               <Select value={platformFilter} onValueChange={setPlatformFilter}>
-                <SelectTrigger className="h-9 w-full sm:w-[160px]">
-                  <SelectValue placeholder="Platform" />
+                <SelectTrigger className="h-9 w-full rounded-full sm:w-[170px]" aria-label="Filter by channel">
+                  <SelectValue placeholder="All channels" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All platforms</SelectItem>
+                  <SelectItem value="all">All channels</SelectItem>
                   {PLATFORMS.map((p) => (
                     <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          </div>
-
-          {loadingContent ? (
-            <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
-              <Loader2 className="h-5 w-5 animate-spin" /> Loading content…
-            </div>
-          ) : generatedContent.length === 0 ? (
-            <div className="rounded-xl border border-dashed bg-muted/20 p-10 text-center">
-              <p className="text-sm text-muted-foreground">
-                {searchQuery || platformFilter !== 'all'
-                  ? 'No content matches your filters.'
-                  : 'No saved drafts yet.'}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {searchQuery || platformFilter !== 'all'
-                  ? 'Try a different title or platform.'
-                  : (
-                    <>
-                      <span className="lg:hidden">Compose above and hit Save draft.</span>
-                      <span className="hidden lg:inline">Compose on the left and hit Save draft.</span>
-                    </>
-                  )}
-              </p>
-            </div>
-          ) : (
-            <>
-              {selectedIds.length > 0 && (
-                <div className="flex items-center justify-between p-2.5 rounded-xl border bg-muted/40 text-xs sm:text-sm">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      checked={isAllPageSelected}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          handleSelectAllPage();
-                        } else {
-                          handleDeselectAllPage();
-                        }
-                      }}
-                      id="select-all-checkbox"
-                    />
-                    <label htmlFor="select-all-checkbox" className="font-medium cursor-pointer">
-                      {selectedIds.length} selected
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 text-xs"
-                      onClick={() => setSelectedIds([])}
-                    >
-                      Clear selection
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      className="h-8 text-xs font-semibold"
-                      onClick={handleBulkDelete}
-                      disabled={deletingBulk}
-                    >
-                      {deletingBulk ? (
-                        <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      ) : (
-                        <Trash2 className="h-3 w-3 mr-1" />
-                      )}
-                      Delete selected
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-3">
-                {generatedContent.map((item) => (
-                  <ContentCard
-                    key={item.id}
-                    item={item}
-                    isActive={activeItem?.id === item.id}
-                    onCopy={copyContent}
-                    onDelete={deleteContent}
-                    onEdit={openEdit}
-                    onPublish={openPublish}
-                    onRepurpose={handleRepurpose}
-                    copiedId={copiedId}
-                    repurposingId={repurposingId}
-                    isSelected={selectedIds.includes(item.id)}
-                    onSelectChange={handleSelectChange}
-                  />
-                ))}
-              </div>
-
-              {totalPages > 1 && (
-                <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between pt-2">
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 sm:flex-none"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 sm:flex-none"
-                      disabled={page >= totalPages}
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                  <span className="text-xs text-muted-foreground text-center sm:text-left">
-                    Page {page} of {totalPages}
-                  </span>
-                </div>
+              {filtering && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 text-xs"
+                  onClick={() => {
+                    setSearchInput('');
+                    setPlatformFilter('all');
+                  }}
+                >
+                  Clear filters
+                </Button>
               )}
             </>
           )}
         </div>
-      </div>
 
-      {/* Publish sheet */}
+        {/* List */}
+        {loading && items.length === 0 ? (
+          <div className="flex items-center justify-center gap-2 py-20 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading posts…
+          </div>
+        ) : items.length === 0 ? (
+          <div className="flex flex-col items-center px-6 py-16 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10">
+              <FileText className="h-5 w-5 text-primary" />
+            </span>
+            {filtering || tab !== 'all' ? (
+              <>
+                <p className="mt-4 font-medium">No posts match</p>
+                <p className="mt-1 text-sm text-muted-foreground">Try another tab, search or channel.</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-4 font-medium">No posts yet</p>
+                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+                  Write your first post, or let Mako draft one in your Brand voice.
+                </p>
+                <Button onClick={openNew} className="mt-5 gap-2 rounded-full">
+                  <Plus className="h-4 w-4" /> New post
+                </Button>
+              </>
+            )}
+          </div>
+        ) : (
+          <ul className={cn('divide-y divide-border/60 transition-opacity', loading && 'opacity-60')}>
+            {items.map((item) => (
+              <PostRow
+                key={item.id}
+                item={item}
+                selected={selectedIds.includes(item.id)}
+                onSelect={(v) => setSelectedIds((prev) => (v ? [...prev, item.id] : prev.filter((x) => x !== item.id)))}
+                onEdit={() => openEdit(item)}
+                onPublish={() => openPublish(item)}
+                onRepurpose={() => void handleRepurpose(item.id)}
+                onCopy={() => void copyContent(item)}
+                onDelete={() => void deleteOne(item)}
+                repurposing={repurposingId === item.id}
+              />
+            ))}
+          </ul>
+        )}
+
+        {/* Pagination */}
+        {total > 0 && (
+          <div className="flex items-center justify-between gap-3 border-t border-border/60 px-3 py-3 text-xs text-muted-foreground sm:px-4">
+            <span>
+              {showingFrom}–{showingTo} of {total}
+            </span>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-1">
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))} aria-label="Previous page">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((n) => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                  .map((n, i, arr) => (
+                    <span key={n} className="flex items-center">
+                      {i > 0 && n - arr[i - 1] > 1 && <span className="px-1">…</span>}
+                      <Button
+                        type="button"
+                        variant={n === page ? 'secondary' : 'ghost'}
+                        size="sm"
+                        className="h-8 min-w-8 rounded-full px-2 text-xs"
+                        onClick={() => setPage(n)}
+                        aria-current={n === page ? 'page' : undefined}
+                      >
+                        {n}
+                      </Button>
+                    </span>
+                  ))}
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))} aria-label="Next page">
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Compose / edit */}
+      <Sheet open={composerOpen} onOpenChange={(open) => { if (!open) closeComposer(); }}>
+        <SheetContent side="right" className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          <SheetHeader className="shrink-0 border-b px-5 py-4 text-left sm:px-6">
+            <SheetTitle className="font-display">{activeItem ? 'Edit post' : 'New post'}</SheetTitle>
+            <SheetDescription>
+              {activeItem ? 'Change the draft, then update it.' : 'Write it yourself, or give Mako a theme and let it draft one in your Brand voice.'}
+            </SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {composerOpen && (
+              <ContentEditor item={activeItem} workspaceId={activeWorkspace} onSaved={handleSaved} bare />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Publish */}
       <Sheet open={!!publishItem} onOpenChange={(open) => { if (!open) closePublish(); }}>
-        <SheetContent side="right" className="w-full sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl p-0 flex flex-col overflow-hidden">
-          {publishItem && (
-            <PublishPanel
-              item={publishItem}
-              onCancel={closePublish}
-              onPublished={handlePublished}
-            />
-          )}
+        <SheetContent side="right" className="flex w-full flex-col overflow-hidden p-0 sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl">
+          {publishItem && <PublishPanel item={publishItem} onCancel={closePublish} onPublished={handlePublished} />}
         </SheetContent>
       </Sheet>
     </div>

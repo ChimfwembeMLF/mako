@@ -128,7 +128,7 @@ export const MORE_ITEMS: NavItem[] = [
   { title: "Maker-Checker", url: "/admin/maker-checker", icon: GitPullRequestArrow, permission: P.admin.makerChecker, keywords: "maker checker approval admin" },
   { title: "Platform Backoffice", url: "/admin/backoffice", icon: Activity, superAdmin: true, keywords: "backoffice super admin platform" },
   { title: "Job Queues", url: "/admin/queues", icon: Activity, superAdmin: true, keywords: "queues jobs admin" },
-  { title: "System Settings", url: "/admin/system", icon: Settings, superAdmin: true, keywords: "system settings admin theme" },
+  { title: "System settings", url: "/admin/system", icon: Settings, superAdmin: true, keywords: "system settings admin theme" },
   { title: "Export Data", url: "/export", icon: Download, permission: P.leads.export, keywords: "export download data csv" },
   { title: "Billing", url: "/billing", icon: CreditCard, permission: P.settings.billing, keywords: "billing subscription payment plan" },
   { title: "Settings", url: "/settings", icon: Settings, permission: P.settings.view, keywords: "settings preferences account" },

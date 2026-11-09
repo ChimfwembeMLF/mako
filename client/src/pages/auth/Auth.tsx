@@ -1,93 +1,43 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Linkedin, Loader2, Mail, MailCheck, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { authApi, getSocialLoginUrl } from "@/lib/api";
-import { Field, FormInput } from "@/components/forms";
-import {
-  Rocket,
-  Mail,
-  Lock,
-  User,
-  Facebook,
-  Linkedin,
-  Instagram,
-  Twitter,
-  ArrowLeft,
-} from "lucide-react";
-import Logo from "@/components/Logo";
-import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
+import { FormInput } from "@/components/forms";
+import { AuthLayout, PasswordField } from "@/components/auth/AuthLayout";
 import { cn } from "@/lib/utils";
-
-const primaryBtnClass =
-  "w-full min-h-12 h-12 rounded-xl text-button-md font-semibold bg-primary text-primary-foreground border-0";
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden>
-      <path
-        fill="#4285F4"
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-      />
-      <path
-        fill="#34A853"
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-      />
-      <path
-        fill="#EA4335"
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-      />
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
     </svg>
   );
 }
 
 const SOCIAL_PROVIDERS = [
-  {
-    id: "google" as const,
-    label: "Google",
-    Icon: GoogleIcon,
-    theme:
-      "bg-slate-50 text-slate-900 border border-slate-300 hover:bg-slate-100 hover:text-slate-900 shadow-sm",
-  },
-  /* {
-    id: "facebook" as const,
-    label: "Facebook",
-    Icon: Facebook,
-    theme: "bg-[#1877F2] text-white border-0 hover:bg-[#166FE5] shadow-sm",
-  }, */
-  {
-    id: "linkedin" as const,
-    label: "LinkedIn",
-    Icon: Linkedin,
-    theme: "bg-[#0A66C2] text-white border-0 hover:bg-[#095196] shadow-sm",
-  },
-  /* {
-    id: "instagram" as const,
-    label: "Instagram",
-    Icon: Instagram,
-    theme:
-      "bg-gradient-to-br from-[#833AB4] via-[#E1306C] to-[#F77737] text-white border-0 hover:opacity-90 shadow-sm",
-  },
-  {
-    id: "twitter" as const,
-    label: "X",
-    Icon: Twitter,
-    theme: "bg-black text-white border-0 hover:bg-neutral-800 shadow-sm",
-  }, */
+  { id: "google" as const, label: "Google", Icon: GoogleIcon, iconClass: "" },
+  { id: "linkedin" as const, label: "LinkedIn", Icon: Linkedin, iconClass: "text-[#0A66C2]" },
 ];
+
+type Mode = "signin" | "signup" | "forgot" | "reset-code";
+
+const COPY: Record<Mode, { title: string; subtitle: string }> = {
+  signin: { title: "Welcome back", subtitle: "Sign in to plan, publish and reply from one place." },
+  signup: { title: "Create your account", subtitle: "Free to start. No card needed, and you can pay with mobile money later." },
+  forgot: { title: "Reset your password", subtitle: "Enter the email you sign in with. We'll send you a way back in." },
+  "reset-code": { title: "Check your email", subtitle: "" },
+};
 
 const Auth = () => {
   const [searchParams] = useSearchParams();
-  const [isSignUp, setIsSignUp] = useState(searchParams.get("mode") === "signup");
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [resetCodeStep, setResetCodeStep] = useState(false);
+  const [mode, setMode] = useState<Mode>(searchParams.get("mode") === "signup" ? "signup" : "signin");
   const [resetCode, setResetCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -99,17 +49,15 @@ const Auth = () => {
   const { login, register, requestPasswordReset } = useAuth();
 
   useEffect(() => {
-    if (searchParams.get("mode") === "signup") setIsSignUp(true);
+    if (searchParams.get("mode") === "signup") setMode("signup");
     const invitedEmail = searchParams.get("email");
     if (invitedEmail) {
       setEmail(invitedEmail);
-      setIsSignUp(true);
+      setMode("signup");
     }
   }, [searchParams]);
 
-  const handleSocialLogin = (provider: "google" | "facebook" | "linkedin" | "instagram" | "twitter") => {
-    window.location.href = getSocialLoginUrl(provider);
-  };
+  const isSignUp = mode === "signup";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,41 +70,15 @@ const Auth = () => {
           firstName: fullName.split(" ")[0] || "",
           lastName: fullName.split(" ").slice(1).join(" ") || "",
         });
-        toast({ title: "Success", description: "Account created!" });
+        toast({ title: "Welcome to Mako", description: "Your account is ready." });
       } else {
         await login(email, password);
-        toast({ title: "Success", description: "Logged in successfully" });
       }
       navigate("/dashboard");
     } catch (err: unknown) {
       toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Authentication failed",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const leaveReset = () => {
-    setIsForgotPassword(false);
-    setResetCodeStep(false);
-    setResetCode("");
-    setNewPassword("");
-  };
-
-  const handleResetWithCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      await authApi.resetPasswordWithCode(email, resetCode.trim(), newPassword);
-      toast({ title: "Password reset", description: "You can now sign in with your new password." });
-      leaveReset();
-    } catch (err: unknown) {
-      toast({
-        title: "Couldn't reset your password",
-        description: err instanceof Error ? err.message : "Check the code and try again.",
+        title: isSignUp ? "Couldn't create your account" : "Couldn't sign you in",
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -169,244 +91,179 @@ const Auth = () => {
     setLoading(true);
     try {
       await requestPasswordReset(email);
-      setResetCodeStep(true);
+      setMode("reset-code");
     } catch (err: unknown) {
-      toast({
-        title: "Error",
-        description: err instanceof Error ? err.message : "Failed to send reset link",
-        variant: "destructive",
-      });
+      toast({ title: "Couldn't send the reset email", description: err instanceof Error ? err.message : undefined, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   };
 
-  const renderSocialButtons = (variant: "mobile" | "desktop") => (
-    <div
-      className={cn(
-        variant === "mobile" &&
-        "flex flex-wrap items-center justify-center gap-3 lg:hidden",
-        variant === "desktop" && "hidden lg:flex flex-col gap-2.5",
-      )}
+  const handleResetWithCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await authApi.resetPasswordWithCode(email, resetCode.trim(), newPassword);
+      toast({ title: "Password changed", description: "Sign in with your new password." });
+      setResetCode("");
+      setNewPassword("");
+      setPassword("");
+      setMode("signin");
+    } catch (err: unknown) {
+      toast({ title: "Couldn't reset your password", description: err instanceof Error ? err.message : "Check the code and try again.", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const backToSignIn = (
+    <button
+      type="button"
+      onClick={() => setMode("signin")}
+      className="mt-6 inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
     >
-      {SOCIAL_PROVIDERS.map(({ id, label, Icon, theme }) => (
-        <Button
-          key={`${variant}-${id}`}
-          type="button"
-          variant="outline"
-          size={variant === "mobile" ? "icon" : "sm"}
-          className={cn(
-            theme,
-            variant === "mobile" &&
-            "h-11 w-11 min-w-11 rounded-full p-0 [&_svg]:size-5",
-            variant === "desktop" &&
-            "w-full h-9 rounded-full text-sm font-medium gap-2 justify-center",
-          )}
-          onClick={() => handleSocialLogin(id)}
-          aria-label={`Continue with ${label}`}
-        >
-          <Icon className={cn("shrink-0", variant === "desktop" && "h-4 w-4")} />
-          {variant === "desktop" && <span>{label}</span>}
-        </Button>
-      ))}
-    </div>
+      <ArrowLeft className="h-4 w-4" /> Back to sign in
+    </button>
   );
 
+  const submitClass = "h-12 w-full rounded-full text-base font-semibold";
+
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center bg-background px-4 py-6 sm:px-6 sm:py-10">
-      <div className="w-full max-w-md lg:max-w-4xl min-w-0 flex flex-col gap-4 sm:gap-6">
-        <AppBreadcrumbs />
-
-
-
-        <Card className="w-full bg-card rounded-xl border-0 p-1">
-          <CardHeader className="pb-2 px-4 sm:px-6 lg:px-8 pt-5 sm:pt-6">
-            <div className="flex justify-center shrink-0">
-              <Logo className="h-16 w-auto sm:h-24 lg:h-28" />
+    <AuthLayout
+      title={COPY[mode].title}
+      subtitle={
+        mode === "reset-code" ? (
+          <>
+            If <span className="font-medium text-foreground">{email}</span> has an account, we've sent it a reset link. If its phone is verified, we've also texted a 6-digit code you can use below.
+          </>
+        ) : (
+          COPY[mode].subtitle
+        )
+      }
+    >
+      {mode === "forgot" && (
+        <>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <FormInput id="email" type="email" icon={Mail} autoComplete="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required autoFocus />
             </div>
-            <CardTitle className="text-display-xs font-display text-center lg:text-left font-extrabold tracking-tight">
-              {isForgotPassword
-                ? "Reset Password"
-                : isSignUp
-                  ? "Create your account"
-                  : "Welcome back"}
-            </CardTitle>
-          </CardHeader>
+            <Button type="submit" disabled={loading} className={submitClass}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? "Sending…" : "Send reset instructions"}
+            </Button>
+          </form>
+          {backToSignIn}
+        </>
+      )}
 
-          <CardContent className="px-4 sm:px-6 lg:px-8 pb-5 sm:pb-6 lg:pb-8">
-            {isForgotPassword ? (
-              <div className="flex flex-col gap-4 max-w-md mx-auto lg:mx-0">
-                {resetCodeStep ? (
-                  <form onSubmit={handleResetWithCode} className="flex flex-col gap-3">
-                    <p className="text-sm text-muted-foreground">
-                      If this account exists, we've emailed a reset link. If it has a verified phone, we've
-                      also texted a 6-digit code. Use either one.
-                    </p>
-                    <Field label="SMS code" htmlFor="reset-code" required>
-                      <FormInput
-                        id="reset-code"
-                        inputMode="numeric"
-                        autoComplete="one-time-code"
-                        maxLength={6}
-                        placeholder="123456"
-                        value={resetCode}
-                        onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ""))}
-                        required
-                      />
-                    </Field>
-                    <Field label="New password" htmlFor="reset-password" hint="At least 6 characters." required>
-                      <FormInput
-                        id="reset-password"
-                        type="password"
-                        autoComplete="new-password"
-                        minLength={6}
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        required
-                      />
-                    </Field>
-                    <Button type="submit" disabled={loading || resetCode.length !== 6} className={primaryBtnClass}>
-                      {loading ? "Resetting..." : "Reset Password"}
-                    </Button>
-                  </form>
-                ) : (
-                <form onSubmit={handleForgotPassword} className="flex flex-col gap-3">
-                  <Field
-                    label="Email"
-                    htmlFor="email"
-                    hint="We'll email a reset link, and text a code if your phone is verified."
-                    required
-                  >
-                    <FormInput
-                      id="email"
-                      type="email"
-                      icon={Mail}
-                      placeholder="you@company.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                  </Field>
-                  <Button type="submit" disabled={loading} className={primaryBtnClass}>
-                    {loading ? "Sending..." : "Send Reset Instructions"}
-                  </Button>
-                </form>
-                )}
-                <button
-                  type="button"
-                  onClick={leaveReset}
-                  className="text-sm text-primary hover:underline flex items-center justify-center gap-1"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" /> Back to Sign In
-                </button>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-start">
-                {/* Left: email / password form */}
-                <div className="flex flex-col gap-4 min-w-0">
-                  <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-                    {isSignUp && (
-                      <Field label="Full name" htmlFor="name">
-                        <FormInput
-                          id="name"
-                          icon={User}
-                          placeholder="Your name"
-                          value={fullName}
-                          onChange={(e) => setFullName(e.target.value)}
-                        />
-                      </Field>
-                    )}
-                    <Field label="Email" htmlFor="email" required>
-                      <FormInput
-                        id="email"
-                        type="email"
-                        icon={Mail}
-                        placeholder="you@company.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                      />
-                    </Field>
-                    <Field
-                      label="Password"
-                      htmlFor="password"
-                      required
-                      hint={isSignUp ? "At least 6 characters" : undefined}
-                    >
-                      <div className="flex flex-col gap-1">
-                        {!isSignUp && (
-                          <div className="flex justify-end">
-                            <button
-                              type="button"
-                              onClick={() => setIsForgotPassword(true)}
-                              className="text-xs text-primary hover:underline"
-                            >
-                              Forgot password?
-                            </button>
-                          </div>
-                        )}
-                        <FormInput
-                          id="password"
-                          type="password"
-                          icon={Lock}
-                          placeholder="••••••••"
-                          value={password}
-                          onChange={(e) => setPassword(e.target.value)}
-                          required
-                          minLength={6}
-                        />
-                      </div>
-                    </Field>
-                    <Button type="submit" disabled={loading} className={primaryBtnClass}>
-                      {loading ? (
-                        "Loading..."
-                      ) : isSignUp ? (
-                        <>
-                          <Rocket className="h-3.5 w-3.5" />
-                          Create Account
-                        </>
-                      ) : (
-                        "Sign In"
-                      )}
-                    </Button>
-                  </form>
+      {mode === "reset-code" && (
+        <>
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-border/70 bg-card p-4">
+            <MailCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+            <p className="text-sm text-muted-foreground">Open the link in the email, or enter the texted code here.</p>
+          </div>
+          <form onSubmit={handleResetWithCode} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-code">Code from the text message</Label>
+              <FormInput
+                id="reset-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                placeholder="123456"
+                value={resetCode}
+                onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ""))}
+                className="text-center font-mono text-lg tracking-[0.5em]"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-password">New password</Label>
+              <PasswordField id="reset-password" value={newPassword} onChange={setNewPassword} autoComplete="new-password" />
+              <p className="text-xs text-muted-foreground">At least 6 characters.</p>
+            </div>
+            <Button type="submit" disabled={loading || resetCode.length !== 6 || newPassword.length < 6} className={submitClass}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? "Changing…" : "Change password"}
+            </Button>
+          </form>
+          {backToSignIn}
+        </>
+      )}
 
-                  <button
-                    type="button"
-                    onClick={() => setIsSignUp(!isSignUp)}
-                    className="text-xs sm:text-sm text-primary hover:underline text-center lg:text-left"
-                  >
-                    {isSignUp
-                      ? "Already have an account? Sign in"
-                      : "Don't have an account? Sign up"}
-                  </button>
-                </div>
+      {(mode === "signin" || mode === "signup") && (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {SOCIAL_PROVIDERS.map(({ id, label, Icon, iconClass }) => (
+              <Button
+                key={id}
+                type="button"
+                variant="outline"
+                className="h-12 gap-2 rounded-full border-border bg-card text-sm font-medium hover:bg-muted"
+                onClick={() => {
+                  window.location.href = getSocialLoginUrl(id);
+                }}
+                aria-label={`Continue with ${label}`}
+              >
+                <Icon className={cn("h-5 w-5", iconClass)} />
+                {label}
+              </Button>
+            ))}
+          </div>
 
-                {/* Right: social sign-in */}
-                <div className="flex flex-col gap-4 min-w-0 lg:border-l lg:border-border/60 lg:pl-8">
-                  <div className="relative py-1 lg:py-0">
-                    <div className="absolute inset-0 flex items-center lg:hidden">
-                      <Separator className="w-full" />
-                    </div>
-                    <p className="relative text-center lg:text-left text-[10px] sm:text-xs uppercase tracking-wide text-muted-foreground bg-card lg:bg-transparent px-2 lg:px-0 mx-auto lg:mx-0 w-fit lg:w-full">
-                      or continue with
-                    </p>
-                  </div>
+          <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="h-px flex-1 bg-border" />
+            or with email
+            <span className="h-px flex-1 bg-border" />
+          </div>
 
-                  {renderSocialButtons("mobile")}
-                  {renderSocialButtons("desktop")}
-
-                  <p className="hidden lg:block text-xs text-muted-foreground leading-relaxed">
-                    Sign in with your social account. We only request the permissions needed to
-                    connect your profiles.
-                  </p>
-                </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {isSignUp && (
+              <div className="space-y-1.5">
+                <Label htmlFor="name">Your name</Label>
+                <FormInput id="name" icon={User} autoComplete="name" placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email</Label>
+              <FormInput id="email" type="email" icon={Mail} autoComplete="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                {!isSignUp && (
+                  <button type="button" onClick={() => setMode("forgot")} className="text-xs font-medium text-muted-foreground hover:text-foreground">
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <PasswordField id="password" value={password} onChange={setPassword} autoComplete={isSignUp ? "new-password" : "current-password"} />
+              {isSignUp && <p className="text-xs text-muted-foreground">At least 6 characters.</p>}
+            </div>
+            <Button type="submit" disabled={loading} className={submitClass}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? (isSignUp ? "Creating your account…" : "Signing in…") : isSignUp ? "Create account" : "Sign in"}
+            </Button>
+          </form>
+
+          {isSignUp && (
+            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
+              By creating an account you agree to the{" "}
+              <a href="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</a> and{" "}
+              <a href="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy policy</a>.
+            </p>
+          )}
+
+          <p className="mt-6 text-sm text-muted-foreground">
+            {isSignUp ? "Already have an account?" : "New to Mako?"}{" "}
+            <button type="button" onClick={() => setMode(isSignUp ? "signin" : "signup")} className="font-semibold text-foreground underline-offset-2 hover:underline">
+              {isSignUp ? "Sign in" : "Create an account"}
+            </button>
+          </p>
+        </>
+      )}
+    </AuthLayout>
   );
 };
 

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Brain, Pen, CalendarClock, BarChart3, MessageSquareReply, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { DeviceMockup } from './DeviceMockup';
 import { COMPANY } from '@/config/company';
 
 export type ScreenshotDevice = 'desktop' | 'tablet' | 'phone';
@@ -8,15 +9,15 @@ export type ScreenshotVariant = 'float' | 'chrome';
 
 const DEVICE_SIZE_CLASS: Record<ScreenshotDevice, string> = {
   desktop: 'w-full',
-  tablet: 'w-full max-w-[240px] sm:max-w-[280px] mx-auto',
-  phone: 'w-full max-w-[200px] sm:max-w-[260px] md:max-w-[300px] mx-auto',
+  tablet: 'w-full max-w-[520px] mx-auto',
+  phone: 'w-full max-w-[200px] sm:max-w-[230px] mx-auto',
 };
 
-// Every screenshot of a device shares one size, so space is reserved before it loads.
+// Browser-chrome variant only: every screenshot of a device shares one shape.
 const DEVICE_ASPECT_CLASS: Record<ScreenshotDevice, string> = {
-  desktop: 'aspect-[2900/1666]',
-  tablet: 'aspect-[1342/1860]',
-  phone: 'aspect-[748/1508]',
+  desktop: 'aspect-[16/10]',
+  tablet: 'aspect-[4/3]',
+  phone: 'aspect-[390/801]',
 };
 
 export function BrowserChrome({
@@ -62,7 +63,7 @@ export function ScreenshotFrame({
   mock: React.ReactNode;
   url?: string;
   className?: string;
-  /** float = bare image on page bg; chrome = browser frame */
+  /** float = inside a laptop, tablet or phone frame; chrome = browser frame */
   variant?: ScreenshotVariant;
   device?: ScreenshotDevice;
   /** Load straight away (above the fold) instead of lazily */
@@ -100,6 +101,9 @@ export function ScreenshotFrame({
     );
   }
 
+  // If the screenshot fails to load, show the drawn mock without a device around it.
+  if (failed) return <div className={cn(DEVICE_SIZE_CLASS[device], className)}>{mock}</div>;
+
   return (
     <div className={cn(DEVICE_SIZE_CLASS[device], className)}>
       <div className="relative group">
@@ -108,7 +112,20 @@ export function ScreenshotFrame({
           aria-hidden
         />
         <div className="transition-transform duration-500 ease-out group-hover:scale-[1.02] motion-reduce:group-hover:scale-100">
-          {image}
+          <DeviceMockup device={device}>
+            <img
+              src={src}
+              alt={alt}
+              className={cn(
+                'h-full w-full object-cover object-top transition-opacity duration-500 ease-out motion-reduce:transition-none',
+                loaded ? 'opacity-100' : 'opacity-0',
+              )}
+              onLoad={() => setLoaded(true)}
+              onError={() => setFailed(true)}
+              loading={eager ? 'eager' : 'lazy'}
+              {...(eager ? { fetchpriority: 'high' } : {})}
+            />
+          </DeviceMockup>
         </div>
       </div>
     </div>

@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import Logo from "@/components/Logo";
+import { Loader2 } from "lucide-react";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 export default function SocialCallback() {
   const location = useLocation();
@@ -53,9 +54,11 @@ export default function SocialCallback() {
   }, [location, navigate, toast, completeOAuthLogin]);
 
   return (
-    <div className="min-h-screen min-h-[100dvh] flex flex-col items-center justify-center p-6 bg-background">
-      <Logo className="h-24 w-auto sm:h-28 animate-pulse" />
-      <p className="mt-6 text-muted-foreground text-center">Completing sign in…</p>
-    </div>
+    <AuthLayout title="Signing you in…" subtitle="Finishing up with your account. This only takes a moment." showcase={false}>
+      <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-card p-4 text-sm text-muted-foreground" role="status">
+        <Loader2 className="h-5 w-5 animate-spin text-primary" />
+        Checking your details
+      </div>
+    </AuthLayout>
   );
 }

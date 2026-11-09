@@ -60,10 +60,10 @@ export function DocumentUpload({ onResult, disabled, workspaceId }: DocumentUplo
           variant="outline"
           onClick={() => fileRef.current?.click()}
           disabled={disabled || uploading}
-          className="justify-start sm:flex-1"
+          className="min-w-0 justify-start sm:flex-1"
         >
           <Upload className="mr-2 h-4 w-4 shrink-0" />
-          {selectedFile ? selectedFile.name : "Choose PDF, DOCX, or TXT"}
+          <span className="truncate">{selectedFile ? selectedFile.name : "Choose PDF, DOCX, or TXT"}</span>
         </Button>
         <Button
           onClick={handleSubmit}

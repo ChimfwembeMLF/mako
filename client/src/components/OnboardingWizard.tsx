@@ -6,7 +6,6 @@ import {
   PenLine,
   Rocket,
   Sparkles,
-  X,
 } from 'lucide-react';
 import { brandProfilesApi } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +23,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { isBrandVoiceStarted, onboardingGate } from '@/lib/onboarding-gate';
 
 interface BrandForm {
   company_name: string;
@@ -112,20 +112,12 @@ export function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
                   Welcome to Mako
                 </DialogTitle>
                 <DialogDescription className="text-sm text-primary-foreground/85 mt-0.5">
-                  {activeWorkspaceName
+                  {activeWorkspaceName && activeWorkspaceName !== 'Default'
                     ? `Set up “${activeWorkspaceName}” in under a minute.`
                     : 'Set up your workspace in under a minute.'}
                 </DialogDescription>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => close(true)}
-              className="rounded-lg p-1.5 text-primary-foreground/80 transition-colors hover:bg-white/10 hover:text-primary-foreground"
-              aria-label="Skip onboarding"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
 
           <div className="relative mt-6 flex gap-2">
@@ -272,8 +264,9 @@ export function useNeedsOnboarding() {
       .getMine(tenant.id, activeWorkspace ?? undefined)
       .then((profile) => {
         if (cancelled) return;
-        const hasBrandBrain = Boolean(profile?.companyName?.trim() || profile?.description?.trim());
-        setNeeds(!hasBrandBrain);
+        // A new workspace gets a starter profile (its name and a default tone), so look
+        // for anything a person wrote, not just a company name.
+        setNeeds(!isBrandVoiceStarted(profile));
         setChecked(true);
       })
       .catch(() => {
@@ -286,6 +279,13 @@ export function useNeedsOnboarding() {
       cancelled = true;
     };
   }, [user, tenant, dismissed, activeWorkspace, workspaceVersion, workspaceLoading]);
+
+  // Let guided tours know whether the welcome is still being checked or is showing.
+  useEffect(() => {
+    if (!user) return;
+    onboardingGate.set(!checked ? 'checking' : needs ? 'open' : 'clear');
+  }, [user, checked, needs]);
+  useEffect(() => () => onboardingGate.set('clear'), []);
 
   const dismiss = () => {
     localStorage.setItem('onboarding_dismissed', '1');

@@ -4,7 +4,7 @@ import { resolveMediaUrl } from '@/lib/mediaUrl';
 import { RichTextContent } from '@/components/RichTextContent';
 import { htmlToPlainText } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
-import { PreviewAvatar, TwitterImageGrid } from './shared';
+import { PreviewAvatar, TwitterImageGrid, ReadMore } from './shared';
 import type { SocialPreviewProps } from './types';
 
 export function TwitterPreview({
@@ -31,11 +31,12 @@ export function TwitterPreview({
             <span className="text-muted-foreground">· {publishedAt ? formatDistanceToNow(new Date(publishedAt)) : 'now'}</span>
           </p>
           <div className="text-[15px] mt-1 leading-normal">
+<ReadMore lines={8} moreLabel="Show more" lessLabel="Show less" buttonClassName="text-[#1d9bf0]">
             {mode === 'published' ? (
               <p className="whitespace-pre-wrap">{plain}</p>
             ) : (
               <RichTextContent html={payload.content ?? ''} emptyPlaceholder="What's happening?" />
-            )}
+            )}</ReadMore>
           </div>
 
           {videos.length > 0 && (

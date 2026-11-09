@@ -1,13 +1,15 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Zap, Settings, CreditCard, Building2,
+  Zap, Settings, CreditCard,
   Menu, LogOut, ChevronRight, Search, Sparkles, Layers,
-  MoreHorizontal, Check,
+  MoreHorizontal, Check, Sun, Moon, Monitor,
 } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { GlobalSearch, GlobalSearchTrigger, useGlobalSearchShortcut } from "@/components/GlobalSearch";
+import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
+import { useTheme, type ColorMode } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -36,79 +38,76 @@ function isActivePath(pathname: string, url: string, exact = false) {
 
 
 
+const COLOR_MODES: { id: ColorMode; label: string; icon: typeof Sun }[] = [
+  { id: "light", label: "Light", icon: Sun },
+  { id: "dark", label: "Dark", icon: Moon },
+  { id: "system", label: "System", icon: Monitor },
+];
+
+/** Your account: who you are, settings, billing, theme and sign out. Workspaces live in the sidebar. */
 function UserMenu() {
   const { user, signOut } = useAuth();
-  const { workspaces, activeWorkspace, setActiveWorkspace, loading } = useWorkspace();
+  const { colorMode, setColorMode } = useTheme();
   const initials = (user?.firstName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase();
-  const activeName =
-    workspaces.find((w: { id: string }) => w.id === activeWorkspace)?.name ?? "Workspace";
+  const name = user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : "Account";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+          className="flex items-center rounded-full outline-none ring-offset-background transition-shadow hover:ring-2 hover:ring-border focus-visible:ring-2 focus-visible:ring-ring"
           aria-label="Account menu"
         >
-          <Avatar className="h-8 w-8 border border-border">
+          <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="font-normal pb-1">
-          <p className="text-sm font-medium truncate">
-            {user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : "Account"}
-          </p>
-          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-        </DropdownMenuLabel>
+      <DropdownMenuContent align="end" className="w-64 p-1.5">
+        <div className="flex items-center gap-3 px-2 py-2">
+          <Avatar className="h-9 w-9">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-semibold">{initials}</AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium">{name}</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+        </div>
         <DropdownMenuSeparator />
-        <DropdownMenuLabel className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-          Workspace
-        </DropdownMenuLabel>
-        {loading ? (
-          <DropdownMenuItem disabled className="text-xs">Loading…</DropdownMenuItem>
-        ) : workspaces.length === 0 ? (
-          <DropdownMenuItem asChild>
-            <Link to="/workspaces" className="flex items-center gap-2">
-              <Layers className="h-4 w-4" /> Create workspace
-            </Link>
-          </DropdownMenuItem>
-        ) : (
-          workspaces.map((ws: { id: string; name: string }) => (
-            <DropdownMenuItem
-              key={ws.id}
-              onClick={() => setActiveWorkspace(ws.id)}
-              className="flex items-center gap-2"
+        <DropdownMenuItem asChild className="gap-2">
+          <Link to="/settings"><Settings className="h-4 w-4" /> Settings</Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="gap-2">
+          <Link to="/billing"><CreditCard className="h-4 w-4" /> Billing</Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel className="px-2 pb-1 pt-1.5 text-xs font-normal text-muted-foreground">Theme</DropdownMenuLabel>
+        <div className="grid grid-cols-3 gap-1 px-1 pb-1" role="radiogroup" aria-label="Theme">
+          {COLOR_MODES.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={colorMode === id}
+              onClick={() => setColorMode(id)}
+              className={cn(
+                "flex flex-col items-center gap-1 rounded-lg border px-2 py-2 text-[11px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                colorMode === id
+                  ? "border-foreground/20 bg-accent font-medium text-foreground"
+                  : "border-transparent text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+              )}
             >
-              <Layers className="h-4 w-4 shrink-0 opacity-70" />
-              <span className="truncate flex-1">{ws.name}</span>
-              {ws.id === activeWorkspace && <Check className="h-3.5 w-3.5 shrink-0" />}
-            </DropdownMenuItem>
-          ))
-        )}
-        <DropdownMenuItem asChild>
-          <Link to="/workspaces" className="flex items-center gap-2 text-muted-foreground">
-            <Building2 className="h-4 w-4" />
-            Manage workspaces
-            {!loading && activeName ? (
-              <span className="ml-auto truncate max-w-[7rem] text-xs">{activeName}</span>
-            ) : null}
-          </Link>
-        </DropdownMenuItem>
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to="/settings"><Settings className="h-4 w-4 mr-2" /> Settings</Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to="/billing"><CreditCard className="h-4 w-4 mr-2" /> Billing</Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive">
-          <LogOut className="h-4 w-4 mr-2" /> Sign out
+        <DropdownMenuItem onClick={signOut} className="gap-2 text-destructive focus:text-destructive">
+          <LogOut className="h-4 w-4" /> Sign out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -272,53 +271,41 @@ export function AppNavbar() {
     <>
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
 
-      <header className="sticky top-0 z-50 border-b border-border bg-card">
-        <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-2 px-4 md:px-6">
+      <header className="sticky top-0 z-50 border-b border-border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+        <div className="flex h-16 items-center gap-2 px-3 sm:px-4 lg:px-6">
           <MobileNav />
 
-          <Link to={homeTo} className="flex shrink-0 items-center mr-2 lg:mr-4">
-            <Logo className="h-11" />
+          {/* Below desktop the sidebar is a rail or hidden, so the bar carries the logo. */}
+          <Link to={homeTo} className="flex shrink-0 items-center lg:hidden" aria-label={`Mako ${homeLabel}`}>
+            <Logo className="h-9 sm:h-10" />
           </Link>
 
-          <div className="hidden md:flex flex-1 justify-center max-w-md mx-2 lg:mx-4 lg:ml-12">
-            <GlobalSearchTrigger onClick={openSearch} className="max-w-sm w-full" />
-          </div>
+          {/* Desktop: where you are, in the bar instead of a row above the page. */}
+          <AppBreadcrumbs className="hidden min-w-0 flex-1 lg:flex [&_li]:text-sm" />
 
-          <div className="ml-auto flex items-center gap-0.5 sm:gap-1">
+          <div className="ml-auto flex items-center gap-1 sm:gap-1.5">
+            <GlobalSearchTrigger onClick={openSearch} className="h-9 w-64 shadow-none xl:w-80" />
             <Button
               variant="ghost"
               size="icon"
-              className="shrink-0 text-muted-foreground md:hidden min-h-12 min-w-12"
+              className="h-10 w-10 shrink-0 rounded-full text-muted-foreground md:hidden"
               onClick={openSearch}
               aria-label="Search"
             >
               <Search className="h-4 w-4" />
             </Button>
 
-            <Button
-              asChild
-              variant="ghost"
-              size="icon"
-              className="shrink-0 text-muted-foreground xl:hidden min-h-12 min-w-12"
-              aria-label="Create content"
-            >
-              <Link to="/content">
+            <Button asChild size="sm" className="h-9 shrink-0 gap-1.5 rounded-full px-3 sm:px-4" aria-label="Create content">
+              <Link to="/content?new=1">
                 <Sparkles className="h-4 w-4" />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              size="sm"
-              className="hidden xl:inline-flex shrink-0 gap-1.5 rounded-xl px-3 min-h-10"
-            >
-              <Link to="/content">
-                <Sparkles className="h-3.5 w-3.5" />
-                Create
+                <span className="hidden sm:inline">Create</span>
               </Link>
             </Button>
 
+            <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden />
+
             <NotificationBell />
-            <ColorModeToggle />
+            <ColorModeToggle className="hidden h-9 min-h-0 w-9 min-w-0 rounded-full sm:inline-flex" />
             <UserMenu />
           </div>
         </div>

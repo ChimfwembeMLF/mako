@@ -69,7 +69,8 @@ export class ContentItemsController {
       query.page != null ||
       query.limit != null ||
       query.search ||
-      query.platform
+      query.platform ||
+      query.status
     ) {
       return this.service.findPaginated({
         tenantId: query.tenantId,
@@ -79,6 +80,7 @@ export class ContentItemsController {
         limit: query.limit,
         search: query.search,
         platform: query.platform,
+        status: query.status,
       });
     }
     return this.service.findAll(query.tenantId, query.workspaceId, {

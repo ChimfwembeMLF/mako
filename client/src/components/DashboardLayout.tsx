@@ -23,11 +23,19 @@ function DashboardMain() {
           pageWidthClass(width),
         )}
       >
-        <AppBreadcrumbs className="mb-4 w-full" />
+        {/* On desktop the breadcrumbs sit in the top bar. */}
+        <AppBreadcrumbs className="mb-4 w-full lg:hidden" />
         <Outlet />
       </div>
     </main>
   );
+}
+
+/** Open unless it was collapsed last time (the sidebar saves this in a cookie), or the screen is tablet-sized. */
+function initialSidebarOpen(): boolean {
+  if (typeof window === "undefined") return true;
+  if (window.innerWidth >= 768 && window.innerWidth < 1024) return false;
+  return !/(?:^|;\s*)sidebar:state=false/.test(document.cookie);
 }
 
 export function DashboardLayout() {
@@ -36,7 +44,7 @@ export function DashboardLayout() {
   const shell = resolveProductShell(pathname);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={initialSidebarOpen()}>
       <AppSidebar />
       <PageBreadcrumbProvider>
         <div className="min-h-screen flex flex-col bg-background flex-1 w-full min-w-0 overflow-x-clip" data-product-shell={shell}>

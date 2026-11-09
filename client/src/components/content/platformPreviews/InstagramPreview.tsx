@@ -3,7 +3,7 @@ import { PlatformPayload } from '@/lib/platforms';
 import { RichTextContent } from '@/components/RichTextContent';
 import { htmlToPlainText } from '@/lib/rich-text';
 import { cn } from '@/lib/utils';
-import { MediaCarousel, PreviewAvatar } from './shared';
+import { MediaCarousel, PreviewAvatar, ReadMore } from './shared';
 import { EngagementStats } from './EngagementStats';
 import type { SocialPreviewProps } from './types';
 
@@ -52,6 +52,7 @@ export function InstagramPreview({
         {mode === 'published' && (
           <EngagementStats engagement={engagement} variant="inline" className="mb-2 font-semibold text-foreground" />
         )}
+        <ReadMore lines={2} moreLabel="more" lessLabel="less">
         <p>
           <span className="font-semibold mr-1">{handle}</span>
           {mode === 'published' ? (
@@ -64,6 +65,7 @@ export function InstagramPreview({
             />
           )}
         </p>
+        </ReadMore>
       </div>
     </div>
   );

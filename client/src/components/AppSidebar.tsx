@@ -1,17 +1,19 @@
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useLocation, useMatch } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Brain, Pen, CalendarClock, Zap, Settings, Rocket, Link2, Image, LayoutTemplate,
   Megaphone, GitPullRequestArrow, Users, ClipboardList, ShieldCheck, Activity, ChevronsUpDown,
-  Building2, CreditCard, Download, ListOrdered, Target, Mail, MessageCircle, LogOut,
-  Inbox, UserPlus, LayoutDashboard, LineChart, Workflow,
+  Building2, Download, ListOrdered, Target, Mail, MessageCircle, LogOut,
+  Inbox, UserPlus, LayoutDashboard, LineChart, Workflow, Check, ChevronRight, PanelLeftClose, PanelLeftOpen,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 import { P, type PermissionKey } from "@/lib/permissions";
 import { useWorkspace } from "@/hooks/useWorkspace";
 import { WorkspaceLogo } from "@/components/WorkspaceLogo";
+import { approvalRequestsApi, inboxApi } from "@/lib/api";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent,
   SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem,
@@ -21,46 +23,36 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTenant } from "@/hooks/useTenant";
 import { cn } from "@/lib/utils";
 
-function NavItem({ title, url, icon: Icon, exact = false, id }: {
-  title: string; url: string; icon: React.ComponentType<{ className?: string }>;
-  exact?: boolean; id?: string;
-}) {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
-  return (
-    <SidebarMenuItem id={id}>
-      <SidebarMenuButton asChild tooltip={collapsed ? title : undefined}>
-        <NavLink to={url} end={exact}
-          className="hover:bg-sidebar-accent"
-          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
-          <Icon className="mr-2 h-4 w-4 shrink-0" />
-          {!collapsed && <span className="flex-1 truncate">{title}</span>}
-        </NavLink>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  );
-}
+type Icon = React.ComponentType<{ className?: string }>;
 
 type NavEntry = {
   title: string;
   url: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: Icon;
   id?: string;
   exact?: boolean;
   /** Shown when the person has any of these permissions. Omit for everyone. */
   perms?: PermissionKey[];
   superAdminOnly?: boolean;
+  /** A live count shown beside the item. */
+  badge?: "inbox" | "approvals";
 };
 
-type NavGroup = { label: string; id?: string; items: NavEntry[] };
+type NavGroup = {
+  label?: string;
+  id?: string;
+  items: NavEntry[];
+  /** Folded away until opened, or until you are on one of its pages. */
+  collapsible?: boolean;
+};
 
 /** Grouped by what people are doing: making content, getting it out, talking to people, measuring, running the team. */
 const NAV: NavGroup[] = [
   {
-    label: "Home",
     id: "tour-sidebar-core",
     items: [
       { id: "tour-nav-dashboard", title: "Dashboard", url: "/dashboard", icon: LayoutDashboard, exact: true },
@@ -81,7 +73,7 @@ const NAV: NavGroup[] = [
     label: "Publish",
     items: [
       { id: "tour-nav-scheduler", title: "Schedule", url: "/scheduler", icon: CalendarClock, perms: [P.content.view] },
-      { id: "tour-nav-approvals", title: "Approvals", url: "/approvals", icon: GitPullRequestArrow, perms: [P.approvals.view, P.content.approve] },
+      { id: "tour-nav-approvals", title: "Approvals", url: "/approvals", icon: GitPullRequestArrow, perms: [P.approvals.view, P.content.approve], badge: "approvals" },
       { id: "tour-nav-publisher", title: "Social accounts", url: "/publisher", icon: Link2 },
     ],
   },
@@ -89,7 +81,7 @@ const NAV: NavGroup[] = [
     label: "Engage",
     id: "tour-sidebar-engagement",
     items: [
-      { id: "tour-nav-inbox", title: "Inbox", url: "/replies", icon: Inbox, perms: [P.replies.view] },
+      { id: "tour-nav-inbox", title: "Inbox", url: "/replies", icon: Inbox, perms: [P.replies.view], badge: "inbox" },
       { id: "tour-nav-leads", title: "Leads", url: "/leads", icon: UserPlus, perms: [P.leads.view] },
       { id: "tour-nav-email", title: "Email", url: "/mail", icon: Mail, perms: [P.leads.email, P.leads.view] },
       { id: "tour-nav-whatsapp", title: "WhatsApp", url: "/whatsapp", icon: MessageCircle },
@@ -104,18 +96,14 @@ const NAV: NavGroup[] = [
     ],
   },
   {
-    label: "Team",
+    label: "Manage",
     id: "tour-sidebar-governance",
+    collapsible: true,
     items: [
       { id: "tour-nav-team", title: "Members", url: "/team", icon: Users, perms: [P.team.view] },
       { id: "tour-nav-workspaces", title: "Workspaces", url: "/workspaces", icon: Building2 },
       { id: "tour-nav-audit", title: "Audit logs", url: "/audit", icon: ClipboardList, perms: [P.audit.view] },
       { title: "Export data", url: "/export", icon: Download, perms: [P.settings.view] },
-    ],
-  },
-  {
-    label: "Admin",
-    items: [
       { id: "tour-nav-roles", title: "Roles & permissions", url: "/admin/roles", icon: ShieldCheck, perms: [P.admin.roles] },
       { id: "tour-nav-maker-checker", title: "Maker-checker", url: "/admin/maker-checker", icon: Workflow, perms: [P.admin.makerChecker] },
       { id: "tour-nav-backoffice", title: "Platform backoffice", url: "/admin/backoffice", icon: Activity, superAdminOnly: true },
@@ -125,131 +113,347 @@ const NAV: NavGroup[] = [
   },
 ];
 
-export function AppSidebar() {
-  const { state } = useSidebar();
-  const collapsed = state === "collapsed";
+const MANAGE_OPEN_KEY = "mako_sidebar_manage_open";
+
+/** Unread conversations and pending approvals, refreshed every couple of minutes. */
+function useSidebarCounts(enabled: { inbox: boolean; approvals: boolean }) {
+  const { tenant } = useTenant();
+  const { activeWorkspace } = useWorkspace();
+  const tenantId = tenant?.id;
+  const inbox = useQuery({
+    queryKey: ["sidebar-count", "inbox", tenantId, activeWorkspace],
+    queryFn: async () => {
+      const rows = await inboxApi.conversations(tenantId!, "all", activeWorkspace || undefined);
+      return rows.filter((c) => c.unreadCount > 0).length;
+    },
+    enabled: Boolean(tenantId) && enabled.inbox,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    retry: false,
+  });
+  const approvals = useQuery({
+    queryKey: ["sidebar-count", "approvals", tenantId],
+    queryFn: async () => (await approvalRequestsApi.findAll({ tenantId, status: "pending" })).length,
+    enabled: Boolean(tenantId) && enabled.approvals,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    retry: false,
+  });
+  return { inbox: inbox.data ?? 0, approvals: approvals.data ?? 0 };
+}
+
+function CountBadge({ count, collapsed }: { count: number; collapsed: boolean }) {
+  if (count <= 0) return null;
+  const label = count > 99 ? "99+" : String(count);
+  if (collapsed) {
+    return <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary ring-2 ring-sidebar" aria-hidden />;
+  }
+  return (
+    <span className="ml-auto min-w-5 rounded-full bg-primary/15 px-1.5 text-center text-[11px] font-semibold leading-5 tabular-nums text-foreground">
+      {label}
+    </span>
+  );
+}
+
+/**
+ * The curved branch from a group's label to one of its items. A vertical line carries on
+ * to the next item, so each group reads as a small tree. The current page's branch is orange.
+ */
+function TreeBranch({ active, last }: { active: boolean; last: boolean }) {
+  return (
+    <>
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute left-[11px] -top-1 h-[calc(50%+4px)] w-2.5 rounded-bl-[10px] border-b border-l transition-colors",
+          active ? "z-[1] border-primary" : "border-sidebar-border",
+        )}
+      />
+      {/* Starts where the curve begins (its 10px radius above the middle), so the line never breaks. */}
+      {!last && (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-1 left-[11px] top-[calc(50%-10px)] border-l border-sidebar-border"
+        />
+      )}
+    </>
+  );
+}
+
+function NavItem({ item, count = 0, tree = false, last = false }: {
+  item: NavEntry; count?: number;
+  /** Draw curved connector lines (items under a group label). */
+  tree?: boolean;
+  last?: boolean;
+}) {
+  const { state, isMobile, setOpenMobile } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
+  const active = Boolean(useMatch({ path: item.url, end: Boolean(item.exact) }));
+  const showTree = tree && !collapsed;
+  const Icon = item.icon;
+  const tooltip = count > 0 ? `${item.title} (${count})` : item.title;
+  return (
+    <SidebarMenuItem id={item.id} className={cn(showTree && "pl-5")}>
+      {showTree && <TreeBranch active={active} last={last} />}
+      <SidebarMenuButton asChild tooltip={collapsed ? tooltip : undefined} className="relative h-8 rounded-lg">
+        <NavLink
+          to={item.url}
+          end={item.exact}
+          onClick={() => isMobile && setOpenMobile(false)}
+          aria-label={count > 0 ? `${item.title}, ${count} waiting` : undefined}
+          className={cn(
+            "group/nav text-[13px] text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-foreground",
+            // Items outside a group mark the current page with a short bar; grouped items use their orange branch.
+            !showTree &&
+              "before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[3px] before:rounded-full before:bg-transparent",
+          )}
+          activeClassName={cn(
+            "bg-primary/10 font-medium !text-sidebar-foreground [&_svg]:!text-primary hover:bg-primary/15",
+            !showTree && "before:!bg-primary",
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0 text-sidebar-foreground/55 transition-colors group-hover/nav:text-sidebar-foreground" />
+          {!collapsed && <span className="truncate">{item.title}</span>}
+          <CountBadge count={count} collapsed={collapsed} />
+        </NavLink>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
+}
+
+function WorkspaceSwitcher({ collapsed }: { collapsed: boolean }) {
   const { tenant, tenants, switchTenant } = useTenant();
+  const { workspaces, activeWorkspace, setActiveWorkspace, loading } = useWorkspace();
+  const active = workspaces.find((w) => w.id === activeWorkspace);
+  const name = active?.name ?? "Workspace";
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={cn(
+            "flex w-full items-center gap-2.5 rounded-xl px-2 py-1.5 text-left transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+            collapsed && "justify-center px-0",
+          )}
+          title={collapsed ? name : undefined}
+          aria-label={`Workspace: ${name}. Switch workspace`}
+        >
+          <WorkspaceLogo
+            name={name}
+            logoUrl={active?.logoUrl}
+            className="h-8 w-8 shrink-0 rounded-lg shadow-sm"
+            fallback={<Rocket className="h-4 w-4" />}
+          />
+          {!collapsed && (
+            <>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] font-semibold text-sidebar-foreground">
+                  {loading ? "Loading…" : name}
+                </span>
+                {/* The organisation, unless it has the same name as the workspace. */}
+                {tenant?.name && tenant.name !== name && (
+                  <span className="block truncate text-[11px] text-sidebar-foreground/55">{tenant.name}</span>
+                )}
+              </span>
+              <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/40" />
+            </>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-60">
+        <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Workspaces</DropdownMenuLabel>
+        {workspaces.length === 0 ? (
+          <DropdownMenuItem asChild className="text-sm">
+            <Link to="/workspaces">Create a workspace</Link>
+          </DropdownMenuItem>
+        ) : (
+          workspaces.map((ws) => (
+            <DropdownMenuItem key={ws.id} onClick={() => setActiveWorkspace(ws.id)} className="gap-2 text-sm">
+              <WorkspaceLogo
+                name={ws.name}
+                logoUrl={ws.logoUrl}
+                className="h-6 w-6 rounded-md text-[10px]"
+                fallbackClassName="bg-muted text-muted-foreground"
+              />
+              <span className="flex-1 truncate">{ws.name}</span>
+              {ws.id === activeWorkspace && <Check className="h-4 w-4 text-primary" />}
+            </DropdownMenuItem>
+          ))
+        )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild className="text-sm">
+          <Link to="/workspaces">Manage workspaces</Link>
+        </DropdownMenuItem>
+        {tenants.length > 1 && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">Organizations</DropdownMenuLabel>
+            {tenants.map((t) => (
+              <DropdownMenuItem key={t.id} onClick={() => switchTenant(t.id)} className="gap-2 text-sm">
+                <Building2 className="h-4 w-4 shrink-0" />
+                <span className="flex-1 truncate">{t.name}</span>
+                {t.id === tenant?.id && <Check className="h-4 w-4 text-primary" />}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function SidebarUser({ collapsed }: { collapsed: boolean }) {
+  const { user, signOut } = useAuth();
+  const { toggleSidebar, isMobile } = useSidebar();
+  const name = user?.firstName ? `${user.firstName} ${user.lastName ?? ""}`.trim() : user?.email ?? "Account";
+  const initial = (user?.firstName?.[0] ?? user?.email?.[0] ?? "?").toUpperCase();
+
+  const iconButton = (label: string, Icon: Icon, onClick: () => void, extra?: string) => (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={onClick}
+          aria-label={label}
+          className={cn(
+            "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sidebar-foreground/55 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring",
+            extra,
+          )}
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side={collapsed ? "right" : "top"}>{label}</TooltipContent>
+    </Tooltip>
+  );
+
+  if (collapsed) {
+    return (
+      <div className="flex flex-col items-center gap-1">
+        {iconButton("Expand sidebar", PanelLeftOpen, toggleSidebar)}
+        {iconButton("Sign out", LogOut, () => void signOut())}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-1">
+      <Link
+        to="/settings"
+        className="flex min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-sidebar-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        title="Your settings"
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+          {initial}
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-[13px] font-medium text-sidebar-foreground">{name}</span>
+          {user?.email && name !== user.email && (
+            <span className="block truncate text-[11px] text-sidebar-foreground/55">{user.email}</span>
+          )}
+        </span>
+      </Link>
+      {iconButton("Sign out", LogOut, () => void signOut())}
+      {!isMobile && iconButton("Collapse sidebar", PanelLeftClose, toggleSidebar)}
+    </div>
+  );
+}
+
+export function AppSidebar() {
+  const { state, isMobile, setOpen } = useSidebar();
+  const collapsed = state === "collapsed" && !isMobile;
+  const { pathname } = useLocation();
   const { isSuperAdmin, canAny, loading: permsLoading } = usePermissions();
   // While permissions load, show everything rather than flashing a short menu.
   const visible = (item: NavEntry) =>
     item.superAdminOnly ? isSuperAdmin : !item.perms || permsLoading || isSuperAdmin || canAny(...item.perms);
-  const { signOut } = useAuth();
-  const { workspaces, activeWorkspace, setActiveWorkspace, loading: workspacesLoading } = useWorkspace();
-  const activeWorkspaceRow = workspaces.find((w) => w.id === activeWorkspace);
-  const activeWorkspaceName = activeWorkspaceRow?.name ?? "Workspace";
+
+  const counts = useSidebarCounts({
+    inbox: !permsLoading && (isSuperAdmin || canAny(P.replies.view)),
+    approvals: !permsLoading && (isSuperAdmin || canAny(P.approvals.view, P.content.approve)),
+  });
+
+  const [manageOpen, setManageOpen] = useState(() => {
+    try {
+      return localStorage.getItem(MANAGE_OPEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggleManage = () =>
+    setManageOpen((open) => {
+      try {
+        localStorage.setItem(MANAGE_OPEN_KEY, open ? "0" : "1");
+      } catch {
+        /* the toggle still works for this visit */
+      }
+      return !open;
+    });
+
+  // Tablets: keep to an icon rail so the page keeps its width (the top bar's menu has the full list).
+  useEffect(() => {
+    const mq = window.matchMedia?.("(min-width: 768px) and (max-width: 1023px)");
+    if (!mq) return;
+    const apply = () => mq.matches && setOpen(false);
+    apply();
+    mq.addEventListener?.("change", apply);
+    return () => mq.removeEventListener?.("change", apply);
+  }, [setOpen]);
 
   return (
     <Sidebar collapsible="icon" className="min-h-0" id="tour-dashboard-nav">
-      <SidebarHeader className="h-[65px] shrink-0 justify-center px-3 py-0 border-b border-sidebar-border">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className={cn(
-                "flex items-center gap-2 w-full rounded-md hover:bg-sidebar-accent px-1 py-1.5 transition-colors",
-                collapsed && "justify-center px-0",
-              )}
-              title={collapsed ? activeWorkspaceName : undefined}
-            >
-              <WorkspaceLogo
-                name={activeWorkspaceName}
-                logoUrl={activeWorkspaceRow?.logoUrl}
-                className="h-8 w-8 rounded-md shadow-sm"
-                fallback={<Rocket className="h-4 w-4" />}
-              />
-              {!collapsed && (
-                <>
-                  <div className="flex-1 text-left min-w-0">
-                    <p className="text-[10px] text-sidebar-foreground/50 uppercase tracking-widest truncate">{tenant?.name ?? "Mako"}</p>
-                    <p className="text-xs font-semibold truncate text-sidebar-foreground">
-                      {workspacesLoading ? "Loading…" : activeWorkspaceName}
-                    </p>
-                  </div>
-                  <ChevronsUpDown className="h-3.5 w-3.5 text-sidebar-foreground/40 shrink-0" />
-                </>
-              )}
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-              Workspaces
-            </DropdownMenuLabel>
-            {workspaces.length === 0 ? (
-              <DropdownMenuItem asChild className="text-xs">
-                <Link to="/workspaces">Create a workspace</Link>
-              </DropdownMenuItem>
-            ) : (
-              workspaces.map((ws) => (
-                <DropdownMenuItem
-                  key={ws.id}
-                  onClick={() => setActiveWorkspace(ws.id)}
-                  className={cn("text-xs", ws.id === activeWorkspace && "font-semibold")}
-                >
-                  <WorkspaceLogo
-                    name={ws.name}
-                    logoUrl={ws.logoUrl}
-                    className="mr-2 h-5 w-5 rounded text-[9px]"
-                    fallbackClassName="bg-muted text-muted-foreground"
-                  />
-                  <span className="truncate">{ws.name}</span>
-                </DropdownMenuItem>
-              ))
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="text-xs">
-              <Link to="/workspaces">Manage workspaces</Link>
-            </DropdownMenuItem>
-            
-            {tenants.length > 1 && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel className="text-xs font-normal text-muted-foreground">
-                  Organizations
-                </DropdownMenuLabel>
-                {tenants.map(t => (
-                  <DropdownMenuItem key={t.id} onClick={() => switchTenant(t.id)}
-                    className={cn("text-xs", t.id === tenant?.id && "font-semibold")}>
-                    <Building2 className="h-3.5 w-3.5 mr-2 shrink-0" />
-                    <span className="truncate">{t.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <SidebarHeader className="h-[65px] shrink-0 justify-center border-b border-sidebar-border px-2 py-0">
+        <WorkspaceSwitcher collapsed={collapsed} />
       </SidebarHeader>
 
-      <SidebarContent className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+      <SidebarContent className="min-h-0 flex-1 gap-0 overflow-y-auto overflow-x-hidden py-2">
         {NAV.map((group) => {
           const items = group.items.filter(visible);
           if (items.length === 0) return null;
+          const onGroupPage = items.some((i) => pathname === i.url || pathname.startsWith(`${i.url}/`));
+          const open = !group.collapsible || collapsed || manageOpen || onGroupPage;
+
           return (
-            <SidebarGroup key={group.label} id={group.id}>
-              <SidebarGroupLabel className="text-sidebar-foreground/40 uppercase text-[10px] tracking-wider">{group.label}</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {items.map((item) => (
-                    <NavItem key={item.url} id={item.id} title={item.title} url={item.url} icon={item.icon} exact={item.exact} />
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
+            <SidebarGroup key={group.label ?? "home"} id={group.id} className="px-2 py-1">
+              {group.label && !collapsed &&
+                (group.collapsible ? (
+                  <button
+                    type="button"
+                    onClick={toggleManage}
+                    aria-expanded={open}
+                    className="flex h-7 w-full items-center gap-1 rounded-md px-2 text-[11px] font-medium text-sidebar-foreground/45 transition-colors hover:text-sidebar-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+                  >
+                    {group.label}
+                    <ChevronRight className={cn("h-3 w-3 transition-transform", open && "rotate-90")} />
+                  </button>
+                ) : (
+                  <SidebarGroupLabel className="h-7 px-2 text-[11px] font-medium normal-case tracking-normal text-sidebar-foreground/45">
+                    {group.label}
+                  </SidebarGroupLabel>
+                ))}
+              {collapsed && group.label && <div className="mx-auto my-1 h-px w-5 bg-sidebar-border" aria-hidden />}
+              {open && (
+                <SidebarGroupContent>
+                  <SidebarMenu className="gap-0.5">
+                    {items.map((item, i) => (
+                      <NavItem
+                        key={item.url}
+                        item={item}
+                        count={item.badge ? counts[item.badge] : 0}
+                        tree={Boolean(group.label)}
+                        last={i === items.length - 1}
+                      />
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
             </SidebarGroup>
           );
         })}
       </SidebarContent>
 
-      <SidebarFooter className="shrink-0 border-t border-sidebar-border">
-        <SidebarMenu>
-          {visible({ title: "Billing", url: "/billing", icon: CreditCard, perms: [P.settings.billing] }) && (
-            <NavItem title="Billing" url="/billing" icon={CreditCard} />
-          )}
-          <NavItem title="Settings" url="/settings" icon={Settings} />
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Sign out" className="hover:bg-sidebar-accent" onClick={() => void signOut()}>
-              <LogOut className="mr-2 h-4 w-4 shrink-0" />
-              {!collapsed && <span className="flex-1">Sign out</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+      <SidebarFooter className="shrink-0 border-t border-sidebar-border p-2">
+        <SidebarUser collapsed={collapsed} />
       </SidebarFooter>
     </Sidebar>
   );

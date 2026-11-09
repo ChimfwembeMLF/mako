@@ -531,6 +531,13 @@ export class SocialAccountsController {
           : data.error_description || data.error;
       }
       const message = data?.error?.message || err.message;
+      // Google: the API is switched off in the Cloud project.
+      const disabled = message.match(
+        /^(.+? API) has not been used in project \S+ before or it is disabled/,
+      );
+      if (disabled) {
+        return `Turn on the ${disabled[1]} in your Google Cloud project (APIs & Services → Library), wait a few minutes, then connect again.`;
+      }
       // Business Profile APIs allow zero calls until Google approves access.
       if (
         /mybusiness\w*\.googleapis\.com/.test(message) ||

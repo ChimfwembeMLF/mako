@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Send, Loader2, X, Link2, AlertCircle, Sparkles, Check } from 'lucide-react';
+import { Send, Loader2, Link2, AlertCircle, Sparkles, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -30,11 +30,15 @@ import {
   instagramHasMedia,
   formatPlainPostText,
   formatContentForPlatform,
+  PLATFORMS,
 } from '@/lib/platforms';
 import { normalizeMediaAsset, type MediaAsset } from '@/lib/mediaUrl';
 import { toPublishMediaUrl } from '@/lib/publishContent';
-import { PlatformPickerCarousel } from './PlatformPickerCarousel';
-import { PlatformPreviewCarousel } from './PlatformPreviewCarousel';
+import { PlatformPreview } from './PlatformPreview';
+import { PlatformMediaEditor } from './PlatformMediaEditor';
+import RichTextEditor from '@/components/RichTextEditor';
+import { normalizeRichContent } from '@/lib/rich-text';
+import { cn } from '@/lib/utils';
 import { ContentItem } from './types';
 
 interface PublishPanelProps {
@@ -506,176 +510,327 @@ export function PublishPanel({ item, onCancel, onPublished }: PublishPanelProps)
     }
   };
 
+  // The channel being edited and previewed.
+  const [activePlatform, setActivePlatform] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedPlatforms.length) setActivePlatform(null);
+    else if (!activePlatform || !selectedPlatforms.includes(activePlatform)) setActivePlatform(selectedPlatforms[0]);
+  }, [selectedPlatforms, activePlatform]);
+
+  const accountsFor = (p: string) => connectedAccounts.filter((a) => a.connected && a.platform === p);
+  const postingAccount = (p: string) => {
+    const list = accountsFor(p);
+    const chosen = platformPayloads[p]?.accountId;
+    return list.find((a) => a.id === chosen) ?? list.find((a) => a.metadata?.is_default === true) ?? list[0];
+  };
+  const issuesFor = (p: string) => {
+    const out = validationIssues.filter((i) => i.platform === p).map((i) => i.message);
+    if (platformRequiresMedia(p) && !instagramHasMedia(platformPayloads[p], linkedCount)) {
+      out.push(`${platformOf(p).label} needs an image or video.`);
+    }
+    if (!connectedPlatforms.has(p)) out.push(`${platformOf(p).label} isn't connected for this workspace.`);
+    return out;
+  };
+  const allIssues = selectedPlatforms.flatMap((p) => issuesFor(p).map((m) => ({ platform: p, message: m })));
+  const blockingIssues = allIssues.filter((i) => !i.message.includes("isn't connected"));
+  const channelList = [...PLATFORMS].sort(
+    (x, y) => Number(connectedPlatforms.has(y.value)) - Number(connectedPlatforms.has(x.value)),
+  );
+  const [showAllChannels, setShowAllChannels] = useState(false);
+  // Connected and chosen channels first; the rest wait behind "not connected".
+  const visibleChannels = showAllChannels
+    ? channelList
+    : channelList.filter((p) => connectedPlatforms.has(p.value) || selectedPlatforms.includes(p.value));
+  const hiddenCount = channelList.length - visibleChannels.length;
+  const toggleChannel = (value: string) =>
+    setSelectedPlatforms((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+
+  const active = activePlatform;
+  const activeDef = active ? platformOf(active) : null;
+  const activePayload = active ? platformPayloads[active] ?? { content: item.content ?? '', title: item.title } : null;
+  const activeValidation = active && activePayload ? validatePlatformPayload(active, activePayload) : null;
+  const activeAccounts = active ? accountsFor(active) : [];
+  const ActiveIcon = activeDef?.icon;
+  const names = (list: string[]) => {
+    const labels = list.map((p) => platformOf(p).label);
+    return labels.length <= 1 ? labels.join('') : `${labels.slice(0, -1).join(', ')} and ${labels[labels.length - 1]}`;
+  };
+
   return (
-    <div className="flex flex-col h-full min-h-0">
-      <div className="sticky top-0 z-10 bg-background border-b px-4 sm:px-6 py-4 sm:py-5">
-        <div className="flex items-start justify-between gap-3 sm:gap-4">
-          <div className="pr-6 sm:pr-8 min-w-0">
-            <h2 className="font-display text-lg sm:text-xl font-semibold">Publish content</h2>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1 sm:mt-1.5 leading-relaxed">
-              Pick platforms and preview before publishing.
-            </p>
-          </div>
-          <Button type="button" variant="ghost" size="icon" onClick={onCancel} className="shrink-0 -mr-1">
-            <X className="h-4 w-4" />
-          </Button>
+    <div className="flex h-full min-h-0 flex-col">
+      {/* Header */}
+      <div className="flex shrink-0 items-start justify-between gap-3 border-b px-5 py-4 sm:px-6">
+        <div className="min-w-0 pr-6">
+          <p className="text-xs font-medium text-muted-foreground">Publish</p>
+          <h2 className="truncate font-display text-lg font-semibold sm:text-xl">{item.title || 'Untitled post'}</h2>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 sm:py-5 space-y-5 sm:space-y-6 min-w-0">
-        <div>
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground mb-3 block">
-            Select platforms
-          </Label>
-          <PlatformPickerCarousel values={selectedPlatforms} onChange={setSelectedPlatforms} />
-        </div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {/* Channels */}
+        <section className="border-b px-5 py-4 sm:px-6" aria-labelledby="publish-channels">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <h3 id="publish-channels" className="text-sm font-semibold">
+              Channels{' '}
+              <span className="font-normal text-muted-foreground">
+                {selectedPlatforms.length ? `· ${selectedPlatforms.length} selected` : '· pick at least one'}
+              </span>
+            </h3>
+            {selectedPlatforms.length > 0 && (
+              <Button type="button" variant="outline" size="sm" className="h-8 gap-1.5 rounded-full text-xs" onClick={() => void handleGenerateWithAi()} disabled={generating}>
+                {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 text-primary" />}
+                {generating ? 'Rewriting…' : 'Rewrite for each channel'}
+              </Button>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {visibleChannels.map((p) => {
+              const selected = selectedPlatforms.includes(p.value);
+              const connected = connectedPlatforms.has(p.value);
+              const Icon = p.icon;
+              return (
+                <button
+                  key={p.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => toggleChannel(p.value)}
+                  title={connected ? undefined : `${p.label} isn't connected for this workspace`}
+                  className={cn(
+                    'inline-flex h-9 items-center gap-2 rounded-full border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    selected
+                      ? 'border-primary bg-primary/10 font-medium text-foreground'
+                      : connected
+                        ? 'border-border bg-card text-foreground/80 hover:border-foreground/30'
+                        : 'border-dashed border-border bg-transparent text-muted-foreground hover:text-foreground',
+                  )}
+                >
+                  <Icon className="h-4 w-4" style={{ color: connected || selected ? p.color : undefined }} />
+                  {p.label}
+                  {selected ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    !connected && <span className="text-[10px]">Not connected</span>
+                  )}
+                </button>
+              );
+            })}
+            {(hiddenCount > 0 || showAllChannels) && (
+              <button
+                type="button"
+                onClick={() => setShowAllChannels((v) => !v)}
+                className="inline-flex h-9 items-center rounded-full px-3 text-sm text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                {showAllChannels ? 'Show fewer' : `+${hiddenCount} not connected`}
+              </button>
+            )}
+          </div>
+          {missingConnect.length > 0 && (
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              {names(missingConnect)} {missingConnect.length === 1 ? "isn't" : "aren't"} connected yet, so {missingConnect.length === 1 ? 'it' : 'they'} will be skipped.
+              <Link to="/publisher" className="inline-flex items-center gap-1 font-medium underline-offset-2 hover:underline">
+                <Link2 className="h-3 w-3" /> Connect
+              </Link>
+            </p>
+          )}
+        </section>
 
-        {(() => {
-          // Only platforms with more than one connected account need a choice.
-          const choices = selectedPlatforms
-            .map((p) => ({ platform: p, accounts: connectedAccounts.filter((a) => a.connected && a.platform === p) }))
-            .filter((c) => c.accounts.length > 1);
-          if (!choices.length) return null;
-          return (
-            <div className="space-y-3 rounded-lg border bg-muted/30 p-4">
-              <Label className="text-sm font-medium">Post from</Label>
-              {choices.map(({ platform, accounts }) => {
-                const fallback = accounts.find((a) => a.metadata?.is_default === true) ?? accounts[0];
+        {!active || !activeDef || !activePayload || !activeValidation ? (
+          <div className="flex flex-col items-center px-6 py-16 text-center">
+            <Send className="h-6 w-6 text-muted-foreground" />
+            <p className="mt-3 font-medium">Pick where to publish</p>
+            <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+              Choose one or more channels above. You can adjust the text and media for each before it goes out.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* One tab per chosen channel */}
+            <div className="sticky top-0 z-10 flex gap-1 overflow-x-auto border-b bg-background/95 px-3 backdrop-blur [scrollbar-width:none] sm:px-4 [&::-webkit-scrollbar]:hidden" role="tablist" aria-label="Edit each channel">
+              {selectedPlatforms.map((p) => {
+                const def = platformOf(p);
+                const Icon = def.icon;
+                const problems = issuesFor(p).filter((m) => !m.includes("isn't connected")).length;
+                const isActive = p === active;
                 return (
-                  <div key={platform} className="grid gap-1.5 sm:grid-cols-[120px_minmax(0,1fr)] sm:items-center">
-                    <span className="text-xs font-medium">{platformOf(platform).label}</span>
+                  <button
+                    key={p}
+                    type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    onClick={() => setActivePlatform(p)}
+                    className={cn(
+                      "relative flex shrink-0 items-center gap-1.5 px-3 pb-2.5 pt-3 text-sm transition-colors after:absolute after:inset-x-2 after:bottom-0 after:h-0.5 after:rounded-full after:content-['']",
+                      isActive ? 'font-medium text-foreground after:bg-primary' : 'text-muted-foreground hover:text-foreground after:bg-transparent',
+                    )}
+                  >
+                    <Icon className="h-4 w-4" style={{ color: def.color }} />
+                    {def.label}
+                    {problems > 0 ? (
+                      <span className="h-2 w-2 rounded-full bg-destructive" aria-label={`${problems} problem${problems === 1 ? '' : 's'}`} />
+                    ) : (
+                      <Check className="h-3.5 w-3.5 text-green-600" aria-label="Ready" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="grid gap-6 px-5 py-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+              {/* Edit */}
+              <div className="min-w-0 space-y-5">
+                {activeAccounts.length > 1 && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Post from</Label>
                     <Select
-                      value={platformPayloads[platform]?.accountId || 'default'}
-                      onValueChange={(v) => updatePayload(platform, { accountId: v === 'default' ? undefined : v })}
+                      value={platformPayloads[active]?.accountId || 'default'}
+                      onValueChange={(v) => updatePayload(active, { accountId: v === 'default' ? undefined : v })}
                     >
-                      <SelectTrigger className="h-9 bg-background text-sm"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-10"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="default">Default ({fallback?.accountName ?? 'first account'})</SelectItem>
-                        {accounts.map((a) => (
+                        <SelectItem value="default">
+                          Default ({(activeAccounts.find((a) => a.metadata?.is_default === true) ?? activeAccounts[0])?.accountName ?? 'first account'})
+                        </SelectItem>
+                        {activeAccounts.map((a) => (
                           <SelectItem key={a.id} value={a.id}>{a.accountName || a.username || a.id}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                );
-              })}
-            </div>
-          );
-        })()}
-
-        {selectedPlatforms.includes('whatsapp') && (
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-            <Label className="text-sm font-medium">WhatsApp broadcast template</Label>
-            <p className="text-xs text-muted-foreground">
-              Proactive messages outside the 24h window require a Meta-approved template.
-            </p>
-            <Select
-              value={platformPayloads.whatsapp?.whatsappTemplate ?? waDefaultTemplate}
-              onValueChange={(name) => {
-                const tpl = waTemplates.find((t) => t.name === name);
-                updatePayload('whatsapp', {
-                  whatsappTemplate: name,
-                  whatsappTemplateLanguage: tpl?.language ?? 'en',
-                  whatsappUseTemplate: true,
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select template" />
-              </SelectTrigger>
-              <SelectContent>
-                {(waTemplates.length ? waTemplates : [{ name: waDefaultTemplate, language: 'en' }]).map(
-                  (t) => (
-                    <SelectItem key={`${t.name}-${t.language}`} value={t.name}>
-                      {t.name} ({t.language})
-                    </SelectItem>
-                  ),
                 )}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
 
-        {selectedPlatforms.length > 0 && (
-          <Button
-            type="button"
-            variant="secondary"
-            className="w-full"
-            onClick={handleGenerateWithAi}
-            disabled={generating}
-          >
-            {generating ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Sparkles className="h-4 w-4 mr-2" />
-            )}
-            {generating ? 'Generating platform copy…' : 'Generate AI copy for selected platforms'}
-          </Button>
-        )}
+                {active === 'whatsapp' && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Message template</Label>
+                    <Select
+                      value={platformPayloads.whatsapp?.whatsappTemplate ?? waDefaultTemplate}
+                      onValueChange={(name) => {
+                        const tpl = waTemplates.find((t) => t.name === name);
+                        updatePayload('whatsapp', {
+                          whatsappTemplate: name,
+                          whatsappTemplateLanguage: tpl?.language ?? 'en',
+                          whatsappUseTemplate: true,
+                        });
+                      }}
+                    >
+                      <SelectTrigger className="h-10"><SelectValue placeholder="Select template" /></SelectTrigger>
+                      <SelectContent>
+                        {(waTemplates.length ? waTemplates : [{ name: waDefaultTemplate, language: 'en' }]).map((t) => (
+                          <SelectItem key={`${t.name}-${t.language}`} value={t.name}>
+                            {t.name} ({t.language})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      WhatsApp only lets businesses message people first with a template Meta has approved.
+                    </p>
+                  </div>
+                )}
 
-        <PlatformPreviewCarousel
-          platforms={selectedPlatforms}
-          platformPayloads={platformPayloads}
-          title={item.title}
-          baseContent={item.content}
-          libraryAssets={libraryAssets}
-          onEditPayload={updatePayload}
-          onApplyMediaToAll={applyMediaToAll}
-          onApplyAssetsToAll={applyAssetsToAll}
-          onLibraryUpdate={loadLibrary}
-          editable
-        />
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <Label className="text-sm">Text for {activeDef.label}</Label>
+                    <span className={cn('text-xs tabular-nums', activeValidation.overCharLimit ? 'font-medium text-destructive' : 'text-muted-foreground')}>
+                      {activeValidation.charCount.toLocaleString()} / {activeDef.maxChars.toLocaleString()}
+                    </span>
+                  </div>
+                  <RichTextEditor
+                    key={active}
+                    value={normalizeRichContent(activePayload.content)}
+                    onChange={(html) => updatePayload(active, { content: html })}
+                    placeholder={`What to post on ${activeDef.label}…`}
+                    minHeight="160px"
+                  />
+                  <div className="h-1 overflow-hidden rounded-full bg-muted" aria-hidden>
+                    <div
+                      className={cn('h-full rounded-full transition-[width]', activeValidation.overCharLimit ? 'bg-destructive' : 'bg-primary')}
+                      style={{ width: `${Math.min(100, (activeValidation.charCount / Math.max(1, activeDef.maxChars)) * 100)}%` }}
+                    />
+                  </div>
+                </div>
 
-        {missingConnect.length > 0 && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
-            <AlertCircle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-            <div>
-              <p className="text-amber-800 dark:text-amber-200">
-                Not connected for this workspace:{' '}
-                {missingConnect.map((p) => platformOf(p).label).join(', ')}
-              </p>
-              <Link
-                to="/publisher"
-                className="inline-flex items-center gap-1 text-xs text-primary mt-1 hover:underline"
-              >
-                <Link2 className="h-3 w-3" /> Connect accounts in Connections
-              </Link>
+                <PlatformMediaEditor
+                  platform={active}
+                  payload={activePayload}
+                  libraryAssets={libraryAssets}
+                  onChange={(media) => updatePayload(active, { media })}
+                  onApplyToAll={selectedPlatforms.length > 1 ? () => applyMediaToAll(active) : undefined}
+                  onApplyAssetsToAll={applyAssetsToAll}
+                  onLibraryUpdate={loadLibrary}
+                />
+              </div>
+
+              {/* Preview */}
+              <aside className="min-w-0 lg:sticky lg:top-16 lg:self-start" aria-label={`${activeDef.label} preview`}>
+                <p className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  {ActiveIcon && <ActiveIcon className="h-3.5 w-3.5" style={{ color: activeDef.color }} />}
+                  How it will look on {activeDef.label}
+                </p>
+                <PlatformPreview
+                  platform={active}
+                  payload={activePayload}
+                  authorName={postingAccount(active)?.accountName || tenant?.name || undefined}
+                  className="w-full max-w-none"
+                />
+                {issuesFor(active).length > 0 && (
+                  <ul className="mt-3 space-y-1.5">
+                    {issuesFor(active).map((m) => (
+                      <li key={m} className="flex items-start gap-1.5 text-xs text-destructive">
+                        <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {m}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </aside>
             </div>
-          </div>
+          </>
         )}
       </div>
 
-      <div className="sticky bottom-0 border-t bg-background px-4 sm:px-6 py-3 sm:py-4 flex flex-col-reverse sm:flex-row gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} className="w-full sm:w-auto">
-          Cancel
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={handleSaveDraftOnly}
-          disabled={savingDraft || publishing || generating || !selectedPlatforms.length}
-          className="w-full sm:w-auto text-xs"
-        >
-          {savingDraft ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-1" />
+      {/* Footer */}
+      <div className="flex shrink-0 flex-col gap-3 border-t bg-background px-5 py-3 sm:flex-row sm:items-center sm:px-6">
+        <p className={cn('flex min-w-0 flex-1 items-center gap-1.5 text-xs', blockingIssues.length ? 'text-destructive' : 'text-muted-foreground')}>
+          {!selectedPlatforms.length ? (
+            'No channels chosen'
+          ) : blockingIssues.length ? (
+            <>
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                Fix {blockingIssues.length} problem{blockingIssues.length === 1 ? '' : 's'}: {blockingIssues[0].message}
+              </span>
+            </>
           ) : (
-            <Check className="h-4 w-4 mr-1 text-green-600" />
+            <>
+              <Check className="h-3.5 w-3.5 shrink-0 text-green-600" />
+              <span className="truncate">Ready to publish to {names(selectedPlatforms.filter((p) => connectedPlatforms.has(p)))}</span>
+            </>
           )}
-          Save draft
-        </Button>
-        <Button
-          type="button"
-          className="w-full sm:flex-1"
-          onClick={handlePublish}
-          disabled={publishing || generating || !selectedPlatforms.length || validationIssues.length > 0}
-        >
-          {publishing ? (
-            <Loader2 className="h-4 w-4 animate-spin mr-2" />
-          ) : (
-            <Send className="h-4 w-4 mr-2" />
-          )}
-          Publish to {selectedPlatforms.length || 0} platform{selectedPlatforms.length !== 1 ? 's' : ''}
-        </Button>
+        </p>
+        <div className="flex gap-2">
+          <Button type="button" variant="ghost" onClick={onCancel} className="hidden sm:inline-flex">
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void handleSaveDraftOnly()}
+            disabled={savingDraft || publishing || generating || !selectedPlatforms.length}
+            className="flex-1 gap-1.5 rounded-full sm:flex-none"
+          >
+            {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Save draft
+          </Button>
+          <Button
+            type="button"
+            className="flex-1 gap-1.5 rounded-full sm:flex-none sm:px-6"
+            onClick={() => void handlePublish()}
+            disabled={publishing || generating || !selectedPlatforms.length || validationIssues.length > 0}
+          >
+            {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {publishing ? 'Publishing…' : `Publish${selectedPlatforms.length ? ` to ${selectedPlatforms.length}` : ''}`}
+          </Button>
+        </div>
       </div>
     </div>
   );

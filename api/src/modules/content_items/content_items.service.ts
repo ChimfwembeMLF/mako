@@ -8,6 +8,9 @@ import { ContentItemsUpdateDto } from './dto/update-content_items.dto';
 import {
   ListContentItemsQueryDto,
   PaginatedContentItems,
+  CONTENT_STATUS_GROUPS,
+  STATUSES_BY_GROUP,
+  type ContentStatusGroup,
 } from './dto/list-content-items.dto';
 import { ContentPublicationsService } from '../content_publications/content-publications.service';
 import { ContentPublications } from '../content_publications/entities/content_publications.entity';
@@ -112,43 +115,84 @@ export class ContentItemsService {
     limit?: number;
     search?: string;
     platform?: string;
+    status?: ContentStatusGroup;
   }): Promise<PaginatedContentItems> {
     const page = Math.max(1, params.page ?? 1);
     const limit = Math.min(50, Math.max(1, params.limit ?? 6));
     const skip = (page - 1) * limit;
 
-    const qb = this.repo.createQueryBuilder('item');
+    // Everything except the status tab, so the tab counts share the same filters.
+    const base = () => {
+      const qb = this.repo.createQueryBuilder('item');
+      if (params.tenantId) {
+        qb.andWhere('item.tenantId = :tenantId', { tenantId: params.tenantId });
+      }
+      if (params.userId) {
+        qb.andWhere('item.userId = :userId', { userId: params.userId });
+      }
+      if (params.workspaceId) {
+        applyWorkspaceScope(qb, 'item', params.workspaceId);
+      }
+      if (params.search?.trim()) {
+        qb.andWhere(
+          '(item.title ILIKE :search OR item.content ILIKE :search)',
+          { search: `%${params.search.trim()}%` },
+        );
+      }
+      if (params.platform?.trim()) {
+        qb.andWhere(':platform = ANY(item.platforms)', {
+          platform: params.platform.trim(),
+        });
+      }
+      return qb;
+    };
 
-    if (params.tenantId) {
-      qb.andWhere('item.tenantId = :tenantId', { tenantId: params.tenantId });
-    }
-    if (params.userId) {
-      qb.andWhere('item.userId = :userId', { userId: params.userId });
-    }
-    if (params.workspaceId) {
-      applyWorkspaceScope(qb, 'item', params.workspaceId);
-    }
-    if (params.search?.trim()) {
-      qb.andWhere('item.title ILIKE :search', {
-        search: `%${params.search.trim()}%`,
+    const qb = base();
+    if (params.status) {
+      qb.andWhere('item.status IN (:...statuses)', {
+        statuses: STATUSES_BY_GROUP[params.status],
       });
     }
-    if (params.platform?.trim()) {
-      qb.andWhere(':platform = ANY(item.platforms)', {
-        platform: params.platform.trim(),
-      });
-    }
-
     qb.orderBy('item.created_at', 'DESC').skip(skip).take(limit);
 
-    const [items, total] = await qb.getManyAndCount();
+    const [[items, total], countRows] = await Promise.all([
+      qb.getManyAndCount(),
+      base()
+        .select('item.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('item.status')
+        .getRawMany<{ status: string | null; count: string }>(),
+    ]);
+
+    const statusCounts = {
+      all: 0,
+      drafts: 0,
+      scheduled: 0,
+      published: 0,
+      failed: 0,
+    };
+    for (const row of countRows) {
+      const n = Number(row.count) || 0;
+      statusCounts.all += n;
+      const group = CONTENT_STATUS_GROUPS.find((g) =>
+        STATUSES_BY_GROUP[g].includes(row.status ?? 'draft'),
+      );
+      if (group) statusCounts[group] += n;
+    }
+
+    const withMedia = items.length
+      ? await this.attachPreviewMedia(
+          items.map((item) => this.normalizePlatformPayloads(item)),
+        )
+      : [];
 
     return {
-      items,
+      items: withMedia,
       total,
       page,
       limit,
       totalPages: Math.max(1, Math.ceil(total / limit)),
+      statusCounts,
     };
   }
 

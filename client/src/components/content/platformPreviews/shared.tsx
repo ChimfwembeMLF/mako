@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { resolveMediaUrl } from '@/lib/mediaUrl';
 import type { PlatformMediaAttachment } from '@/lib/platforms';
@@ -253,6 +253,72 @@ export function YouTubeThumbnail({
           <p className="text-xs text-[#aaaaaa]">1.2K views · 2 hours ago</p>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Clips long post text to a few lines with a "see more" button, the way the networks
+ * do in a feed. The button only appears when text is actually hidden.
+ */
+export function ReadMore({
+  children,
+  lines = 5,
+  moreLabel = 'See more',
+  lessLabel = 'See less',
+  className,
+  buttonClassName,
+}: {
+  children: React.ReactNode;
+  lines?: number;
+  moreLabel?: string;
+  lessLabel?: string;
+  className?: string;
+  buttonClassName?: string;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const [clipped, setClipped] = useState(false);
+  const [lineHeight, setLineHeight] = useState<number | null>(null);
+
+  // Measure while collapsed: the real line height of the text inside (it can differ from
+  // the wrapper's), and whether any text is hidden below the cut.
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || open) return;
+    const check = () => {
+      const textEl = (el.querySelector('p, li, span') as HTMLElement | null) ?? el;
+      const cs = getComputedStyle(textEl);
+      const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.4;
+      if (lh && Math.abs(lh - (lineHeight ?? 0)) > 0.5) setLineHeight(lh);
+      setClipped(el.scrollHeight > el.clientHeight + 2);
+    };
+    check();
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => ro.disconnect();
+  });
+
+  return (
+    <div className={className}>
+      <div
+        ref={ref}
+        className={cn('relative', !open && 'overflow-hidden')}
+        // Cut on a line boundary of the text itself, so no line shows half-way.
+        style={open ? undefined : { maxHeight: lineHeight ? `${Math.round(lines * lineHeight)}px` : `calc(${lines} * 1lh)` }}
+      >
+        {children}
+      </div>
+      {(clipped || open) && (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className={cn('mt-0.5 font-medium text-muted-foreground hover:underline focus-visible:outline-none focus-visible:underline', buttonClassName)}
+        >
+          {open ? lessLabel : moreLabel}
+        </button>
+      )}
     </div>
   );
 }

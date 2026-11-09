@@ -15,8 +15,8 @@ export const contentEngineTourConfig: TourConfig = {
     {
       element: '#tour-ce-controls',
       popover: {
-        title: 'Generation Controls',
-        description: 'Select your target networks, platforms, and provide any custom prompts or images before generating.',
+        title: 'Start a post',
+        description: 'Write a post yourself, or give Mako a theme and it drafts one in your Brand voice.',
         side: 'bottom',
         align: 'start',
       },
@@ -24,8 +24,8 @@ export const contentEngineTourConfig: TourConfig = {
     {
       element: '#tour-ce-results',
       popover: {
-        title: 'Generated Content',
-        description: 'Your AI-generated content will appear here. You can edit, approve, or schedule it directly.',
+        title: 'All your posts',
+        description: 'Every post lives here. Filter by status, then publish, edit or repurpose it from its row.',
         side: 'top',
         align: 'center',
       },

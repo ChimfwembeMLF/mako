@@ -8,6 +8,7 @@ import {
   Brain, Pen, CalendarClock, BarChart3, CheckCircle2, ArrowRight,
   Menu, X, MessageSquareReply, Shield, Link2,
   TrendingUp, Users, Globe, Check, Smartphone,
+  Instagram, Facebook, Linkedin, Twitter, MessageCircle, Send,
 } from 'lucide-react';
 import {
   ScreenshotFrame,
@@ -152,10 +153,10 @@ const SHOWCASE: Array<{
       badge: 'Inbox',
       title: 'Reply from one queue',
       desc: 'Comments from your posts land in a single inbox. Review, edit, and send replies without switching apps.',
-      img: '/screenshots/mako-replies-tablet.webp',
+      img: '/screenshots/mako-inbox-phone.webp',
       mock: <MockReplies />,
       icon: MessageSquareReply,
-      device: 'tablet',
+      device: 'phone',
     },
   ];
 
@@ -215,8 +216,8 @@ function HeroBackdrop() {
           <img
             src="/screenshots/mako-dashboard-desktop.webp"
             alt=""
-            width={2900}
-            height={1666}
+            width={2880}
+            height={1800}
             loading="eager"
             {...{ fetchpriority: 'high' }}
             onLoad={() => setLoaded(true)}
@@ -231,42 +232,177 @@ function HeroBackdrop() {
         </div>
       </div>
       {/* Keeps the copy readable: a solid wash on phones, a short left-to-right fade on desktop. */}
-      <div className="absolute inset-0 bg-card/85 lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-30% lg:via-card/85 lg:via-42% lg:to-card/0 lg:to-62%" />
+      <div className="absolute inset-0 bg-card/[0.93] lg:bg-transparent lg:bg-gradient-to-r lg:from-card lg:from-30% lg:via-card/85 lg:via-42% lg:to-card/0 lg:to-62%" />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-card to-transparent" />
     </div>
   );
 }
 
+type HeroChannel = {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  /** Brand colour, used on the icon tile and underline only (never as text colour). */
+  color: string;
+};
+
+/** Channels the hero headline cycles through. */
+const HERO_CHANNELS: HeroChannel[] = [
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    icon: Instagram,
+    color: '#C13584',
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    icon: Facebook,
+    color: '#1877F2',
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    icon: Linkedin,
+    color: '#0A66C2',
+  },
+  {
+    id: 'x',
+    name: 'X',
+    icon: Twitter,
+    color: '#111111',
+  },
+  {
+    id: 'whatsapp',
+    name: 'WhatsApp',
+    icon: MessageCircle,
+    color: '#128C7E',
+  },
+  {
+    id: 'telegram',
+    name: 'Telegram',
+    icon: Send,
+    color: '#0088CC',
+  },
+];
+
+const HERO_CYCLE_MS = 2800;
+
+function usePrefersReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!mq) return;
+    setReduced(mq.matches);
+    const on = (e: MediaQueryListEvent) => setReduced(e.matches);
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
+  }, []);
+  return reduced;
+}
+
 function Hero() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [hovering, setHovering] = useState(false);
+  const reducedMotion = usePrefersReducedMotion();
+  const channel = HERO_CHANNELS[active];
+  const Icon = channel.icon;
+
+  useEffect(() => {
+    if (paused || hovering || reducedMotion) return;
+    const t = window.setInterval(() => {
+      if (document.visibilityState === 'visible') setActive((i) => (i + 1) % HERO_CHANNELS.length);
+    }, HERO_CYCLE_MS);
+    return () => window.clearInterval(t);
+  }, [paused, hovering, reducedMotion]);
+
+  const pick = (i: number) => {
+    setActive(i);
+    setPaused(true);
+  };
+
   return (
     <section className="relative isolate min-h-[92svh] flex items-center pt-24 pb-section overflow-hidden bg-card">
       <HeroBackdrop />
       <div className="relative max-w-[1200px] mx-auto px-4 sm:px-6 w-full">
-        <div className="max-w-xl space-y-7 text-center mx-auto lg:mx-0 lg:text-left">
+        <div className="max-w-[520px] text-left">
           <Reveal>
-            <p className="text-sm font-bold uppercase tracking-[0.2em] text-primary mb-2">
-              Mako
+            <p className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-card/80 px-3 py-1 text-xs font-medium text-body backdrop-blur">
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+              Social, inbox and leads in one place
             </p>
           </Reveal>
 
           <Reveal delay={80}>
-            <h1 className="font-display text-display-xl bg-clip-text text-transparent bg-gradient-to-br from-foreground to-foreground/70">
-              Your brand voice.
-              <br />
-              Every channel.
-              <br />
-              One workspace.
+            <h1 className="mt-5 font-display text-display-xl leading-[0.95]">
+              <span className="sr-only">Your brand voice. Every channel. One workspace.</span>
+              <span aria-hidden className="block text-foreground/55">Your brand voice.</span>
+              <span aria-hidden className="block text-foreground/55">
+                On{' '}
+                <span
+                  key={channel.id}
+                  className="relative inline-flex items-center gap-[0.18em] text-foreground animate-in fade-in slide-in-from-bottom-3 duration-300 motion-reduce:animate-none"
+                >
+                  <span
+                    className="inline-flex h-[0.72em] w-[0.72em] items-center justify-center rounded-[0.18em] text-white"
+                    style={{ backgroundColor: channel.color }}
+                  >
+                    <Icon className="h-[0.42em] w-[0.42em]" />
+                  </span>
+                  {channel.name}.
+                  <span
+                    className="absolute -bottom-[0.06em] left-[0.9em] right-[0.25em] h-[0.06em] rounded-full"
+                    style={{ backgroundColor: channel.color }}
+                  />
+                </span>
+              </span>
+              <span aria-hidden className="block text-foreground">One workspace.</span>
             </h1>
           </Reveal>
 
           <Reveal delay={140}>
-            <p className="text-lg text-body max-w-lg mx-auto lg:mx-0 leading-relaxed">
-              Plan content, publish to social, reply to comments, and follow up on leads — without switching between a dozen tabs.
+            <p className="mt-6 max-w-[40ch] text-base sm:text-lg text-body leading-relaxed text-balance">
+              Plan, publish, reply and follow up on leads, without switching between a dozen tabs.
             </p>
           </Reveal>
 
-          <Reveal delay={280}>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start pt-1">
+          <Reveal delay={220}>
+            <div
+              className="mt-6"
+              onMouseEnter={() => setHovering(true)}
+              onMouseLeave={() => setHovering(false)}
+            >
+              <p className="mb-2 text-xs font-medium text-muted-foreground">
+                Pick a channel
+              </p>
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Preview the post on a channel">
+                {HERO_CHANNELS.map((c, i) => {
+                  const ChipIcon = c.icon;
+                  const selected = i === active;
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={selected}
+                      onClick={() => pick(i)}
+                      onFocus={() => setHovering(true)}
+                      onBlur={() => setHovering(false)}
+                      className={cn(
+                        'inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm transition-colors',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                        selected
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border bg-card/80 text-body hover:border-foreground/40 hover:text-foreground',
+                      )}
+                    >
+                      <ChipIcon className="h-3.5 w-3.5" />
+                      {c.name}
+                    </button>
+                  );
+                })}
+                <Reveal delay={300}>
+            <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Button
                 size="lg"
                 asChild
@@ -281,24 +417,19 @@ function Hero() {
                 <a href="#product">See how it works</a>
               </Button>
             </div>
-          </Reveal>
-
-          <Reveal delay={360}>
-            <ul className="flex flex-col sm:flex-row flex-wrap gap-x-6 gap-y-2 justify-center lg:justify-start text-sm text-body">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
-                No credit card required
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
-                Mobile money billing
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-positive-deep shrink-0" />
-                Built in Zambia
-              </li>
+            <ul className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-muted-foreground">
+              {['No credit card required', 'Mobile money billing', 'Built in Zambia'].map((t) => (
+                <li key={t} className="flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-positive-deep shrink-0" />
+                  {t}
+                </li>
+              ))}
             </ul>
           </Reveal>
+        </div>
+            </div>
+          </Reveal>
+
         </div>
 
       </div>
@@ -525,7 +656,7 @@ function RoadmapCarousel() {
                 alt={s.title}
                 mock={s.mock}
                 device={s.device}
-                className={s.device === 'tablet' ? 'max-w-[190px] sm:max-w-[220px]' : undefined}
+                className={s.device === 'phone' ? 'max-w-[150px] sm:max-w-[180px]' : undefined}
               />
             </div>
           </li>
@@ -550,7 +681,7 @@ function RoadmapCarousel() {
 const FEATURES = [
   { icon: Shield, title: 'Roles & approvals', desc: 'Control who can publish with role-based access and sign-off workflows.' },
   { icon: TrendingUp, title: 'Leads', desc: 'Capture leads from forms and WhatsApp, then track follow-ups in one place.' },
-  { icon: Link2, title: 'Connections', desc: 'Link Facebook, Instagram, LinkedIn, and WhatsApp with secure OAuth.' },
+  { icon: Link2, title: 'Connections', desc: 'Link Facebook, Instagram, LinkedIn and WhatsApp in a few clicks.' },
   { icon: Users, title: 'Workspaces & teams', desc: 'Separate brands or clients with workspaces, seats, and permissions.' },
 ];
 
@@ -563,18 +694,21 @@ function FeaturesGrid() {
             label="Platform"
             title="Built for teams, not solo hacks"
             desc="Permissions, workspaces, and audit trails — without the enterprise software price tag."
-            className="mb-14"
+            className="mb-8 sm:mb-14"
           />
         </Reveal>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {/* Phone: one grouped list with the icon beside the text. Larger screens: separate cards. */}
+        <div className="divide-y divide-border/70 rounded-2xl border border-border/80 bg-card sm:grid sm:grid-cols-2 sm:gap-5 sm:divide-y-0 sm:rounded-none sm:border-0 sm:bg-transparent lg:grid-cols-4">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={i * 70}>
-              <div className="group rounded-xl border border-border/80 bg-card p-6 h-full transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:shadow-card hover:border-primary/30 motion-reduce:hover:translate-y-0">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 shadow-sm mb-4">
+              <div className="group flex h-full gap-4 p-4 sm:block sm:rounded-xl sm:border sm:border-border/80 sm:bg-card sm:p-6 sm:transition-[transform,box-shadow,border-color] sm:duration-200 sm:hover:-translate-y-0.5 sm:hover:shadow-card sm:hover:border-primary/30 motion-reduce:hover:translate-y-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/10 shadow-sm sm:mb-4">
                   <f.icon className="h-5 w-5 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-2 text-foreground">{f.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-foreground sm:mb-2">{f.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground leading-relaxed sm:mt-0">{f.desc}</p>
+                </div>
               </div>
             </Reveal>
           ))}

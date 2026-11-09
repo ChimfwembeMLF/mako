@@ -3,6 +3,7 @@ import { driver, DriveStep, Config } from 'driver.js';
 import 'driver.js/dist/driver.css';
 import { usersApi, authApi } from '@/lib/api';
 import { toast } from '@/hooks/use-toast';
+import { onboardingGate } from '@/lib/onboarding-gate';
 
 export interface TourCompletionState {
   completed: boolean;
@@ -31,6 +32,9 @@ export class TourService {
     if (this.completedToursLocalCache.has(tourId)) {
       return;
     }
+
+    // Don't start on top of the first-run welcome; the tour starts on a later visit.
+    if ((await onboardingGate.settled()) === 'open') return;
 
     try {
       // Add a timestamp cache buster to ensure we don't get a browser-cached response

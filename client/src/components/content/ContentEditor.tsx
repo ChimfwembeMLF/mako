@@ -35,9 +35,11 @@ interface ContentEditorProps {
   workspaceId: string | null;
   onReset?: () => void;
   onSaved: () => void;
+  /** Inside a panel that already has its own frame and title: drop the card border and header. */
+  bare?: boolean;
 }
 
-export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEditorProps) {
+export function ContentEditor({ item, workspaceId, onReset, onSaved, bare = false }: ContentEditorProps) {
   const { user } = useAuth();
   const { tenant } = useTenant();
   const { toast } = useToast();
@@ -241,8 +243,8 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
 
   return (
     <>
-      <div className="rounded-xl border bg-card shadow-sm overflow-hidden min-w-0">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-4 border-b bg-muted/30">
+      <div className={bare ? "flex min-h-full min-w-0 flex-col" : "rounded-xl border bg-card shadow-sm overflow-hidden min-w-0"}>
+        <div className={bare ? "hidden" : "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-4 border-b bg-muted/30"}>
           <div className="min-w-0">
             <h2 className="font-display text-base font-semibold">
               {item?.id ? 'Edit draft' : 'Compose'}
@@ -259,8 +261,8 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
           )}
         </div>
 
-        <div className="p-4 sm:p-5 space-y-5">
-          <div className="grid gap-4 sm:grid-cols-2">
+        <div className={bare ? "flex-1 space-y-5 p-5 sm:p-6" : "p-4 sm:p-5 space-y-5"}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {templates.length > 0 && (
               <div className="space-y-2 sm:col-span-2">
                 <Label>Content template</Label>
@@ -393,7 +395,9 @@ export function ContentEditor({ item, workspaceId, onReset, onSaved }: ContentEd
           </Button>
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 px-4 sm:px-5 py-4 border-t bg-muted/20">
+        <div className={bare
+          ? "sticky bottom-0 flex flex-col gap-2 border-t bg-card/95 px-5 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-end sm:px-6"
+          : "flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2 px-4 sm:px-5 py-4 border-t bg-muted/20"}>
           <Button
             type="button"
             className=" w-full sm:w-auto sm:min-w-[140px]"
