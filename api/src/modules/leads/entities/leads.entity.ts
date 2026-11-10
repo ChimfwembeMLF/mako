@@ -43,6 +43,15 @@ export class Leads {
   unsubscribed?: boolean;
   @Column({ type: 'text', nullable: true })
   unsubscribeToken?: string;
+  /** Who they are on the channel they came from, e.g. "instagram:1784…". One per person. */
+  @Index('IDX_leads_external_ref')
+  @Column({ type: 'text', nullable: true })
+  externalRef?: string;
+  @Column({ type: 'text', nullable: true })
+  avatarUrl?: string;
+  /** When they last wrote (a DM, comment or email). */
+  @Column({ type: 'timestamptz', nullable: true })
+  lastMessageAt?: Date;
   @DeleteDateColumn({ type: 'timestamptz' })
   deleted_at?: Date;
   @CreateDateColumn({ type: 'timestamptz' })

@@ -6,6 +6,7 @@ import {
   SocialMessages,
   InboxAttachment,
 } from './entities/social_messages.entity';
+import { LeadCaptureService } from '../leads/lead-capture.service';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 
 type ParsedInbound = {
@@ -29,6 +30,7 @@ export class XAccountActivityInboundService {
     @InjectRepository(SocialMessages)
     private readonly messagesRepo: Repository<SocialMessages>,
     private readonly autoReply: SocialDmAutoReplyService,
+    private readonly leadCapture: LeadCaptureService,
   ) {}
 
   async handleWebhook(body: unknown): Promise<{ received: boolean }> {
@@ -339,6 +341,17 @@ export class XAccountActivityInboundService {
           (parsed.direction === 'inbound' ? 'received' : 'sent'),
       }),
     );
+
+    if (parsed.direction === 'inbound') {
+      await this.leadCapture.capture({
+        tenantId: account.tenantId,
+        workspaceId: account.workspaceId,
+        source: parsed.threadId.startsWith('post:') ? 'x_reply' : 'x_dm',
+        externalRef: `x:${parsed.participantId}`,
+        name: parsed.participantName,
+        message: parsed.body,
+      });
+    }
 
     if (
       parsed.direction === 'inbound' &&

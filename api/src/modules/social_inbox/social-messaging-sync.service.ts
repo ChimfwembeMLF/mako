@@ -8,6 +8,7 @@ import {
   InboxAttachment,
   InboxReaction,
 } from './entities/social_messages.entity';
+import { LeadCaptureService, dmSource } from '../leads/lead-capture.service';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 import { scopeWhere } from '../../common/workspace-scope.util';
 import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
@@ -22,6 +23,7 @@ export class SocialMessagingSyncService {
     @InjectRepository(SocialMessages)
     private readonly messagesRepo: Repository<SocialMessages>,
     private readonly autoReply: SocialDmAutoReplyService,
+    private readonly leadCapture: LeadCaptureService,
   ) {}
 
   async syncForTenant(
@@ -102,6 +104,17 @@ export class SocialMessagingSyncService {
         }),
       );
       synced++;
+
+      if (!isOutbound) {
+        await this.leadCapture.capture({
+          tenantId: account.tenantId,
+          workspaceId: account.workspaceId,
+          source: 'x_dm',
+          externalRef: `x:${senderId}`,
+          message: body,
+          at: evt.created_at ? new Date(String(evt.created_at)) : undefined,
+        });
+      }
 
       if (!isOutbound && body.trim()) {
         await this.autoReply.tryReply({
@@ -214,6 +227,19 @@ export class SocialMessagingSyncService {
           }),
         );
         synced++;
+
+        const source = dmSource(account.platform);
+        if (!isOutbound && source) {
+          await this.leadCapture.capture({
+            tenantId: account.tenantId,
+            workspaceId: account.workspaceId,
+            source,
+            externalRef: `${account.platform}:${saved.participantId}`,
+            name: saved.participantName,
+            message: body,
+            at: saved.created_at,
+          });
+        }
 
         if (!isOutbound && body.trim()) {
           await this.autoReply.tryReply({

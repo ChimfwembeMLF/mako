@@ -17,6 +17,7 @@ import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 import { SocialDmReplyService } from './social-dm-reply.service';
 import { XAccountActivityInboundService } from './x-account-activity-inbound.service';
 import { SocialInboxController } from './social-inbox.controller';
+import { LeadCaptureModule } from '../leads/lead-capture.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { SocialInboxController } from './social-inbox.controller';
     AiModule,
     WhatsappModule,
     XWebhookModule,
+    LeadCaptureModule,
   ],
   controllers: [SocialInboxController],
   providers: [

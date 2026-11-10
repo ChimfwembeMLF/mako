@@ -1,42 +1,22 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
-import {
-  Zap, Settings, CreditCard,
-  Menu, LogOut, ChevronRight, Search, Sparkles, Layers,
-  MoreHorizontal, Check, Sun, Moon, Monitor,
-} from "lucide-react";
+import { Settings, CreditCard, Menu, LogOut, Search, Sparkles, Sun, Moon, Monitor } from "lucide-react";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ColorModeToggle } from "@/components/ColorModeToggle";
 import { GlobalSearch, GlobalSearchTrigger, useGlobalSearchShortcut } from "@/components/GlobalSearch";
 import { AppBreadcrumbs } from "@/components/AppBreadcrumbs";
 import { useTheme, type ColorMode } from "@/hooks/useTheme";
 import { useAuth } from "@/hooks/useAuth";
-import { useWorkspace } from "@/hooks/useWorkspace";
-import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger,
-} from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { NavLink } from "@/components/NavLink";
 import Logo from "./Logo";
-import {
-  NAV_GROUPS, SOCIAL_NAV_GROUPS, MORE_ITEMS,
-  filterNavGroups, filterNavItems, type NavGroup, type NavItem,
-} from "@/lib/nav-config";
+import { MobileSidebar } from "@/components/AppSidebar";
 import { resolveProductShell } from "@/lib/social-shell";
-
-function isActivePath(pathname: string, url: string, exact = false) {
-  if (exact) return pathname === url;
-  return pathname === url || pathname.startsWith(`${url}/`);
-}
-
-
 
 const COLOR_MODES: { id: ColorMode; label: string; icon: typeof Sun }[] = [
   { id: "light", label: "Light", icon: Sun },
@@ -114,156 +94,14 @@ function UserMenu() {
   );
 }
 
-function MobileNav() {
-  const [open, setOpen] = useState(false);
-  const { pathname } = useLocation();
-  const { canAny, isSuperAdmin, loading } = usePermissions();
-  const { workspaces, activeWorkspace, setActiveWorkspace } = useWorkspace();
-  const shell = resolveProductShell(pathname);
-  const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
-  const groups = filterNavGroups(
-    shell === "social" ? SOCIAL_NAV_GROUPS : NAV_GROUPS,
-    canAny,
-    isSuperAdmin,
-    loading,
-  );
-  const homeTo = shell === "social" ? "/social" : "/dashboard";
-  const homeLabel = shell === "social" ? "Social" : "Dashboard";
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" className="lg:hidden shrink-0 -ml-1 min-h-12 min-w-12">
-          <Menu className="h-5 w-5" />
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="left" className="flex h-full max-h-[100dvh] w-[min(100vw-2rem,20rem)] flex-col overflow-hidden p-0">
-        <SheetHeader className="shrink-0 border-b px-4 py-3 pr-12 text-left">
-          <SheetTitle className="flex items-center gap-2 text-base font-semibold">
-            <Logo className="h-8" />
-          </SheetTitle>
-        </SheetHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 space-y-5">
-          <Link
-            to={homeTo}
-            onClick={() => setOpen(false)}
-            className={cn(
-              "flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm font-medium transition-colors",
-              pathname === homeTo ? "bg-primary text-primary-foreground" : "hover:bg-surface-soft",
-            )}
-          >
-            <Zap className="h-4 w-4" /> {homeLabel}
-          </Link>
-
-          {shell === "social" ? (
-            <Link
-              to="/dashboard"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm font-medium transition-colors hover:bg-surface-soft text-muted-foreground"
-            >
-              <Layers className="h-4 w-4" /> Main app
-            </Link>
-          ) : (
-            <Link
-              to="/social"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm font-medium transition-colors hover:bg-surface-soft text-muted-foreground"
-            >
-              <Sparkles className="h-4 w-4" /> Social
-            </Link>
-          )}
-
-          {groups.map((group) => (
-            <div key={group.label}>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-2">
-                {group.label}
-              </p>
-              <div className="space-y-0.5">
-                {group.items.map((item) => (
-                  <Link
-                    key={item.url}
-                    to={item.url}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm transition-colors",
-                      isActivePath(pathname, item.url)
-                        ? "bg-primary/25 font-medium border-l-2 border-primary pl-[10px]"
-                        : "hover:bg-surface-soft",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4 shrink-0 opacity-70" />
-                    {item.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          {visibleMore.length > 0 && (
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-2">
-                More
-              </p>
-              <div className="space-y-0.5">
-                {visibleMore.map((item) => (
-                  <Link
-                    key={item.url}
-                    to={item.url}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center gap-2.5 rounded-lg px-3 py-2.5 min-h-12 text-sm transition-colors",
-                      isActivePath(pathname, item.url)
-                        ? "bg-primary/25 font-medium border-l-2 border-primary pl-[10px]"
-                        : "hover:bg-surface-soft",
-                    )}
-                  >
-                    <item.icon className="h-4 w-4 shrink-0 opacity-70" />
-                    {item.title}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {workspaces.length > 0 && (
-            <div className="border-t pt-4">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5 px-2">
-                Workspace
-              </p>
-              {workspaces.map((ws: { id: string; name: string }) => (
-                <button
-                  key={ws.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveWorkspace(ws.id);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 min-h-12 text-sm text-left transition-colors",
-                    ws.id === activeWorkspace ? "bg-surface-soft font-medium" : "hover:bg-surface-soft",
-                  )}
-                >
-                  <Layers className="h-4 w-4 shrink-0 opacity-70" />
-                  <span className="truncate">{ws.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
-}
-
 export function AppNavbar() {
   const { pathname } = useLocation();
-  const { canAny, isSuperAdmin, loading } = usePermissions();
-  const visibleMore = filterNavItems(MORE_ITEMS, canAny, isSuperAdmin, loading);
   const shell = resolveProductShell(pathname);
   const homeTo = shell === "social" ? "/social" : "/dashboard";
   const homeLabel = shell === "social" ? "Social" : "Dashboard";
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const openSearch = useCallback(() => setSearchOpen(true), []);
   useGlobalSearchShortcut(openSearch);
 
@@ -273,7 +111,17 @@ export function AppNavbar() {
 
       <header className="sticky top-0 z-50 border-b border-border bg-card/90 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="flex h-16 items-center gap-2 px-3 sm:px-4 lg:px-6">
-          <MobileNav />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="-ml-1 h-11 w-11 shrink-0 rounded-xl lg:hidden"
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
+            aria-expanded={menuOpen}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <MobileSidebar open={menuOpen} onOpenChange={setMenuOpen} onSearch={openSearch} />
 
           {/* Below desktop the sidebar is a rail or hidden, so the bar carries the logo. */}
           <Link to={homeTo} className="flex shrink-0 items-center lg:hidden" aria-label={`Mako ${homeLabel}`}>

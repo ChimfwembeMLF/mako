@@ -6,6 +6,7 @@ import {
   SocialMessages,
   InboxAttachment,
 } from './entities/social_messages.entity';
+import { LeadCaptureService, dmSource } from '../leads/lead-capture.service';
 import { SocialDmAutoReplyService } from './social-dm-auto-reply.service';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class SocialMessagingInboundService {
     @InjectRepository(SocialMessages)
     private readonly messagesRepo: Repository<SocialMessages>,
     private readonly autoReply: SocialDmAutoReplyService,
+    private readonly leadCapture: LeadCaptureService,
   ) {}
 
   async handleMetaWebhook(body: unknown): Promise<{ received: boolean }> {
@@ -151,6 +153,8 @@ export class SocialMessagingInboundService {
       }),
     );
 
+    if (!isOutbound) await this.captureLead(account, platform, senderId, body);
+
     if (!isOutbound && body.trim()) {
       await this.autoReply.tryReply({
         tenantId: account.tenantId,
@@ -161,6 +165,24 @@ export class SocialMessagingInboundService {
         account,
       });
     }
+  }
+
+  /** The sender becomes (or updates) a lead. */
+  private async captureLead(
+    account: SocialAccounts,
+    platform: string,
+    senderId: string,
+    body: string,
+  ) {
+    const source = dmSource(platform);
+    if (!source || !senderId) return;
+    await this.leadCapture.capture({
+      tenantId: account.tenantId,
+      workspaceId: account.workspaceId,
+      source,
+      externalRef: `${platform}:${senderId}`,
+      message: body,
+    });
   }
 
   private parseMessageAttachments(raw: unknown): InboxAttachment[] {

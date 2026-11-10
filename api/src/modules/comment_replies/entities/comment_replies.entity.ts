@@ -30,6 +30,9 @@ export class CommentReplies {
   externalPostId: string;
   @Column({ type: 'text' })
   commenterName: string;
+  /** The commenter's id on the platform, so their comments add up to one lead. */
+  @Column({ type: 'text', nullable: true })
+  commenterId?: string;
   @Column({ type: 'text', nullable: true })
   commenterAvatarUrl?: string;
   @Column({ type: 'text' })

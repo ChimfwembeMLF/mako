@@ -30,6 +30,7 @@ import { LeadSources } from '../lead_sources/entities/lead_sources.entity';
 import { QueueDispatchService } from '../queues/queue-dispatch.service';
 import { BrandProfilesService } from '../brand_profiles/brand_profiles.service';
 import { ChatbotConfigService } from '../chatbot/services/chatbot-config.service';
+import { LeadCaptureService } from './lead-capture.service';
 
 interface JwtUser {
   sub: string;
@@ -51,6 +52,7 @@ export class LeadsController {
     private readonly tenantsService: TenantsService,
     private readonly brandProfiles: BrandProfilesService,
     private readonly chatbotConfig: ChatbotConfigService,
+    private readonly leadCapture: LeadCaptureService,
   ) {}
 
   @Post('webhook')
@@ -228,6 +230,15 @@ export class LeadsController {
       return { queued: true, jobId, queue };
     }
     return this.leadEmail.sendLeadEmail(payload);
+  }
+
+  /** Adds everyone who has already messaged, commented or emailed as a lead. */
+  @RequirePermission('leads.classify')
+  @Post('import-conversations')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  importConversations(@Body() body: { tenantId: string; workspaceId?: string }) {
+    return this.leadCapture.importExisting(body.tenantId, body.workspaceId || null);
   }
 
   @RequirePermission('leads.classify')

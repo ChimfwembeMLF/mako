@@ -20,6 +20,7 @@ import { MailInboxMessagesService } from './mail-inbox-messages.service';
 import { mailFromAddress, mailTransportOptions } from './mail-transport.util';
 import { MailController } from './mail.controller';
 import { MailService } from './mail.service';
+import { LeadCaptureModule } from '../leads/lead-capture.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { MailService } from './mail.service';
     forwardRef(() => AuthModule),
     AiModule,
     AutoReplyRulesModule,
+    LeadCaptureModule,
     TypeOrmModule.forFeature([
       GmailInboxConnection,
       MailMessages,

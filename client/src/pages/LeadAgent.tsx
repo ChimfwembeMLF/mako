@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { MessageSquare, UserCheck, AlertTriangle, Star, Clock, Send, ArrowUpRight, Globe, Copy, Check, Zap, ExternalLink, Mail, MailX, Phone, UserPlus, Trash2, PhoneOff, Bot, Plus, Sparkles, Edit2, Eye, MoreHorizontal } from "lucide-react";
 import { useTenant } from "@/hooks/useTenant";
 import { useWorkspace } from "@/hooks/useWorkspace";
@@ -23,6 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FormFieldAi } from "@/components/form/FormFieldAi";
 import { whatsappPhoneFromLead, isWhatsappLead, formatWhatsappPhoneDisplay } from "@/lib/whatsappLead";
+import { leadSourceLabel, isSocialLead, hasRealEmail } from "@/lib/leadSource";
 
 interface Lead {
   id: string;
@@ -36,6 +37,8 @@ interface Lead {
   ai_reply: string | null;
   created_at: string;
   unsubscribed?: boolean;
+  avatar_url?: string | null;
+  last_message_at?: string | null;
 }
 
 const classColors: Record<string, string> = {
@@ -74,6 +77,7 @@ const LeadAgent = () => {
   const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'whatsapp' ? 'whatsapp' : 'leads';
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [importing, setImporting] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [replyText, setReplyText] = useState("");
   const [filterClass, setFilterClass] = useState<string>("all");
@@ -380,7 +384,13 @@ const LeadAgent = () => {
             ai_reply: l.aiReply != null ? String(l.aiReply) : null,
             created_at: String(l.created_at ?? ""),
             unsubscribed: Boolean(l.unsubscribed),
-          })),
+            avatar_url: l.avatarUrl != null ? String(l.avatarUrl) : null,
+            last_message_at: l.lastMessageAt != null ? String(l.lastMessageAt) : null,
+          }))
+          // Whoever wrote most recently first.
+          .sort((a, b) =>
+            (b.last_message_at ?? b.created_at).localeCompare(a.last_message_at ?? a.created_at),
+          ),
       );
     } catch {
       setLeads([]);
@@ -388,6 +398,29 @@ const LeadAgent = () => {
   };
 
   const filtered = filterClass === "all" ? leads : leads.filter((l) => l.classification === filterClass);
+
+  const importConversations = async () => {
+    if (!tenant) return;
+    setImporting(true);
+    try {
+      const r = await leadsApi.importConversations(tenant.id, activeWorkspace);
+      toast({
+        title: r.created ? `${r.created} new ${r.created === 1 ? "lead" : "leads"} added` : "Already up to date",
+        description: r.created
+          ? "Everyone who has messaged, commented or emailed is now a lead."
+          : `${r.updated} existing ${r.updated === 1 ? "lead was" : "leads were"} refreshed.`,
+      });
+      await loadLeads();
+    } catch (e) {
+      toast({
+        title: "Couldn't import conversations",
+        description: e instanceof Error ? e.message : "Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   const handleReply = async () => {
     if (!selectedLead || !replyText.trim()) return;
@@ -592,6 +625,10 @@ const LeadAgent = () => {
       {/* Filter */}
       <div className="flex gap-2 items-center flex-wrap">
         <BulkEmailSheet leads={leads} />
+        <Button size="sm" variant="outline" onClick={importConversations} disabled={importing} className="gap-1.5">
+          <UserPlus className="h-3.5 w-3.5" />
+          {importing ? "Importing…" : "Import conversations"}
+        </Button>
         {["all", "hot", "warm", "cold"].map((f) => (
           <Button key={f} size="sm" variant={filterClass === f ? "default" : "outline"} onClick={() => setFilterClass(f)}
             className={filterClass === f ? "" : ""}>
@@ -605,7 +642,8 @@ const LeadAgent = () => {
         {leads.length === 0 ? (
           <Card className="border-border/50">
             <CardContent className="p-8 text-center text-muted-foreground">
-              No leads yet. Share your webhook URL or contact form to start receiving leads.
+              No leads yet. Everyone who messages, comments on your posts or emails you will appear here.
+              To add people who already have, use Import conversations.
             </CardContent>
           </Card>
         ) : filtered.map((lead) => (
@@ -626,7 +664,9 @@ const LeadAgent = () => {
                         <Badge className="text-[10px] bg-muted text-muted-foreground"><MailX className="h-3 w-3 mr-1" /> Unsubscribed</Badge>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground mb-1">{lead.email} • via {lead.source}</p>
+                    <p className="text-xs text-muted-foreground mb-1">
+                      {hasRealEmail(lead.email) ? `${lead.email} • ` : ""}via {leadSourceLabel(lead.source)}
+                    </p>
                     {lead.message && <p className="text-sm text-foreground mt-2">{lead.message}</p>}
                     {lead.ai_reply && (
                       <div className="mt-2 bg-primary/5 border border-primary/20 rounded-lg p-2">
@@ -634,7 +674,11 @@ const LeadAgent = () => {
                         <p className="text-sm">{lead.ai_reply}</p>
                       </div>
                     )}
-                    <p className="text-xs text-muted-foreground mt-2">{new Date(lead.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {lead.last_message_at
+                        ? `Last message ${new Date(lead.last_message_at).toLocaleString()}`
+                        : new Date(lead.created_at).toLocaleString()}
+                    </p>
                   </div>
                 </div>
 
@@ -655,7 +699,8 @@ const LeadAgent = () => {
                     size="sm"
                     variant="outline"
                     className="h-8 text-xs"
-                    disabled={lead.unsubscribed}
+                    disabled={lead.unsubscribed || !hasRealEmail(lead.email)}
+                    title={hasRealEmail(lead.email) ? undefined : "No email address for this lead yet"}
                     onClick={() => {
                       setSelectedLead(lead);
                       setEmailSubject("");
@@ -665,6 +710,13 @@ const LeadAgent = () => {
                   >
                     <Mail className="h-3.5 w-3.5 mr-1.5" /> Email
                   </Button>
+                  {isSocialLead(lead.source) && (
+                    <Button asChild size="sm" variant="outline" className="h-8 text-xs">
+                      <Link to="/replies">
+                        <MessageSquare className="h-3.5 w-3.5 mr-1.5" /> Open inbox
+                      </Link>
+                    </Button>
+                  )}
                   {isWhatsappLead(lead) && (
                     <Button
                       size="sm"

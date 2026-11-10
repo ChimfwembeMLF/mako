@@ -1851,6 +1851,13 @@ export const leadsApi = {
     remove: (id: string) =>
         request<any>(`/api/v1/leads/${id}`, { method: 'DELETE' }),
 
+    /** Adds everyone who has already messaged, commented or emailed as a lead. */
+    importConversations: (tenantId: string, workspaceId?: string | null) =>
+        request<{ created: number; updated: number }>('/api/v1/leads/import-conversations', {
+            method: 'POST',
+            body: JSON.stringify({ tenantId, ...(workspaceId ? { workspaceId } : {}) }),
+        }),
+
     sendEmail: (data: {
         to?: string;
         leadId?: string;

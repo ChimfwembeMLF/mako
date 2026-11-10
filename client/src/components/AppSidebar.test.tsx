@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
-import { AppSidebar } from "./AppSidebar";
+import { AppSidebar, MobileSidebar } from "./AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 
 const signOut = vi.hoisted(() => vi.fn().mockResolvedValue(undefined));
@@ -12,7 +12,11 @@ const perms = vi.hoisted(() => ({
   loading: false,
 }));
 
-vi.mock("@/hooks/useAuth", () => ({ useAuth: () => ({ signOut }) }));
+vi.mock("@/hooks/useAuth", () => ({
+  useAuth: () => ({ signOut, user: { firstName: "Demo", lastName: "Owner", email: "owner@example.test" } }),
+}));
+const setColorMode = vi.hoisted(() => vi.fn());
+vi.mock("@/hooks/useTheme", () => ({ useTheme: () => ({ colorMode: "light", setColorMode }) }));
 vi.mock("@/hooks/usePermissions", () => ({
   usePermissions: () => ({
     isSuperAdmin: perms.isSuperAdmin,
@@ -111,5 +115,65 @@ describe("AppSidebar", () => {
     renderSidebar();
     expect(await screen.findByRole("link", { name: "Inbox" })).toBeInTheDocument();
     expect(screen.queryByText("0")).not.toBeInTheDocument();
+  });
+});
+
+describe("MobileSidebar", () => {
+  beforeEach(() => {
+    perms.granted = new Set(["content.view", "replies.view"]);
+    perms.isSuperAdmin = false;
+    perms.loading = false;
+    counts.unread = 0;
+    counts.pending = 0;
+    localStorage.clear();
+  });
+
+  function renderMenu(path = "/dashboard", onSearch = vi.fn()) {
+    const onOpenChange = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[path]}>
+          <SidebarProvider>
+            <MobileSidebar open onOpenChange={onOpenChange} onSearch={onSearch} />
+          </SidebarProvider>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+    return { onOpenChange, onSearch };
+  }
+
+  it("shows the same groups and pages as the desktop sidebar", () => {
+    renderMenu();
+    expect(screen.getByRole("link", { name: "Posts" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Inbox" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Leads" })).not.toBeInTheDocument();
+    expect(screen.getByText("Engage")).toBeInTheDocument();
+  });
+
+  it("marks the page you are on", () => {
+    renderMenu("/content");
+    expect(screen.getByRole("link", { name: "Posts" })).toHaveAttribute("aria-current", "page");
+  });
+
+  it("closes when you tap a page", () => {
+    const { onOpenChange } = renderMenu();
+    fireEvent.click(screen.getByRole("link", { name: "Posts" }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("closes and opens search", () => {
+    const { onOpenChange, onSearch } = renderMenu();
+    fireEvent.click(screen.getByRole("button", { name: /search pages/i }));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onSearch).toHaveBeenCalledTimes(1);
+  });
+
+  it("switches theme and signs out from the bottom", () => {
+    renderMenu();
+    fireEvent.click(screen.getByRole("radio", { name: "Dark" }));
+    expect(setColorMode).toHaveBeenCalledWith("dark");
+    fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+    expect(signOut).toHaveBeenCalled();
   });
 });

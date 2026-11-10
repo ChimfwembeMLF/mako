@@ -12,6 +12,7 @@ import {
 } from './email-reply.util';
 import { GmailInboxConnection } from './entities/gmail_inbox_connection.entity';
 import { MailMessages } from './entities/mail_messages.entity';
+import { LeadCaptureService } from '../leads/lead-capture.service';
 
 @Injectable()
 export class GmailInboxSyncService {
@@ -29,6 +30,7 @@ export class GmailInboxSyncService {
     private readonly usersRepo: Repository<UserEntity>,
     @InjectRepository(TenantMembers)
     private readonly membersRepo: Repository<TenantMembers>,
+    private readonly leadCapture: LeadCaptureService,
   ) {}
 
   async syncAll(): Promise<{ processed: number; drafted: number }> {
@@ -119,6 +121,19 @@ export class GmailInboxSyncService {
           }),
         );
         processed += 1;
+
+        // Real people writing in become leads; newsletters and no-reply senders don't.
+        if (status === 'received') {
+          await this.leadCapture.capture({
+            tenantId: connection.tenantId,
+            workspaceId: connection.workspaceId,
+            source: 'email',
+            externalRef: `email:${message.fromEmail.toLowerCase()}`,
+            email: message.fromEmail,
+            name: message.fromName,
+            message: [message.subject, cleanBody].filter(Boolean).join('\n\n').slice(0, 4000),
+          });
+        }
 
         if (
           message.isUnread &&

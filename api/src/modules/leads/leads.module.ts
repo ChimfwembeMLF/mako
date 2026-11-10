@@ -14,6 +14,7 @@ import { QueuesModule } from '../queues/queues.module';
 import { TenantsModule } from '../tenants/tenants.module';
 import { BrandProfilesModule } from '../brand_profiles/brand_profiles.module';
 import { ChatbotModule } from '../chatbot/chatbot.module';
+import { LeadCaptureModule } from './lead-capture.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { ChatbotModule } from '../chatbot/chatbot.module';
     TenantsModule,
     BrandProfilesModule,
     ChatbotModule,
+    LeadCaptureModule,
     forwardRef(() => QueuesModule),
   ],
   providers: [LeadsService, LeadClassifyService, LeadEmailService],

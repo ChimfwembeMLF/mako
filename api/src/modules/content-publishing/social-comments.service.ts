@@ -15,11 +15,14 @@ import { summarizeAxiosError } from './publish-error.util';
 import { logOnce } from '../../common/throttled-log.util';
 import { scopeWhere } from '../../common/workspace-scope.util';
 import { META_GRAPH_VERSION } from '../../common/meta-graph-version';
+import { LeadCaptureService, commentSource } from '../leads/lead-capture.service';
 
 type FetchedComment = {
   externalCommentId: string;
   externalPostId: string;
   commenterName: string;
+  /** Their id on the platform, so one person's comments add up to one lead. */
+  commenterId?: string;
   commenterAvatarUrl?: string;
   commentText: string;
   parentCommentId?: string;
@@ -43,6 +46,7 @@ export class FetchCommentsService {
     private readonly engagement: PublicationEngagementService,
     private readonly publishAccounts: SocialPublishAccountService,
     private readonly config: ConfigService,
+    private readonly leadCapture: LeadCaptureService,
   ) {}
 
   async fetchForTenant(params: {
@@ -95,6 +99,7 @@ export class FetchCommentsService {
               externalCommentId: c.externalCommentId,
               externalPostId: c.externalPostId,
               commenterName: c.commenterName,
+              commenterId: c.commenterId,
               commenterAvatarUrl: c.commenterAvatarUrl,
               commentText: c.commentText,
               parentCommentId: c.parentCommentId,
@@ -105,6 +110,7 @@ export class FetchCommentsService {
           );
           fetched++;
           newCommentIds.push(saved.id);
+          if (!saved.isFromBrand) await this.captureLead(pub, c);
         }
       } catch (err) {
         logOnce(
@@ -143,6 +149,24 @@ export class FetchCommentsService {
     );
 
     return { fetched, autoReplied, engagementSynced };
+  }
+
+  /** The commenter becomes (or updates) a lead. Brand replies never do. */
+  private async captureLead(pub: ContentPublications, c: FetchedComment) {
+    const source = commentSource(pub.platform);
+    if (!source) return;
+    const platform = pub.platform === 'twitter' ? 'x' : pub.platform;
+    const nameRef = `${platform}:name:${c.commenterName.trim().toLowerCase()}`;
+    await this.leadCapture.capture({
+      tenantId: pub.tenantId,
+      workspaceId: pub.workspaceId,
+      source,
+      externalRef: c.commenterId ? `${platform}:${c.commenterId}` : nameRef,
+      fallbackRef: c.commenterId ? nameRef : undefined,
+      name: c.commenterName,
+      avatarUrl: c.commenterAvatarUrl,
+      message: c.commentText,
+    });
   }
 
   /** Sync comments for every tenant with published posts (cron). */
@@ -286,6 +310,7 @@ export class FetchCommentsService {
         externalCommentId: String(c.id),
         externalPostId: postId,
         commenterName: String(from?.name ?? 'Facebook user'),
+        commenterId: from?.id,
         commentText: String(c.message ?? ''),
         likeCount: Number(c.like_count ?? 0),
         isFromBrand: this.isBrandComment(account, from?.name, from?.id),
@@ -299,6 +324,7 @@ export class FetchCommentsService {
           externalCommentId: String(reply.id),
           externalPostId: postId,
           commenterName: String(replyFrom?.name ?? 'Facebook user'),
+          commenterId: replyFrom?.id,
           commentText: String(reply.message ?? ''),
           parentCommentId: String(c.id),
           likeCount: Number(reply.like_count ?? 0),
@@ -350,6 +376,7 @@ export class FetchCommentsService {
         externalCommentId: String(c.id),
         externalPostId: mediaId,
         commenterName,
+        commenterId: from?.id,
         commentText: String(c.text ?? ''),
         likeCount: Number(c.like_count ?? 0),
         isFromBrand: this.isBrandComment(account, commenterName, from?.id),
@@ -366,6 +393,7 @@ export class FetchCommentsService {
           externalCommentId: String(reply.id),
           externalPostId: mediaId,
           commenterName: replyName,
+          commenterId: replyFrom?.id,
           commentText: String(reply.text ?? ''),
           parentCommentId: String(c.id),
           likeCount: Number(reply.like_count ?? 0),
@@ -407,6 +435,7 @@ export class FetchCommentsService {
           commenterName:
             actor?.replace('urn:li:person:', 'LinkedIn user ') ??
             'LinkedIn user',
+          commenterId: actor,
           commentText: String(message?.text ?? ''),
         };
       });
@@ -451,6 +480,7 @@ export class FetchCommentsService {
           externalCommentId: topId,
           externalPostId: videoId,
           commenterName: top?.authorDisplayName ?? 'YouTube user',
+          commenterId: this.youtubeChannelId(top?.authorChannelId),
           commenterAvatarUrl: top?.authorProfileImageUrl,
           commentText: String(top?.textDisplay ?? top?.textOriginal ?? ''),
           likeCount: Number(top?.likeCount ?? 0),
@@ -467,6 +497,7 @@ export class FetchCommentsService {
             externalCommentId: String(reply.id ?? ''),
             externalPostId: videoId,
             commenterName: rs?.authorDisplayName ?? 'YouTube user',
+            commenterId: this.youtubeChannelId(rs?.authorChannelId),
             commenterAvatarUrl: rs?.authorProfileImageUrl,
             commentText: String(rs?.textDisplay ?? rs?.textOriginal ?? ''),
             parentCommentId: topId,

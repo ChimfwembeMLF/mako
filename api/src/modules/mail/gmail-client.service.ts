@@ -4,11 +4,14 @@ import { google, gmail_v1 } from 'googleapis';
 
 import { GoogleAuthService } from '../auth/google-auth.service';
 import { UserService } from '../user/user.service';
+import { displayName } from './from-header.util';
 
 export type ParsedGmailMessage = {
   id: string;
   threadId?: string;
   fromEmail: string;
+  /** The display name in From ("Jo Banda <jo@x.com>" gives "Jo Banda"), if any. */
+  fromName?: string;
   subject: string;
   body: string;
   messageIdHeader?: string;
@@ -132,6 +135,7 @@ export class GmailClientService {
       id: data.id,
       threadId: data.threadId ?? undefined,
       fromEmail,
+      fromName: displayName(fromRaw),
       subject,
       body,
       messageIdHeader,

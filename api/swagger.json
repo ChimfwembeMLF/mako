@@ -5643,6 +5643,25 @@
         ]
       }
     },
+    "/api/v1/leads/import-conversations": {
+      "post": {
+        "operationId": "LeadsController_importConversations",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "bearer": []
+          }
+        ],
+        "tags": [
+          "Leads"
+        ]
+      }
+    },
     "/api/v1/leads": {
       "post": {
         "operationId": "LeadsController_create",

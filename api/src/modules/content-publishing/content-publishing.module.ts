@@ -24,6 +24,7 @@ import { PublishMediaResolverService } from './publish-media-resolver.service';
 import { SocialPublishAccountService } from './social-publish-account.service';
 import { NewChannelPublishingService } from './new-channel-publishing.service';
 import { WhatsappModule } from '../whatsapp/whatsapp.module';
+import { LeadCaptureModule } from '../leads/lead-capture.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { WhatsappModule } from '../whatsapp/whatsapp.module';
     AutoReplyRulesModule,
     AiModule,
     WhatsappModule,
+    LeadCaptureModule,
   ],
   providers: [
     NewChannelPublishingService,
